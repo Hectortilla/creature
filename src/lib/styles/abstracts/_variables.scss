@@ -1,0 +1,81 @@
+/*
+* Colors
+*/
+
+$colors: (
+    base: (
+        100: 50deg, // hsla(50,s,l,a);
+        200: 24deg, // hsla(24,s,l,a);
+    ),
+    ether: (
+        100: 0deg, // hsla(50,s,l,a);
+        200: 0deg, // hsla(10,s,l,a);
+    ),
+    ground: (
+        100: 34deg, // hsla(0,s,l,a);
+        200: 30deg, // hsla(10,s,l,a);
+    ),
+    water: ( // TODO
+        100: 206deg, // hsla(50,s,l,a);
+        200: 200deg, // hsla(24,s,l,a);
+    ),
+    air: ( // TODO
+        100: 200deg, // hsla(50,s,l,a);
+        200: 190deg, // hsla(24,s,l,a);
+    ),
+    fire: (
+        100: 14deg, // hsla(0,s,l,a);
+        200: 24deg, // hsla(10,s,l,a);
+    ),
+    ice: ( // TODO
+        100: 183deg, // hsla(50,s,l,a);
+        200: 190deg, // hsla(24,s,l,a);
+    ),
+    thunder: ( // TODO
+        100: 52deg, // hsla(50,s,l,a);
+        200: 68deg, // hsla(24,s,l,a);
+    ),
+    metal: ( // TODO
+        100: 0deg, // hsla(50,s,l,a);
+        200: 0deg, // hsla(24,s,l,a);
+    ),
+    nature: ( // TODO
+        100: 100deg, // hsla(50,s,l,a);
+        200: 90deg, // hsla(24,s,l,a);
+    ),
+    light: ( // TODO
+        100: 50deg, // hsla(50,s,l,a);
+        200: 24deg, // hsla(24,s,l,a);
+    ),
+    darkness: ( // TODO
+        100: 271deg, // hsla(50,s,l,a);
+        200: 285deg, // hsla(24,s,l,a);
+    ),
+    semantic: (
+        error: 0deg,
+        success: 90deg,
+    ),
+);
+
+/*
+* Fonts
+*/
+$font-main: 'Titillium Web', sans-serif;
+$font-title: "Cormorant", serif;
+$font-number: "Cormorant Infant", serif;
+$font-base: 16;
+
+
+/*
+* Margins
+*/
+$margin-page-desktop: 32;
+$margin-page-mobile: 10;
+
+/*
+* Input
+*/
+$input-height: 48;
+$input-padding: 12;
+$input-radius: 18;
+$input-font-size: 16;

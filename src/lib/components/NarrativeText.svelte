@@ -1,0 +1,175 @@
+<script lang="ts">
+    interface PageProps {
+        text: string;
+    }
+
+    let {
+        text,
+    }: PageProps = $props();
+
+    // Icons Types
+    import primordial from '$lib/icons/primordial.svg?raw';
+    import warrior from '$lib/icons/warrior.svg?raw';
+    import wizard from '$lib/icons/wizard.svg?raw';
+    import creature from '$lib/icons/creature.svg?raw';
+    import weapon from '$lib/icons/weapon.svg?raw';
+    import object from '$lib/icons/object.svg?raw';
+    import field from '$lib/icons/field.svg?raw';
+
+    // Icons Characters
+    import ancestral from '$lib/icons/ancestral.svg?raw';
+    import elemental from '$lib/icons/elemental.svg?raw';
+    import leyend from '$lib/icons/leyend.svg?raw';
+    import hero from '$lib/icons/hero.svg?raw';
+    import magic from '$lib/icons/magic.svg?raw';
+    import undead from '$lib/icons/undead.svg?raw';
+    import common from '$lib/icons/common.svg?raw';
+
+    // Icons Types
+    import physical from "$lib/icons/physical-type.svg?raw";
+    import magical from "$lib/icons/magical-type.svg?raw";
+
+    type IconName =
+        | "primordial"
+        | "warrior"
+        | "wizard"
+        | "creature"
+        | "weapon"
+        | "object"
+        | "field"
+        | "ancestral"
+        | "elemental"
+        | "leyend"
+        | "hero"
+        | "magic"
+        | "undead"
+        | "common"
+        | "magical"
+        | "physical";
+
+    type TextPart =
+        | { type: "text"; value: string }
+        | { type: "number"; value: string; sign: "positive" | "negative" }
+        | { type: "element"; name: string }
+        | { type: "icon";  name: IconName }
+        | { type: "italic"; value: string }
+
+    // Mapa de iconos
+    const icons: Record<string, string> = {
+        primordial,
+        warrior,
+        wizard,
+        creature,
+        weapon,
+        object,
+        field,
+        ancestral,
+        elemental,
+        leyend,
+        hero,
+        magic,
+        undead,
+        common,
+        magical,
+        physical
+    };
+
+    const ICON_NAMES = new Set([
+        "primordial","warrior","wizard","creature","weapon","object",
+        "field","ancestral","elemental","leyend","hero","magic","undead","common","magical","physical"
+    ]);
+
+    function parseText(text: string): TextPart[] {
+        const parts: TextPart[] = [];
+        const regex = /([+-]\d+)|<i>(.*?)<\/i>|<([a-z]+)>/gi;
+        let lastIndex = 0;
+
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(text)) !== null) {
+            const [fullMatch, number, italic, element] = match;
+            const offset = match.index;
+
+            // Texto antes del match
+            if (offset > lastIndex) {
+                parts.push({ type: "text", value: text.slice(lastIndex, offset) });
+            }
+
+            if (number) {
+                parts.push({
+                    type: "number",
+                    value: number,
+                    sign: number.startsWith("+") ? "positive" : "negative",
+                });
+            } else if (italic) {
+                parts.push({ type: "italic", value: italic });
+            } else if (element) {
+                if (ICON_NAMES.has(element)) {
+                    parts.push({ type: "icon", name: element as IconName });
+                } else {
+                    parts.push({ type: "element", name: element });
+                }
+            }
+
+            lastIndex = offset + fullMatch.length;
+        }
+
+        // Texto restante
+        if (lastIndex < text.length) {
+            parts.push({ type: "text", value: text.slice(lastIndex) });
+        }
+
+        return parts;
+    }
+
+
+    let parsed = $derived.by(() => parseText(text));
+</script>
+
+<p class="effect">
+  {#each parsed as part}
+    {#if part.type === "text"}
+      {part.value}
+    {:else if part.type === "number"}
+      <span class={part.sign}>{part.value}</span>
+    {:else if part.type === "element"}
+      <img
+        class="icon-formatted"
+        src={`/images/elements/${part.name}.png`}
+        alt={part.name}
+      />
+    {:else if part.type === "italic"}
+        <span class="italic">{part.value}</span>
+    {:else if part.type === "icon"}
+        <span class="icon-formatted">
+            {@html icons[part.name] ?? `<svg><text>?</text></svg>`}
+        </span>
+    {/if}
+  {/each}
+</p>
+
+<style lang="scss">
+    @use "$lib/styles/abstracts/variables" as variables;
+    @use "$lib/styles/abstracts/mixins" as mixins;
+	@use "$lib/styles/abstracts/functions" as functions;
+
+    p.effect {
+        color: var(--color-effect-text);
+    }
+
+    span.negative {
+        color: functions.color(semantic, error, 80%, 60%);
+    }
+    span.positive {
+        color: functions.color(semantic, success, 80%, 60%);
+    }
+    span.italic {
+        font-family: variables.$font-title;
+        font-size: functions.rem(19);
+    }
+    .icon-formatted {
+        display: inline-block;
+        width: functions.rem(20);
+        height: functions.rem(20);
+        margin: 0 functions.rem(2) functions.rem(-4) functions.rem(2);
+    }
+</style>

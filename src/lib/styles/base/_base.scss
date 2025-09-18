@@ -1,0 +1,142 @@
+@use "sass:math";
+@use "../abstracts/variables" as variables;
+@use "../abstracts/functions" as functions;
+@use "../abstracts/mixins" as mixins;
+
+html,
+body {
+    font-family: variables.$font-main;
+    font-weight: 400;
+    text-rendering: geometricPrecision;
+    padding-bottom: functions.rem(40);
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-text);
+
+    &.no-scroll {
+        overflow-y: hidden;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    text-rendering: geometricPrecision;
+}
+
+svg {
+    display: block;
+}
+
+
+// Input
+.input-container {
+    position: relative;
+    @include mixins.displayFlex(column, 6, flex-start, flex-start, nowrap);
+    @include mixins.transition;
+
+    &.number {
+        width: max-content;
+    }
+
+    &.text {
+        width: 100%;
+    }
+
+    &.disabled {
+        opacity: .4;
+        pointer-events: none;
+    }
+
+    .label-wrapper {
+        width: 100%;
+        padding: 0 functions.rem(8);
+
+        @include mixins.displayFlex(row, 8, space-between, flex-start, nowrap);
+
+        .icon {
+            width: functions.rem(16);
+            height: functions.rem(16);
+        }
+
+        label, .label {
+            width: 100%;
+            font-size: functions.rem(14);
+            color: var(--color-input-label);
+
+            @include mixins.displayFlex(row, 4, flex-start, center, nowrap);
+        }
+
+        p.message {
+            color: var(--color-input-placeholder);
+            font-size: functions.rem(12);
+            @include mixins.transition;
+
+            &.warning {
+                color: var(--color-input-text-warning);
+            }
+
+            &.max {
+                color: var(--color-input-text-max);
+            }
+        }
+    }
+    .info-hover {
+        flex: 1;
+        position: relative;
+
+        @include mixins.displayFlex(row, 0, flex-end, center, nowrap);
+
+        .icon {
+            position: relative;
+            width: functions.rem(14);
+            height: functions.rem(14);
+            color: var(--color-input-placeholder);
+
+            .hover-wrapper{
+                position: absolute;
+                top: functions.rem(-28);
+                left: 50%;
+                transform: translateX(-50%);
+                width: max-content;
+                background-color: var(--color-pop-in-background);
+                border-radius: functions.rem(4);
+                padding: functions.rem(2) functions.rem(6);
+                z-index: 2;
+                opacity: 0;
+
+                @include mixins.displayFlex(row, 8, flex-start, flex-start, nowrap);
+                @include mixins.transition;
+
+                p {
+                    font-size: functions.rem(12);
+                    color: var(--color-input-placeholder);
+                }
+            }
+
+            &:hover .hover-wrapper {
+                opacity: 1;
+            }
+        }
+    }
+}
+
+// Gallery and filters
+.gallery-container {
+    width: 100%;
+    @include mixins.displayFlex(column, 20, center, center, nowrap);
+    @include mixins.margins();
+
+    .filters-container {
+        position: sticky;
+        top: functions.rem(20);
+        left: 0;
+        width: 100%;
+        max-width: functions.rem(900);
+        z-index: 1;
+
+        @include mixins.displayFlex(row, 6, center, flex-end, nowrap);
+    }
+}

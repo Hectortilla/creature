@@ -1,0 +1,68 @@
+{
+	"/": [
+		"src/routes/+page.server.ts"
+	],
+	"/abilities": [
+		"src/routes/abilities/+page.server.ts"
+	],
+	"/abilities/create": [
+		"src/routes/abilities/create/+page.server.ts"
+	],
+	"/abilities/[ability]": [
+		"src/routes/abilities/[ability]/+page.server.ts"
+	],
+	"/api/abilities": [
+		"src/routes/api/abilities/+server.ts"
+	],
+	"/api/associations": [
+		"src/routes/api/associations/+server.ts"
+	],
+	"/api/attacks": [
+		"src/routes/api/attacks/+server.ts"
+	],
+	"/api/cards": [
+		"src/routes/api/cards/+server.ts"
+	],
+	"/api/characters": [
+		"src/routes/api/characters/+server.ts"
+	],
+	"/api/elements": [
+		"src/routes/api/elements/+server.ts"
+	],
+	"/api/types": [
+		"src/routes/api/types/+server.ts"
+	],
+	"/associations": [
+		"src/routes/associations/+page.server.ts"
+	],
+	"/associations/create": [
+		"src/routes/associations/create/+page.server.ts"
+	],
+	"/associations/[association]": [
+		"src/routes/associations/[association]/+page.server.ts"
+	],
+	"/attacks": [
+		"src/routes/attacks/+page.server.ts"
+	],
+	"/attacks/create": [
+		"src/routes/attacks/create/+page.server.ts"
+	],
+	"/attacks/[attack]": [
+		"src/routes/attacks/[attack]/+page.server.ts"
+	],
+	"/cards": [
+		"src/routes/cards/+page.server.ts"
+	],
+	"/cards/create": [
+		"src/routes/cards/create/+page.server.ts"
+	],
+	"/cards/[card]": [
+		"src/routes/cards/[card]/+page.server.ts"
+	],
+	"/cards/[card]/edit": [
+		"src/routes/cards/[card]/edit/+page.server.ts"
+	],
+	"/clasification": [
+		"src/routes/clasification/+page.server.ts"
+	]
+}
