@@ -30,7 +30,10 @@
      * Search next code in cards
      * */
     let nextAttackCode = $derived.by(() => {
-        return attacks.length > 0 ? (attacks[attacks.length - 1]?.code + 1 || 1) : 1;
+        if (!attacks || attacks.length === 0) return 1;
+
+        const maxCode = Math.max(...attacks.map(a => a.code ?? 0));
+        return maxCode + 1;
     });
     $effect(() => {
         $inspect(nextAttackCode);

@@ -43,7 +43,10 @@
      * Search next code in cards
      * */
     let nextCardCode = $derived.by(() => {
-        return cards.length > 0 ? (cards[cards.length - 1]?.code + 1 || 1) : 1;
+        if (!cards || cards.length === 0) return 1;
+
+        const maxCode = Math.max(...cards.map(a => a.code ?? 0));
+        return maxCode + 1;
     });
 
     // New Card data
@@ -102,10 +105,28 @@
     });
 
     /**
+     * Attacks depends on card elements. Only element Ether can have differente element attacks
+    */
+   let attacksFilterList = $derived.by(() => {
+        if (cardFirstElement === 1 || cardSecondElement === 1) {
+            return data.attacks;
+        }
+
+        if (!cardSecondElement) {
+            return data.attacks.filter(e => e.element.id === cardFirstElement);
+        }
+
+        return data.attacks.filter(
+            e => e.element.id === cardFirstElement || e.element.id === cardSecondElement
+        );
+    });
+
+
+    /**
      * Second attack list without first attack
      */
     let secondAttackList = $derived.by(() => {
-        return data.attacks.filter(e => e.code !== cardFirstAttack); 
+        return attacksFilterList.filter(e => e.code !== cardFirstAttack); 
     });
 
     // Clean second attack data if firts change to the same element
@@ -486,7 +507,7 @@
         <Divider title="Ataques" hasMargins={true}></Divider>
         <div class="row min-gap">
             <SelectAttack
-                attacks={data.attacks}
+                attacks={attacksFilterList}
                 bind:group={cardFirstAttack}
                 buttonText="Añadir ataque *"
                 isDisabled={false}
@@ -498,7 +519,7 @@
                 isDisabled={cardFirstAttack === null}
             />
         </div>
-        <Divider title="Efectos" hasMargins={true}></Divider>
+        <Divider title="Habilidades" hasMargins={true}></Divider>
             <SelectAbility
                 abilities={data.abilities}
                 bind:group={cardAbility}

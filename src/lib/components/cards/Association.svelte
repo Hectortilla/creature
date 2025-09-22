@@ -39,6 +39,7 @@
 
     .card-attack-container {
         width: 100%;
+        height: 100%;
         border-radius: functions.rem(16);
         padding: functions.rem(16);
         background-color: var(--color-card-background);

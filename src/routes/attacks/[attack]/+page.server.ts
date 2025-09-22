@@ -9,7 +9,6 @@ export const load: PageServerLoad = async ({ params }) => {
         throw new Error("Attack parameter is missing");
     }
 
-
     let data: Record<string, unknown> = {};
 	data.attack = attacksDB.getAttack(attack);
     data.cards_use_attack = cardsDB.getCardsByAttack(Number(attack));

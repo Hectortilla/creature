@@ -29,6 +29,10 @@
     import physical from "$lib/icons/physical-type.svg?raw";
     import magical from "$lib/icons/magical-type.svg?raw";
 
+    // Icons others
+    import dice from "$lib/icons/dice-rolls.svg?raw";
+    import health from "$lib/icons/health.svg?raw";
+
     type IconName =
         | "primordial"
         | "warrior"
@@ -45,14 +49,18 @@
         | "undead"
         | "common"
         | "magical"
-        | "physical";
+        | "physical"
+        | "dice"
+        | "health";
 
     type TextPart =
         | { type: "text"; value: string }
-        | { type: "number"; value: string; sign: "positive" | "negative" }
+        | { type: "number"; value: string; sign: "positive" | "negative" | "neutral" }
         | { type: "element"; name: string }
         | { type: "icon";  name: IconName }
         | { type: "italic"; value: string }
+        | { type: "fontNumber"; value: string }
+
 
     // Mapa de iconos
     const icons: Record<string, string> = {
@@ -71,22 +79,25 @@
         undead,
         common,
         magical,
-        physical
+        physical,
+        dice,
+        health
     };
 
     const ICON_NAMES = new Set([
         "primordial","warrior","wizard","creature","weapon","object",
-        "field","ancestral","elemental","leyend","hero","magic","undead","common","magical","physical"
+        "field","ancestral","elemental","leyend","hero","magic","undead",
+        "common","magical","physical", "dice", "health"
     ]);
 
     function parseText(text: string): TextPart[] {
         const parts: TextPart[] = [];
-        const regex = /([+-]\d+)|<i>(.*?)<\/i>|<([a-z]+)>/gi;
+        const regex = /([+-]?\d+)|<i>(.*?)<\/i>|<n>(.*?)<\/n>|<([a-z]+)>/gi;
         let lastIndex = 0;
 
         let match: RegExpExecArray | null;
         while ((match = regex.exec(text)) !== null) {
-            const [fullMatch, number, italic, element] = match;
+            const [fullMatch, number, italic, fontNumber, element] = match;
             const offset = match.index;
 
             // Texto antes del match
@@ -95,13 +106,20 @@
             }
 
             if (number) {
+                let sign: "positive" | "negative" | "neutral" = "positive";
+                if (number.startsWith("+")) sign = "positive";
+                else if (number.startsWith("-")) sign = "negative";
+                else if (number === "0") sign = "neutral";
+
                 parts.push({
                     type: "number",
                     value: number,
-                    sign: number.startsWith("+") ? "positive" : "negative",
+                    sign,
                 });
             } else if (italic) {
                 parts.push({ type: "italic", value: italic });
+            } else if (fontNumber) {
+                parts.push({ type: "fontNumber", value: fontNumber });
             } else if (element) {
                 if (ICON_NAMES.has(element)) {
                     parts.push({ type: "icon", name: element as IconName });
@@ -122,6 +140,7 @@
     }
 
 
+
     let parsed = $derived.by(() => parseText(text));
 </script>
 
@@ -130,7 +149,7 @@
     {#if part.type === "text"}
       {part.value}
     {:else if part.type === "number"}
-      <span class={part.sign}>{part.value}</span>
+        <span class={part.sign}>{part.value}</span>
     {:else if part.type === "element"}
       <img
         class="icon-formatted"
@@ -139,6 +158,8 @@
       />
     {:else if part.type === "italic"}
         <span class="italic">{part.value}</span>
+    {:else if part.type === "fontNumber"}
+        <span class="number">{part.value}</span>
     {:else if part.type === "icon"}
         <span class="icon-formatted">
             {@html icons[part.name] ?? `<svg><text>?</text></svg>`}
@@ -162,8 +183,15 @@
     span.positive {
         color: functions.color(semantic, success, 80%, 60%);
     }
+    span.neutral {
+        color: var(--color-button-primary-background);
+    }
     span.italic {
         font-family: variables.$font-title;
+        font-size: functions.rem(19);
+    }
+    span.number {
+        font-family: variables.$font-number;
         font-size: functions.rem(19);
     }
     .icon-formatted {

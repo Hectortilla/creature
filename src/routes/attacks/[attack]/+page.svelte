@@ -72,7 +72,7 @@
     {#if attack}
         <div class="attack-info">
             <div class="info">
-                <p class="name">{attack.name}</p>
+                <h1 class="name">{attack.name}</h1>
                 {#if data && attack.dice_rolls > 0 && attack.dice_rolls}
                     <div class="item">
                         <p>{attack.dice_rolls}</p>
@@ -83,18 +83,43 @@
                     <p>{attack.damage}</p>
                     <div class="icon">{@html iconType[attack.type]}</div>
                 </div>
-                {#if attack.necessary_force !== null && attack.necessary_force.length > 0}
-                    <div class="forces">
+                <div class="forces">
+                    {#if attack.necessary_force !== null && attack.necessary_force.length > 0}
                         {#each attack.necessary_force as force}
                             <div class={`force-item theme-${formatHandle(force.elementData.label)}`}>
                                 <p>{force.value}</p>
                             </div>
                         {/each}
-                    </div>
-                {:else}
-                    <p class="empty">No aporta fuerza</p>
-                {/if}
+                    {:else}
+                        <div class="force-item zero theme-ether">
+                            <p>0</p>
+                        </div>
+                    {/if}
+                </div>
                 <img class="element" src={attack.element.icon} alt={attack.element.label} />
+            </div>
+            <Divider title={false} hasMargins={false}/>
+            <div class="element-damage-wrapper">
+                {#each attack.weaknesses as weakness}
+                    <div class="item weakness">
+                        <img
+                            src={weakness.element.icon}
+                            alt={weakness.element.label}
+                            style="--color-element:#{weakness.element.color}70"
+                        />
+                        <p>-{weakness.value}</p>
+                    </div>
+                {/each}
+                {#each attack.strengths as strength}
+                    <div class="item strength">
+                        <img
+                            src={strength.element.icon}
+                            alt={strength.element.label}
+                            style="--color-element:#{strength.element.color}70"
+                        />
+                        <p>+{strength.value}</p>
+                    </div>
+                {/each}
             </div>
             {#if attack.effect}
                 <Divider title={false} hasMargins={false}/>
@@ -148,10 +173,17 @@
             width: 100%;
             @include mixins.displayFlex(row, 20, flex-start, center, wrap);
 
-            p.name {
+            h1.name {
                 flex: 1;
-                font-size: functions.rem(32);
+                font-size: functions.rem(48);
                 font-family: variables.$font-title;
+                font-weight: 300;
+            }
+
+            p.code {
+                font-size: functions.rem(38);
+                font-family: variables.$font-title;
+                font-weight: 300;
             }
 
             .item {
@@ -180,6 +212,10 @@
                     background-color: var(--color-force-background);
                     transform: rotate(45deg);
                     @include mixins.displayFlex(column, 0, center, center, nowrap);
+
+                    &.zero p{
+                        opacity: .6;
+                    }
 
                     p {
                         color: var(--color-force-foreground);
@@ -220,6 +256,32 @@
             grid-template-columns: repeat(4, 1fr);
             perspective: 1000px;
             gap: functions.rem(20);
+        }
+
+        .element-damage-wrapper {
+            @include mixins.displayFlex(row, 10, center, center, nowrap);
+
+            .item {
+                background-color: var(--color-pop-in-background);
+                padding: functions.rem(4) functions.rem(8) functions.rem(4) functions.rem(4);
+                border-radius: functions.rem(8);
+                overflow: hidden;
+
+                @include mixins.displayFlex(row, 6, center, center, nowrap);
+
+                p {
+                    font-size: functions.rem(14);
+                }
+
+                &.weakness p { color: functions.color(semantic, error, 80%, 60%); }
+                &.strength p { color: functions.color(semantic, success, 80%, 60%); }
+
+                img {
+                    width: functions.rem(26);
+                    height: functions.rem(26);
+                    filter: drop-shadow(0 0 functions.rem(20) var(--color-element));
+                }
+            }
         }
     }
 

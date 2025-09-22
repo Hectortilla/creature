@@ -46,7 +46,7 @@
                 filterByType === null || (types.find(t => t.id === filterByType)?.icon === attack.type);
 
             return matchesSearch && matchesElement && matchesType;
-        });
+        }).sort((a, b) => a.code - b.code);
     });
 
 </script>

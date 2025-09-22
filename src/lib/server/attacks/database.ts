@@ -1,5 +1,6 @@
 import db from '$lib/server/db.js';
 import { formatHandle } from '$lib/utils/formatHandle';
+import { getAttackStrengths, getAttackWeaknesses } from '$lib/utils/getStrenghtsAndWeaknesses';
 import type { Attack, CreateAttack } from '$lib/types';
 import * as elementsDB from '$lib/server/elements/database';
 
@@ -9,6 +10,14 @@ function enrichAttack(a: Attack): Attack {
         ...a,
         element: a.element ? elementsDB.getElement(a.element) : null,
 		necessary_force: a.necessary_force ? JSON.parse(a.necessary_force) : null,
+		strengths: getAttackStrengths(
+			elementsDB.getAllElements(),
+			elementsDB.getElement(a.element) ?? null
+		),
+		weaknesses: getAttackWeaknesses(
+			elementsDB.getAllElements(),
+			elementsDB.getElement(a.element) ?? null
+		),
     };
 }
 
@@ -43,14 +52,16 @@ export function createAttack({
 		damage,
 		dice_rolls,
 		necessary_force,
-		effect
+		effect,
+		strengths,
+		weaknesses
 	}: CreateAttack): Attack {
 		const handle = formatHandle(name);
 		const stmt = db.prepare(`
 			INSERT INTO attacks (
 				created_at, code, name, handle, description,
-				element, type, damage, dice_rolls, necessary_force, effect
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				element, type, damage, dice_rolls, necessary_force, effect, strengths, weaknesses
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`);
 		const result = stmt.run(
 			created_at,
@@ -63,7 +74,9 @@ export function createAttack({
 			damage,
 			dice_rolls,
 			necessary_force,
-			effect
+			effect,
+			strengths,
+			weaknesses,
 		);
 
 		return {
@@ -78,7 +91,9 @@ export function createAttack({
 			damage,
 			dice_rolls,
 			necessary_force,
-			effect
+			effect,
+			strengths: null,
+			weaknesses: null,
 		};
 }
 

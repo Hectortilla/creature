@@ -21,7 +21,10 @@
      * Search next code in cards
      * */
     let nextAssociationCode = $derived.by(() => {
-        return associations.length > 0 ? (associations[associations.length - 1]?.code + 1 || 1) : 1;
+        if (!associations || associations.length === 0) return 1;
+
+        const maxCode = Math.max(...associations.map(a => a.code ?? 0));
+        return maxCode + 1;
     });
 
     // New Card data

@@ -50,7 +50,7 @@
                 filterByCharacter === null || Number(card.character.id) === filterByCharacter;
 
             return matchesSearch && matchesElement && matchesType && matchesCharacter;
-        });
+        }).sort((a, b) => a.code - b.code);
     });
 
 
@@ -105,19 +105,21 @@
         {/if}
     </div>
     {#if data.cards && data.cards.length > 0}
-        <div class="gallery-cards" bind:this={cardContainer}>
+        <ul class="gallery-cards" bind:this={cardContainer}>
             {#each filteredCards() as card, i}
-                <CreatureCard360
-                    data={card}
-                    key={i}
-                    showCode={true}
-                    showInfo={true}
-                    allowLink= {true}
-                    containerPos={cardContainerPosition}
-                    allowHoverEffect={true}
-                />
+                <li>
+                    <CreatureCard360
+                        data={card}
+                        key={i}
+                        showCode={true}
+                        showInfo={true}
+                        allowLink= {true}
+                        containerPos={cardContainerPosition}
+                        allowHoverEffect={true}
+                    />
+                </li>
             {/each}
-        </div>
+        </ul>
     {:else}
         <p>No cards found in this section.</p>
     {/if}
@@ -134,9 +136,6 @@
         justify-items: center;
         align-items: start;
 
-        perspective: 2000px;
-        -webkit-perspective: 2000px;
-
         @media (max-width: 1250px) {
             grid-template-columns: repeat(4, 1fr);
         }
@@ -147,6 +146,10 @@
 
         @media (max-width: 600px) {
             grid-template-columns: repeat(2, 1fr);
+        }
+
+        li {
+            perspective: 1000px;
         }
     }
 </style>

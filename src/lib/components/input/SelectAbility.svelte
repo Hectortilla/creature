@@ -157,6 +157,7 @@
 
     button.add-attack {
         width: 100%;
+        height: 100%;
         border: solid 1px var(--color-pop-in-background);
         border-radius: functions.rem(12);
         color: var(--color-input-label);
@@ -193,6 +194,7 @@
     }
 
     .preview-attack {
+        width: 100%;
         @include mixins.displayFlex(row, 6, flex-start, stretch, nowrap);
 
         button {
@@ -270,7 +272,7 @@
                 display: grid;
                 grid-template-columns: repeat(3,1fr);
                 gap: functions.rem(4);
-                padding: functions.rem(80) functions.rem(20) functions.rem(20) functions.rem(20);
+                padding: functions.rem(80) functions.rem(20) functions.rem(120) functions.rem(20);
 
                 @media (max-width: 1300px) {
                     grid-template-columns: repeat(2, 1fr);

@@ -21,6 +21,8 @@ export interface Creature {
   forces: any;
   ability: any;
   association: any;
+  weaknesses: any;
+  strengths: any;
 }
 
 export type CreateCreature = Omit<Creature, 'id' | 'handle'>;
@@ -51,6 +53,8 @@ export interface Attack {
     dice_rolls: number;
     necessary_force: any;
     effect: string | null;
+    strengths: any;
+    weaknesses: any;
 }
 
 export type CreateAttack = Omit<Attack, 'id' | 'handle'>;
@@ -82,8 +86,8 @@ export interface Element {
     id: number | bigint;
     label: string;
     icon: string;
-    strengths: string[];
-    weaknesses: string[];
+    strengths: any;
+    weaknesses: any;
     color: string;
 }
 

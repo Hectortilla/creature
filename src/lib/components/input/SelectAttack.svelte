@@ -194,6 +194,7 @@
     }
 
     .preview-attack {
+        width: 100%;
         @include mixins.displayFlex(row, 6, flex-start, stretch, nowrap);
 
         button {
@@ -271,7 +272,7 @@
                 display: grid;
                 grid-template-columns: repeat(3,1fr);
                 gap: functions.rem(4);
-                padding: functions.rem(80) functions.rem(20) functions.rem(20) functions.rem(20);
+                padding: functions.rem(80) functions.rem(20) functions.rem(120) functions.rem(20);
 
                 @media (max-width: 1300px) {
                     grid-template-columns: repeat(2, 1fr);
@@ -281,6 +282,8 @@
                 }
 
                 li {
+                    height: 100%;
+
                     input {display: none;}
                     label {
                         height: 100%;

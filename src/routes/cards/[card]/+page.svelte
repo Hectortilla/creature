@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Creature } from '$lib/types';
+    import type { Creature, Element } from '$lib/types';
 	import { goto } from "$app/navigation";
     import { changeThemeTo } from '$lib/utils/changeThemeTo';
     import { onDestroy, onMount } from 'svelte';
@@ -18,6 +18,7 @@
     import healthIcon from "$lib/icons/health.svg?raw"
     import physicalDefenceIcon from "$lib/icons/physical-type.svg?raw"
     import magicDefenceIcon from "$lib/icons/magical-type.svg?raw"
+	import NarrativeText from '$lib/components/NarrativeText.svelte';
 
     interface PageProps {
         data: {
@@ -26,6 +27,7 @@
             };
             cards?: Creature[];
             variants: Creature[];
+            elements: Element[];
         };
     }
     let { data }: PageProps = $props();
@@ -113,11 +115,7 @@
         return allLines;
     };
 
-
-
     const evoLines = $derived.by(() => card ? getAllEvolutionLines(card) : []);
-
-    $inspect(evoLines);
 
     onMount (() => {
         cardContainerPosition = cardContainer?.getBoundingClientRect().top ?? 0;
@@ -132,20 +130,24 @@
 
 {#if data.cards && data.params.card}
     {#if data.cards.length > 1}
-        <h2>Multiple cards found with the name "{data.params.card}". Please specify by code.</h2>
-        <ul>
-            {#each data.cards as cardItem}
-                <li>
-                    <p>Card ID: {cardItem.id}</p>
-                    <p>Card Code: {cardItem.code}</p>
-                    <p>Nombre: {cardItem.name}</p>
-                    <p>Description: {cardItem.description}</p>
-                    <a href={`/cards/${cardItem.code}`}>View Details</a>
-                </li>
-            {/each}
-        </ul>
+        <div class="cards-multiple-container">
+            <h2>Hay multiples cartas para <span>{data.cards[0].name}</span></h2>
+            <ul class="card-gallery" bind:this={cardContainer}>
+                {#each data.cards as cardItem,i}
+                    <CreatureCard360
+                        data={cardItem}
+                        key={i}
+                        showCode={true}
+                        showInfo={true}
+                        allowLink= {true}
+                        allowHoverEffect={true}
+                        containerPos={cardContainerPosition}
+                    />
+                {/each}
+            </ul>
+        </div>
     {:else if card} 
-        <div class="create-page-container">
+        <div class="card-page-container">
             <div class="card-wrapper" bind:this={cardContainer}>
                 <CreatureCard360
                     data={card}
@@ -170,14 +172,33 @@
                             {/if}
                         </div>
                     </div>
-                    <p class="description">{card?.description}</p>
+                    <div class="description">
+                        <NarrativeText text={card.description} />
+                    </div>
+                    <p class="date">
+                        Fecha de creación: {
+                            card?.created_at
+                            ? new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).format(
+                                new Date(card.created_at)
+                            )
+                            : ''
+                        }
+                    </p>
                 </div>
-                <Divider title="Elementos, skills y fuerza" hasMargins={false}></Divider>
+                <Divider title="Características" hasMargins={false}></Divider>
                 <div class="info">
                     <div class="elements">
-                        <img src={card.first_element?.icon} alt={card.first_element?.label}/>
+                        <img
+                            src={card.first_element?.icon}
+                            alt={card.first_element?.label}
+                            style="--color-element:#{card.first_element.color}70"
+                        />
                         {#if card.second_element}
-                            <img src={card.second_element.icon} alt={card.second_element.label}/>
+                            <img
+                                src={card.second_element.icon}
+                                alt={card.second_element.label}
+                                style="--color-element:#{card.second_element.color}70"
+                            />
                         {/if}
                     </div>
                     <div class="skills">
@@ -205,6 +226,32 @@
                     {:else}
                         <p class="empty">No aporta fuerza</p>
                     {/if}
+                </div>
+
+                <Divider title="Daño por elemento" hasMargins={false}></Divider>
+                <div class="info">
+                    <div class="element-damage-wrapper">
+                        {#each card.weaknesses as weakness}
+                            <div class="item weakness">
+                                <img
+                                    src={weakness.element.icon}
+                                    alt={weakness.element.label}
+                                    style="--color-element:#{weakness.element.color}70"
+                                />
+                                <p>+{weakness.value}</p>
+                            </div>
+                        {/each}
+                        {#each card.strengths as strength}
+                            <div class="item strength">
+                                <img
+                                    src={strength.element.icon}
+                                    alt={strength.element.label}
+                                    style="--color-element:#{strength.element.color}70"
+                                />
+                                <p>-{strength.value}</p>
+                            </div>
+                        {/each}
+                    </div>
                 </div>
                 
                 {#if card.first_attack || card.second_attack}
@@ -292,7 +339,25 @@
     @use "$lib/styles/abstracts/mixins" as mixins;
 	@use "$lib/styles/abstracts/functions" as functions;
 
-    .create-page-container {
+    .cards-multiple-container {
+        width: 100%;
+        padding-top: functions.rem(60);
+
+        @include mixins.displayFlex(column, 40, center, center, nowrap);
+        @include mixins.margins;
+
+        h2 {
+            font-size: functions.rem(28);
+            font-family: variables.$font-title;
+            font-weight: 300;
+        }
+        .card-gallery {
+            perspective: 1000px;
+           @include mixins.displayFlex(row, 20, center, flex-start, nowrap); 
+        }
+    }
+
+    .card-page-container {
         width: 100%;
         padding-top: functions.rem(60);
 
@@ -352,17 +417,25 @@
                     width: 100%;
                     opacity: .6;
                 }
+
+                .date {
+                    width: 100%;
+                    opacity: .4;
+                    font-size: functions.rem(14);
+                    //font-family: variables.$font-number;
+                }
             }
 
             .info {
                 width: 100%;
-                @include mixins.displayFlex(row, 26, space-between, flex-start, wrap);
+                @include mixins.displayFlex(row, 26, space-between, center, wrap);
 
                 .elements {
                     @include mixins.displayFlex(row, 6, space-between, flex-start, wrap);
 
                     img {
                         width: functions.rem(30);
+                        filter: drop-shadow(0 0 functions.rem(20) var(--color-element));
                     }
                 }
 
@@ -411,9 +484,36 @@
                 .empty {
                     opacity: .4;
                 }
+
+                .element-damage-wrapper {
+                    @include mixins.displayFlex(row, 10, center, center, nowrap);
+
+                    .item {
+                        background-color: var(--color-pop-in-background);
+                        padding: functions.rem(4) functions.rem(8) functions.rem(4) functions.rem(4);
+                        border-radius: functions.rem(8);
+                        overflow: hidden;
+
+                        @include mixins.displayFlex(row, 6, center, center, nowrap);
+
+                        p {
+                            font-size: functions.rem(14);
+                        }
+
+                        &.weakness p { color: functions.color(semantic, error, 80%, 60%); }
+                        &.strength p { color: functions.color(semantic, success, 80%, 60%); }
+
+                        img {
+                            width: functions.rem(26);
+                            height: functions.rem(26);
+                            filter: drop-shadow(0 0 functions.rem(20) var(--color-element));
+                        }
+                    }
+                }
             }
 
             .attacks-container {
+                width: 100%;
                 @include mixins.displayFlex(column, 12, flex-start, flex-start, nowrap);
             }
 

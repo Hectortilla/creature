@@ -54,18 +54,24 @@
             <p>{data.damage}</p>
             <div class="icon">{@html iconType[data.type]}</div>
         </div>
-        {#if data.necessary_force!== null && data.necessary_force.length > 0}
-            <div class="forces">
+        <div class="forces">
+            {#if data.necessary_force!== null && data.necessary_force.length > 0}
                 {#each data.necessary_force as force}
                     <div class={`force-item theme-${formatHandle(force.elementData.label)}`}>
                         <p>{force.value}</p>
                     </div>
                 {/each}
-            </div>
-        {:else}
-            <p class="empty">No aporta fuerza</p>
-        {/if}
-        <img class="element" src={data.element.icon} alt={data.element.label} />
+            {:else}
+                <div class="force-item zero theme-ether">
+                    <p>0</p>
+                </div>
+            {/if}
+        </div>
+        <img
+            class="element"
+            src={data.element.icon} alt={data.element.label}
+            style="--color-element:#{data.element.color}"
+        />
     </div>
     {#if data.effect}
         <div class="effect-wrapper">
@@ -74,9 +80,9 @@
         </div>
     {/if}
     {#if showDescription}
-        <p class="description">
-            {data.description}
-        </p>
+        <div class="description">
+            <NarrativeText text={data.description}/>
+        </div>
     {/if}
 </a>
 
@@ -87,12 +93,14 @@
 
     .card-attack-container {
         width: 100%;
+        height: 100%;
         border-radius: functions.rem(16);
         padding: functions.rem(16);
         background-color: var(--color-card-background);
         box-shadow:
             0 functions.rem(-2) functions.rem(4) functions.rem(-2) transparent inset,
             0 functions.rem(2) functions.rem(6) functions.rem(1) transparent inset;
+        overflow: hidden;
 
         @include mixins.displayFlex(column, 16, flex-start, flex-start, nowrap);
         @include mixins.transition;
@@ -143,7 +151,12 @@
                     border: solid 1px var(--color-forces-border);
                     background-color: var(--color-force-background);
                     transform: rotate(45deg);
+
                     @include mixins.displayFlex(column, 0, center, center, nowrap);
+
+                    &.zero p{
+                        opacity: .6;
+                    }
 
                     p {
                         color: var(--color-force-foreground);
@@ -157,10 +170,11 @@
             img.element {
                 width: functions.rem(30);
                 height: functions.rem(30);
+                filter: drop-shadow(0 0 functions.rem(20) var(--color-element));
             }
         }
 
-        p.description {
+        .description {
             opacity: .6;
         }
 

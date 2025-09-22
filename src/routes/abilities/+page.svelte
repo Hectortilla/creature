@@ -37,9 +37,10 @@
             // Type filter
             const matchesType =
                 filterByType === null || (types.find(t => t.id === filterByType)?.icon === ability.type);
+                
 
             return matchesSearch && matchesType;
-        });
+        }).sort((a, b) => a.code - b.code);
     });
 
 </script>

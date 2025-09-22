@@ -31,7 +31,7 @@
             );
         }
 
-        return filterAssociations;
+        return filterAssociations.sort((a, b) => a.code - b.code);
 
     });
 

@@ -18,7 +18,7 @@
     --color-input-border: #{color(metal, 100, 0%, 30%)};
     --color-input-text: #{color(metal, 100, 0%, 90%)};
     --color-input-button-background: #{color(metal, 100, 0%, 10%)};
-    --color-input-label: #{color(metal, 100, 20%, 0%, .8)};
+    --color-input-label: #{color(metal, 100, 0%, 80%, .8)};
     --color-input-button-light-top: #{color(metal, 100, 0%, 80%)};
     --color-input-button-light-bottom: #{color(metal, 200, 0%, 20%, .8)};
     --color-input-placeholder: #{color(metal, 100, 0%, 40%)};
@@ -73,11 +73,11 @@
     --color-divider-text: #{color(metal, 200, 0%, 60%)};
 
     // Card
-    --color-card-background: #{color(metal, 100, 80%, 10%)};
-    --color-effect-text: #{color(metal, 100, 30%, 90%, .8)};
+    --color-card-background: #{color(metal, 100, 0%, 18%)};
+    --color-effect-text: #{color(metal, 100, 0%, 90%, .8)};
 
     // Force
-    --color-force-background: #{color(metal, 100, 60%, 38%)};
+    --color-force-background: #{color(metal, 100, 0%, 38%)};
     --color-force-foreground: #{color(metal, 100, 0%, 90%)};
-    --color-forces-border: #{color(metal, 100, 60%, 38%)};
+    --color-forces-border: #{color(metal, 100, 0%, 38%)};
 }

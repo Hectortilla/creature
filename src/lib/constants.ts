@@ -1,0 +1,1 @@
+export const ELEMENTAL_ATTACK_MODIFIER = 20;

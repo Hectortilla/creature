@@ -35,8 +35,10 @@ export async function POST({ request }) {
 	const physical_defence = Number(formData.get('physical_defence'));
 	const magic_defence = Number(formData.get('magic_defence'));
 	const forces = formData.get('forces') !== null ? String(formData.get('forces')) : null;
-	const ability= formData.get('ability') !== null ? Number(formData.get('ability')) : null;
-	const association= formData.get('association') !== null ? Number(formData.get('association')) : null;
+	const ability = formData.get('ability') !== null ? Number(formData.get('ability')) : null;
+	const association = formData.get('association') !== null ? Number(formData.get('association')) : null;
+	const weaknesses = null;
+	const strengths = null;
 
 	// Campo de imagen (archivo)
 	const image = formData.get('image'); // puede ser File o null
@@ -101,7 +103,9 @@ export async function POST({ request }) {
 		magic_defence,
 		forces,
 		ability,
-		association
+		association,
+		weaknesses,
+		strengths
 	});
 
 	return json({ card }, { status: 201 });

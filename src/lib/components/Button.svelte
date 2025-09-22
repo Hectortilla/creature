@@ -53,6 +53,7 @@
         color: var(--color-input-button-light-top);
         cursor: pointer;
         will-change: opacity, box-shadow;
+        white-space: nowrap;
 
         @include mixins.displayFlex(row, 0, center, center, nowrap);
         @include mixins.transition;

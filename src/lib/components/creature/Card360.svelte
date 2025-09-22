@@ -180,12 +180,20 @@
                 <div class="elements">
                     {#if data.first_element}
                         <div class="element">
-                            <img src={data.first_element.icon} alt={data.first_element.label} />
+                            <img
+                                src={data.first_element.icon}
+                                alt={data.first_element.label}
+                                style="--color-element:#{data.first_element.color}"
+                            />
                         </div>
                     {/if}
                     {#if data.second_element && data.second_element !== "null"}
                         <div class="element">
-                            <img src={data.second_element.icon} alt={data.second_element.label} />
+                            <img
+                                src={data.second_element.icon}
+                                alt={data.second_element.label}
+                                style="--color-element:#{data.first_element.color}"
+                            />
                         </div>
                     {/if}
                 </div>
@@ -426,6 +434,7 @@
                         flex-shrink: 0;
                         width: 100%;
                         height: 100%;
+                        filter: drop-shadow(0 0 functions.rem(20) var(--color-element));
                     }
                 }
             }

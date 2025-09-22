@@ -19,6 +19,7 @@ export async function POST({ request }) {
     const dice_rolls = Number(formData.get('dice_rolls'));
     const necessary_force = formData.get('necessary_force') !== null ? String(formData.get('necessary_force')) : null;
     const effect = formData.get('effect') ? String(formData.get('effect')): null;
+    const strengths = null;
 
     const attack = attacksDB.createAttack({
         created_at,
@@ -30,7 +31,8 @@ export async function POST({ request }) {
         damage,
         dice_rolls,
         necessary_force,
-        effect
+        effect,
+        strengths
     });
     
 

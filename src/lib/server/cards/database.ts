@@ -1,5 +1,6 @@
 import db from '$lib/server/db.js';
 import { formatHandle } from '$lib/utils/formatHandle';
+import { getCardStrengths, getCardWeaknesses } from '$lib/utils/getStrenghtsAndWeaknesses';
 import type { Creature, CreateCreature } from '$lib/types';
 import * as elementsDB from '$lib/server/elements/database';
 import * as typesDB from '$lib/server/types/database';
@@ -27,6 +28,16 @@ function enrichCard(c: Creature, visited = new Set<number>()): Creature {
 		forces: c.forces ? JSON.parse(c.forces) : null,
 		is_evolution: null,
 		next_evolution: null,
+		weaknesses: getCardWeaknesses(
+			elementsDB.getAllElements(),
+			elementsDB.getElement(c.first_element) ?? null,
+			elementsDB.getElement(c.second_element) ?? null
+		),
+		strengths: getCardStrengths(
+			elementsDB.getAllElements(),
+			elementsDB.getElement(c.first_element) ?? null,
+			elementsDB.getElement(c.second_element) ?? null
+		),
 	};
 
 	// Enriquecer is_evolution si existe
@@ -101,7 +112,9 @@ export function createCard({
 		magic_defence,
 		forces,
 		ability,
-		association
+		association,
+		weaknesses,
+		strengths
 	}: CreateCreature): Creature {
 		const handle = formatHandle(name);
 		const stmt = db.prepare(`
@@ -109,8 +122,8 @@ export function createCard({
 				created_at, code, name, is_evolution, next_evolution, handle, description,
 				image, overlay_image, first_element, second_element, type, character,
 				first_attack, second_attack, health, physical_defence,
-				magic_defence, forces, ability, association
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				magic_defence, forces, ability, association, weaknesses, strengths
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`);
 		const result = stmt.run(
 			created_at,
@@ -133,7 +146,9 @@ export function createCard({
 			magic_defence,
 			forces,
 			ability,
-			association
+			association,
+			weaknesses,
+			strengths
 		);
 
 		return {
@@ -159,6 +174,8 @@ export function createCard({
 			forces,
 			ability,
 			association,
+			weaknesses: null,
+			strengths: null
 		};
 }
 

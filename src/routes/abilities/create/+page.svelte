@@ -23,7 +23,10 @@
      * Search next code in cards
      * */
     let nextAbilityCode = $derived.by(() => {
-        return abilities.length > 0 ? (abilities[abilities.length - 1]?.code + 1 || 1) : 1;
+        if (!abilities || abilities.length === 0) return 1;
+
+        const maxCode = Math.max(...abilities.map(a => a.code ?? 0));
+        return maxCode + 1;
     });
 
     // New Card data

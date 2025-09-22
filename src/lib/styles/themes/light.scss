@@ -4,8 +4,8 @@
 
 .theme-luz {
     //-- Base colors
-    --color-background: #{color(light, 200, 18%, 9%)};
-    --color-text: #{color(light, 100, 30%, 90%)};
+    --color-background: #{color(light, 200, 12%, 14%)};
+    --color-text: #{color(light, 100, 10%, 90%)};
 
     //-- Nav colors
     --color-nav-active-background: #{color(light, 100, 4%, 28%, .2)};
@@ -15,12 +15,12 @@
     --color-nav-active-point-light: #{color(light, 100, 100%, 60%)};
 
     //-- Input colors
-    --color-input-border: #{color(light, 100, 80%, 30%)};
-    --color-input-text: #{color(light, 100, 30%, 90%)};
-    --color-input-button-background: #{color(light, 100, 80%, 10%)};
+    --color-input-border: #{color(light, 100, 20%, 30%)};
+    --color-input-text: #{color(light, 100, 20%, 90%)};
+    --color-input-button-background: #{color(light, 100, 20%, 20%)};
     --color-input-label: #{color(light, 100, 20%, 70%, .8)};
     --color-input-button-light-top: #{color(light, 100, 80%, 80%)};
-    --color-input-button-light-bottom: #{color(light, 200, 40%, 20%, .8)};
+    --color-input-button-light-bottom: #{color(light, 200, 20%, 20%, .8)};
     --color-input-placeholder: #{color(light, 100, 10%, 40%)};
     --color-input-text-error: #{color(semantic, error, 80%, 50%)};
     --color-input-text-warning: #{color(light, 100, 30%, 60%)};
@@ -28,9 +28,9 @@
     --color-input-search-background: #{color(light, 200, 10%, 20%, .84)};
 
     //-- Button
-    --color-button-primary-background: #{color(light, 100, 80%, 50%)};
-    --color-button-primary-text: #{color(light, 100, 80%, 10%)};
-    --color-button-secondary-background: #{color(light, 100, 80%, 10%)};
+    --color-button-primary-background: #{color(light, 100, 20%, 40%)};
+    --color-button-primary-text: #{color(light, 100, 20%, 10%)};
+    --color-button-secondary-background: #{color(light, 100, 20%, 30%)};
 
     //-- Pop in
     --color-pop-in-background: #{color(light, 100, 4%, 28%, .2)};
@@ -73,11 +73,11 @@
     --color-divider-text: #{color(light, 200, 10%, 60%)};
 
     // Card
-    --color-card-background: #{color(light, 100, 80%, 10%)};
+    --color-card-background: #{color(light, 100, 20%, 20%)};
     --color-effect-text: #{color(light, 100, 30%, 90%, .8)};
 
     // Force
-    --color-force-background: #{color(light, 100, 60%, 38%)};
-    --color-force-foreground: #{color(light, 100, 0%, 90%)};
-    --color-forces-border: #{color(light, 100, 60%, 38%)};
+    --color-force-background: #{color(light, 100, 40%, 90%)};
+    --color-force-foreground: #{color(light, 100, 20%, 10%)};
+    --color-forces-border: #{color(light, 100, 40%, 90%)};
 }
