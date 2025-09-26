@@ -1,7 +1,12 @@
 <script lang="ts">
 	// Components
 	import Nav from '$lib/components/Nav.svelte';
+	import RollDice from '$lib/components/RollDice.svelte';
+
+	// Icons
 	import favicon from '$lib/icons/favicon.svg';
+
+	// SCSS
 	import "$lib/styles/main.scss";
 
 	let { children } = $props();
@@ -16,6 +21,8 @@
 </div>
 
 {@render children?.()}
+
+<RollDice />
 
 <style lang="scss">
 	@use "$lib/styles/abstracts/variables" as variables;

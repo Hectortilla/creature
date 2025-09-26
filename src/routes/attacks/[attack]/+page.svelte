@@ -180,12 +180,6 @@
                 font-weight: 300;
             }
 
-            p.code {
-                font-size: functions.rem(38);
-                font-family: variables.$font-title;
-                font-weight: 300;
-            }
-
             .item {
                 @include mixins.displayFlex(row, 4, flex-start, center, wrap);
 
