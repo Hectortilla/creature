@@ -14,7 +14,7 @@
             "module": "uvicorn",
             "cwd": "${workspaceFolder}/back",
             "args": [
-                "main:app",
+                "app.main:app",
                 "--reload"
             ],
             "jinja": true
