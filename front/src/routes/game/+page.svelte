@@ -7,7 +7,7 @@
 	let connected = $state(false);
 
 	onMount(() => {
-		ws = new WebSocket('ws://localhost:8000/game');
+		ws = new WebSocket(`ws://localhost:8000/game/${Date.now()}`);
 
 		ws.onopen = () => {
 			connected = true;
