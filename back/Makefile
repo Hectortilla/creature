@@ -1,2 +1,2 @@
 run:
-	uv run fastapi dev main.py
+	uv run python -m uvicorn main:app --reload
