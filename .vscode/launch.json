@@ -2,7 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: FastAPI",
+            "name": "Frontend",
+            "command": "npm run dev",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}/front",
+        }, {
+            "name": "Backend",
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
