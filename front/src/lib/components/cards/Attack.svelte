@@ -34,17 +34,28 @@
         magical
     };
 
+    // Safe accessors for optional fields
+    const elementLabel = $derived(data.element?.label ?? 'default');
+    const elementIcon = $derived(data.element?.icon ?? '');
+    const elementColor = $derived(data.element?.color ?? '000000');
+    const attackType = $derived(data.type ?? 'physical');
+    const necessaryForce = $derived(
+        data.necessary_force && Array.isArray(data.necessary_force) 
+            ? data.necessary_force as Array<{ value: number; elementData: { label: string } }>
+            : []
+    );
+
 </script>
 
 <a
     href={`/attacks/${data.code}`}
     aria-label={`Ver ataque ${data.name}`}
-    class={`card-attack-container theme-${formatHandle(data.element.label)}`}
+    class={`card-attack-container theme-${formatHandle(elementLabel)}`}
     class:no-link={!allowLink}
 >
     <div class="info">
         <p class="name">{data.name}</p>
-        {#if data && data.dice_rolls > 0 && data.dice_rolls}
+        {#if data.dice_rolls && data.dice_rolls > 0}
             <div class="item">
                 <p>{data.dice_rolls}</p>
                 <div class="icon">{@html diceRollsIcon}</div>
@@ -52,11 +63,11 @@
         {/if}
         <div class="item">
             <p>{data.damage}</p>
-            <div class="icon">{@html iconType[data.type]}</div>
+            <div class="icon">{@html iconType[attackType]}</div>
         </div>
         <div class="forces">
-            {#if data.necessary_force!== null && data.necessary_force.length > 0}
-                {#each data.necessary_force as force}
+            {#if necessaryForce.length > 0}
+                {#each necessaryForce as force}
                     <div class={`force-item theme-${formatHandle(force.elementData.label)}`}>
                         <p>{force.value}</p>
                     </div>
@@ -67,11 +78,13 @@
                 </div>
             {/if}
         </div>
-        <img
-            class="element"
-            src={data.element.icon} alt={data.element.label}
-            style="--color-element:#{data.element.color}"
-        />
+        {#if data.element}
+            <img
+                class="element"
+                src={elementIcon} alt={elementLabel}
+                style="--color-element:#{elementColor}"
+            />
+        {/if}
     </div>
     {#if data.effect}
         <div class="effect-wrapper">
@@ -79,7 +92,7 @@
             <NarrativeText text={data.effect}/>
         </div>
     {/if}
-    {#if showDescription}
+    {#if showDescription && data.description}
         <div class="description">
             <NarrativeText text={data.description}/>
         </div>

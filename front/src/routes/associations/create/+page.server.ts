@@ -1,10 +1,10 @@
 import type { PageServerLoad } from './$types';
-import * as associationsDB from '$lib/server/associations/database';
+import { getAllAssociationsAssociationsGet } from '$lib/api/config';
 
 export const load: PageServerLoad = async () => {
-	const associations = associationsDB.getAllAssociations();
+	const associationsRes = await getAllAssociationsAssociationsGet();
 
 	return {
-		associations
+		associations: associationsRes.data ?? []
 	};
 };

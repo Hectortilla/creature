@@ -113,11 +113,11 @@
         }
 
         if (!cardSecondElement) {
-            return data.attacks.filter(e => e.element.id === cardFirstElement);
+            return data.attacks.filter(e => e.element?.id === cardFirstElement);
         }
 
         return data.attacks.filter(
-            e => e.element.id === cardFirstElement || e.element.id === cardSecondElement
+            e => e.element?.id === cardFirstElement || e.element?.id === cardSecondElement
         );
     });
 
@@ -320,9 +320,11 @@
 
     let dataCardPreview = $derived.by(() => {
         return {
+            id: 0,
+            created_at: new Date().toISOString(),
             code: cardCode,
             name: cardName,
-            is_evolution: cardIsEvolution ? { code: evolutionNumber } : null,
+            is_evolution: cardIsEvolution ? { id: 0, created_at: '', code: evolutionNumber, name: '', handle: '', description: null, image: null, overlay_image: null, health: null, physical_defence: null, magic_defence: null, forces: null, is_evolution_id: null, first_element_id: null, second_element_id: null, type_id: null, character_id: null, first_attack_id: null, second_attack_id: null, ability_id: null, association_id: null } : null,
             handle: formatHandle(cardName),
             image: cardImagePreview,
             overlay_image: cardOverlayImagePreview,
@@ -330,7 +332,7 @@
             second_element: secondElement,
             type: type,
             character: character,
-        };
+        } as import('$lib/types').Creature;
     });
 
     onMount (() => {

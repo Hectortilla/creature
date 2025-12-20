@@ -1,38 +1,42 @@
 import type { PageServerLoad } from './$types';
-import * as cardsDB from '$lib/server/cards/database';
-import * as elementsDB from '$lib/server/elements/database';
-import * as typesDB from '$lib/server/types/database';
-import * as charactersDB from '$lib/server/characters/database';
-import * as attacksDB from '$lib/server/attacks/database';
-import * as abilitiesDB from '$lib/server/abilities/database';
-import * as associationsDB from '$lib/server/associations/database';
+import {
+	getAllCardsCardsGet,
+	getCardCardsValueGet,
+	getAllElementsElementsGet,
+	getAllTypesTypesGet,
+	getAllCharactersCharactersGet,
+	getAllAttacksAttacksGet,
+	getAllAbilitiesAbilitiesGet,
+	getAllAssociationsAssociationsGet
+} from '$lib/api/config';
 
 export const load: PageServerLoad = async ({ params }) => {
-    const { card } = params;
+	const { card } = params;
 
-    if (!card) {
-        throw new Error("Card parameter is missing");
-    }
+	if (!card) {
+		throw new Error("Card parameter is missing");
+	}
 
-    const all_cards = cardsDB.getAllCards();
-    const cards = cardsDB.getCard(card);
-    const elements = elementsDB.getAllElements();
-    const types = typesDB.getAllTypes();
-    const characters = charactersDB.getAllCharacters();
-    const attacks = attacksDB.getAllAttacks();
-    const abilities = abilitiesDB.getAllAbilities();
-    const associations = associationsDB.getAllAssociations();
+	const [allCardsRes, cardsRes, elementsRes, typesRes, charactersRes, attacksRes, abilitiesRes, associationsRes] = await Promise.all([
+		getAllCardsCardsGet(),
+		getCardCardsValueGet({ path: { value: card } }),
+		getAllElementsElementsGet(),
+		getAllTypesTypesGet(),
+		getAllCharactersCharactersGet(),
+		getAllAttacksAttacksGet(),
+		getAllAbilitiesAbilitiesGet(),
+		getAllAssociationsAssociationsGet()
+	]);
 
-    return {
-        params,
-        all_cards,
-        cards,
-        elements,
-        types,
-        characters,
-        attacks,
-        abilities,
-        associations
-    };
-
+	return {
+		params,
+		all_cards: allCardsRes.data ?? [],
+		cards: cardsRes.data ?? [],
+		elements: elementsRes.data ?? [],
+		types: typesRes.data ?? [],
+		characters: charactersRes.data ?? [],
+		attacks: attacksRes.data ?? [],
+		abilities: abilitiesRes.data ?? [],
+		associations: associationsRes.data ?? []
+	};
 };

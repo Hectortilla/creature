@@ -11,16 +11,16 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint ."
+		"lint": "prettier --check . && eslint .",
+		"generate-client": "openapi-ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
+		"@hey-api/openapi-ts": "^0.89.2",
 		"@sveltejs/adapter-auto": "^6.0.0",
 		"@sveltejs/kit": "^2.39.1",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
-		"@types/better-sqlite3": "^7.6.13",
-		"@types/pg": "^8.15.5",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",
@@ -35,6 +35,6 @@
 		"vite": "^7.1.5"
 	},
 	"dependencies": {
-		"better-sqlite3": "^12.2.0"
+		"@hey-api/client-fetch": "^0.13.1"
 	}
 }

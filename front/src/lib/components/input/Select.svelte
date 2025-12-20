@@ -145,7 +145,7 @@
                     >
                         {#if iconType === 'image'}
                             <img src={item.icon} alt={item.label} />
-                        {:else}
+                        {:else if item.icon}
                             <Icon
                                 name={item.icon}
                                 size={26}

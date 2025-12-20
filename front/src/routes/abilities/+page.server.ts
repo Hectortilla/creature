@@ -1,11 +1,10 @@
 import type { PageServerLoad } from './$types';
-import * as abilitiesDB from '$lib/server/abilities/database';
-
+import { getAllAbilitiesAbilitiesGet } from '$lib/api/config';
 
 export const load: PageServerLoad = async () => {
-	const abilities = abilitiesDB.getAllAbilities();
+	const abilitiesRes = await getAllAbilitiesAbilitiesGet();
 
 	return {
-		abilities,
+		abilities: abilitiesRes.data ?? []
 	};
 };

@@ -1,13 +1,17 @@
 import type { PageServerLoad } from './$types';
-import * as attacksDB from '$lib/server/attacks/database';
-import * as elementsDB from '$lib/server/elements/database';
+import {
+	getAllAttacksAttacksGet,
+	getAllElementsElementsGet
+} from '$lib/api/config';
 
 export const load: PageServerLoad = async () => {
-	const attacks = attacksDB.getAllAttacks();
-	const elements = elementsDB.getAllElements();
+	const [attacksRes, elementsRes] = await Promise.all([
+		getAllAttacksAttacksGet(),
+		getAllElementsElementsGet()
+	]);
 
 	return {
-		attacks,
-		elements,
+		attacks: attacksRes.data ?? [],
+		elements: elementsRes.data ?? []
 	};
 };

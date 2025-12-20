@@ -1,16 +1,20 @@
 import type { PageServerLoad } from './$types';
-import * as elementsDB from '$lib/server/elements/database';
-import * as typesDB from '$lib/server/types/database';
-import * as charactersDB from '$lib/server/characters/database';
+import {
+	getAllElementsElementsGet,
+	getAllTypesTypesGet,
+	getAllCharactersCharactersGet
+} from '$lib/api/config';
 
 export const load: PageServerLoad = async () => {
-	const elements = elementsDB.getAllElements();
-	const types = typesDB.getAllTypes();
-	const characters = charactersDB.getAllCharacters();
+	const [elementsRes, typesRes, charactersRes] = await Promise.all([
+		getAllElementsElementsGet(),
+		getAllTypesTypesGet(),
+		getAllCharactersCharactersGet()
+	]);
 
 	return {
-		elements,
-		types,
-		characters
+		elements: elementsRes.data ?? [],
+		types: typesRes.data ?? [],
+		characters: charactersRes.data ?? []
 	};
 };

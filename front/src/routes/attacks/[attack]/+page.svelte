@@ -4,6 +4,7 @@
     import { changeThemeTo } from '$lib/utils/changeThemeTo';
     import { onDestroy, onMount } from 'svelte';
     import { goto } from "$app/navigation";
+    import { deleteAttackAttacksAttackIdDelete } from '$lib/api/config';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';
@@ -21,7 +22,7 @@
             params: {
                 attack?: string;
             };
-            attack?: Attack;
+            attack?: Attack | null;
             cards_use_attack: Creature[]
         };
     }
@@ -40,6 +41,14 @@
 
     let attack = $derived.by(() => data.attack ? data.attack : null);
 
+    // Safe accessors for optional fields
+    const attackType = $derived(attack?.type ?? 'physical');
+    const necessaryForce = $derived(
+        attack?.necessary_force && Array.isArray(attack.necessary_force) 
+            ? attack.necessary_force as Array<{ value: number; elementData: { label: string } }>
+            : []
+    );
+
     // Container card position
     let cardContainer = $state<HTMLElement>();
     let cardContainerPosition = $state(0);
@@ -55,11 +64,7 @@
 
     const handleDeleteAttack = async () => {
         if (!attack) return;
-		await fetch('/api/attacks', {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ id: attack.id })
-		});
+        await deleteAttackAttacksAttackIdDelete({ path: { attack_id: attack.id } });
         goto('/attacks');
 	};
 
@@ -73,7 +78,7 @@
         <div class="attack-info">
             <div class="info">
                 <h1 class="name">{attack.name}</h1>
-                {#if data && attack.dice_rolls > 0 && attack.dice_rolls}
+                {#if attack.dice_rolls && attack.dice_rolls > 0}
                     <div class="item">
                         <p>{attack.dice_rolls}</p>
                         <div class="icon">{@html diceRollsIcon}</div>
@@ -81,11 +86,11 @@
                 {/if}
                 <div class="item">
                     <p>{attack.damage}</p>
-                    <div class="icon">{@html iconType[attack.type]}</div>
+                    <div class="icon">{@html iconType[attackType]}</div>
                 </div>
                 <div class="forces">
-                    {#if attack.necessary_force !== null && attack.necessary_force.length > 0}
-                        {#each attack.necessary_force as force}
+                    {#if necessaryForce.length > 0}
+                        {#each necessaryForce as force}
                             <div class={`force-item theme-${formatHandle(force.elementData.label)}`}>
                                 <p>{force.value}</p>
                             </div>
@@ -96,31 +101,11 @@
                         </div>
                     {/if}
                 </div>
-                <img class="element" src={attack.element.icon} alt={attack.element.label} />
+                {#if attack.element}
+                    <img class="element" src={attack.element.icon} alt={attack.element.label} />
+                {/if}
             </div>
             <Divider title={false} hasMargins={false}/>
-            <div class="element-damage-wrapper">
-                {#each attack.weaknesses as weakness}
-                    <div class="item weakness">
-                        <img
-                            src={weakness.element.icon}
-                            alt={weakness.element.label}
-                            style="--color-element:#{weakness.element.color}70"
-                        />
-                        <p>-{weakness.value}</p>
-                    </div>
-                {/each}
-                {#each attack.strengths as strength}
-                    <div class="item strength">
-                        <img
-                            src={strength.element.icon}
-                            alt={strength.element.label}
-                            style="--color-element:#{strength.element.color}70"
-                        />
-                        <p>+{strength.value}</p>
-                    </div>
-                {/each}
-            </div>
             {#if attack.effect}
                 <Divider title={false} hasMargins={false}/>
                 <div class="effect-wrapper">
@@ -129,9 +114,11 @@
                 </div>
             {/if}
             <Divider title={false} hasMargins={false}/>
-            <p class="description">
-                {attack.description}
-            </p>
+            {#if attack.description}
+                <p class="description">
+                    {attack.description}
+                </p>
+            {/if}
             {#if data.cards_use_attack.length > 0}
                 <Divider title={`Cartas con este ataque (${data.cards_use_attack.length})`} hasMargins={false}/>
                 <div class="cards-gallery">
@@ -250,32 +237,6 @@
             grid-template-columns: repeat(4, 1fr);
             perspective: 1000px;
             gap: functions.rem(20);
-        }
-
-        .element-damage-wrapper {
-            @include mixins.displayFlex(row, 10, center, center, nowrap);
-
-            .item {
-                background-color: var(--color-pop-in-background);
-                padding: functions.rem(4) functions.rem(8) functions.rem(4) functions.rem(4);
-                border-radius: functions.rem(8);
-                overflow: hidden;
-
-                @include mixins.displayFlex(row, 6, center, center, nowrap);
-
-                p {
-                    font-size: functions.rem(14);
-                }
-
-                &.weakness p { color: functions.color(semantic, error, 80%, 60%); }
-                &.strength p { color: functions.color(semantic, success, 80%, 60%); }
-
-                img {
-                    width: functions.rem(26);
-                    height: functions.rem(26);
-                    filter: drop-shadow(0 0 functions.rem(20) var(--color-element));
-                }
-            }
         }
     }
 

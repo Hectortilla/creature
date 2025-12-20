@@ -4,6 +4,7 @@
     import { changeThemeTo } from '$lib/utils/changeThemeTo';
     import { onDestroy, onMount } from 'svelte';
     import { formatHandle } from '$lib/utils/formatHandle';
+    import { deleteCardCardsCardIdDelete } from '$lib/api/config';
 
     // Components
     import CreatureCard360 from "$lib/components/creature/Card360.svelte"
@@ -35,6 +36,19 @@
 
     let card = $derived.by(() => data.cards && data.cards.length === 1 ? data.cards[0] : null);
 
+    // Safe accessors for forces
+    const forces = $derived(
+        card?.forces && Array.isArray(card.forces) 
+            ? card.forces as Array<{ value: number; elementData: { label: string } }>
+            : []
+    );
+
+    // Helper to find element by ID
+    function findElement(id: number | undefined | null): Element | null {
+        if (!id) return null;
+        return data.elements?.find(e => e.id === id) ?? null;
+    }
+
     /// Creature card
     let cardContainer = $state<HTMLElement>();
     let cardContainerPosition = $state(0);
@@ -45,11 +59,7 @@
 
     const handleDeleteCard = async () => {
         if (!card) return;
-		await fetch('/api/cards', {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ id: card.id })
-		});
+        await deleteCardCardsCardIdDelete({ path: { card_id: card.id } });
         goto('/cards');
 	};
 
@@ -86,12 +96,12 @@
 
         // --- Bajar todas las posibles cadenas de evoluciones ---
         const getNextChains = (c: Creature): Creature[][] => {
-            if (!c.next_evolution || c.next_evolution.length === 0) {
+            if (!c.next_evolutions || c.next_evolutions.length === 0) {
                 return [[c]]; // no tiene next, termina aquí
             }
 
             let chains: Creature[][] = [];
-            for (const n of c.next_evolution) {
+            for (const n of c.next_evolutions) {
                 for (const chain of getNextChains(n as Creature)) {
                     chains.push([c, ...chain]);
                 }
@@ -164,17 +174,19 @@
                     <div class="title">
                         <h1>{card?.name}</h1>
                         <div class="classification">
-                            {#if card.type}
+                            {#if card.type?.icon}
                                 <Icon name={card.type.icon} size={28} isBackground={false}/>
                             {/if}
-                            {#if card.character}
+                            {#if card.character?.icon}
                                 <Icon name={card.character.icon} size={28} isBackground={false}/>
                             {/if}
                         </div>
                     </div>
-                    <div class="description">
-                        <NarrativeText text={card.description} />
-                    </div>
+                    {#if card.description}
+                        <div class="description">
+                            <NarrativeText text={card.description} />
+                        </div>
+                    {/if}
                     <p class="date">
                         Fecha de creación: {
                             card?.created_at
@@ -188,36 +200,38 @@
                 <Divider title="Características" hasMargins={false}></Divider>
                 <div class="info">
                     <div class="elements">
-                        <img
-                            src={card.first_element?.icon}
-                            alt={card.first_element?.label}
-                            style="--color-element:#{card.first_element.color}70"
-                        />
+                        {#if card.first_element}
+                            <img
+                                src={card.first_element.icon}
+                                alt={card.first_element.label}
+                                style="--color-element:#{card.first_element.color ?? '000000'}70"
+                            />
+                        {/if}
                         {#if card.second_element}
                             <img
                                 src={card.second_element.icon}
                                 alt={card.second_element.label}
-                                style="--color-element:#{card.second_element.color}70"
+                                style="--color-element:#{card.second_element.color ?? '000000'}70"
                             />
                         {/if}
                     </div>
                     <div class="skills">
                         <div class="item">
                             <div class="icon">{@html healthIcon}</div>
-                            <p>{card?.health !== null ? card?.health : 0}</p>
+                            <p>{card?.health ?? 0}</p>
                         </div>
                         <div class="item">
                             <div class="icon">{@html physicalDefenceIcon}</div>
-                            <p>{card?.physical_defence  !== null ? card?.physical_defence : 0}</p>
+                            <p>{card?.physical_defence ?? 0}</p>
                         </div>
                         <div class="item">
                             <div class="icon">{@html magicDefenceIcon}</div>
-                            <p>{card?.magic_defence  !== null ? card?.magic_defence  : 0}</p>
+                            <p>{card?.magic_defence ?? 0}</p>
                         </div>
                     </div>
-                    {#if card.forces !== null && card.forces.length > 0}
+                    {#if forces.length > 0}
                         <div class="forces">
-                            {#each card.forces as force}
+                            {#each forces as force}
                                 <div class={`force-item theme-${formatHandle(force.elementData.label)}`}>
                                     <p>{force.value}</p>
                                 </div>
@@ -231,25 +245,31 @@
                 <Divider title="Daño por elemento" hasMargins={false}></Divider>
                 <div class="info">
                     <div class="element-damage-wrapper">
-                        {#each card.weaknesses as weakness}
-                            <div class="item weakness">
-                                <img
-                                    src={weakness.element.icon}
-                                    alt={weakness.element.label}
-                                    style="--color-element:#{weakness.element.color}70"
-                                />
-                                <p>+{weakness.value}</p>
-                            </div>
+                        {#each card.weaknesses ?? [] as weaknessId}
+                            {@const weakness = findElement(weaknessId)}
+                            {#if weakness}
+                                <div class="item weakness">
+                                    <img
+                                        src={weakness.icon}
+                                        alt={weakness.label}
+                                        style="--color-element:#{weakness.color ?? '000000'}70"
+                                    />
+                                    <p>+5</p>
+                                </div>
+                            {/if}
                         {/each}
-                        {#each card.strengths as strength}
-                            <div class="item strength">
-                                <img
-                                    src={strength.element.icon}
-                                    alt={strength.element.label}
-                                    style="--color-element:#{strength.element.color}70"
-                                />
-                                <p>-{strength.value}</p>
-                            </div>
+                        {#each card.strengths ?? [] as strengthId}
+                            {@const strength = findElement(strengthId)}
+                            {#if strength}
+                                <div class="item strength">
+                                    <img
+                                        src={strength.icon}
+                                        alt={strength.label}
+                                        style="--color-element:#{strength.color ?? '000000'}70"
+                                    />
+                                    <p>-5</p>
+                                </div>
+                            {/if}
                         {/each}
                     </div>
                 </div>
@@ -422,7 +442,6 @@
                     width: 100%;
                     opacity: .4;
                     font-size: functions.rem(14);
-                    //font-family: variables.$font-number;
                 }
             }
 
@@ -530,7 +549,6 @@
                         max-width: functions.rem(160);
 
                         &.selected {
-                            //filter: grayscale(1);
                             flex: .8;
                             max-width: functions.rem(120);
                         }
