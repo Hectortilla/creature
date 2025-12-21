@@ -153,9 +153,9 @@ export type AttackCreate = {
   /**
    * Necessary Force
    */
-  necessary_force?: {
+  necessary_force?: Array<{
     [key: string]: unknown;
-  } | null;
+  }> | null;
   /**
    * Effect
    */
@@ -211,9 +211,9 @@ export type AttackReadWithElement = {
   /**
    * Necessary Force
    */
-  necessary_force?: {
+  necessary_force?: Array<{
     [key: string]: unknown;
-  } | null;
+  }> | null;
   /**
    * Effect
    */
@@ -364,9 +364,9 @@ export type CardRead = {
   /**
    * Forces
    */
-  forces?: {
+  forces?: Array<{
     [key: string]: unknown;
-  } | null;
+  }> | null;
   /**
    * Is Evolution Id
    */
@@ -458,9 +458,9 @@ export type CardReadWithRelations = {
   /**
    * Forces
    */
-  forces?: {
+  forces?: Array<{
     [key: string]: unknown;
-  } | null;
+  }> | null;
   /**
    * Is Evolution Id
    */

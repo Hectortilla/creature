@@ -44,7 +44,7 @@ class CardRead(SQLModel):
     health: int | None = None
     physical_defence: int | None = None
     magic_defence: int | None = None
-    forces: dict | None = None
+    forces: list[dict] | None = None
     is_evolution_id: int | None = None
     first_element_id: int | None = None
     second_element_id: int | None = None

@@ -13,7 +13,7 @@ class AttackCreate(SQLModel):
     type: str | None = None
     element_id: int | None = None
     dice_rolls: int | None = None
-    necessary_force: dict | None = None
+    necessary_force: list[dict] | None = None
     effect: str | None = None
 
 
@@ -29,7 +29,7 @@ class AttackRead(SQLModel):
     type: str | None = None
     element_id: int | None = None
     dice_rolls: int | None = None
-    necessary_force: dict | None = None
+    necessary_force: list[dict] | None = None
     effect: str | None = None
 
 

@@ -19,7 +19,7 @@ class Attack(SQLModel, table=True):
     damage: int | None = Field(default=None)
     type: str | None = Field(default=None, max_length=50)
     dice_rolls: int | None = Field(default=None)
-    necessary_force: dict | None = Field(default=None, sa_column=Column(JSONB))
+    necessary_force: list[dict] | None = Field(default=None, sa_column=Column(JSONB))
     effect: str | None = Field(default=None)
     element_id: int | None = Field(default=None, foreign_key="elements.id")
     
