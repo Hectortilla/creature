@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { PUBLIC_API_URL } from '$env/static/public';
 
 	let messages: string[] = $state([]);
 	let messageText = $state('');
 	let ws: WebSocket | null = $state(null);
 	let connected = $state(false);
 
+	// Convert http(s):// to ws(s):// for WebSocket connection
+	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws');
+
 	onMount(() => {
-		ws = new WebSocket(`ws://localhost:8000/game/${Date.now()}`);
+		ws = new WebSocket(`${wsUrl}/game/${Date.now()}`);
 
 		ws.onopen = () => {
 			connected = true;
@@ -222,4 +226,3 @@
 		background: #484f58;
 	}
 </style>
-
