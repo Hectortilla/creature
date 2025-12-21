@@ -4,7 +4,7 @@ import {
 	getAllElementsElementsGet,
 	getAllTypesTypesGet,
 	getAllCharactersCharactersGet
-} from '$lib/api/config';
+} from '$lib/api';
 
 export const load: PageServerLoad = async () => {
 	const [cardsRes, elementsRes, typesRes, charactersRes] = await Promise.all([

@@ -8,7 +8,7 @@ import {
 	getAllAttacksAttacksGet,
 	getAllAbilitiesAbilitiesGet,
 	getAllAssociationsAssociationsGet
-} from '$lib/api/config';
+} from '$lib/api';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { card } = params;

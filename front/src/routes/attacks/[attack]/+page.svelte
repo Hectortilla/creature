@@ -4,7 +4,7 @@
     import { changeThemeTo } from '$lib/utils/changeThemeTo';
     import { onDestroy, onMount } from 'svelte';
     import { goto } from "$app/navigation";
-    import { deleteAttackAttacksAttackIdDelete } from '$lib/api/config';
+    import { deleteAttackAttacksAttackIdDelete } from '$lib/api';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';

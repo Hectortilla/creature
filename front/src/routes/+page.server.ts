@@ -7,7 +7,7 @@ import {
 	getAllAttacksAttacksGet,
 	getAllAbilitiesAbilitiesGet,
 	getAllAssociationsAssociationsGet
-} from '$lib/api/config';
+} from '$lib/api';
 
 export const load: PageServerLoad = async () => {
 	const [cardsRes, elementsRes, typesRes, charactersRes, attacksRes, abilitiesRes, associationsRes] = await Promise.all([

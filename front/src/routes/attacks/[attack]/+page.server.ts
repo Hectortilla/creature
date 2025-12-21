@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import {
 	getAttackAttacksValueGet,
 	getCardsByAttackCardsByAttackAttackCodeGet
-} from '$lib/api/config';
+} from '$lib/api';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { attack } = params;

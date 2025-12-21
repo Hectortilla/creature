@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import {
 	getCardCardsValueGet,
 	getAllElementsElementsGet
-} from '$lib/api/config';
+} from '$lib/api';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { card } = params;

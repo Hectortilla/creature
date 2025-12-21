@@ -4,7 +4,7 @@
     import { changeThemeTo } from '$lib/utils/changeThemeTo';
     import { onDestroy, onMount } from 'svelte';
     import { formatHandle } from '$lib/utils/formatHandle';
-    import { deleteCardCardsCardIdDelete } from '$lib/api/config';
+    import { deleteCardCardsCardIdDelete } from '$lib/api';
 
     // Components
     import CreatureCard360 from "$lib/components/creature/Card360.svelte"

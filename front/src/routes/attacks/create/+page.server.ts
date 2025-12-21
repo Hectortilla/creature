@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import {
 	getAllAttacksAttacksGet,
 	getAllElementsElementsGet
-} from '$lib/api/config';
+} from '$lib/api';
 
 export const load: PageServerLoad = async () => {
 	const [attacksRes, elementsRes] = await Promise.all([

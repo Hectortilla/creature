@@ -2,7 +2,7 @@
     import type { Ability, Creature } from "$lib/types";
     import { onMount } from 'svelte';
     import { goto } from "$app/navigation";
-    import { deleteAbilityAbilitiesAbilityIdDelete } from '$lib/api/config';
+    import { deleteAbilityAbilitiesAbilityIdDelete } from '$lib/api';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';

@@ -2,7 +2,7 @@
     import type { Association, Creature } from "$lib/types";
     import { onMount } from 'svelte';
     import { goto } from "$app/navigation";
-    import { deleteAssociationAssociationsAssociationIdDelete } from '$lib/api/config';
+    import { deleteAssociationAssociationsAssociationIdDelete } from '$lib/api';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';
