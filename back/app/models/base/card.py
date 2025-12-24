@@ -2,7 +2,6 @@ from sqlmodel import SQLModel, Field
 
 
 class CardBase(SQLModel):
-    """Base model with shared fields for Card."""
     code: int
     name: str = Field(max_length=255)
     description: str | None = None
@@ -15,7 +14,6 @@ class CardBase(SQLModel):
 
 
 class CardForeignKeys(SQLModel):
-    """Foreign key fields shared between DB model and schemas."""
     is_evolution_id: int | None = None
     first_element_id: int | None = None
     second_element_id: int | None = None

@@ -10,12 +10,10 @@ from app.models.schemas.association import AssociationRead
 
 
 class CardCreate(CardBase, CardForeignKeys):
-    """Request body for creating a card."""
     pass
 
 
 class CardRead(CardBase, CardForeignKeys):
-    """Response model for a card (lightweight)."""
     id: int
     created_at: datetime
     handle: str
@@ -23,7 +21,6 @@ class CardRead(CardBase, CardForeignKeys):
 
 
 class CardReadWithRelations(CardRead):
-    """Response model for a card with all relationships."""
     first_element: ElementRead | None = None
     second_element: ElementRead | None = None
     type: TypeRead | None = None
