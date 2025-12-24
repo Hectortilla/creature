@@ -1,15 +1,11 @@
-from sqlmodel import SQLModel
+from app.models.base.character import CharacterBase
 
 
-class CharacterCreate(SQLModel):
+class CharacterCreate(CharacterBase):
     """Request body for creating a character."""
-    label: str
-    icon: str | None = None
+    pass
 
 
-class CharacterRead(SQLModel):
+class CharacterRead(CharacterBase):
     """Response model for a character."""
     id: int
-    label: str
-    icon: str | None = None
-

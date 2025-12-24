@@ -1,7 +1,9 @@
-from sqlmodel import SQLModel, Field, Relationship, Column
+from sqlmodel import Field, Relationship, Column
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
+
+from app.models.base.card import CardBase, CardForeignKeys
 
 if TYPE_CHECKING:
     from app.models.db.element import Element
@@ -12,26 +14,17 @@ if TYPE_CHECKING:
     from app.models.db.association import Association
 
 
-class Card(SQLModel, table=True):
+class Card(CardBase, CardForeignKeys, table=True):
     __tablename__ = "cards"
     
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     code: int = Field(unique=True)
-    name: str = Field(max_length=255)
     handle: str = Field(default="", max_length=255)
-    description: str | None = Field(default=None)
-    image: str | None = Field(default=None, max_length=500)
-    overlay_image: str | None = Field(default=None, max_length=500)
-    health: int | None = Field(default=None)
-    physical_defence: int | None = Field(default=None)
-    magic_defence: int | None = Field(default=None)
     forces: dict | None = Field(default=None, sa_column=Column(JSONB))
     
-    # Evolution reference (self-referential)
+    # Foreign keys with constraints
     is_evolution_id: int | None = Field(default=None, foreign_key="cards.id")
-    
-    # Foreign keys
     first_element_id: int | None = Field(default=None, foreign_key="elements.id")
     second_element_id: int | None = Field(default=None, foreign_key="elements.id")
     type_id: int | None = Field(default=None, foreign_key="types.id")
@@ -63,4 +56,3 @@ class Card(SQLModel, table=True):
     is_evolution: Optional["Card"] = Relationship(
         sa_relationship_kwargs={"remote_side": "Card.id", "foreign_keys": "[Card.is_evolution_id]"}
     )
-

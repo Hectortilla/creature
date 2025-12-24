@@ -1,22 +1,15 @@
-from sqlmodel import SQLModel
 from datetime import datetime
 
+from app.models.base.ability import AbilityBase
 
-class AbilityCreate(SQLModel):
+
+class AbilityCreate(AbilityBase):
     """Request body for creating an ability."""
-    code: int
-    name: str
-    description: str | None = None
-    type: str | None = None
+    pass
 
 
-class AbilityRead(SQLModel):
+class AbilityRead(AbilityBase):
     """Response model for an ability."""
     id: int
     created_at: datetime
-    code: int
-    name: str
     handle: str
-    description: str | None = None
-    type: str | None = None
-

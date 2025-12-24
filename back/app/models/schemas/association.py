@@ -1,20 +1,15 @@
-from sqlmodel import SQLModel
 from datetime import datetime
 
+from app.models.base.association import AssociationBase
 
-class AssociationCreate(SQLModel):
+
+class AssociationCreate(AssociationBase):
     """Request body for creating an association."""
-    code: int
-    name: str
-    description: str | None = None
+    pass
 
 
-class AssociationRead(SQLModel):
+class AssociationRead(AssociationBase):
     """Response model for an association."""
     id: int
     created_at: datetime
-    code: int
-    name: str
     handle: str
-    description: str | None = None
-

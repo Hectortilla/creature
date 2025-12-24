@@ -1,36 +1,20 @@
-from sqlmodel import SQLModel
 from datetime import datetime
 
+from app.models.base.attack import AttackBase
 from app.models.schemas.element import ElementRead
 
 
-class AttackCreate(SQLModel):
+class AttackCreate(AttackBase):
     """Request body for creating an attack."""
-    code: int
-    name: str
-    description: str | None = None
-    damage: int | None = None
-    type: str | None = None
     element_id: int | None = None
-    dice_rolls: int | None = None
-    necessary_force: list[dict] | None = None
-    effect: str | None = None
 
 
-class AttackRead(SQLModel):
+class AttackRead(AttackBase):
     """Response model for an attack."""
     id: int
     created_at: datetime
-    code: int
-    name: str
     handle: str
-    description: str | None = None
-    damage: int | None = None
-    type: str | None = None
     element_id: int | None = None
-    dice_rolls: int | None = None
-    necessary_force: list[dict] | None = None
-    effect: str | None = None
 
 
 class AttackReadWithElement(AttackRead):
@@ -38,4 +22,3 @@ class AttackReadWithElement(AttackRead):
     element: ElementRead | None = None
     strengths: list[int] | None = None
     weaknesses: list[int] | None = None
-

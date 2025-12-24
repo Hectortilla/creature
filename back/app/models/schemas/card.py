@@ -1,6 +1,6 @@
-from sqlmodel import SQLModel
 from datetime import datetime
 
+from app.models.base.card import CardBase, CardForeignKeys
 from app.models.schemas.element import ElementRead
 from app.models.schemas.type import TypeRead
 from app.models.schemas.character import CharacterRead
@@ -9,51 +9,17 @@ from app.models.schemas.ability import AbilityRead
 from app.models.schemas.association import AssociationRead
 
 
-class CardCreate(SQLModel):
+class CardCreate(CardBase, CardForeignKeys):
     """Request body for creating a card."""
-    code: int
-    name: str
-    description: str | None = None
-    image: str | None = None
-    overlay_image: str | None = None
-    is_evolution_id: int | None = None
-    first_element_id: int | None = None
-    second_element_id: int | None = None
-    type_id: int | None = None
-    character_id: int | None = None
-    first_attack_id: int | None = None
-    second_attack_id: int | None = None
-    ability_id: int | None = None
-    association_id: int | None = None
-    health: int | None = None
-    physical_defence: int | None = None
-    magic_defence: int | None = None
-    forces: dict | None = None
+    pass
 
 
-class CardRead(SQLModel):
+class CardRead(CardBase, CardForeignKeys):
     """Response model for a card (lightweight)."""
     id: int
     created_at: datetime
-    code: int
-    name: str
     handle: str
-    description: str | None = None
-    image: str | None = None
-    overlay_image: str | None = None
-    health: int | None = None
-    physical_defence: int | None = None
-    magic_defence: int | None = None
-    forces: list[dict] | None = None
-    is_evolution_id: int | None = None
-    first_element_id: int | None = None
-    second_element_id: int | None = None
-    type_id: int | None = None
-    character_id: int | None = None
-    first_attack_id: int | None = None
-    second_attack_id: int | None = None
-    ability_id: int | None = None
-    association_id: int | None = None
+    forces: list[dict] | None = None  # Override to allow list format in response
 
 
 class CardReadWithRelations(CardRead):
@@ -70,4 +36,3 @@ class CardReadWithRelations(CardRead):
     next_evolutions: list["CardRead"] | None = None
     strengths: list[int] | None = None
     weaknesses: list[int] | None = None
-

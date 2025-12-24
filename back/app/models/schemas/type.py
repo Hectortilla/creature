@@ -1,15 +1,11 @@
-from sqlmodel import SQLModel
+from app.models.base.type import TypeBase
 
 
-class TypeCreate(SQLModel):
+class TypeCreate(TypeBase):
     """Request body for creating a type."""
-    label: str
-    icon: str | None = None
+    pass
 
 
-class TypeRead(SQLModel):
+class TypeRead(TypeBase):
     """Response model for a type."""
     id: int
-    label: str
-    icon: str | None = None
-

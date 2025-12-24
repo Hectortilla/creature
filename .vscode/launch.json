@@ -18,6 +18,20 @@
                 "--reload"
             ],
             "jinja": true
+        },
+        {
+            "name": "Alembic migration",
+            "command": "alembic revision --autogenerate -m \"${input:alemMsg}\" && alembic upgrade head",
+            "type": "node-terminal",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/back",
+        }
+    ],
+    "inputs": [
+        {
+          "id": "alemMsg",
+          "type": "promptString",
+          "description": "Alembic migration message",
         }
     ]
 }

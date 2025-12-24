@@ -1,21 +1,11 @@
-from sqlmodel import SQLModel
+from app.models.base.element import ElementBase
 
 
-class ElementCreate(SQLModel):
+class ElementCreate(ElementBase):
     """Request body for creating an element."""
-    label: str
-    icon: str | None = None
-    color: str | None = None
-    strengths: list[int] | None = None
-    weaknesses: list[int] | None = None
+    pass
 
 
-class ElementRead(SQLModel):
+class ElementRead(ElementBase):
     """Response model for an element."""
     id: int
-    label: str
-    icon: str | None = None
-    color: str | None = None
-    strengths: list[int] | None = None
-    weaknesses: list[int] | None = None
-
