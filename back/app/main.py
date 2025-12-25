@@ -12,6 +12,7 @@ from app.routers import (
     associations_router,
     cards_router,
 )
+from app.game.router import game_router
 
 # Import models to ensure they're registered with SQLModel
 from app.models.db import (
@@ -50,6 +51,7 @@ app.include_router(attacks_router)
 app.include_router(abilities_router)
 app.include_router(associations_router)
 app.include_router(cards_router)
+app.include_router(game_router)
 
 
 @app.get("/")
