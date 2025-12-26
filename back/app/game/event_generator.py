@@ -53,7 +53,7 @@ from app.game.events import (
 from app.game.elements import calculate_damage
 
 if TYPE_CHECKING:
-    from app.game.models import GameState, GameCard
+    from app.models.game import GameState, GameCard
 
 
 class ActionToEventGenerator:

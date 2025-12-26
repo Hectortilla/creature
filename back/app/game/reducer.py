@@ -40,7 +40,7 @@ from app.game.events import (
 )
 
 if TYPE_CHECKING:
-    from app.game.models import GameState
+    from app.models.game import GameState
 
 
 def apply_event(state: "GameState", event: GameEvent) -> "GameState":

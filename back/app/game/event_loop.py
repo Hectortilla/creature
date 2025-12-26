@@ -30,7 +30,7 @@ from app.game.effects import EffectTrigger, EffectContext, EffectRegistry
 from app.game.reducer import apply_event
 
 if TYPE_CHECKING:
-    from app.game.models import GameState
+    from app.models.game import GameState
 
 
 @dataclass

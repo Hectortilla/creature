@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Optional
 from enum import IntEnum
 
 if TYPE_CHECKING:
-    from app.game.models import GameCard, AttackDefinition
+    from app.models.game import GameCard, AttackDefinition
 
 
 class ElementId(IntEnum):

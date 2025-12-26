@@ -9,7 +9,6 @@ Use @computed_field for derived properties that should be included in output.
 
 Modules:
 - enums: Game enumerations (zones, phases, damage types)
-- models: Game state models (cards, players, zones) 
 - actions: Player action definitions (intent only, no computation)
 - events: Game events with computed data
 - event_generator: ActionToEventGenerator - transforms actions into events
@@ -21,9 +20,16 @@ Modules:
 - engine: Orchestrates the pipeline
 - router: FastAPI endpoints
 
+Game state models are located in app.models.game:
+    from app.models.game import (
+        GameBaseModel, GameCard, PlayerState, ZoneState, GameState,
+        ElementContribution, AttackDefinition, AttackResult,
+        GameConfiguration, ElementPool
+    )
+
 Usage:
     from app.game import get_engine
-    from app.game.models import GameState
+    from app.models.game import GameState
     from app.game.actions import PlayCardAction
     
     engine = get_engine()
@@ -35,24 +41,13 @@ Usage:
     state_dict = state.model_dump(mode='json')
 """
 
-from app.game.enums import (
+from app.models.game import (
     Zone,
     TurnPhase,
     DamageType,
     GameStatus,
     CardStatus,
     EffectTiming,
-)
-from app.game.models import (
-    GameCard,
-    PlayerState,
-    ZoneState,
-    GameState,
-    ElementContribution,
-    AttackDefinition,
-    AttackResult,
-    GameConfiguration,
-    ElementPool,
 )
 from app.game.actions import (
     Action,
@@ -142,16 +137,6 @@ __all__ = [
     "GameStatus",
     "CardStatus",
     "EffectTiming",
-    # Models
-    "GameCard",
-    "PlayerState",
-    "ZoneState",
-    "GameState",
-    "ElementContribution",
-    "AttackDefinition",
-    "AttackResult",
-    "GameConfiguration",
-    "ElementPool",
     # Actions
     "Action",
     "DrawAction",

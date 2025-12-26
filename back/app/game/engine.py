@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from app.game.enums import Zone, TurnPhase, GameStatus, DamageType
-from app.game.models import (
+from app.models.game import (
     GameState,
     GameCard,
     ElementContribution,

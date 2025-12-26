@@ -20,7 +20,7 @@ from app.models.schemas import (
     CardCreate, CardRead, CardReadWithRelations,
 )
 
-# Base models (for inheritance)
+# Base models (for inheritance - used by db and schema models)
 from app.models.base import (
     CharacterBase,
     TypeBase,
@@ -30,13 +30,11 @@ from app.models.base import (
     AttackBase,
     CardBase,
     CardForeignKeys,
-    # Game runtime base models (Pydantic)
-    GameBaseModel,
-    ElementContributionBase,
-    AttackCostBase,
-    GameCardStats,
-    GameConfigurationBase,
 )
+
+# Game state models are in app.models.game submodule
+# Import directly: from app.models.game import GameState, GameCard, etc.
+# Re-exported via app.game for convenience
 
 __all__ = [
     # DB models
@@ -64,10 +62,4 @@ __all__ = [
     "AttackBase",
     "CardBase",
     "CardForeignKeys",
-    # Game base models (Pydantic)
-    "GameBaseModel",
-    "ElementContributionBase",
-    "AttackCostBase",
-    "GameCardStats",
-    "GameConfigurationBase",
 ]

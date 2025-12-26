@@ -15,7 +15,7 @@ from abc import ABC
 from pydantic import Field, field_serializer, computed_field
 
 from app.game.enums import Zone, TurnPhase, DamageType
-from app.models.base.game import GameBaseModel
+from app.models.game import GameBaseModel
 
 
 class GameEvent(GameBaseModel, ABC):

@@ -5,16 +5,8 @@ from app.models.base.ability import AbilityBase
 from app.models.base.association import AssociationBase
 from app.models.base.attack import AttackBase
 from app.models.base.card import CardBase, CardForeignKeys
-from app.models.base.game import (
-    GameBaseModel,
-    ElementContributionBase,
-    AttackCostBase,
-    GameCardStats,
-    GameConfigurationBase,
-)
 
 __all__ = [
-    # Entity base models
     "CharacterBase",
     "TypeBase",
     "ElementBase",
@@ -23,11 +15,4 @@ __all__ = [
     "AttackBase",
     "CardBase",
     "CardForeignKeys",
-    # Game runtime base models (Pydantic)
-    "GameBaseModel",
-    "ElementContributionBase",
-    "AttackCostBase",
-    "GameCardStats",
-    "GameConfigurationBase",
 ]
-

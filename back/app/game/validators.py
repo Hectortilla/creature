@@ -28,7 +28,7 @@ from app.game.actions import (
 from app.game.elements import can_afford_attack
 
 if TYPE_CHECKING:
-    from app.game.models import GameState, GameCard
+    from app.models.game import GameState, GameCard
 
 
 class ValidationError(Exception):

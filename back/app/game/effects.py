@@ -26,7 +26,7 @@ from app.game.events import (
 )
 
 if TYPE_CHECKING:
-    from app.game.models import GameState, GameCard
+    from app.models.game import GameState, GameCard
 
 
 class EffectTrigger(Enum):

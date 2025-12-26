@@ -13,18 +13,177 @@ from __future__ import annotations
 import uuid
 from typing import Any, Optional
 from datetime import datetime
-from pydantic import Field, ConfigDict, field_serializer, computed_field
-
-from app.game.enums import Zone, TurnPhase, GameStatus, CardStatus, DamageType
-from app.models.base.game import GameBaseModel, ElementContributionBase, GameConfigurationBase
+from enum import Enum, auto
+from pydantic import BaseModel, Field, ConfigDict, field_serializer, computed_field
 
 
-class ElementContribution(ElementContributionBase):
+# ============================================================================
+# Game Enumerations
+# ============================================================================
+
+class Zone(Enum):
     """
-    Runtime element contribution.
-    Inherits from ElementContributionBase.
+    Zones in the game. Each player has their own instance of each zone.
+    
+    - DECK: Contains 22 cards at game start, cards are drawn from here
+    - HAND: Cards held by player, can be played from here
+    - SUPPORTING: Max 3 cards, cannot attack but contribute elements/skills
+    - ATTACKING: Max 2 cards, can attack and contribute elements/skills
+    - GRAVEYARD: Destroyed cards go here, no effect
     """
-    pass
+    DECK = auto()
+    HAND = auto()
+    SUPPORTING = auto()
+    ATTACKING = auto()
+    GRAVEYARD = auto()
+
+
+class TurnPhase(Enum):
+    """
+    Turn phases in order of execution.
+    
+    Each player's turn follows this sequence:
+    1. DRAW - Draw cards from deck
+    2. PLACEMENT - Place cards from hand to supporting zone
+    3. PROMOTION - Move cards from supporting to attacking zone
+    4. SWAP - Swap supporting and attacking cards
+    5. ASSOCIATION - Apply association cards
+    6. EVOLUTION - Evolve eligible creatures
+    7. ATTACK - Perform attacks with attacking creatures
+    """
+    DRAW = auto()
+    PLACEMENT = auto()
+    PROMOTION = auto()
+    SWAP = auto()
+    ASSOCIATION = auto()
+    EVOLUTION = auto()
+    ATTACK = auto()
+    
+    @classmethod
+    def get_order(cls) -> list["TurnPhase"]:
+        """Get phases in execution order."""
+        return [
+            cls.DRAW,
+            cls.PLACEMENT,
+            cls.PROMOTION,
+            cls.SWAP,
+            cls.ASSOCIATION,
+            cls.EVOLUTION,
+            cls.ATTACK,
+        ]
+    
+    def next_phase(self) -> "TurnPhase | None":
+        """Get the next phase, or None if this is the last phase."""
+        order = self.get_order()
+        idx = order.index(self)
+        if idx < len(order) - 1:
+            return order[idx + 1]
+        return None
+
+
+class DamageType(Enum):
+    """
+    Types of damage in the game.
+    
+    - PHYSICAL: Reduced by physical defense
+    - MAGICAL: Reduced by magical defense
+    """
+    PHYSICAL = auto()
+    MAGICAL = auto()
+
+
+class GameStatus(Enum):
+    """
+    Overall game status.
+    
+    - WAITING: Game created, waiting for players
+    - STARTING: Game is initializing
+    - IN_PROGRESS: Game is actively being played
+    - PAUSED: Game is paused (e.g., waiting for forced defend)
+    - FINISHED: Game has ended
+    """
+    WAITING = auto()
+    STARTING = auto()
+    IN_PROGRESS = auto()
+    PAUSED = auto()
+    FINISHED = auto()
+
+
+class CardStatus(Enum):
+    """
+    Status flags for cards in active zones.
+    
+    - READY: Card is ready and contributing normally
+    - SWAPPED: Card was swapped this turn, no element contribution
+    - EXHAUSTED: Card has attacked this turn
+    - ASSOCIATED: Card is being used as an association
+    """
+    READY = auto()
+    SWAPPED = auto()
+    EXHAUSTED = auto()
+    ASSOCIATED = auto()
+
+
+class EffectTiming(Enum):
+    """
+    When effects trigger.
+    
+    - IMMEDIATE: Triggers immediately when condition is met
+    - START_OF_TURN: Triggers at the start of owner's turn
+    - END_OF_TURN: Triggers at the end of owner's turn
+    - ON_ATTACK: Triggers when this card attacks
+    - ON_DEFEND: Triggers when this card is attacked
+    - ON_DAMAGE: Triggers when this card takes damage
+    - ON_DESTROY: Triggers when this card is destroyed
+    - ON_PLAY: Triggers when this card enters play
+    - ON_PROMOTE: Triggers when this card moves to attacking zone
+    - PASSIVE: Always active while card is in active zone
+    """
+    IMMEDIATE = auto()
+    START_OF_TURN = auto()
+    END_OF_TURN = auto()
+    ON_ATTACK = auto()
+    ON_DEFEND = auto()
+    ON_DAMAGE = auto()
+    ON_DESTROY = auto()
+    ON_PLAY = auto()
+    ON_PROMOTE = auto()
+    PASSIVE = auto()
+
+
+# ============================================================================
+# Base Model
+# ============================================================================
+
+class GameBaseModel(BaseModel):
+    """
+    Base class for all game models.
+    
+    Provides consistent configuration and serialization behavior.
+    Uses Pydantic v2 with:
+    - model_dump() for dict serialization
+    - model_dump_json() for JSON string
+    - model_validate() for creating from dict
+    """
+    model_config = ConfigDict(
+        populate_by_name=True,
+        validate_assignment=True,
+        arbitrary_types_allowed=True,
+        use_enum_values=False,
+    )
+
+
+# ============================================================================
+# Element & Attack Models
+# ============================================================================
+
+class ElementContribution(GameBaseModel):
+    """
+    Represents element contribution from a card.
+    Used for element costs, contributions, and any element+amount pair.
+    """
+    element_id: int
+    amount: int
 
 
 class AttackDefinition(GameBaseModel):
@@ -45,6 +204,10 @@ class AttackDefinition(GameBaseModel):
         return value.name
 
 
+# ============================================================================
+# Card Model
+# ============================================================================
+
 class GameCard(GameBaseModel):
     """
     Represents a card instance in the game.
@@ -52,11 +215,6 @@ class GameCard(GameBaseModel):
     This is distinct from the database Card model - this represents
     a specific instance of a card during gameplay with runtime state.
     """
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        validate_assignment=True,
-    )
-    
     instance_id: str
     card_id: int
     owner_id: str
@@ -181,6 +339,10 @@ class GameCard(GameBaseModel):
         self.turns_in_zone += 1
 
 
+# ============================================================================
+# Zone & Element Pool Models
+# ============================================================================
+
 class ZoneState(GameBaseModel):
     """
     Represents the state of a single zone for a player.
@@ -291,6 +453,10 @@ class ElementPool(GameBaseModel):
         self.max_elements = self.elements.copy()
 
 
+# ============================================================================
+# Player & Game State Models
+# ============================================================================
+
 class PlayerState(GameBaseModel):
     """
     Represents a player's state in the game.
@@ -330,12 +496,15 @@ class PlayerState(GameBaseModel):
         self.has_passed_phase = False
 
 
-class GameConfiguration(GameConfigurationBase):
+class GameConfiguration(GameBaseModel):
     """
-    Runtime game configuration.
-    Inherits defaults from GameConfigurationBase.
+    Configuration options for a game.
     """
-    pass
+    deck_size: int = 22
+    initial_draw: int = 4
+    normal_draw: int = 1
+    supporting_zone_size: int = 3
+    attacking_zone_size: int = 2
 
 
 class GameState(GameBaseModel):
@@ -474,6 +643,10 @@ class GameState(GameBaseModel):
         return None
 
 
+# ============================================================================
+# Result Models
+# ============================================================================
+
 class AttackResult(GameBaseModel):
     """
     Result of an attack calculation.
@@ -488,3 +661,26 @@ class AttackResult(GameBaseModel):
     target_destroyed: bool
     attacker_damaged: bool = False
     attacker_damage: int = 0
+
+
+__all__ = [
+    # Enums
+    "Zone",
+    "TurnPhase",
+    "DamageType",
+    "GameStatus",
+    "CardStatus",
+    "EffectTiming",
+    # Models
+    "GameBaseModel",
+    "ElementContribution",
+    "AttackDefinition",
+    "GameCard",
+    "ZoneState",
+    "ElementPool",
+    "PlayerState",
+    "GameConfiguration",
+    "GameState",
+    "AttackResult",
+]
+

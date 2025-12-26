@@ -13,10 +13,10 @@ from typing import TYPE_CHECKING, Optional, Any
 from abc import ABC, abstractmethod
 
 from app.game.enums import TurnPhase
-from app.models.base.game import GameBaseModel
+from app.models.game import GameBaseModel
 
 if TYPE_CHECKING:
-    from app.game.models import GameState
+    from app.models.game import GameState
 
 
 class Action(GameBaseModel, ABC):
