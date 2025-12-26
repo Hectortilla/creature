@@ -121,6 +121,12 @@ from app.game.engine import (
     ActionResult,
     get_engine,
 )
+from app.game.websocket import (
+    GameManager,
+    GameRoom,
+    PlayerConnection,
+    game_websocket_handler,
+)
 
 __all__ = [
     # Enums
@@ -200,4 +206,9 @@ __all__ = [
     "GameEngine",
     "ActionResult",
     "get_engine",
+    # WebSocket
+    "GameManager",
+    "GameRoom",
+    "PlayerConnection",
+    "game_websocket_handler",
 ]

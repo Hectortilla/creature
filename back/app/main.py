@@ -1,8 +1,13 @@
-import asyncio
+"""
+Creature Card Game API
+
+Main FastAPI application with WebSocket-based game system.
+"""
+
 from contextlib import asynccontextmanager
 
 from broadcaster import Broadcast
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
@@ -16,7 +21,7 @@ from app.routers import (
     associations_router,
     cards_router,
 )
-from app.game.router import game_router
+from app.game.websocket import GameManager, game_websocket_handler
 
 # Import models to ensure they're registered with SQLModel
 from app.models.db import (
@@ -26,19 +31,30 @@ from app.models.db import (
 settings = get_settings()
 broadcast = Broadcast(settings.broadcast_url)
 
+# Global game manager instance
+game_manager: GameManager = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create database tables on startup and connect broadcaster."""
-    # create_db_and_tables()
+    """Initialize resources on startup and cleanup on shutdown."""
+    global game_manager
+    
+    # Connect broadcaster for pub/sub
     await broadcast.connect()
+    
+    # Initialize game manager
+    game_manager = GameManager(broadcast)
+    
     yield
+    
+    # Cleanup
     await broadcast.disconnect()
 
 
 app = FastAPI(
     title="Creature Card Game API",
-    description="API for managing creature cards, attacks, abilities, and more",
+    description="API for managing creature cards, attacks, abilities, and real-time game play",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -52,7 +68,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include all routers
+# Include data routers (cards, attacks, etc.)
 app.include_router(elements_router)
 app.include_router(types_router)
 app.include_router(characters_router)
@@ -60,7 +76,6 @@ app.include_router(attacks_router)
 app.include_router(abilities_router)
 app.include_router(associations_router)
 app.include_router(cards_router)
-app.include_router(game_router)
 
 
 @app.get("/")
@@ -69,29 +84,97 @@ async def root():
     return {"message": "Creature Card Game API", "status": "healthy"}
 
 
-GAME_CHANNEL = "game"
+# ============================================================================
+# Game WebSocket Endpoint
+# ============================================================================
+
+@app.websocket("/game/ws")
+async def game_websocket(
+    websocket: WebSocket,
+    player_id: str = Query(..., description="Unique player identifier"),
+    name: str = Query("Player", description="Player display name"),
+):
+    """
+    WebSocket endpoint for real-time game communication.
+    
+    Connect with: ws://host/game/ws?player_id=YOUR_ID&name=YOUR_NAME
+    
+    Message Protocol (send JSON):
+    
+    ## Create a new game room:
+    ```json
+    {
+        "type": "create_game",
+        "data": {
+            "name": "Player Name",
+            "deck": [{"id": 1, "name": "Card 1", ...}, ...]
+        }
+    }
+    ```
+    
+    ## List available rooms:
+    ```json
+    {"type": "list_rooms"}
+    ```
+    
+    ## Join an existing room:
+    ```json
+    {
+        "type": "join_game",
+        "data": {
+            "room_id": "room-uuid",
+            "name": "Player Name", 
+            "deck": [...]
+        }
+    }
+    ```
+    
+    ## Start the game (host only):
+    ```json
+    {"type": "start_game"}
+    ```
+    
+    ## Perform a game action:
+    ```json
+    {
+        "type": "action",
+        "data": {
+            "action_type": "play_card",
+            "card_id": "card-instance-id"
+        }
+    }
+    ```
+    
+    ## Get current game state:
+    ```json
+    {"type": "get_state"}
+    ```
+    
+    ## Get valid actions:
+    ```json
+    {"type": "get_valid_actions"}
+    ```
+    
+    ## Leave current game:
+    ```json
+    {"type": "leave_game"}
+    ```
+    
+    ## Keep-alive ping:
+    ```json
+    {"type": "ping"}
+    ```
+    """
+    await game_websocket_handler(websocket, player_id, name, game_manager)
 
 
-@app.websocket("/game/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: int):
-    """WebSocket endpoint for real-time game communication."""
-    await websocket.accept()
+@app.get("/game/rooms")
+async def list_game_rooms():
+    """
+    List all available game rooms (HTTP endpoint for convenience).
     
-    async def receiver():
-        """Receive messages from WebSocket and publish to broadcast channel."""
-        async for message in websocket.iter_text():
-            await websocket.send_text(f"You wrote: {message}")
-            await broadcast.publish(channel=GAME_CHANNEL, message=f"Client #{client_id} says: {message}")
-    
-    async def sender():
-        """Subscribe to broadcast channel and send messages to WebSocket."""
-        async with broadcast.subscribe(channel=GAME_CHANNEL) as subscriber:
-            async for event in subscriber:
-                await websocket.send_text(event.message)
-    
-    try:
-        async with asyncio.TaskGroup() as tg:
-            tg.create_task(receiver())
-            tg.create_task(sender())
-    except* WebSocketDisconnect:
-        await broadcast.publish(channel=GAME_CHANNEL, message=f"Client #{client_id} left the chat")
+    Returns rooms that haven't started yet.
+    """
+    if game_manager is None:
+        return {"rooms": []}
+    return {"rooms": game_manager.list_rooms()}
