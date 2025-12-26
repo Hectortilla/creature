@@ -6,6 +6,8 @@ players, zones, and the overall game state.
 
 All models use Pydantic BaseModel for validation and serialization.
 Uses @computed_field for derived properties to include in serialization.
+
+Inherits shared field definitions from app.models.core for DRY with base models.
 """
 
 from __future__ import annotations
@@ -15,6 +17,9 @@ from typing import Any, Optional
 from datetime import datetime
 from enum import Enum, auto
 from pydantic import BaseModel, Field, ConfigDict, field_serializer, computed_field
+
+from app.models.core.card import CardIdentityFields, CardCombatFields
+from app.models.core.attack import AttackCoreFields
 
 
 # ============================================================================
@@ -186,21 +191,26 @@ class ElementContribution(GameBaseModel):
     amount: int
 
 
-class AttackDefinition(GameBaseModel):
+class AttackDefinition(AttackCoreFields, GameBaseModel):
     """
     Represents an attack that a creature can perform.
+    
+    Inherits shared fields from AttackCoreFields:
+    - name, description, damage, effect, dice_rolls
+    
+    Adds game-specific fields: attack_id, type (enum), element_id, necessary_force (typed)
     """
     attack_id: int
-    name: str
-    base_damage: int
-    damage_type: DamageType
+    # Override damage to be required (not Optional) for game runtime
+    damage: int
+    # Use DamageType enum instead of str for type safety
+    type: DamageType
     element_id: int
-    element_cost: list[ElementContribution] = []
-    effect_id: Optional[str] = None
-    description: Optional[str] = None
+    # Use typed ElementContribution instead of dict
+    necessary_force: list[ElementContribution] = []
     
-    @field_serializer('damage_type')
-    def serialize_damage_type(self, value: DamageType) -> str:
+    @field_serializer('type')
+    def serialize_type(self, value: DamageType) -> str:
         return value.name
 
 
@@ -208,23 +218,30 @@ class AttackDefinition(GameBaseModel):
 # Card Model
 # ============================================================================
 
-class GameCard(GameBaseModel):
+class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     """
     Represents a card instance in the game.
     
     This is distinct from the database Card model - this represents
     a specific instance of a card during gameplay with runtime state.
+    
+    Inherits shared fields from:
+    - CardIdentityFields: name, description
+    - CardCombatFields: health, physical_defence, magic_defence
+    
+    Adds game-specific fields for runtime state.
     """
     instance_id: str
     card_id: int
     owner_id: str
-    name: str
     
-    # Combat stats
-    max_health: int
+    # Override combat stats to be required (not Optional) for game runtime
+    health: int  # max health
+    physical_defence: int
+    magic_defence: int
+    
+    # Runtime mutable health (separate from max health)
     current_health: int
-    physical_defense: int
-    magical_defense: int
     
     # Elements
     element_ids: list[int] = []
@@ -294,7 +311,7 @@ class GameCard(GameBaseModel):
     
     @classmethod
     def create(cls, card_id: int, owner_id: str, name: str,
-               max_health: int, physical_defense: int, magical_defense: int,
+               health: int, physical_defence: int, magic_defence: int,
                **kwargs) -> "GameCard":
         """Factory method to create a new game card instance."""
         return cls(
@@ -302,10 +319,10 @@ class GameCard(GameBaseModel):
             card_id=card_id,
             owner_id=owner_id,
             name=name,
-            max_health=max_health,
-            current_health=max_health,
-            physical_defense=physical_defense,
-            magical_defense=magical_defense,
+            health=health,
+            current_health=health,
+            physical_defence=physical_defence,
+            magic_defence=magic_defence,
             **kwargs
         )
     
@@ -324,7 +341,7 @@ class GameCard(GameBaseModel):
     def heal(self, amount: int) -> int:
         """Heal the card. Returns the actual healing done."""
         old_health = self.current_health
-        self.current_health = min(self.max_health, self.current_health + amount)
+        self.current_health = min(self.health, self.current_health + amount)
         return self.current_health - old_health
     
     def reset_turn_flags(self) -> None:

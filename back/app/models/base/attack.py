@@ -1,13 +1,20 @@
 from sqlmodel import SQLModel, Field
 
+from app.models.core.attack import AttackCoreFields
 
-class AttackBase(SQLModel):
+
+class AttackBase(AttackCoreFields, SQLModel):
+    """
+    Base attack model for database.
+    
+    Inherits shared fields from:
+    - AttackCoreFields: name, description, damage, effect, dice_rolls
+    
+    Adds DB-specific fields: code, type (as string), necessary_force (as dict)
+    """
     code: int
+    # Override with Field constraints for DB
     name: str = Field(max_length=255)
-    description: str | None = None
-    damage: int | None = None
     type: str | None = Field(default=None, max_length=50)
-    dice_rolls: int | None = None
     necessary_force: list[dict] | None = None
-    effect: str | None = None
 

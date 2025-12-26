@@ -6,6 +6,9 @@ from app.models.base.association import AssociationBase
 from app.models.base.attack import AttackBase
 from app.models.base.card import CardBase, CardForeignKeys
 
+# Re-export core models for convenience
+from app.models.core import CardCombatFields, CardIdentityFields, AttackCoreFields
+
 __all__ = [
     "CharacterBase",
     "TypeBase",
@@ -15,4 +18,8 @@ __all__ = [
     "AttackBase",
     "CardBase",
     "CardForeignKeys",
+    # Core field definitions
+    "CardCombatFields",
+    "CardIdentityFields", 
+    "AttackCoreFields",
 ]

@@ -1,15 +1,23 @@
 from sqlmodel import SQLModel, Field
 
+from app.models.core.card import CardIdentityFields, CardCombatFields
 
-class CardBase(SQLModel):
+
+class CardBase(CardIdentityFields, CardCombatFields, SQLModel):
+    """
+    Base card model for database.
+    
+    Inherits shared fields from:
+    - CardIdentityFields: name, description
+    - CardCombatFields: health, physical_defence, magic_defence
+    
+    Adds DB-specific fields: code, image, overlay_image, forces
+    """
     code: int
+    # Override with Field constraints for DB
     name: str = Field(max_length=255)
-    description: str | None = None
     image: str | None = Field(default=None, max_length=500)
     overlay_image: str | None = Field(default=None, max_length=500)
-    health: int | None = None
-    physical_defence: int | None = None
-    magic_defence: int | None = None
     forces: dict | None = None
 
 

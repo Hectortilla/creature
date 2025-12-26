@@ -288,8 +288,8 @@ class ActionToEventGenerator:
         if not target:
             return events
         
-        # Consume elements event
-        element_costs = {cost.element_id: cost.amount for cost in attack.element_cost}
+        # Consume elements event (using 'necessary_force' matching AttackBase)
+        element_costs = {cost.element_id: cost.amount for cost in attack.necessary_force}
         if element_costs:
             events.append(ElementsConsumedEvent(
                 game_id=state.game_id,
@@ -311,13 +311,13 @@ class ActionToEventGenerator:
         # Calculate damage
         damage_calc = calculate_damage(attack, attacker, target)
         
-        # Damage to target
+        # Damage to target (using 'type' matching AttackBase)
         if damage_calc.final_damage > 0:
             events.append(DamageDealtEvent(
                 game_id=state.game_id,
                 source_id=action.attacker_id,
                 target_id=action.target_id,
-                damage_type=attack.damage_type,
+                damage_type=attack.type,
                 base_damage=damage_calc.base_damage,
                 element_bonus=damage_calc.element_bonus,
                 defense_reduction=damage_calc.defense_value,
@@ -341,7 +341,7 @@ class ActionToEventGenerator:
                 game_id=state.game_id,
                 source_id=action.target_id,
                 target_id=action.attacker_id,
-                damage_type=attack.damage_type,
+                damage_type=attack.type,
                 base_damage=0,
                 element_bonus=0,
                 defense_reduction=0,

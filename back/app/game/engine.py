@@ -127,44 +127,45 @@ class GameEngine:
         """Create a GameCard from card data dict."""
         attacks = []
         for attack_data in card_data.get("attacks", []):
-            element_cost = [
-                ElementContribution(e["element_id"], e["amount"])
-                for e in attack_data.get("element_cost", [])
+            necessary_force = [
+                ElementContribution(element_id=e["element_id"], amount=e["amount"])
+                for e in attack_data.get("necessary_force", [])
             ]
             
-            damage_type = DamageType.PHYSICAL
+            attack_type = DamageType.PHYSICAL
             if attack_data.get("type", "").lower() == "magical":
-                damage_type = DamageType.MAGICAL
+                attack_type = DamageType.MAGICAL
             
             attacks.append(AttackDefinition(
                 attack_id=attack_data["id"],
                 name=attack_data["name"],
-                base_damage=attack_data.get("damage", 0),
-                damage_type=damage_type,
+                damage=attack_data.get("damage", 0),
+                type=attack_type,
                 element_id=attack_data.get("element_id", 0),
-                element_cost=element_cost,
-                effect_id=attack_data.get("effect"),
+                necessary_force=necessary_force,
+                effect=attack_data.get("effect"),
                 description=attack_data.get("description"),
+                dice_rolls=attack_data.get("dice_rolls"),
             ))
         
         element_contribution = []
         for contrib in card_data.get("element_contribution", []):
             element_contribution.append(
-                ElementContribution(contrib["element_id"], contrib["amount"])
+                ElementContribution(element_id=contrib["element_id"], amount=contrib["amount"])
             )
         
         # Default: contribute 1 of each element the card has
         if not element_contribution:
             for elem_id in card_data.get("element_ids", []):
-                element_contribution.append(ElementContribution(elem_id, 1))
+                element_contribution.append(ElementContribution(element_id=elem_id, amount=1))
         
         return GameCard.create(
             card_id=card_data["id"],
             owner_id=owner_id,
             name=card_data["name"],
-            max_health=card_data.get("health", 10),
-            physical_defense=card_data.get("physical_defence", 0),
-            magical_defense=card_data.get("magic_defence", 0),
+            health=card_data.get("health", 10),
+            physical_defence=card_data.get("physical_defence", 0),
+            magic_defence=card_data.get("magic_defence", 0),
             element_ids=card_data.get("element_ids", []),
             element_contribution=element_contribution,
             attacks=attacks,
@@ -381,7 +382,7 @@ class GameEngine:
                         for attack in attacker.attacks:
                             can_afford = all(
                                 player.element_pool.get_available(cost.element_id) >= cost.amount
-                                for cost in attack.element_cost
+                                for cost in attack.necessary_force
                             )
                             
                             if can_afford:

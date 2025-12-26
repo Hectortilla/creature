@@ -330,8 +330,8 @@ def calculate_damage(
     """
     from app.game.enums import DamageType
     
-    # Get base damage
-    base_damage = attack.base_damage
+    # Get base damage (using 'damage' field name matching AttackBase)
+    base_damage = attack.damage
     
     # Calculate element bonus
     element_bonus = calculate_element_bonus(
@@ -340,11 +340,11 @@ def calculate_damage(
         matrix
     )
     
-    # Get appropriate defense
-    if attack.damage_type == DamageType.PHYSICAL:
-        defense = target.physical_defense
+    # Get appropriate defense (using field names matching CardBase)
+    if attack.type == DamageType.PHYSICAL:
+        defense = target.physical_defence
     else:  # MAGICAL
-        defense = target.magical_defense
+        defense = target.magic_defence
     
     return DamageCalculation(
         base_damage=base_damage,
@@ -368,7 +368,7 @@ def can_afford_attack(
     Returns:
         True if the player has enough elements
     """
-    for cost in attack.element_cost:
+    for cost in attack.necessary_force:
         available = player_elements.get(cost.element_id, 0)
         if available < cost.amount:
             return False
