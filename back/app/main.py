@@ -1,7 +1,11 @@
+import asyncio
 from contextlib import asynccontextmanager
+
+from broadcaster import Broadcast
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import get_settings
 from app.database import create_db_and_tables
 from app.routers import (
     elements_router,
@@ -19,12 +23,17 @@ from app.models.db import (
     Element, Type, Character, Attack, Ability, Association, Card
 )
 
+settings = get_settings()
+broadcast = Broadcast(settings.broadcast_url)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create database tables on startup."""
-    create_db_and_tables()
+    """Create database tables on startup and connect broadcaster."""
+    # create_db_and_tables()
+    await broadcast.connect()
     yield
+    await broadcast.disconnect()
 
 
 app = FastAPI(
@@ -60,38 +69,29 @@ async def root():
     return {"message": "Creature Card Game API", "status": "healthy"}
 
 
-# WebSocket connection manager for game functionality
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-
-manager = ConnectionManager()
+GAME_CHANNEL = "game"
 
 
 @app.websocket("/game/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: int):
     """WebSocket endpoint for real-time game communication."""
-    await manager.connect(websocket)
+    await websocket.accept()
+    
+    async def receiver():
+        """Receive messages from WebSocket and publish to broadcast channel."""
+        async for message in websocket.iter_text():
+            await websocket.send_text(f"You wrote: {message}")
+            await broadcast.publish(channel=GAME_CHANNEL, message=f"Client #{client_id} says: {message}")
+    
+    async def sender():
+        """Subscribe to broadcast channel and send messages to WebSocket."""
+        async with broadcast.subscribe(channel=GAME_CHANNEL) as subscriber:
+            async for event in subscriber:
+                await websocket.send_text(event.message)
+    
     try:
-        while True:
-            data = await websocket.receive_text()
-            await manager.send_personal_message(f"You wrote: {data}", websocket)
-            await manager.broadcast(f"Client #{client_id} says: {data}")
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} left the chat")
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(receiver())
+            tg.create_task(sender())
+    except* WebSocketDisconnect:
+        await broadcast.publish(channel=GAME_CHANNEL, message=f"Client #{client_id} left the chat")
