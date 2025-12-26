@@ -3,281 +3,130 @@ Game Events
 
 Defines all events that can occur during a game.
 Events are used for event-driven processing and effect triggers.
+
+All events use Pydantic BaseModel for validation and serialization.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Any, Optional
 from datetime import datetime
 from abc import ABC
+from pydantic import Field, field_serializer, computed_field
 
 from app.game.enums import Zone, TurnPhase, DamageType
+from app.models.base.game import GameBaseModel
 
 
-@dataclass
-class GameEvent(ABC):
+class GameEvent(GameBaseModel, ABC):
     """
     Base class for all game events.
     
-    Attributes:
-        timestamp: When the event occurred
-        game_id: ID of the game this event belongs to
+    Uses Pydantic's model_dump() for serialization.
+    event_type is a computed field so it's included automatically.
     """
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
     game_id: Optional[str] = None
     
+    @computed_field
     @property
     def event_type(self) -> str:
         """Return the type name of this event."""
         return self.__class__.__name__
     
-    def to_dict(self) -> dict[str, Any]:
-        """Convert event to dictionary for logging/serialization."""
-        return {
-            "event_type": self.event_type,
-            "timestamp": self.timestamp.isoformat(),
-            "game_id": self.game_id,
-        }
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> str:
+        return value.isoformat()
 
 
 # ============================================================================
 # Card Movement Events
 # ============================================================================
 
-@dataclass
 class CardDrawnEvent(GameEvent):
-    """
-    Event fired when a card is drawn from deck to hand.
-    
-    Attributes:
-        player_id: ID of the player who drew the card
-        card_id: Instance ID of the card drawn
-        cards_remaining: Number of cards remaining in deck
-    """
+    """Event fired when a card is drawn from deck to hand."""
     player_id: str = ""
     card_id: str = ""
     cards_remaining: int = 0
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "card_id": self.card_id,
-            "cards_remaining": self.cards_remaining,
-        })
-        return d
 
 
-@dataclass
 class CardMovedEvent(GameEvent):
-    """
-    Event fired when a card moves between zones.
-    
-    Attributes:
-        card_id: Instance ID of the card
-        owner_id: ID of the player who owns the card
-        from_zone: Zone the card moved from
-        to_zone: Zone the card moved to
-    """
+    """Event fired when a card moves between zones."""
     card_id: str = ""
     owner_id: str = ""
     from_zone: Optional[Zone] = None
     to_zone: Optional[Zone] = None
     
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "card_id": self.card_id,
-            "owner_id": self.owner_id,
-            "from_zone": self.from_zone.name if self.from_zone else None,
-            "to_zone": self.to_zone.name if self.to_zone else None,
-        })
-        return d
+    @field_serializer('from_zone')
+    def serialize_from_zone(self, value: Optional[Zone]) -> Optional[str]:
+        return value.name if value else None
+    
+    @field_serializer('to_zone')
+    def serialize_to_zone(self, value: Optional[Zone]) -> Optional[str]:
+        return value.name if value else None
 
 
-@dataclass
 class CardPlayedEvent(GameEvent):
-    """
-    Event fired when a card is played from hand to supporting zone.
-    
-    Attributes:
-        player_id: ID of the player who played the card
-        card_id: Instance ID of the card
-        card_name: Name of the card (for logging)
-    """
+    """Event fired when a card is played from hand to supporting zone."""
     player_id: str = ""
     card_id: str = ""
     card_name: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "card_id": self.card_id,
-            "card_name": self.card_name,
-        })
-        return d
 
 
-@dataclass
 class CardPromotedEvent(GameEvent):
-    """
-    Event fired when a card is promoted from supporting to attacking zone.
-    
-    Attributes:
-        player_id: ID of the player
-        card_id: Instance ID of the card
-        card_name: Name of the card
-    """
+    """Event fired when a card is promoted from supporting to attacking zone."""
     player_id: str = ""
     card_id: str = ""
     card_name: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "card_id": self.card_id,
-            "card_name": self.card_name,
-        })
-        return d
 
 
-@dataclass
 class CardSwappedEvent(GameEvent):
-    """
-    Event fired when two cards are swapped between supporting and attacking zones.
-    
-    Attributes:
-        player_id: ID of the player
-        supporting_card_id: Card that was in supporting zone
-        attacking_card_id: Card that was in attacking zone
-    """
+    """Event fired when two cards are swapped between zones."""
     player_id: str = ""
     supporting_card_id: str = ""
     attacking_card_id: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "supporting_card_id": self.supporting_card_id,
-            "attacking_card_id": self.attacking_card_id,
-        })
-        return d
 
 
 # ============================================================================
 # Association & Evolution Events
 # ============================================================================
 
-@dataclass
 class CardAssociatedEvent(GameEvent):
-    """
-    Event fired when a card is associated with another card.
-    
-    Attributes:
-        player_id: ID of the player
-        association_card_id: Card being used as association
-        target_card_id: Card receiving the association
-        source_zone: Zone the association card came from
-    """
+    """Event fired when a card is associated with another card."""
     player_id: str = ""
     association_card_id: str = ""
     target_card_id: str = ""
     source_zone: Optional[Zone] = None
     
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "association_card_id": self.association_card_id,
-            "target_card_id": self.target_card_id,
-            "source_zone": self.source_zone.name if self.source_zone else None,
-        })
-        return d
+    @field_serializer('source_zone')
+    def serialize_source_zone(self, value: Optional[Zone]) -> Optional[str]:
+        return value.name if value else None
 
 
-@dataclass
 class CardEvolvedEvent(GameEvent):
-    """
-    Event fired when a card evolves.
-    
-    Attributes:
-        player_id: ID of the player
-        base_card_id: Card that was evolved (removed)
-        evolution_card_id: New evolved card
-        base_card_name: Name of the base card
-        evolution_card_name: Name of the evolved card
-    """
+    """Event fired when a card evolves."""
     player_id: str = ""
     base_card_id: str = ""
     evolution_card_id: str = ""
     base_card_name: str = ""
     evolution_card_name: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "base_card_id": self.base_card_id,
-            "evolution_card_id": self.evolution_card_id,
-            "base_card_name": self.base_card_name,
-            "evolution_card_name": self.evolution_card_name,
-        })
-        return d
 
 
 # ============================================================================
 # Combat Events
 # ============================================================================
 
-@dataclass
 class AttackDeclaredEvent(GameEvent):
-    """
-    Event fired when an attack is declared.
-    
-    Attributes:
-        attacker_owner_id: ID of the attacking player
-        attacker_id: Instance ID of the attacking card
-        target_id: Instance ID of the target card
-        attack_id: ID of the attack being used
-        attack_name: Name of the attack
-    """
+    """Event fired when an attack is declared."""
     attacker_owner_id: str = ""
     attacker_id: str = ""
     target_id: str = ""
     attack_id: int = 0
     attack_name: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "attacker_owner_id": self.attacker_owner_id,
-            "attacker_id": self.attacker_id,
-            "target_id": self.target_id,
-            "attack_id": self.attack_id,
-            "attack_name": self.attack_name,
-        })
-        return d
 
 
-@dataclass
 class DamageDealtEvent(GameEvent):
-    """
-    Event fired when damage is dealt to a card.
-    
-    Attributes:
-        source_id: Instance ID of the damage source
-        target_id: Instance ID of the target
-        damage_type: Physical or magical damage
-        base_damage: Damage before modifiers
-        element_bonus: Bonus from element interactions
-        defense_reduction: Damage absorbed by defense
-        final_damage: Actual damage dealt
-        remaining_health: Target's remaining health
-    """
+    """Event fired when damage is dealt to a card."""
     source_id: str = ""
     target_id: str = ""
     damage_type: Optional[DamageType] = None
@@ -287,302 +136,113 @@ class DamageDealtEvent(GameEvent):
     final_damage: int = 0
     remaining_health: int = 0
     
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "source_id": self.source_id,
-            "target_id": self.target_id,
-            "damage_type": self.damage_type.name if self.damage_type else None,
-            "base_damage": self.base_damage,
-            "element_bonus": self.element_bonus,
-            "defense_reduction": self.defense_reduction,
-            "final_damage": self.final_damage,
-            "remaining_health": self.remaining_health,
-        })
-        return d
+    @field_serializer('damage_type')
+    def serialize_damage_type(self, value: Optional[DamageType]) -> Optional[str]:
+        return value.name if value else None
 
 
-@dataclass
 class CardDestroyedEvent(GameEvent):
-    """
-    Event fired when a card is destroyed (health <= 0).
-    
-    Attributes:
-        card_id: Instance ID of the destroyed card
-        owner_id: ID of the card's owner
-        card_name: Name of the destroyed card
-        destroyed_by: Instance ID of the card that destroyed it (if any)
-    """
+    """Event fired when a card is destroyed (health <= 0)."""
     card_id: str = ""
     owner_id: str = ""
     card_name: str = ""
     destroyed_by: Optional[str] = None
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "card_id": self.card_id,
-            "owner_id": self.owner_id,
-            "card_name": self.card_name,
-            "destroyed_by": self.destroyed_by,
-        })
-        return d
 
 
 # ============================================================================
 # Element Events
 # ============================================================================
 
-@dataclass
 class ElementsConsumedEvent(GameEvent):
-    """
-    Event fired when elements are consumed for an attack.
-    
-    Attributes:
-        player_id: ID of the player
-        elements: Dict of element_id -> amount consumed
-        for_attack_id: ID of the attack these elements were used for
-    """
+    """Event fired when elements are consumed for an attack."""
     player_id: str = ""
-    elements: dict[int, int] = field(default_factory=dict)
+    elements: dict[int, int] = {}
     for_attack_id: int = 0
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "elements": self.elements,
-            "for_attack_id": self.for_attack_id,
-        })
-        return d
 
 
-@dataclass
 class ElementsRestoredEvent(GameEvent):
-    """
-    Event fired when elements are restored at turn start.
-    
-    Attributes:
-        player_id: ID of the player
-        elements: Dict of element_id -> amount restored
-    """
+    """Event fired when elements are restored at turn start."""
     player_id: str = ""
-    elements: dict[int, int] = field(default_factory=dict)
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "elements": self.elements,
-        })
-        return d
+    elements: dict[int, int] = {}
 
 
 # ============================================================================
 # Turn & Phase Events
 # ============================================================================
 
-@dataclass
 class TurnStartedEvent(GameEvent):
-    """
-    Event fired at the start of a player's turn.
-    
-    Attributes:
-        player_id: ID of the active player
-        turn_number: Current turn number
-        is_first_turn: Whether this is the player's first turn
-    """
+    """Event fired at the start of a player's turn."""
     player_id: str = ""
     turn_number: int = 0
     is_first_turn: bool = False
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "turn_number": self.turn_number,
-            "is_first_turn": self.is_first_turn,
-        })
-        return d
 
 
-@dataclass
 class TurnEndedEvent(GameEvent):
-    """
-    Event fired at the end of a player's turn.
-    
-    Attributes:
-        player_id: ID of the player whose turn ended
-        turn_number: Turn number that ended
-    """
+    """Event fired at the end of a player's turn."""
     player_id: str = ""
     turn_number: int = 0
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "turn_number": self.turn_number,
-        })
-        return d
 
 
-@dataclass
 class PhaseChangedEvent(GameEvent):
-    """
-    Event fired when the turn phase changes.
-    
-    Attributes:
-        player_id: ID of the active player
-        from_phase: Previous phase
-        to_phase: New phase
-    """
+    """Event fired when the turn phase changes."""
     player_id: str = ""
     from_phase: Optional[TurnPhase] = None
     to_phase: Optional[TurnPhase] = None
     
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_id": self.player_id,
-            "from_phase": self.from_phase.name if self.from_phase else None,
-            "to_phase": self.to_phase.name if self.to_phase else None,
-        })
-        return d
+    @field_serializer('from_phase')
+    def serialize_from_phase(self, value: Optional[TurnPhase]) -> Optional[str]:
+        return value.name if value else None
+    
+    @field_serializer('to_phase')
+    def serialize_to_phase(self, value: Optional[TurnPhase]) -> Optional[str]:
+        return value.name if value else None
 
 
 # ============================================================================
 # Game-Level Events
 # ============================================================================
 
-@dataclass
 class GameStartedEvent(GameEvent):
-    """
-    Event fired when a game starts.
-    
-    Attributes:
-        player_ids: IDs of all players in the game
-        first_player_id: ID of the player who goes first
-    """
-    player_ids: list[str] = field(default_factory=list)
+    """Event fired when a game starts."""
+    player_ids: list[str] = []
     first_player_id: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "player_ids": self.player_ids,
-            "first_player_id": self.first_player_id,
-        })
-        return d
 
 
-@dataclass
 class GameEndedEvent(GameEvent):
-    """
-    Event fired when the game ends.
-    
-    Attributes:
-        winner_id: ID of the winning player
-        loser_id: ID of the losing player
-        reason: Reason for the game ending
-    """
+    """Event fired when the game ends."""
     winner_id: str = ""
     loser_id: str = ""
     reason: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "winner_id": self.winner_id,
-            "loser_id": self.loser_id,
-            "reason": self.reason,
-        })
-        return d
 
 
-@dataclass
 class NoDefenderEvent(GameEvent):
     """
     Event fired when a player has no defending creatures and is attacked.
-    
-    This triggers the forced defend mechanic where the player must move
-    a supporting creature to the attacking zone.
-    
-    Attributes:
-        defender_id: ID of the player who must defend
-        attacker_id: ID of the attacking player
-        must_defend: Whether the defender must move a creature (has supporting cards)
-        game_lost: Whether the defender lost (no cards to defend with)
+    Triggers the forced defend mechanic.
     """
     defender_id: str = ""
     attacker_id: str = ""
     must_defend: bool = False
     game_lost: bool = False
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "defender_id": self.defender_id,
-            "attacker_id": self.attacker_id,
-            "must_defend": self.must_defend,
-            "game_lost": self.game_lost,
-        })
-        return d
 
 
 # ============================================================================
 # Effect Events
 # ============================================================================
 
-@dataclass
 class EffectTriggeredEvent(GameEvent):
-    """
-    Event fired when an effect is triggered.
-    
-    Attributes:
-        source_card_id: Card that has the effect
-        effect_id: ID of the effect
-        effect_name: Name of the effect
-        trigger_reason: What triggered the effect
-    """
+    """Event fired when an effect is triggered."""
     source_card_id: str = ""
     effect_id: str = ""
     effect_name: str = ""
     trigger_reason: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "source_card_id": self.source_card_id,
-            "effect_id": self.effect_id,
-            "effect_name": self.effect_name,
-            "trigger_reason": self.trigger_reason,
-        })
-        return d
 
 
-@dataclass
 class EffectAppliedEvent(GameEvent):
-    """
-    Event fired when an effect's result is applied.
-    
-    Attributes:
-        effect_id: ID of the effect
-        affected_card_ids: Cards affected by the effect
-        description: Description of what happened
-    """
+    """Event fired when an effect's result is applied."""
     effect_id: str = ""
-    affected_card_ids: list[str] = field(default_factory=list)
+    affected_card_ids: list[str] = []
     description: str = ""
-    
-    def to_dict(self) -> dict[str, Any]:
-        d = super().to_dict()
-        d.update({
-            "effect_id": self.effect_id,
-            "affected_card_ids": self.affected_card_ids,
-            "description": self.description,
-        })
-        return d
 
 
 # Event type registry for deserialization
@@ -608,4 +268,3 @@ EVENT_TYPES = {
     "EffectTriggeredEvent": EffectTriggeredEvent,
     "EffectAppliedEvent": EffectAppliedEvent,
 }
-

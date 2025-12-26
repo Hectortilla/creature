@@ -4,6 +4,9 @@ Creature Card Game Engine
 Event-driven game engine with clean architecture:
     Action → Validator → Evaluator → Events → EventLoop → Reducer → New State
 
+All models use Pydantic BaseModel with model_dump() for serialization.
+Use @computed_field for derived properties that should be included in output.
+
 Modules:
 - enums: Game enumerations (zones, phases, damage types)
 - models: Game state models (cards, players, zones) 
@@ -28,9 +31,8 @@ Usage:
     result = engine.start_game(state)
     state = result.state
     
-    action = PlayCardAction(player_id="p1", card_id="...")
-    result = engine.process_action(state, action)
-    new_state = result.state
+    # Serialize using Pydantic's model_dump()
+    state_dict = state.model_dump(mode='json')
 """
 
 from app.game.enums import (
@@ -64,6 +66,8 @@ from app.game.actions import (
     PassPhaseAction,
     ForceDefendAction,
     ConcedeAction,
+    MultiPlayCardAction,
+    MultiSwapAction,
     create_action,
 )
 from app.game.events import (
@@ -86,6 +90,8 @@ from app.game.events import (
     GameStartedEvent,
     GameEndedEvent,
     NoDefenderEvent,
+    EffectTriggeredEvent,
+    EffectAppliedEvent,
 )
 from app.game.effects import (
     Effect,
@@ -158,6 +164,8 @@ __all__ = [
     "PassPhaseAction",
     "ForceDefendAction",
     "ConcedeAction",
+    "MultiPlayCardAction",
+    "MultiSwapAction",
     "create_action",
     # Events
     "GameEvent",
@@ -179,6 +187,8 @@ __all__ = [
     "GameStartedEvent",
     "GameEndedEvent",
     "NoDefenderEvent",
+    "EffectTriggeredEvent",
+    "EffectAppliedEvent",
     # Effects
     "Effect",
     "EffectTrigger",

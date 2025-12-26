@@ -32,20 +32,20 @@ Message Protocol:
 
 from __future__ import annotations
 
-import asyncio
-import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 from uuid import uuid4
 
 from fastapi import WebSocket, WebSocketDisconnect
 from broadcaster import Broadcast
+from pydantic import Field, field_serializer, computed_field
 
 from app.game.engine import get_engine
 from app.game.models import GameState, GameConfiguration
 from app.game.actions import create_action
 from app.game.enums import GameStatus
+from app.models.base.game import GameBaseModel
 
 
 # ============================================================================
@@ -54,32 +54,59 @@ from app.game.enums import GameStatus
 
 @dataclass
 class PlayerConnection:
-    """Represents a connected player."""
+    """Represents a connected player (kept as dataclass - not serialized)."""
     player_id: str
     name: str
     websocket: WebSocket
     game_id: Optional[str] = None
 
 
-@dataclass 
-class GameRoom:
-    """Represents a game room/lobby."""
+class GameRoom(GameBaseModel):
+    """
+    Represents a game room/lobby.
+    
+    Uses Pydantic for automatic serialization via model_dump().
+    """
     room_id: str
     host_id: str
     state: Optional[GameState] = None
     player1_id: Optional[str] = None
     player1_name: Optional[str] = None
-    player1_deck: Optional[list[dict]] = None
+    player1_deck: Optional[list[dict]] = Field(default=None, exclude=True)
     player2_id: Optional[str] = None
     player2_name: Optional[str] = None
-    player2_deck: Optional[list[dict]] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    player2_deck: Optional[list[dict]] = Field(default=None, exclude=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     
+    @field_serializer('created_at')
+    def serialize_created_at(self, value: datetime) -> str:
+        return value.isoformat()
+    
+    @field_serializer('state')
+    def serialize_state(self, value: Optional[GameState]) -> None:
+        # Don't include full state in room serialization
+        return None
+    
+    @computed_field
+    @property
     def is_full(self) -> bool:
         return self.player1_id is not None and self.player2_id is not None
     
+    @computed_field
+    @property
     def is_started(self) -> bool:
         return self.state is not None and self.state.status != GameStatus.WAITING
+    
+    @computed_field
+    @property
+    def players(self) -> list[Optional[dict]]:
+        """List of players for serialization."""
+        return [
+            {"player_id": self.player1_id, "name": self.player1_name}
+            if self.player1_id else None,
+            {"player_id": self.player2_id, "name": self.player2_name}
+            if self.player2_id else None,
+        ]
     
     def add_player(self, player_id: str, name: str, deck: list[dict]) -> int:
         """Add a player to the room. Returns slot number (1 or 2)."""
@@ -119,116 +146,9 @@ class GameRoom:
         return ids
 
 
-# ============================================================================
-# Serialization Helpers
-# ============================================================================
-
-def serialize_card(card) -> dict:
-    """Serialize a game card to dict."""
-    return {
-        "instance_id": card.instance_id,
-        "card_id": card.card_id,
-        "name": card.name,
-        "owner_id": card.owner_id,
-        "current_health": card.current_health,
-        "max_health": card.max_health,
-        "physical_defense": card.physical_defense,
-        "magical_defense": card.magical_defense,
-        "element_ids": card.element_ids,
-        "zone": card.zone.name,
-        "turns_in_zone": card.turns_in_zone,
-        "can_attack": card.can_attack(),
-        "can_promote": card.can_promote(),
-        "has_attacked_this_turn": card.has_attacked_this_turn,
-        "attacks": [
-            {
-                "attack_id": atk.attack_id,
-                "name": atk.name,
-                "base_damage": atk.base_damage,
-                "damage_type": atk.damage_type.name,
-                "element_id": atk.element_id,
-                "element_cost": [
-                    {"element_id": c.element_id, "amount": c.amount}
-                    for c in atk.element_cost
-                ],
-            }
-            for atk in card.attacks
-        ],
-    }
-
-
-def serialize_zone(zone_state) -> dict:
-    """Serialize a zone state to dict."""
-    return {
-        "zone": zone_state.zone.name,
-        "card_ids": zone_state.card_ids,
-        "max_capacity": zone_state.max_capacity,
-        "is_full": zone_state.is_full(),
-    }
-
-
-def serialize_player(player) -> dict:
-    """Serialize a player state to dict."""
-    return {
-        "player_id": player.player_id,
-        "name": player.name,
-        "turn_count": player.turn_count,
-        "elements": dict(player.element_pool.elements),
-        "zones": {
-            zone.name: serialize_zone(zone_state)
-            for zone, zone_state in player.zones.items()
-        },
-    }
-
-
-def serialize_game_state(state: GameState) -> dict:
-    """Serialize full game state to dict."""
-    return {
-        "game_id": state.game_id,
-        "status": state.status.name,
-        "turn_number": state.turn_number,
-        "current_phase": state.current_phase.name,
-        "active_player_id": state.active_player_id,
-        "winner_id": state.winner_id,
-        "pending_action": state.pending_action,
-        "players": {
-            pid: serialize_player(player)
-            for pid, player in state.players.items()
-        },
-        "cards": {
-            cid: serialize_card(card)
-            for cid, card in state.cards.items()
-        },
-    }
-
-
-def serialize_events(events) -> list[dict]:
-    """Serialize game events to list of dicts."""
-    return [
-        {
-            "event_type": event.event_type,
-            "timestamp": event.timestamp.isoformat(),
-            "data": event.to_dict(),
-        }
-        for event in events
-    ]
-
-
-def serialize_room(room: GameRoom) -> dict:
-    """Serialize a game room to dict."""
-    return {
-        "room_id": room.room_id,
-        "host_id": room.host_id,
-        "is_full": room.is_full(),
-        "is_started": room.is_started(),
-        "players": [
-            {"player_id": room.player1_id, "name": room.player1_name}
-            if room.player1_id else None,
-            {"player_id": room.player2_id, "name": room.player2_name}
-            if room.player2_id else None,
-        ],
-        "created_at": room.created_at.isoformat(),
-    }
+def serialize_events(events) -> list[dict[str, Any]]:
+    """Serialize a list of game events using Pydantic's model_dump()."""
+    return [event.model_dump(mode='json') for event in events]
 
 
 # ============================================================================
@@ -315,10 +235,10 @@ class GameManager:
         
         room = self.rooms[room_id]
         
-        if room.is_full():
+        if room.is_full:
             raise ValueError("Room is full")
         
-        if room.is_started():
+        if room.is_started:
             raise ValueError("Game already started")
         
         room.add_player(player_id, name, deck)
@@ -333,7 +253,7 @@ class GameManager:
             "data": {
                 "player_id": player_id,
                 "name": name,
-                "room": serialize_room(room),
+                "room": room.model_dump(mode='json'),
             },
         }, exclude=player_id)
         
@@ -358,7 +278,7 @@ class GameManager:
             "type": "player_left",
             "data": {
                 "player_id": player_id,
-                "room": serialize_room(room),
+                "room": room.model_dump(mode='json'),
             },
         })
         
@@ -373,9 +293,9 @@ class GameManager:
     def list_rooms(self) -> list[dict]:
         """List all available (not started) rooms."""
         return [
-            serialize_room(room)
+            room.model_dump(mode='json')
             for room in self.rooms.values()
-            if not room.is_started()
+            if not room.is_started
         ]
     
     # ========================================================================
@@ -391,10 +311,10 @@ class GameManager:
         if room.host_id != player_id:
             raise ValueError("Only the host can start the game")
         
-        if not room.is_full():
+        if not room.is_full:
             raise ValueError("Need 2 players to start")
         
-        if room.is_started():
+        if room.is_started:
             raise ValueError("Game already started")
         
         # Create the game
@@ -419,7 +339,7 @@ class GameManager:
         
         response = {
             "success": True,
-            "game_state": serialize_game_state(result.state),
+            "game_state": result.state.model_dump(mode='json'),
             "events": serialize_events(result.events),
         }
         
@@ -464,7 +384,7 @@ class GameManager:
             "events": serialize_events(result.events),
             "game_over": result.game_over,
             "winner_id": result.winner_id,
-            "game_state": serialize_game_state(result.state) if result.state else None,
+            "game_state": result.state.model_dump(mode='json') if result.state else None,
         }
         
         # Broadcast result to all players
@@ -524,7 +444,7 @@ class GameManager:
         room = self.get_room(room_id)
         if not room or not room.state:
             return None
-        return serialize_game_state(room.state)
+        return room.state.model_dump(mode='json')
     
     # ========================================================================
     # Messaging
@@ -574,7 +494,7 @@ class GameManager:
                 )
                 await self.send_to_player(player_id, {
                     "type": "game_created",
-                    "data": {"room": serialize_room(room)},
+                    "data": {"room": room.model_dump(mode='json')},
                 })
             
             elif msg_type == "join_game":
@@ -586,7 +506,7 @@ class GameManager:
                 )
                 await self.send_to_player(player_id, {
                     "type": "game_joined",
-                    "data": {"room": serialize_room(room)},
+                    "data": {"room": room.model_dump(mode='json')},
                 })
             
             elif msg_type == "list_rooms":
@@ -699,4 +619,3 @@ async def game_websocket_handler(
         await manager.disconnect(player_id)
     except Exception:
         await manager.disconnect(player_id)
-
