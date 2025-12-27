@@ -112,20 +112,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
                 detail="Card not found"
             )
         
-        # Check if card is already in deck
-        existing = self.db.exec(
-            select(DeckCard).where(
-                DeckCard.deck_id == deck_id,
-                DeckCard.card_id == card_id
-            )
-        ).first()
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Card already in deck"
-            )
-        
-        # Check deck size limit
+        # Check deck size limit (cards can be repeated, so we just check total count)
         current_count = self.get_deck_card_count(deck_id)
         if current_count >= self.deck_size:
             raise HTTPException(
@@ -150,7 +137,10 @@ class DeckService(BaseService[Deck, DeckCreate]):
         return True
     
     def remove_card_from_deck(self, deck_id: int, card_id: int) -> bool:
-        """Remove a card from a deck."""
+        """Remove one instance of a card from a deck.
+        
+        If the same card appears multiple times, only one instance is removed.
+        """
         deck = self.get_user_deck(deck_id)
         if not deck:
             raise HTTPException(
@@ -158,6 +148,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
                 detail="Deck not found"
             )
         
+        # Get the first instance of this card in the deck
         deck_card = self.db.exec(
             select(DeckCard).where(
                 DeckCard.deck_id == deck_id,

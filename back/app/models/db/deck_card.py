@@ -7,11 +7,15 @@ if TYPE_CHECKING:
 
 
 class DeckCard(SQLModel, table=True):
-    """Association table for many-to-many relationship between Deck and Card."""
+    """Association table for many-to-many relationship between Deck and Card.
+    
+    Allows the same card to be added multiple times to a deck.
+    """
     __tablename__ = "deck_cards"
     
-    deck_id: int = Field(foreign_key="decks.id", primary_key=True)
-    card_id: int = Field(foreign_key="cards.id", primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
+    deck_id: int = Field(foreign_key="decks.id", index=True)
+    card_id: int = Field(foreign_key="cards.id", index=True)
     position: int | None = Field(default=None)  # Optional position/order in deck
     
     # Relationships
