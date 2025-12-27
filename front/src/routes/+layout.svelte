@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+
 	// Components
 	import Nav from '$lib/components/Nav.svelte';
 	import RollDice from '$lib/components/RollDice.svelte';
@@ -10,19 +12,27 @@
 	import "$lib/styles/main.scss";
 
 	let { children } = $props();
+
+	// Routes where nav should be hidden
+	const hideNavRoutes = ['/login', '/register'];
+	const shouldShowNav = $derived(!hideNavRoutes.includes(page.url.pathname));
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div id="menu">
-	<Nav />
-</div>
+{#if shouldShowNav}
+	<div id="menu">
+		<Nav />
+	</div>
+{/if}
 
 {@render children?.()}
 
-<RollDice />
+{#if shouldShowNav}
+	<RollDice />
+{/if}
 
 <style lang="scss">
 	@use "$lib/styles/abstracts/variables" as variables;

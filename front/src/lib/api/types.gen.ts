@@ -6,8 +6,6 @@ export type ClientOptions = {
 
 /**
  * AbilityCreate
- *
- * Request body for creating an ability.
  */
 export type AbilityCreate = {
   /**
@@ -30,18 +28,8 @@ export type AbilityCreate = {
 
 /**
  * AbilityRead
- *
- * Response model for an ability.
  */
 export type AbilityRead = {
-  /**
-   * Id
-   */
-  id: number;
-  /**
-   * Created At
-   */
-  created_at: string;
   /**
    * Code
    */
@@ -51,10 +39,6 @@ export type AbilityRead = {
    */
   name: string;
   /**
-   * Handle
-   */
-  handle: string;
-  /**
    * Description
    */
   description?: string | null;
@@ -62,12 +46,22 @@ export type AbilityRead = {
    * Type
    */
   type?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Handle
+   */
+  handle: string;
 };
 
 /**
  * AssociationCreate
- *
- * Request body for creating an association.
  */
 export type AssociationCreate = {
   /**
@@ -86,18 +80,8 @@ export type AssociationCreate = {
 
 /**
  * AssociationRead
- *
- * Response model for an association.
  */
 export type AssociationRead = {
-  /**
-   * Id
-   */
-  id: number;
-  /**
-   * Created At
-   */
-  created_at: string;
   /**
    * Code
    */
@@ -107,25 +91,27 @@ export type AssociationRead = {
    */
   name: string;
   /**
-   * Handle
-   */
-  handle: string;
-  /**
    * Description
    */
   description?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Handle
+   */
+  handle: string;
 };
 
 /**
  * AttackCreate
- *
- * Request body for creating an attack.
  */
 export type AttackCreate = {
-  /**
-   * Code
-   */
-  code: number;
   /**
    * Name
    */
@@ -139,17 +125,21 @@ export type AttackCreate = {
    */
   damage?: number | null;
   /**
-   * Type
+   * Effect
    */
-  type?: string | null;
-  /**
-   * Element Id
-   */
-  element_id?: number | null;
+  effect?: string | null;
   /**
    * Dice Rolls
    */
   dice_rolls?: number | null;
+  /**
+   * Code
+   */
+  code: number;
+  /**
+   * Type
+   */
+  type?: string | null;
   /**
    * Necessary Force
    */
@@ -157,17 +147,49 @@ export type AttackCreate = {
     [key: string]: unknown;
   }> | null;
   /**
-   * Effect
+   * Element Id
    */
-  effect?: string | null;
+  element_id?: number | null;
 };
 
 /**
  * AttackReadWithElement
- *
- * Response model for an attack with element details.
  */
 export type AttackReadWithElement = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Damage
+   */
+  damage?: number | null;
+  /**
+   * Effect
+   */
+  effect?: string | null;
+  /**
+   * Dice Rolls
+   */
+  dice_rolls?: number | null;
+  /**
+   * Code
+   */
+  code: number;
+  /**
+   * Type
+   */
+  type?: string | null;
+  /**
+   * Necessary Force
+   */
+  necessary_force?: Array<{
+    [key: string]: unknown;
+  }> | null;
   /**
    * Id
    */
@@ -177,47 +199,13 @@ export type AttackReadWithElement = {
    */
   created_at: string;
   /**
-   * Code
-   */
-  code: number;
-  /**
-   * Name
-   */
-  name: string;
-  /**
    * Handle
    */
   handle: string;
   /**
-   * Description
-   */
-  description?: string | null;
-  /**
-   * Damage
-   */
-  damage?: number | null;
-  /**
-   * Type
-   */
-  type?: string | null;
-  /**
    * Element Id
    */
   element_id?: number | null;
-  /**
-   * Dice Rolls
-   */
-  dice_rolls?: number | null;
-  /**
-   * Necessary Force
-   */
-  necessary_force?: Array<{
-    [key: string]: unknown;
-  }> | null;
-  /**
-   * Effect
-   */
-  effect?: string | null;
   element?: ElementRead | null;
   /**
    * Strengths
@@ -230,31 +218,39 @@ export type AttackReadWithElement = {
 };
 
 /**
+ * Body_login_for_access_token_auth_token_post
+ */
+export type BodyLoginForAccessTokenAuthTokenPost = {
+  /**
+   * Grant Type
+   */
+  grant_type?: string | null;
+  /**
+   * Username
+   */
+  username: string;
+  /**
+   * Password
+   */
+  password: string;
+  /**
+   * Scope
+   */
+  scope?: string;
+  /**
+   * Client Id
+   */
+  client_id?: string | null;
+  /**
+   * Client Secret
+   */
+  client_secret?: string | null;
+};
+
+/**
  * CardCreate
- *
- * Request body for creating a card.
  */
 export type CardCreate = {
-  /**
-   * Code
-   */
-  code: number;
-  /**
-   * Name
-   */
-  name: string;
-  /**
-   * Description
-   */
-  description?: string | null;
-  /**
-   * Image
-   */
-  image?: string | null;
-  /**
-   * Overlay Image
-   */
-  overlay_image?: string | null;
   /**
    * Is Evolution Id
    */
@@ -303,6 +299,26 @@ export type CardCreate = {
    * Magic Defence
    */
   magic_defence?: number | null;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Code
+   */
+  code: number;
+  /**
+   * Image
+   */
+  image?: string | null;
+  /**
+   * Overlay Image
+   */
+  overlay_image?: string | null;
   /**
    * Forces
    */
@@ -313,60 +329,8 @@ export type CardCreate = {
 
 /**
  * CardRead
- *
- * Response model for a card (lightweight).
  */
 export type CardRead = {
-  /**
-   * Id
-   */
-  id: number;
-  /**
-   * Created At
-   */
-  created_at: string;
-  /**
-   * Code
-   */
-  code: number;
-  /**
-   * Name
-   */
-  name: string;
-  /**
-   * Handle
-   */
-  handle: string;
-  /**
-   * Description
-   */
-  description?: string | null;
-  /**
-   * Image
-   */
-  image?: string | null;
-  /**
-   * Overlay Image
-   */
-  overlay_image?: string | null;
-  /**
-   * Health
-   */
-  health?: number | null;
-  /**
-   * Physical Defence
-   */
-  physical_defence?: number | null;
-  /**
-   * Magic Defence
-   */
-  magic_defence?: number | null;
-  /**
-   * Forces
-   */
-  forces?: Array<{
-    [key: string]: unknown;
-  }> | null;
   /**
    * Is Evolution Id
    */
@@ -403,64 +367,62 @@ export type CardRead = {
    * Association Id
    */
   association_id?: number | null;
+  /**
+   * Health
+   */
+  health?: number | null;
+  /**
+   * Physical Defence
+   */
+  physical_defence?: number | null;
+  /**
+   * Magic Defence
+   */
+  magic_defence?: number | null;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Code
+   */
+  code: number;
+  /**
+   * Image
+   */
+  image?: string | null;
+  /**
+   * Overlay Image
+   */
+  overlay_image?: string | null;
+  /**
+   * Forces
+   */
+  forces?: Array<{
+    [key: string]: unknown;
+  }> | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Handle
+   */
+  handle: string;
 };
 
 /**
  * CardReadWithRelations
- *
- * Response model for a card with all relationships.
  */
 export type CardReadWithRelations = {
-  /**
-   * Id
-   */
-  id: number;
-  /**
-   * Created At
-   */
-  created_at: string;
-  /**
-   * Code
-   */
-  code: number;
-  /**
-   * Name
-   */
-  name: string;
-  /**
-   * Handle
-   */
-  handle: string;
-  /**
-   * Description
-   */
-  description?: string | null;
-  /**
-   * Image
-   */
-  image?: string | null;
-  /**
-   * Overlay Image
-   */
-  overlay_image?: string | null;
-  /**
-   * Health
-   */
-  health?: number | null;
-  /**
-   * Physical Defence
-   */
-  physical_defence?: number | null;
-  /**
-   * Magic Defence
-   */
-  magic_defence?: number | null;
-  /**
-   * Forces
-   */
-  forces?: Array<{
-    [key: string]: unknown;
-  }> | null;
   /**
    * Is Evolution Id
    */
@@ -497,6 +459,56 @@ export type CardReadWithRelations = {
    * Association Id
    */
   association_id?: number | null;
+  /**
+   * Health
+   */
+  health?: number | null;
+  /**
+   * Physical Defence
+   */
+  physical_defence?: number | null;
+  /**
+   * Magic Defence
+   */
+  magic_defence?: number | null;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Code
+   */
+  code: number;
+  /**
+   * Image
+   */
+  image?: string | null;
+  /**
+   * Overlay Image
+   */
+  overlay_image?: string | null;
+  /**
+   * Forces
+   */
+  forces?: Array<{
+    [key: string]: unknown;
+  }> | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Handle
+   */
+  handle: string;
   first_element?: ElementRead | null;
   second_element?: ElementRead | null;
   type?: TypeRead | null;
@@ -522,8 +534,6 @@ export type CardReadWithRelations = {
 
 /**
  * CharacterCreate
- *
- * Request body for creating a character.
  */
 export type CharacterCreate = {
   /**
@@ -538,14 +548,8 @@ export type CharacterCreate = {
 
 /**
  * CharacterRead
- *
- * Response model for a character.
  */
 export type CharacterRead = {
-  /**
-   * Id
-   */
-  id: number;
   /**
    * Label
    */
@@ -554,12 +558,14 @@ export type CharacterRead = {
    * Icon
    */
   icon?: string | null;
+  /**
+   * Id
+   */
+  id: number;
 };
 
 /**
  * ElementCreate
- *
- * Request body for creating an element.
  */
 export type ElementCreate = {
   /**
@@ -586,14 +592,8 @@ export type ElementCreate = {
 
 /**
  * ElementRead
- *
- * Response model for an element.
  */
 export type ElementRead = {
-  /**
-   * Id
-   */
-  id: number;
   /**
    * Label
    */
@@ -614,6 +614,10 @@ export type ElementRead = {
    * Weaknesses
    */
   weaknesses?: Array<number> | null;
+  /**
+   * Id
+   */
+  id: number;
 };
 
 /**
@@ -627,9 +631,23 @@ export type HttpValidationError = {
 };
 
 /**
- * TypeCreate
+ * Token
  *
- * Request body for creating a type.
+ * Schema for access token response.
+ */
+export type Token = {
+  /**
+   * Access Token
+   */
+  access_token: string;
+  /**
+   * Token Type
+   */
+  token_type: string;
+};
+
+/**
+ * TypeCreate
  */
 export type TypeCreate = {
   /**
@@ -644,14 +662,8 @@ export type TypeCreate = {
 
 /**
  * TypeRead
- *
- * Response model for a type.
  */
 export type TypeRead = {
-  /**
-   * Id
-   */
-  id: number;
   /**
    * Label
    */
@@ -660,6 +672,66 @@ export type TypeRead = {
    * Icon
    */
   icon?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+};
+
+/**
+ * UserCreate
+ *
+ * Schema for creating a new user.
+ */
+export type UserCreate = {
+  /**
+   * Username
+   */
+  username: string;
+  /**
+   * Email
+   */
+  email?: string | null;
+  /**
+   * Full Name
+   */
+  full_name?: string | null;
+  /**
+   * Password
+   */
+  password: string;
+};
+
+/**
+ * UserRead
+ *
+ * Schema for reading user data (excludes password).
+ */
+export type UserRead = {
+  /**
+   * Username
+   */
+  username: string;
+  /**
+   * Email
+   */
+  email?: string | null;
+  /**
+   * Full Name
+   */
+  full_name?: string | null;
+  /**
+   * Disabled
+   */
+  disabled?: boolean;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
 };
 
 /**
@@ -679,6 +751,77 @@ export type ValidationError = {
    */
   type: string;
 };
+
+export type LoginForAccessTokenAuthTokenPostData = {
+  body: BodyLoginForAccessTokenAuthTokenPost;
+  path?: never;
+  query?: never;
+  url: "/auth/token";
+};
+
+export type LoginForAccessTokenAuthTokenPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type LoginForAccessTokenAuthTokenPostError =
+  LoginForAccessTokenAuthTokenPostErrors[keyof LoginForAccessTokenAuthTokenPostErrors];
+
+export type LoginForAccessTokenAuthTokenPostResponses = {
+  /**
+   * Successful Response
+   */
+  200: Token;
+};
+
+export type LoginForAccessTokenAuthTokenPostResponse =
+  LoginForAccessTokenAuthTokenPostResponses[keyof LoginForAccessTokenAuthTokenPostResponses];
+
+export type RegisterUserAuthRegisterPostData = {
+  body: UserCreate;
+  path?: never;
+  query?: never;
+  url: "/auth/register";
+};
+
+export type RegisterUserAuthRegisterPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type RegisterUserAuthRegisterPostError =
+  RegisterUserAuthRegisterPostErrors[keyof RegisterUserAuthRegisterPostErrors];
+
+export type RegisterUserAuthRegisterPostResponses = {
+  /**
+   * Successful Response
+   */
+  201: UserRead;
+};
+
+export type RegisterUserAuthRegisterPostResponse =
+  RegisterUserAuthRegisterPostResponses[keyof RegisterUserAuthRegisterPostResponses];
+
+export type ReadUsersMeAuthMeGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/auth/me";
+};
+
+export type ReadUsersMeAuthMeGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: UserRead;
+};
+
+export type ReadUsersMeAuthMeGetResponse =
+  ReadUsersMeAuthMeGetResponses[keyof ReadUsersMeAuthMeGetResponses];
 
 export type GetAllElementsElementsGetData = {
   body?: never;
@@ -1542,6 +1685,20 @@ export type RootGetData = {
 };
 
 export type RootGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type ListGameRoomsGameRoomsGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/rooms";
+};
+
+export type ListGameRoomsGameRoomsGetResponses = {
   /**
    * Successful Response
    */

@@ -9,8 +9,10 @@ import {
 	getAllAbilitiesAbilitiesGet,
 	getAllAssociationsAssociationsGet
 } from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const headers = getAuthHeaders(locals);
 	const { card } = params;
 
 	if (!card) {
@@ -18,14 +20,14 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const [allCardsRes, cardsRes, elementsRes, typesRes, charactersRes, attacksRes, abilitiesRes, associationsRes] = await Promise.all([
-		getAllCardsCardsGet(),
-		getCardCardsValueGet({ path: { value: card } }),
-		getAllElementsElementsGet(),
-		getAllTypesTypesGet(),
-		getAllCharactersCharactersGet(),
-		getAllAttacksAttacksGet(),
-		getAllAbilitiesAbilitiesGet(),
-		getAllAssociationsAssociationsGet()
+		getAllCardsCardsGet({ headers }),
+		getCardCardsValueGet({ path: { value: card }, headers }),
+		getAllElementsElementsGet({ headers }),
+		getAllTypesTypesGet({ headers }),
+		getAllCharactersCharactersGet({ headers }),
+		getAllAttacksAttacksGet({ headers }),
+		getAllAbilitiesAbilitiesGet({ headers }),
+		getAllAssociationsAssociationsGet({ headers })
 	]);
 
 	return {

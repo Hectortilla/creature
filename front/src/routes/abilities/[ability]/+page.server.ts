@@ -3,8 +3,10 @@ import {
 	getAbilityAbilitiesValueGet,
 	getCardsByAbilityCardsByAbilityAbilityCodeGet
 } from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const headers = getAuthHeaders(locals);
 	const { ability } = params;
 
 	if (!ability) {
@@ -12,8 +14,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const [abilityRes, cardsRes] = await Promise.all([
-		getAbilityAbilitiesValueGet({ path: { value: ability } }),
-		getCardsByAbilityCardsByAbilityAbilityCodeGet({ path: { ability_code: Number(ability) } })
+		getAbilityAbilitiesValueGet({ path: { value: ability }, headers }),
+		getCardsByAbilityCardsByAbilityAbilityCodeGet({ path: { ability_code: Number(ability) }, headers })
 	]);
 
 	return {

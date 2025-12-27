@@ -3,8 +3,10 @@ import {
 	getAssociationAssociationsValueGet,
 	getCardsByAssociationCardsByAssociationAssociationCodeGet
 } from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const headers = getAuthHeaders(locals);
 	const { association } = params;
 
 	if (!association) {
@@ -12,8 +14,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const [associationRes, cardsRes] = await Promise.all([
-		getAssociationAssociationsValueGet({ path: { value: association } }),
-		getCardsByAssociationCardsByAssociationAssociationCodeGet({ path: { association_code: Number(association) } })
+		getAssociationAssociationsValueGet({ path: { value: association }, headers }),
+		getCardsByAssociationCardsByAssociationAssociationCodeGet({ path: { association_code: Number(association) }, headers })
 	]);
 
 	return {

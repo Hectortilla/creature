@@ -3,11 +3,14 @@ import {
 	getAllAttacksAttacksGet,
 	getAllElementsElementsGet
 } from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	const headers = getAuthHeaders(locals);
+
 	const [attacksRes, elementsRes] = await Promise.all([
-		getAllAttacksAttacksGet(),
-		getAllElementsElementsGet()
+		getAllAttacksAttacksGet({ headers }),
+		getAllElementsElementsGet({ headers })
 	]);
 
 	return {

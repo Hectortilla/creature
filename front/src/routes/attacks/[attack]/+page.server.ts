@@ -3,8 +3,10 @@ import {
 	getAttackAttacksValueGet,
 	getCardsByAttackCardsByAttackAttackCodeGet
 } from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const headers = getAuthHeaders(locals);
 	const { attack } = params;
 
 	if (!attack) {
@@ -12,8 +14,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const [attackRes, cardsRes] = await Promise.all([
-		getAttackAttacksValueGet({ path: { value: attack } }),
-		getCardsByAttackCardsByAttackAttackCodeGet({ path: { attack_code: Number(attack) } })
+		getAttackAttacksValueGet({ path: { value: attack }, headers }),
+		getCardsByAttackCardsByAttackAttackCodeGet({ path: { attack_code: Number(attack) }, headers })
 	]);
 
 	return {

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { blur } from 'svelte/transition';
+	import { auth } from '$lib/stores/auth.svelte';
 
 	// Icons
 	import arrowIcon from '$lib/icons/arrow.svg?raw'
@@ -32,6 +34,11 @@
 
 	function hideItem() {
 		shownIndex = null;
+	}
+
+	function handleLogout() {
+		auth.clearAuth();
+		goto('/login');
 	}
 </script>
 
@@ -73,6 +80,13 @@
 			</li>
 		{/each}
 	</ul>
+
+	{#if auth.isAuthenticated}
+		<div class="user-section">
+			<span class="username">{auth.user?.username}</span>
+			<button class="logout-btn" onclick={handleLogout}>Salir</button>
+		</div>
+	{/if}
 </nav>
 
 <style lang="scss">
@@ -85,12 +99,12 @@
 		$border-radius: 16;
 
 		position: relative;
-		width: max-content;
+		width: 100%;
 		padding: functions.rem($padding);
 		border-radius: functions.rem($border-radius);
 		z-index: 11;
 
-		@include mixins.displayFlex(row, 0, flex-start, flex-start);
+		@include mixins.displayFlex(row, 0, space-between, center);
 
 		ul.item-ul {
 			position: relative;
@@ -218,6 +232,35 @@
 							}
 						}
 					}
+				}
+			}
+		}
+
+		.user-section {
+			@include mixins.displayFlex(row, 12, center, center);
+
+			.username {
+				font-family: variables.$font-title;
+				font-size: functions.rem(18);
+				opacity: 0.8;
+			}
+
+			.logout-btn {
+				font-family: variables.$font-title;
+				font-size: functions.rem(16);
+				padding: functions.rem(6) functions.rem(14);
+				border-radius: functions.rem(10);
+				background-color: transparent;
+				border: solid 1px var(--color-input-border);
+				color: var(--color-input-text);
+				cursor: pointer;
+				opacity: 0.6;
+
+				@include mixins.transition;
+
+				&:hover {
+					opacity: 1;
+					background-color: var(--color-input-button-background);
 				}
 			}
 		}

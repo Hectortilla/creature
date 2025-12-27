@@ -8,16 +8,19 @@ import {
 	getAllAbilitiesAbilitiesGet,
 	getAllAssociationsAssociationsGet
 } from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	const headers = getAuthHeaders(locals);
+
 	const [cardsRes, elementsRes, typesRes, charactersRes, attacksRes, abilitiesRes, associationsRes] = await Promise.all([
-		getAllCardsCardsGet(),
-		getAllElementsElementsGet(),
-		getAllTypesTypesGet(),
-		getAllCharactersCharactersGet(),
-		getAllAttacksAttacksGet(),
-		getAllAbilitiesAbilitiesGet(),
-		getAllAssociationsAssociationsGet()
+		getAllCardsCardsGet({ headers }),
+		getAllElementsElementsGet({ headers }),
+		getAllTypesTypesGet({ headers }),
+		getAllCharactersCharactersGet({ headers }),
+		getAllAttacksAttacksGet({ headers }),
+		getAllAbilitiesAbilitiesGet({ headers }),
+		getAllAssociationsAssociationsGet({ headers })
 	]);
 
 	return {
