@@ -19,11 +19,12 @@ from app.routers import (
     associations_router,
     cards_router,
 )
+from app.auth import auth_router
 from app.websocket import GameManager, game_websocket_handler
 
 # Import models to ensure they're registered with SQLModel
 from app.models.db import (
-    Element, Type, Character, Attack, Ability, Association, Card
+    Element, Type, Character, Attack, Ability, Association, Card, User
 )
 from app.settings.lifespan import lifespan
 from app.settings.lifespan import game_manager
@@ -43,6 +44,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include auth router
+app.include_router(auth_router)
 
 # Include data routers (cards, attacks, etc.)
 app.include_router(elements_router)

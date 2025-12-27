@@ -5,6 +5,7 @@ from app.models.schemas.ability import AbilityCreate, AbilityRead
 from app.models.schemas.association import AssociationCreate, AssociationRead
 from app.models.schemas.attack import AttackCreate, AttackRead, AttackReadWithElement
 from app.models.schemas.card import CardCreate, CardRead, CardReadWithRelations
+from app.models.schemas.user import UserCreate, UserRead, Token, TokenData
 
 __all__ = [
     "ElementCreate", "ElementRead",
@@ -14,5 +15,6 @@ __all__ = [
     "AssociationCreate", "AssociationRead",
     "AttackCreate", "AttackRead", "AttackReadWithElement",
     "CardCreate", "CardRead", "CardReadWithRelations",
+    "UserCreate", "UserRead", "Token", "TokenData",
 ]
 

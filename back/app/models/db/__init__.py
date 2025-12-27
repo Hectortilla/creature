@@ -5,6 +5,7 @@ from app.models.db.ability import Ability
 from app.models.db.association import Association
 from app.models.db.attack import Attack
 from app.models.db.card import Card
+from app.models.db.user import User
 
 __all__ = [
     "Element",
@@ -14,4 +15,5 @@ __all__ = [
     "Association",
     "Attack",
     "Card",
+    "User",
 ]
