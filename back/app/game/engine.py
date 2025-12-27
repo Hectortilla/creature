@@ -14,13 +14,22 @@ import random
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from app.game.enums import Zone, TurnPhase, GameStatus, DamageType
 from app.models.game import (
+    Zone,
+    TurnPhase,
+    GameStatus,
+    DamageType,
     GameState,
     GameCard,
     ElementContribution,
     AttackDefinition,
     GameConfiguration,
+    GameEvent,
+    GameStartedEvent,
+    GameEndedEvent,
+    TurnStartedEvent,
+    PhaseChangedEvent,
+    ElementsRestoredEvent,
 )
 from app.game.actions import (
     Action,
@@ -34,14 +43,6 @@ from app.game.actions import (
     AssociationAction,
     EvolutionAction,
     AttackAction,
-)
-from app.game.events import (
-    GameEvent,
-    GameStartedEvent,
-    GameEndedEvent,
-    TurnStartedEvent,
-    PhaseChangedEvent,
-    ElementsRestoredEvent,
 )
 from app.game.validators import RuleValidator
 from app.game.event_generator import ActionToEventGenerator

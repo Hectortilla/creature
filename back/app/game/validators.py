@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-from app.game.enums import Zone, TurnPhase, GameStatus
+from app.models.game import Zone, TurnPhase, GameStatus
 from app.game.actions import (
     Action,
     DrawAction,

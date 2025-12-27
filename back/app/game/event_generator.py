@@ -13,23 +13,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from app.game.enums import Zone, TurnPhase, GameStatus, DamageType
-from app.game.actions import (
-    Action,
-    DrawAction,
-    PlayCardAction,
-    PromoteAction,
-    SwapAction,
-    AssociationAction,
-    EvolutionAction,
-    AttackAction,
-    PassPhaseAction,
-    ForceDefendAction,
-    ConcedeAction,
-    MultiPlayCardAction,
-    MultiSwapAction,
-)
-from app.game.events import (
+from app.models.game import (
+    Zone,
+    TurnPhase,
+    GameStatus,
+    DamageType,
     GameEvent,
     CardDrawnEvent,
     CardMovedEvent,
@@ -49,6 +37,21 @@ from app.game.events import (
     GameStartedEvent,
     GameEndedEvent,
     NoDefenderEvent,
+)
+from app.game.actions import (
+    Action,
+    DrawAction,
+    PlayCardAction,
+    PromoteAction,
+    SwapAction,
+    AssociationAction,
+    EvolutionAction,
+    AttackAction,
+    PassPhaseAction,
+    ForceDefendAction,
+    ConcedeAction,
+    MultiPlayCardAction,
+    MultiSwapAction,
 )
 from app.game.elements import calculate_damage
 

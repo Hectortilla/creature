@@ -65,7 +65,7 @@ from app.game.actions import (
     MultiSwapAction,
     create_action,
 )
-from app.game.events import (
+from app.models.game import (
     GameEvent,
     CardDrawnEvent,
     CardMovedEvent,

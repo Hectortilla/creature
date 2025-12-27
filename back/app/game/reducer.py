@@ -16,8 +16,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
-from app.game.enums import Zone, GameStatus, CardStatus
-from app.game.events import (
+from app.models.game import (
+    Zone,
+    GameStatus,
+    CardStatus,
     GameEvent,
     CardDrawnEvent,
     CardMovedEvent,

@@ -12,8 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Any
 from abc import ABC, abstractmethod
 
-from app.game.enums import TurnPhase
-from app.models.game import GameBaseModel
+from app.models.game import TurnPhase, GameBaseModel
 
 if TYPE_CHECKING:
     from app.models.game import GameState

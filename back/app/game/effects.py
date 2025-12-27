@@ -12,8 +12,9 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from app.game.enums import Zone, EffectTiming
-from app.game.events import (
+from app.models.game import (
+    Zone,
+    EffectTiming,
     GameEvent,
     CardDrawnEvent,
     CardPlayedEvent,

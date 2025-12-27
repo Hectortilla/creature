@@ -16,7 +16,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from app.game.events import (
+from app.models.game import (
     GameEvent,
     CardPlayedEvent,
     CardPromotedEvent,

@@ -328,7 +328,7 @@ def calculate_damage(
     Returns:
         DamageCalculation with full breakdown
     """
-    from app.game.enums import DamageType
+    from app.models.game import DamageType
     
     # Get base damage (using 'damage' field name matching AttackBase)
     base_damage = attack.damage

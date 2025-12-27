@@ -9,13 +9,14 @@ All events use Pydantic BaseModel for validation and serialization.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional
 from datetime import datetime
 from abc import ABC
+
 from pydantic import Field, field_serializer, computed_field
 
-from app.game.enums import Zone, TurnPhase, DamageType
-from app.models.game import GameBaseModel
+from app.models.game.base import GameBaseModel
+from app.models.game.enums import Zone, TurnPhase, DamageType
 
 
 class GameEvent(GameBaseModel, ABC):
@@ -268,3 +269,39 @@ EVENT_TYPES = {
     "EffectTriggeredEvent": EffectTriggeredEvent,
     "EffectAppliedEvent": EffectAppliedEvent,
 }
+
+
+__all__ = [
+    # Base
+    "GameEvent",
+    # Card Movement
+    "CardDrawnEvent",
+    "CardMovedEvent",
+    "CardPlayedEvent",
+    "CardPromotedEvent",
+    "CardSwappedEvent",
+    # Association & Evolution
+    "CardAssociatedEvent",
+    "CardEvolvedEvent",
+    # Combat
+    "AttackDeclaredEvent",
+    "DamageDealtEvent",
+    "CardDestroyedEvent",
+    # Elements
+    "ElementsConsumedEvent",
+    "ElementsRestoredEvent",
+    # Turn & Phase
+    "TurnStartedEvent",
+    "TurnEndedEvent",
+    "PhaseChangedEvent",
+    # Game-Level
+    "GameStartedEvent",
+    "GameEndedEvent",
+    "NoDefenderEvent",
+    # Effects
+    "EffectTriggeredEvent",
+    "EffectAppliedEvent",
+    # Registry
+    "EVENT_TYPES",
+]
+

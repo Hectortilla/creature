@@ -42,9 +42,8 @@ from broadcaster import Broadcast
 from pydantic import Field, field_serializer, computed_field
 
 from app.game.engine import get_engine
-from app.models.game import GameState, GameConfiguration, GameBaseModel
+from app.models.game import GameState, GameConfiguration, GameBaseModel, GameStatus
 from app.game.actions import create_action
-from app.game.enums import GameStatus
 
 
 # ============================================================================
