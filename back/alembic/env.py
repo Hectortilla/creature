@@ -16,6 +16,9 @@ from app.models.db import (
     Association,
     Attack,
     Card,
+    User,
+    Deck,
+    DeckCard,
 )
 
 # Import settings to get database URL

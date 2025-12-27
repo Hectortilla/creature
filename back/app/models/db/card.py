@@ -12,6 +12,10 @@ if TYPE_CHECKING:
     from app.models.db.attack import Attack
     from app.models.db.ability import Ability
     from app.models.db.association import Association
+    from app.models.db.deck import Deck
+    from app.models.db import DeckCard
+else:
+    from app.models.db.deck_card import DeckCard
 
 
 class Card(CardBase, CardForeignKeys, table=True):
@@ -55,4 +59,11 @@ class Card(CardBase, CardForeignKeys, table=True):
     # Self-referential relationship for evolution
     is_evolution: Optional["Card"] = Relationship(
         sa_relationship_kwargs={"remote_side": "Card.id", "foreign_keys": "[Card.is_evolution_id]"}
+    )
+    
+    # Many-to-many relationship with decks
+    decks: list["Deck"] = Relationship(
+        back_populates="cards",
+        link_model=DeckCard,
+        sa_relationship_kwargs={"lazy": "selectin"}
     )

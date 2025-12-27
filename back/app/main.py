@@ -19,13 +19,14 @@ from app.routers import (
     associations_router,
     cards_router,
     auth_router,
+    decks_router,
 )
 from app.websocket import GameManager, game_websocket_handler
 from app.auth import WebSocketUser
 
 # Import models to ensure they're registered with SQLModel
 from app.models.db import (
-    Element, Type, Character, Attack, Ability, Association, Card, User
+    Element, Type, Character, Attack, Ability, Association, Card, User, Deck, DeckCard
 )
 from app.settings.lifespan import lifespan
 from app.settings.lifespan import game_manager
@@ -57,6 +58,7 @@ app.include_router(attacks_router)
 app.include_router(abilities_router)
 app.include_router(associations_router)
 app.include_router(cards_router)
+app.include_router(decks_router)
 
 
 @app.get("/")

@@ -6,6 +6,8 @@ from app.models.db.association import Association
 from app.models.db.attack import Attack
 from app.models.db.card import Card
 from app.models.db.user import User
+from app.models.db.deck import Deck
+from app.models.db.deck_card import DeckCard
 
 __all__ = [
     "Element",
@@ -16,4 +18,6 @@ __all__ = [
     "Attack",
     "Card",
     "User",
+    "Deck",
+    "DeckCard",
 ]
