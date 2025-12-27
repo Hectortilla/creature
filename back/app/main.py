@@ -4,13 +4,11 @@ Creature Card Game API
 Main FastAPI application with WebSocket-based game system.
 """
 
-from contextlib import asynccontextmanager
-
 from broadcaster import Broadcast
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
+from app.settings.config import get_settings
 from app.database import create_db_and_tables
 from app.routers import (
     elements_router,
@@ -27,30 +25,8 @@ from app.game.websocket import GameManager, game_websocket_handler
 from app.models.db import (
     Element, Type, Character, Attack, Ability, Association, Card
 )
-
-settings = get_settings()
-broadcast = Broadcast(settings.broadcast_url)
-
-# Global game manager instance
-game_manager: GameManager = None
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Initialize resources on startup and cleanup on shutdown."""
-    global game_manager
-    
-    # Connect broadcaster for pub/sub
-    await broadcast.connect()
-    
-    # Initialize game manager
-    game_manager = GameManager(broadcast)
-    
-    yield
-    
-    # Cleanup
-    await broadcast.disconnect()
-
+from app.settings.lifespan import lifespan
+from app.settings.lifespan import game_manager
 
 app = FastAPI(
     title="Creature Card Game API",

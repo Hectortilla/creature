@@ -10,8 +10,9 @@ class Settings(BaseSettings):
     def broadcast_url(self) -> str:
         return self.redis_url or "memory://"
     
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "env_file": ".env",
+    }
 
 
 @lru_cache
