@@ -8,7 +8,7 @@ from app.database import DBSessionDep
 from app.models.schemas import Token, UserCreate, UserRead
 from app.settings.config import get_settings
 from app.auth.security import create_access_token
-from app.auth.service import UserService
+from app.services.users import UserService
 from app.auth.dependencies import CurrentActiveUser
 
 router = APIRouter(prefix="/auth", tags=["auth"])

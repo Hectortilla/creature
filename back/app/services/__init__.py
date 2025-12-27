@@ -6,6 +6,7 @@ from app.services.abilities import AbilityService
 from app.services.associations import AssociationService
 from app.services.attacks import AttackService
 from app.services.cards import CardService
+from app.services.users import UserService
 
 __all__ = [
     "BaseService",
@@ -16,4 +17,5 @@ __all__ = [
     "AssociationService",
     "AttackService",
     "CardService",
+    "UserService",
 ]

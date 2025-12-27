@@ -5,6 +5,7 @@ from app.routers.attacks import router as attacks_router
 from app.routers.abilities import router as abilities_router
 from app.routers.associations import router as associations_router
 from app.routers.cards import router as cards_router
+from app.routers.auth import router as auth_router
 
 __all__ = [
     "elements_router",
@@ -14,5 +15,6 @@ __all__ = [
     "abilities_router",
     "associations_router",
     "cards_router",
+    "auth_router",
 ]
 

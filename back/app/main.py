@@ -18,8 +18,8 @@ from app.routers import (
     abilities_router,
     associations_router,
     cards_router,
+    auth_router,
 )
-from app.auth import auth_router
 from app.websocket import GameManager, game_websocket_handler
 
 # Import models to ensure they're registered with SQLModel

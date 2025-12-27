@@ -7,7 +7,7 @@ from app.database import DBSessionDep
 from app.models.db import User
 from app.models.schemas import TokenData
 from app.auth.security import decode_access_token
-from app.auth.service import UserService
+from app.services.users import UserService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
