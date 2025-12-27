@@ -173,13 +173,16 @@ class DeckService(BaseService[Deck, DeckCreate]):
         return True
     
     def enrich(self, deck: Deck) -> DeckReadWithCards:
-        """Enrich deck with its cards."""
-        # Get all cards in the deck via the relationship
-        # Load cards using the relationship (already configured with selectin)
-        self.db.refresh(deck, ["cards"])
-        
-        # Convert cards to CardRead schema
-        cards = [CardRead.model_validate(card) for card in deck.cards] if deck.cards else []
+        """Enrich deck with its cards (including duplicates)."""
+        # Query all cards for this deck using a join to preserve duplicates
+        # This gets all cards including duplicates by joining through deck_cards
+        cards_query = self.db.exec(
+            select(Card)
+            .join(DeckCard, Card.id == DeckCard.card_id)
+            .where(DeckCard.deck_id == deck.id)
+            .order_by(DeckCard.id)  # Preserve insertion order
+        )
+        cards = [CardRead.model_validate(card) for card in cards_query.all()]
         
         return DeckReadWithCards(
             id=deck.id,

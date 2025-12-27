@@ -3,6 +3,7 @@
 	import type { Creature } from '$lib/types';
 	import {
 		getAllDecksDecksGet,
+		getAllCardsCardsGet,
 		createDeckDecksPost,
 		addCardToDeckDecksDeckIdCardsCardIdPost,
 		removeCardFromDeckDecksDeckIdCardsCardIdDelete,
@@ -21,14 +22,14 @@
 	interface PageProps {
 		data: {
 			decks?: DeckReadWithCards[];
-			cards?: Creature[];
 		};
 	}
 
 	let { data }: PageProps = $props();
 
 	let decks = $state<DeckReadWithCards[]>(data.decks ?? []);
-	let allCards = $state<Creature[]>(data.cards ?? []);
+	let allCards = $state<Creature[]>([]);
+	let cardsLoaded = $state(false);
 
 	// Create deck form
 	let showCreateForm = $state(false);
@@ -41,6 +42,28 @@
 	let filterByElement = $state<number | null>(null);
 	let filterByType = $state<number | null>(null);
 	let filterByCharacter = $state<number | null>(null);
+
+	// Load cards when user opens "add cards" section
+	async function loadCardsIfNeeded() {
+		if (!cardsLoaded && selectedDeckId !== null) {
+			try {
+				const response = await getAllCardsCardsGet({});
+				if (response.data) {
+					allCards = response.data;
+					cardsLoaded = true;
+				}
+			} catch (err) {
+				console.error('Error loading cards:', err);
+			}
+		}
+	}
+
+	// Watch for selectedDeckId changes to load cards
+	$effect(() => {
+		if (selectedDeckId !== null) {
+			loadCardsIfNeeded();
+		}
+	});
 
 	// Get available elements, types, and characters from cards
 	let availableElements = $derived(() => {
@@ -76,14 +99,9 @@
 		return Array.from(characterMap.values());
 	});
 
-	// Filter cards that are not already in the selected deck
+	// Filter cards based on search and filters (cards can be repeated in decks)
 	let filteredCards = $derived(() => {
 		if (!allCards) return [];
-
-		const selectedDeck = selectedDeckId
-			? decks.find((d) => d.id === selectedDeckId)
-			: null;
-		const deckCardIds = selectedDeck?.cards ? new Set(selectedDeck.cards.map((c) => c.id)) : new Set();
 
 		return allCards
 			.filter((card: any) => {
@@ -214,6 +232,12 @@
 	function getCardCount(deck: DeckReadWithCards): number {
 		return deck.cards?.length ?? 0;
 	}
+
+	function getCardCountInDeck(deckId: number, cardId: number): number {
+		const deck = decks.find((d) => d.id === deckId);
+		if (!deck || !deck.cards) return 0;
+		return deck.cards.filter((c) => c.id === cardId).length;
+	}
 </script>
 
 <div class="decks-container">
@@ -305,12 +329,12 @@
 						<div class="deck-cards">
 							<h4>Cartas en el mazo:</h4>
 							<ul class="cards-grid" bind:this={cardContainer}>
-								{#each deck.cards as card}
+								{#each deck.cards as card, index (index)}
 									<li>
 										<div class="card-wrapper">
 											<CreatureCard360
 												data={card as Creature}
-												key={card.id}
+												key={index}
 												showCode={true}
 												showInfo={true}
 												allowLink={true}
@@ -383,6 +407,7 @@
 			{#if filteredCards().length > 0}
 				<ul class="available-cards-grid">
 					{#each filteredCards() as card}
+						{@const cardCount = selectedDeckId ? getCardCountInDeck(selectedDeckId, card.id) : 0}
 						<li>
 							<div class="card-wrapper">
 								<CreatureCard360
@@ -398,9 +423,15 @@
 									class="add-card-btn"
 									onclick={() => handleAddCardToDeck(selectedDeckId!, card.id)}
 									aria-label="Añadir carta al mazo"
+									title={cardCount > 0 ? `Ya tienes ${cardCount} copia${cardCount > 1 ? 's' : ''} en el mazo` : 'Añadir carta al mazo'}
 								>
 									+
 								</button>
+								{#if cardCount > 0}
+									<span class="card-count-badge" title="{cardCount} copia{cardCount > 1 ? 's' : ''} en el mazo">
+										{cardCount}
+									</span>
+								{/if}
 							</div>
 						</li>
 					{/each}
@@ -555,6 +586,20 @@
 
 		.remove-card-btn {
 			background-color: var(--color-semantic-error, #ff4444);
+		}
+
+		.card-count-badge {
+			position: absolute;
+			bottom: functions.rem(8);
+			right: functions.rem(8);
+			background-color: var(--color-button-primary-background);
+			color: var(--color-button-primary-text);
+			border-radius: functions.rem(16);
+			padding: functions.rem(4) functions.rem(8);
+			font-size: functions.rem(12);
+			font-weight: bold;
+			z-index: 10;
+			pointer-events: none;
 		}
 	}
 
