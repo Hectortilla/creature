@@ -28,3 +28,4 @@ class AttackCoreFields(BaseModel):
     effect: str | None = None
     dice_rolls: int | None = None
 
+
