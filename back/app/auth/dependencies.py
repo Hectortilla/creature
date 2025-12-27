@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, TYPE_CHECKING
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -7,7 +7,9 @@ from app.database import DBSessionDep
 from app.models.db import User
 from app.models.schemas import TokenData
 from app.auth.security import decode_access_token
-from app.services.users import UserService
+
+if TYPE_CHECKING:
+    from app.services.users import UserService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -17,6 +19,9 @@ async def get_current_user(
     db: DBSessionDep,
 ) -> User:
     """Dependency to get the current authenticated user from JWT token."""
+    # Lazy import to avoid circular dependency
+    from app.services.users import UserService
+    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

@@ -1,10 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import DBSessionDep
 from app.models.schemas import TypeCreate, TypeRead
 from app.services import TypeService
+from app.auth import get_current_active_user
 
-router = APIRouter(prefix="/types", tags=["types"])
+router = APIRouter(
+    prefix="/types",
+    tags=["types"],
+    dependencies=[Depends(get_current_active_user)],
+)
 
 
 @router.get("", response_model=list[TypeRead])

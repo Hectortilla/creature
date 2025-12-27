@@ -1,10 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import DBSessionDep
 from app.models.schemas import ElementCreate, ElementRead
 from app.services import ElementService
+from app.auth import get_current_active_user
 
-router = APIRouter(prefix="/elements", tags=["elements"])
+router = APIRouter(
+    prefix="/elements",
+    tags=["elements"],
+    dependencies=[Depends(get_current_active_user)],
+)
 
 
 @router.get("", response_model=list[ElementRead])

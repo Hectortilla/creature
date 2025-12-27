@@ -1,10 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import DBSessionDep
 from app.models.schemas import AttackCreate, AttackReadWithElement
 from app.services import AttackService
+from app.auth import get_current_active_user
 
-router = APIRouter(prefix="/attacks", tags=["attacks"])
+router = APIRouter(
+    prefix="/attacks",
+    tags=["attacks"],
+    dependencies=[Depends(get_current_active_user)],
+)
 
 
 @router.get("", response_model=list[AttackReadWithElement])
