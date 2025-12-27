@@ -19,7 +19,7 @@ from app.routers import (
     associations_router,
     cards_router,
 )
-from app.game.websocket import GameManager, game_websocket_handler
+from app.websocket import GameManager, game_websocket_handler
 
 # Import models to ensure they're registered with SQLModel
 from app.models.db import (

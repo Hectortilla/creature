@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from broadcaster import Broadcast
 from fastapi import FastAPI
 
-from app.game.websocket import GameManager
+from app.websocket import GameManager
 from app.settings.config import get_settings
 
 settings = get_settings()
