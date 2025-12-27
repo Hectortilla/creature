@@ -5,7 +5,7 @@ Main FastAPI application with WebSocket-based game system.
 """
 
 from broadcaster import Broadcast
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.settings.config import get_settings
@@ -21,6 +21,7 @@ from app.routers import (
     auth_router,
 )
 from app.websocket import GameManager, game_websocket_handler
+from app.auth import WebSocketUser
 
 # Import models to ensure they're registered with SQLModel
 from app.models.db import (
@@ -71,80 +72,17 @@ async def root():
 @app.websocket("/game/ws")
 async def game_websocket(
     websocket: WebSocket,
-    player_id: str = Query(..., description="Unique player identifier"),
-    name: str = Query("Player", description="Player display name"),
+    user: WebSocketUser,
 ):
     """
-    WebSocket endpoint for real-time game communication.
+    Authenticated WebSocket endpoint for game connections.
     
-    Connect with: ws://host/game/ws?player_id=YOUR_ID&name=YOUR_NAME
+    Connect with: ws://host/game/ws?token=<jwt_token>
     
-    Message Protocol (send JSON):
-    
-    ## Create a new game room:
-    ```json
-    {
-        "type": "create_game",
-        "data": {
-            "name": "Player Name",
-            "deck": [{"id": 1, "name": "Card 1", ...}, ...]
-        }
-    }
-    ```
-    
-    ## List available rooms:
-    ```json
-    {"type": "list_rooms"}
-    ```
-    
-    ## Join an existing room:
-    ```json
-    {
-        "type": "join_game",
-        "data": {
-            "room_id": "room-uuid",
-            "name": "Player Name", 
-            "deck": [...]
-        }
-    }
-    ```
-    
-    ## Start the game (host only):
-    ```json
-    {"type": "start_game"}
-    ```
-    
-    ## Perform a game action:
-    ```json
-    {
-        "type": "action",
-        "data": {
-            "action_type": "play_card",
-            "card_id": "card-instance-id"
-        }
-    }
-    ```
-    
-    ## Get current game state:
-    ```json
-    {"type": "get_state"}
-    ```
-    
-    ## Get valid actions:
-    ```json
-    {"type": "get_valid_actions"}
-    ```
-    
-    ## Leave current game:
-    ```json
-    {"type": "leave_game"}
-    ```
-    
-    ## Keep-alive ping:
-    ```json
-    {"type": "ping"}
-    ```
+    Player ID is the user's database ID, name is the user's full_name or username.
     """
+    player_id = str(user.id)
+    name = user.full_name or user.username
     await game_websocket_handler(websocket, player_id, name, game_manager)
 
 

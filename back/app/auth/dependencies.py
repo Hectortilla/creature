@@ -1,9 +1,9 @@
 from typing import Annotated, TYPE_CHECKING
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Query, WebSocket, WebSocketException
 from fastapi.security import OAuth2PasswordBearer
 
-from app.database import DBSessionDep
+from app.database import DBSessionDep, get_db
 from app.models.db import User
 from app.models.schemas import TokenData
 from app.auth.security import decode_access_token
@@ -61,3 +61,52 @@ async def get_current_active_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 
+
+async def get_websocket_user(
+    websocket: WebSocket,
+    token: str = Query(..., description="JWT access token"),
+) -> User:
+    """
+    Dependency to authenticate WebSocket connections using JWT token.
+    
+    Token is passed as a query parameter since WebSocket handshakes
+    don't support Authorization headers the same way as HTTP requests.
+    
+    Usage: ws://host/game/ws?token=<jwt_token>
+    """
+    # Lazy import to avoid circular dependency
+    from app.services.users import UserService
+    
+    credentials_exception = WebSocketException(
+        code=status.WS_1008_POLICY_VIOLATION,
+        reason="Could not validate credentials",
+    )
+    
+    payload = decode_access_token(token)
+    if payload is None:
+        raise credentials_exception
+    
+    username: str | None = payload.get("sub")
+    if username is None:
+        raise credentials_exception
+    
+    # Get database session
+    db = next(get_db())
+    try:
+        user = UserService(db).get_by_username(username)
+        if user is None:
+            raise credentials_exception
+        
+        if user.disabled:
+            raise WebSocketException(
+                code=status.WS_1008_POLICY_VIOLATION,
+                reason="User account is disabled",
+            )
+        
+        return user
+    finally:
+        db.close()
+
+
+# Type alias for WebSocket authentication
+WebSocketUser = Annotated[User, Depends(get_websocket_user)]
