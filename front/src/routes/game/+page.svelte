@@ -11,7 +11,7 @@
 	let connectionError = $state<string | null>(null);
 
 	// Convert http(s):// to ws(s):// for WebSocket connection
-	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws');
+	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'game/ws');
 
 	function connect() {
 		const token = auth.getToken();
@@ -125,7 +125,7 @@
 		<input
 			type="text"
 			bind:value={messageText}
-			placeholder='Send JSON: {"type": "ping"} or {"type": "list_rooms"}'
+			placeholder={'Send JSON: {"type": "ping"} or {"type": "list_rooms"}'}
 			autocomplete="off"
 			disabled={!connected}
 		/>

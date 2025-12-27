@@ -3,7 +3,7 @@ from typing import Annotated, TYPE_CHECKING
 from fastapi import Depends, HTTPException, status, Query, WebSocket, WebSocketException
 from fastapi.security import OAuth2PasswordBearer
 
-from app.database import DBSessionDep, get_db
+from app.database import DBSessionDep, get_db_session
 from app.models.db import User
 from app.models.schemas import TokenData
 from app.auth.security import decode_access_token
@@ -91,7 +91,7 @@ async def get_websocket_user(
         raise credentials_exception
     
     # Get database session
-    db = next(get_db())
+    db = next(get_db_session())
     try:
         user = UserService(db).get_by_username(username)
         if user is None:
