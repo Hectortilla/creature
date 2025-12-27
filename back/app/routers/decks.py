@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
 from typing import List
 
 from app.database import DBSessionDep
@@ -92,6 +93,7 @@ def add_card_to_deck(
 ):
     """Add a card to a deck."""
     DeckService(db, current_user.id).add_card_to_deck(deck_id, card_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/{deck_id}/cards/{card_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -103,4 +105,5 @@ def remove_card_from_deck(
 ):
     """Remove a card from a deck."""
     DeckService(db, current_user.id).remove_card_from_deck(deck_id, card_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 

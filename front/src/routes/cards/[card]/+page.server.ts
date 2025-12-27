@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const variants = variantResults.flatMap(r => r.data ?? []);
 
 	return {
-		params,
+		card,
 		cards,
 		variants,
 		elements: elementsRes.data ?? []

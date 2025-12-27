@@ -8,7 +8,8 @@ const TOKEN_KEY = 'auth_token';
 // Configure the API client with the base URL from environment
 export function configureApiClient(baseUrl: string = PUBLIC_API_URL) {
 	client.setConfig({
-		baseUrl
+		baseUrl,
+		credentials: 'include' as RequestCredentials // Include credentials for CORS
 	});
 
 	// Add request interceptor to inject auth token (client-side only)

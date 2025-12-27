@@ -23,9 +23,7 @@
 
     interface PageProps {
         data: {
-            params: {
-                card?: string | number;
-            };
+            card?: string | number;
             cards?: Creature[];
             variants: Creature[];
             elements: Element[];
@@ -138,7 +136,7 @@
     });
 </script>
 
-{#if data.cards && data.params.card}
+{#if data.cards && data.card}
     {#if data.cards.length > 1}
         <div class="cards-multiple-container">
             <h2>Hay multiples cartas para <span>{data.cards[0].name}</span></h2>

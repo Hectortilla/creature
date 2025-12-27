@@ -8,6 +8,9 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import type {
+  AddCardToDeckDecksDeckIdCardsCardIdPostData,
+  AddCardToDeckDecksDeckIdCardsCardIdPostErrors,
+  AddCardToDeckDecksDeckIdCardsCardIdPostResponses,
   CreateAbilityAbilitiesPostData,
   CreateAbilityAbilitiesPostErrors,
   CreateAbilityAbilitiesPostResponses,
@@ -23,6 +26,9 @@ import type {
   CreateCharacterCharactersPostData,
   CreateCharacterCharactersPostErrors,
   CreateCharacterCharactersPostResponses,
+  CreateDeckDecksPostData,
+  CreateDeckDecksPostErrors,
+  CreateDeckDecksPostResponses,
   CreateElementElementsPostData,
   CreateElementElementsPostErrors,
   CreateElementElementsPostResponses,
@@ -44,6 +50,9 @@ import type {
   DeleteCharacterCharactersCharacterIdDeleteData,
   DeleteCharacterCharactersCharacterIdDeleteErrors,
   DeleteCharacterCharactersCharacterIdDeleteResponses,
+  DeleteDeckDecksDeckIdDeleteData,
+  DeleteDeckDecksDeckIdDeleteErrors,
+  DeleteDeckDecksDeckIdDeleteResponses,
   DeleteElementElementsElementIdDeleteData,
   DeleteElementElementsElementIdDeleteErrors,
   DeleteElementElementsElementIdDeleteResponses,
@@ -63,6 +72,8 @@ import type {
   GetAllCardsCardsGetResponses,
   GetAllCharactersCharactersGetData,
   GetAllCharactersCharactersGetResponses,
+  GetAllDecksDecksGetData,
+  GetAllDecksDecksGetResponses,
   GetAllElementsElementsGetData,
   GetAllElementsElementsGetResponses,
   GetAllTypesTypesGetData,
@@ -88,6 +99,9 @@ import type {
   GetCharacterCharactersValueGetData,
   GetCharacterCharactersValueGetErrors,
   GetCharacterCharactersValueGetResponses,
+  GetDeckDecksDeckIdGetData,
+  GetDeckDecksDeckIdGetErrors,
+  GetDeckDecksDeckIdGetResponses,
   GetElementElementsValueGetData,
   GetElementElementsValueGetErrors,
   GetElementElementsValueGetResponses,
@@ -104,8 +118,14 @@ import type {
   RegisterUserAuthRegisterPostData,
   RegisterUserAuthRegisterPostErrors,
   RegisterUserAuthRegisterPostResponses,
+  RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteData,
+  RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteErrors,
+  RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteResponses,
   RootGetData,
   RootGetResponses,
+  UpdateDeckDecksDeckIdPutData,
+  UpdateDeckDecksDeckIdPutErrors,
+  UpdateDeckDecksDeckIdPutResponses,
 } from "./types.gen";
 
 export type Options<
@@ -828,6 +848,149 @@ export const deleteCardCardsCardIdDelete = <
   >({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/cards/{card_id}",
+    ...options,
+  });
+
+/**
+ * Get All Decks
+ *
+ * Get all decks for the current user.
+ */
+export const getAllDecksDecksGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAllDecksDecksGetData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    GetAllDecksDecksGetResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks",
+    ...options,
+  });
+
+/**
+ * Create Deck
+ *
+ * Create a new deck for the current user.
+ */
+export const createDeckDecksPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateDeckDecksPostData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    CreateDeckDecksPostResponses,
+    CreateDeckDecksPostErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete Deck
+ *
+ * Delete a deck (only if owned by current user).
+ */
+export const deleteDeckDecksDeckIdDelete = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<DeleteDeckDecksDeckIdDeleteData, ThrowOnError>,
+) =>
+  (options.client ?? client).delete<
+    DeleteDeckDecksDeckIdDeleteResponses,
+    DeleteDeckDecksDeckIdDeleteErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks/{deck_id}",
+    ...options,
+  });
+
+/**
+ * Get Deck
+ *
+ * Get a specific deck by ID (only if owned by current user).
+ */
+export const getDeckDecksDeckIdGet = <ThrowOnError extends boolean = false>(
+  options: Options<GetDeckDecksDeckIdGetData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<
+    GetDeckDecksDeckIdGetResponses,
+    GetDeckDecksDeckIdGetErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks/{deck_id}",
+    ...options,
+  });
+
+/**
+ * Update Deck
+ *
+ * Update a deck (only if owned by current user).
+ */
+export const updateDeckDecksDeckIdPut = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateDeckDecksDeckIdPutData, ThrowOnError>,
+) =>
+  (options.client ?? client).put<
+    UpdateDeckDecksDeckIdPutResponses,
+    UpdateDeckDecksDeckIdPutErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks/{deck_id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove Card From Deck
+ *
+ * Remove a card from a deck.
+ */
+export const removeCardFromDeckDecksDeckIdCardsCardIdDelete = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<
+    RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteData,
+    ThrowOnError
+  >,
+) =>
+  (options.client ?? client).delete<
+    RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteResponses,
+    RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks/{deck_id}/cards/{card_id}",
+    ...options,
+  });
+
+/**
+ * Add Card To Deck
+ *
+ * Add a card to a deck.
+ */
+export const addCardToDeckDecksDeckIdCardsCardIdPost = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<AddCardToDeckDecksDeckIdCardsCardIdPostData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    AddCardToDeckDecksDeckIdCardsCardIdPostResponses,
+    AddCardToDeckDecksDeckIdCardsCardIdPostErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks/{deck_id}/cards/{card_id}",
     ...options,
   });
 

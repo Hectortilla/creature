@@ -565,6 +565,74 @@ export type CharacterRead = {
 };
 
 /**
+ * DeckCreate
+ *
+ * Schema for creating a deck.
+ */
+export type DeckCreate = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+};
+
+/**
+ * DeckReadWithCards
+ *
+ * Schema for reading a deck with its cards.
+ */
+export type DeckReadWithCards = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * User Id
+   */
+  user_id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Updated At
+   */
+  updated_at: string;
+  /**
+   * Cards
+   */
+  cards?: Array<CardRead>;
+};
+
+/**
+ * DeckUpdate
+ *
+ * Schema for updating a deck.
+ */
+export type DeckUpdate = {
+  /**
+   * Name
+   */
+  name?: string | null;
+  /**
+   * Description
+   */
+  description?: string | null;
+};
+
+/**
  * ElementCreate
  */
 export type ElementCreate = {
@@ -1676,6 +1744,220 @@ export type DeleteCardCardsCardIdDeleteResponses = {
    */
   200: unknown;
 };
+
+export type GetAllDecksDecksGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/decks";
+};
+
+export type GetAllDecksDecksGetResponses = {
+  /**
+   * Response Get All Decks Decks Get
+   *
+   * Successful Response
+   */
+  200: Array<DeckReadWithCards>;
+};
+
+export type GetAllDecksDecksGetResponse =
+  GetAllDecksDecksGetResponses[keyof GetAllDecksDecksGetResponses];
+
+export type CreateDeckDecksPostData = {
+  body: DeckCreate;
+  path?: never;
+  query?: never;
+  url: "/decks";
+};
+
+export type CreateDeckDecksPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateDeckDecksPostError =
+  CreateDeckDecksPostErrors[keyof CreateDeckDecksPostErrors];
+
+export type CreateDeckDecksPostResponses = {
+  /**
+   * Successful Response
+   */
+  201: DeckReadWithCards;
+};
+
+export type CreateDeckDecksPostResponse =
+  CreateDeckDecksPostResponses[keyof CreateDeckDecksPostResponses];
+
+export type DeleteDeckDecksDeckIdDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * Deck Id
+     */
+    deck_id: number;
+  };
+  query?: never;
+  url: "/decks/{deck_id}";
+};
+
+export type DeleteDeckDecksDeckIdDeleteErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDeckDecksDeckIdDeleteError =
+  DeleteDeckDecksDeckIdDeleteErrors[keyof DeleteDeckDecksDeckIdDeleteErrors];
+
+export type DeleteDeckDecksDeckIdDeleteResponses = {
+  /**
+   * Successful Response
+   */
+  204: void;
+};
+
+export type DeleteDeckDecksDeckIdDeleteResponse =
+  DeleteDeckDecksDeckIdDeleteResponses[keyof DeleteDeckDecksDeckIdDeleteResponses];
+
+export type GetDeckDecksDeckIdGetData = {
+  body?: never;
+  path: {
+    /**
+     * Deck Id
+     */
+    deck_id: number;
+  };
+  query?: never;
+  url: "/decks/{deck_id}";
+};
+
+export type GetDeckDecksDeckIdGetErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetDeckDecksDeckIdGetError =
+  GetDeckDecksDeckIdGetErrors[keyof GetDeckDecksDeckIdGetErrors];
+
+export type GetDeckDecksDeckIdGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: DeckReadWithCards;
+};
+
+export type GetDeckDecksDeckIdGetResponse =
+  GetDeckDecksDeckIdGetResponses[keyof GetDeckDecksDeckIdGetResponses];
+
+export type UpdateDeckDecksDeckIdPutData = {
+  body: DeckUpdate;
+  path: {
+    /**
+     * Deck Id
+     */
+    deck_id: number;
+  };
+  query?: never;
+  url: "/decks/{deck_id}";
+};
+
+export type UpdateDeckDecksDeckIdPutErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateDeckDecksDeckIdPutError =
+  UpdateDeckDecksDeckIdPutErrors[keyof UpdateDeckDecksDeckIdPutErrors];
+
+export type UpdateDeckDecksDeckIdPutResponses = {
+  /**
+   * Successful Response
+   */
+  200: DeckReadWithCards;
+};
+
+export type UpdateDeckDecksDeckIdPutResponse =
+  UpdateDeckDecksDeckIdPutResponses[keyof UpdateDeckDecksDeckIdPutResponses];
+
+export type RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * Deck Id
+     */
+    deck_id: number;
+    /**
+     * Card Id
+     */
+    card_id: number;
+  };
+  query?: never;
+  url: "/decks/{deck_id}/cards/{card_id}";
+};
+
+export type RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteError =
+  RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteErrors[keyof RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteErrors];
+
+export type RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteResponses = {
+  /**
+   * Successful Response
+   */
+  204: void;
+};
+
+export type RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteResponse =
+  RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteResponses[keyof RemoveCardFromDeckDecksDeckIdCardsCardIdDeleteResponses];
+
+export type AddCardToDeckDecksDeckIdCardsCardIdPostData = {
+  body?: never;
+  path: {
+    /**
+     * Deck Id
+     */
+    deck_id: number;
+    /**
+     * Card Id
+     */
+    card_id: number;
+  };
+  query?: never;
+  url: "/decks/{deck_id}/cards/{card_id}";
+};
+
+export type AddCardToDeckDecksDeckIdCardsCardIdPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type AddCardToDeckDecksDeckIdCardsCardIdPostError =
+  AddCardToDeckDecksDeckIdCardsCardIdPostErrors[keyof AddCardToDeckDecksDeckIdCardsCardIdPostErrors];
+
+export type AddCardToDeckDecksDeckIdCardsCardIdPostResponses = {
+  /**
+   * Successful Response
+   */
+  204: void;
+};
+
+export type AddCardToDeckDecksDeckIdCardsCardIdPostResponse =
+  AddCardToDeckDecksDeckIdCardsCardIdPostResponses[keyof AddCardToDeckDecksDeckIdCardsCardIdPostResponses];
 
 export type RootGetData = {
   body?: never;

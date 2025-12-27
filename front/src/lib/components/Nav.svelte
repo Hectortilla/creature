@@ -20,6 +20,7 @@
 			]
 		},
 		{ href: '/cards', label: 'Cartas', subMenu: [] },
+		{ href: '/decks', label: 'Mazos', subMenu: [] },
 		{ href: '/clasification', label: 'Clasificación', subMenu: [] },
 		{ href: '/attacks', label: 'Ataques', subMenu: [] },
 		{ href: '/abilities', label: 'Habilidades', subMenu: [] },

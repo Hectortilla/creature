@@ -5,8 +5,10 @@ Main FastAPI application with WebSocket-based game system.
 """
 
 from broadcaster import Broadcast
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from app.settings.config import get_settings
 from app.database import create_db_and_tables
@@ -38,10 +40,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
