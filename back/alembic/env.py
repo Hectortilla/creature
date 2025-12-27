@@ -19,7 +19,7 @@ from app.models.db import (
 )
 
 # Import settings to get database URL
-from app.config import get_settings
+from app.settings.config import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
