@@ -25,13 +25,29 @@ export function configureApiClient(baseUrl: string = PUBLIC_API_URL) {
 	});
 
 	// Add response interceptor to handle 401 errors
-	client.interceptors.error.use((error, response) => {
+	client.interceptors.error.use((error, response, request) => {
 		if (response?.status === 401) {
-			// Clear auth state on unauthorized
-			auth.clearAuth();
-			// Redirect to login if in browser
-			if (browser) {
-				window.location.href = '/login';
+			// Don't redirect for auth endpoints (login/register) to avoid loops
+			const url = request?.url || '';
+			const isAuthEndpoint = url.includes('/auth/token') || url.includes('/auth/register');
+			
+			if (!isAuthEndpoint) {
+				// Clear auth state on unauthorized
+				auth.clearAuth();
+				// Redirect to login (only on client-side to avoid server-side redirect loops)
+				if (browser) {
+					// Check if we're already on a public route to avoid redirect loops
+					const currentPath = window.location.pathname;
+
+					const isPublicRoute = currentPath === '/login' || currentPath === '/register';
+					
+					if (!isPublicRoute) {
+						// Client-side redirect
+						window.location.href = '/login';
+					}
+				}
+				// Note: Server-side 401s will propagate as errors to load functions
+				// which can handle them appropriately without causing redirect loops
 			}
 		}
 		return error;

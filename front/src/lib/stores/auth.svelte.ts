@@ -55,14 +55,7 @@ function createAuthStore() {
 		}
 	}
 
-	function getToken(): string | null {
-		return token;
-	}
-
 	return {
-		get token() {
-			return token;
-		},
 		get user() {
 			return user;
 		},
@@ -71,7 +64,6 @@ function createAuthStore() {
 		},
 		setAuth,
 		clearAuth,
-		getToken
 	};
 }
 
