@@ -145,50 +145,29 @@ async def game_websocket_handler(
     
     connection = await manager.connect(websocket, player_id, name, deck)
     
-    # Send welcome message directly to WebSocket (before subscription is ready)
-    # This ensures the client receives the connection confirmation immediately
-    try:
-        await websocket.send_json(ConnectedMessage(
-            data=ConnectedData(
-                player_id=player_id,
-                name=name,
-                message="Connected to game server",
-            )
-        ).model_dump(mode='json'))
-    except Exception:
-        # If direct send fails, try via broadcaster (subscription should be ready soon)
-        await manager.send_to_player(player_id, ConnectedMessage(
-            data=ConnectedData(
-                player_id=player_id,
-                name=name,
-                message="Connected to game server",
-            )
-        ))
+    # Send welcome message
+    await manager.send_to_player(player_id, ConnectedMessage(
+        data=ConnectedData(
+            player_id=player_id,
+            name=name,
+            message="Connected to game server",
+        )
+    ))
     
     # Auto-join room if room_id is provided
     if room_id:
         try:
             room = await manager.join_room(player_id, room_id)
             # Send game joined message
-            try:
-                await websocket.send_json(GameJoinedMessage(
-                    data=GameJoinedData(room=room.model_dump(mode='json'))
-                ).model_dump(mode='json'))
-            except Exception:
-                await manager.send_to_player(player_id, GameJoinedMessage(
-                    data=GameJoinedData(room=room.model_dump(mode='json'))
-                ))
+            await manager.send_to_player(player_id, GameJoinedMessage(
+                data=GameJoinedData(room=room.model_dump(mode='json'))
+            ))
         except Exception as e:
             # If auto-join fails, send error but don't disconnect
             from app.models.schemas.websocket.server import ErrorMessage, ErrorData
-            try:
-                await websocket.send_json(ErrorMessage(
-                    data=ErrorData(message=f"Failed to join room: {str(e)}")
-                ).model_dump(mode='json'))
-            except Exception:
-                await manager.send_to_player(player_id, ErrorMessage(
-                    data=ErrorData(message=f"Failed to join room: {str(e)}")
-                ))
+            await manager.send_to_player(player_id, ErrorMessage(
+                data=ErrorData(message=f"Failed to join room: {str(e)}")
+            ))
     
     try:
         while True:
