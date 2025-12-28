@@ -62,6 +62,7 @@ class ActionResult:
         game_over: Whether the game ended
         winner_id: ID of winner if game ended
         state: The new game state after processing
+        valid_actions: Valid actions for the acting player after this action
     """
     success: bool
     events: list[GameEvent] = field(default_factory=list)
@@ -69,6 +70,7 @@ class ActionResult:
     game_over: bool = False
     winner_id: Optional[str] = None
     state: Optional[GameState] = None
+    valid_actions: list[dict[str, Any]] = field(default_factory=list)
 
 
 class GameEngine:
@@ -221,10 +223,16 @@ class GameEngine:
         # Process all events through the event loop
         result = self.event_loop.process(state, initial_events)
         
+        # Get valid actions for the first player after game start
+        valid_actions = []
+        if result.final_state:
+            valid_actions = self.get_valid_actions(result.final_state, first_player_id)
+        
         return ActionResult(
             success=True,
             events=result.all_events,
             state=result.final_state,
+            valid_actions=valid_actions,
         )
     
     def process_action(self, state: GameState, action: Action) -> ActionResult:
@@ -272,12 +280,18 @@ class GameEngine:
                 result.final_state = apply_event(result.final_state, end_event)
                 result.all_events.append(end_event)
             
+            # Get valid actions for the acting player after the action
+            valid_actions = []
+            if result.final_state and not game_over:
+                valid_actions = self.get_valid_actions(result.final_state, action.player_id)
+            
             return ActionResult(
                 success=True,
                 events=result.all_events,
                 game_over=game_over or result.final_state.status == GameStatus.FINISHED,
                 winner_id=result.final_state.winner_id,
                 state=result.final_state,
+                valid_actions=valid_actions,
             )
             
         except Exception as e:

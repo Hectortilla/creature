@@ -120,6 +120,7 @@ class GameStartedData(BaseModel):
     success: bool
     game_state: dict[str, Any]  # GameState serialized
     events: list[dict[str, Any]]  # List of serialized events
+    valid_actions: list[dict[str, Any]] = Field(default_factory=list)  # Valid actions for the active player
 
 
 class GameStateData(BaseModel):
@@ -135,6 +136,7 @@ class ActionResultData(BaseModel):
     game_over: bool
     winner_id: Optional[str] = None
     game_state: Optional[dict[str, Any]] = None  # GameState serialized or None
+    valid_actions: list[dict[str, Any]] = Field(default_factory=list)  # Valid actions for the acting player
 
 
 class ValidActionsData(BaseModel):

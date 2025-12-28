@@ -66,6 +66,7 @@ class GameLogicManager:
             success=True,
             game_state=result.state.model_dump(mode='json'),
             events=serialize_events(result.events),
+            valid_actions=result.valid_actions,
         )
         await self.message_broadcaster.broadcast_to_room(
             room_id,
@@ -113,6 +114,7 @@ class GameLogicManager:
             game_over=result.game_over,
             winner_id=result.winner_id,
             game_state=result.state.model_dump(mode='json') if result.state else None,
+            valid_actions=result.valid_actions,
         )
         await self.message_broadcaster.broadcast_to_room(
             room_id,

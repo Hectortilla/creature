@@ -3,7 +3,9 @@
 	import { goto } from '$app/navigation';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { auth } from '$lib/stores/auth.svelte';
+	import ActionCards from '$lib/components/ActionCards.svelte';
 	import type { PageData } from './$types';
+	import type { ActionData } from '$lib/api/types.gen';
 
 	interface DeckSummary {
 		id: number;
@@ -40,6 +42,14 @@
 	let selectedRoomId = $state<string | null>(null);
 	let createNewRoom = $state(false);
 	let loadingRooms = $state(false);
+	interface ValidAction {
+		action: string;
+		player_id: string;
+		[key: string]: unknown;
+	}
+	
+	let validActions = $state<ValidAction[]>([]);
+	let actionCardsCollapsed = $state(false);
 
 	// Convert http(s):// to ws(s):// for WebSocket connection
 	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/$/, '');
@@ -119,7 +129,7 @@
 			connected = true;
 			connectionError = null;
 			// If creating new room, automatically send create_game message
-			if (createNewRoom) {
+			if (createNewRoom && ws) {
 				ws.send(JSON.stringify({ type: 'create_game', data: {} }));
 			}
 		};
@@ -129,6 +139,21 @@
 			try {
 				const data = JSON.parse(event.data);
 				messages = [...messages, JSON.stringify(data, null, 2)];
+				
+				// Handle action_result messages to update valid actions
+				if (data.type === 'action_result' && data.data?.valid_actions) {
+					validActions = data.data.valid_actions as ValidAction[];
+				}
+				
+				// Handle game_started messages to update valid actions
+				if (data.type === 'game_started' && data.data?.valid_actions) {
+					validActions = data.data.valid_actions as ValidAction[];
+				}
+				
+				// Handle valid_actions messages
+				if (data.type === 'valid_actions' && data.data?.actions) {
+					validActions = data.data.actions as ValidAction[];
+				}
 			} catch {
 				messages = [...messages, event.data];
 			}
@@ -190,34 +215,58 @@
 		selectedRoomId = null;
 		createNewRoom = false;
 		messages = [];
+		validActions = [];
 		// Reload page to get fresh deck and room data
 		window.location.reload();
 	}
+
+	function handleSendAction(actionData: ActionData) {
+		if (ws && ws.readyState === WebSocket.OPEN && connected) {
+			ws.send(JSON.stringify({ type: 'action', data: actionData }));
+		}
+	}
 </script>
 
-<div class="chat-container">
-	<header>
-		<div class="header-left">
-			<h1>Game WebSocket</h1>
-			{#if auth.user}
-				<span class="user-info">Playing as: {auth.user.full_name || auth.user.username}</span>
+<div class="game-layout">
+	{#if connected}
+		<aside class="action-cards-sidebar" class:collapsed={actionCardsCollapsed}>
+			<div class="sidebar-header">
+				<h2>Actions</h2>
+				<button class="collapse-btn" onclick={() => actionCardsCollapsed = !actionCardsCollapsed}>
+					{actionCardsCollapsed ? '▶' : '◀'}
+				</button>
+			</div>
+			{#if !actionCardsCollapsed}
+				<div class="action-cards-content">
+					<ActionCards {validActions} onSendAction={handleSendAction} />
+				</div>
 			{/if}
-		</div>
-		<div class="header-right">
-			<span class="status" class:connected>
-				{connected ? '● Connected' : '○ Disconnected'}
-			</span>
-			{#if !connected}
-				<button class="reconnect-btn" onclick={reconnect}>Reconnect</button>
-			{/if}
-		</div>
-	</header>
-
-	{#if connectionError}
-		<div class="error-banner">
-			{connectionError}
-		</div>
+		</aside>
 	{/if}
+
+	<div class="chat-container">
+		<header>
+			<div class="header-left">
+				<h1>Game WebSocket</h1>
+				{#if auth.user}
+					<span class="user-info">Playing as: {auth.user.full_name || auth.user.username}</span>
+				{/if}
+			</div>
+			<div class="header-right">
+				<span class="status" class:connected>
+					{connected ? '● Connected' : '○ Disconnected'}
+				</span>
+				{#if !connected}
+					<button class="reconnect-btn" onclick={reconnect}>Reconnect</button>
+				{/if}
+			</div>
+		</header>
+
+		{#if connectionError}
+			<div class="error-banner">
+				{connectionError}
+			</div>
+		{/if}
 
 	{#if !connected}
 		<div class="deck-selection">
@@ -379,19 +428,96 @@
 			Send
 		</button>
 	</form>
+	</div>
 </div>
 
 <style>
-	.chat-container {
+	.game-layout {
 		display: flex;
-		flex-direction: column;
 		height: 100vh;
-		max-width: 720px;
-		margin: 0 auto;
-		padding: 1.5rem;
+		gap: 1rem;
+		padding: 1rem;
 		font-family: 'JetBrains Mono', 'Fira Code', monospace;
 		background: linear-gradient(145deg, #0d1117 0%, #161b22 100%);
 		color: #c9d1d9;
+		overflow: hidden;
+	}
+
+	.action-cards-sidebar {
+		flex: 0 0 400px;
+		display: flex;
+		flex-direction: column;
+		background: #161b22;
+		border-radius: 8px;
+		border: 1px solid #30363d;
+		overflow: hidden;
+		transition: flex-basis 0.3s ease;
+	}
+
+	.action-cards-sidebar.collapsed {
+		flex: 0 0 60px;
+	}
+
+	.sidebar-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem;
+		border-bottom: 1px solid #30363d;
+		background: #0d1117;
+	}
+
+	.sidebar-header h2 {
+		margin: 0;
+		font-size: 1.25rem;
+		color: #c9d1d9;
+	}
+
+	.collapse-btn {
+		padding: 0.5rem;
+		background: #30363d;
+		border: 1px solid #484f58;
+		border-radius: 4px;
+		color: #c9d1d9;
+		cursor: pointer;
+		font-size: 0.875rem;
+		transition: all 0.2s ease;
+		min-width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.collapse-btn:hover {
+		background: #484f58;
+	}
+
+	.action-cards-sidebar.collapsed .sidebar-header h2 {
+		display: none;
+	}
+
+	.action-cards-content {
+		flex: 1;
+		overflow-y: auto;
+		padding: 1rem;
+	}
+
+	.action-cards-sidebar.collapsed .action-cards-content {
+		display: none;
+	}
+
+	.chat-container {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 1.5rem;
+		background: #161b22;
+		border-radius: 8px;
+		border: 1px solid #30363d;
+		overflow: hidden;
 	}
 
 	header {

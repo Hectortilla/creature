@@ -161,6 +161,12 @@ export type ActionResultData = {
   game_state?: {
     [key: string]: unknown;
   } | null;
+  /**
+   * Valid Actions
+   */
+  valid_actions?: Array<{
+    [key: string]: unknown;
+  }>;
 };
 
 /**
@@ -996,6 +1002,12 @@ export type GameStartedData = {
    * Events
    */
   events: Array<{
+    [key: string]: unknown;
+  }>;
+  /**
+   * Valid Actions
+   */
+  valid_actions?: Array<{
     [key: string]: unknown;
   }>;
 };
