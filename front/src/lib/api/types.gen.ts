@@ -581,6 +581,46 @@ export type DeckCreate = {
 };
 
 /**
+ * DeckReadSummary
+ *
+ * Lightweight schema for deck listing (without full card data).
+ */
+export type DeckReadSummary = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * User Id
+   */
+  user_id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Updated At
+   */
+  updated_at: string;
+  /**
+   * Card Count
+   */
+  card_count?: number;
+  /**
+   * Is Valid For Playing
+   */
+  is_valid_for_playing?: boolean;
+};
+
+/**
  * DeckReadWithCards
  *
  * Schema for reading a deck with its cards.
@@ -614,6 +654,10 @@ export type DeckReadWithCards = {
    * Cards
    */
   cards?: Array<CardRead>;
+  /**
+   * Is Valid For Playing
+   */
+  is_valid_for_playing?: boolean;
 };
 
 /**
@@ -1790,6 +1834,25 @@ export type CreateDeckDecksPostResponses = {
 
 export type CreateDeckDecksPostResponse =
   CreateDeckDecksPostResponses[keyof CreateDeckDecksPostResponses];
+
+export type GetDeckSummariesDecksSummariesGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/decks/summaries";
+};
+
+export type GetDeckSummariesDecksSummariesGetResponses = {
+  /**
+   * Response Get Deck Summaries Decks Summaries Get
+   *
+   * Successful Response
+   */
+  200: Array<DeckReadSummary>;
+};
+
+export type GetDeckSummariesDecksSummariesGetResponse =
+  GetDeckSummariesDecksSummariesGetResponses[keyof GetDeckSummariesDecksSummariesGetResponses];
 
 export type DeleteDeckDecksDeckIdDeleteData = {
   body?: never;

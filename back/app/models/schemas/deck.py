@@ -24,7 +24,14 @@ class DeckRead(DeckBase):
     updated_at: datetime
 
 
+class DeckReadSummary(DeckRead):
+    """Lightweight schema for deck listing (without full card data)."""
+    card_count: int = 0
+    is_valid_for_playing: bool = False
+
+
 class DeckReadWithCards(DeckRead):
     """Schema for reading a deck with its cards."""
     cards: list[CardRead] = []
+    is_valid_for_playing: bool = False
 

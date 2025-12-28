@@ -102,6 +102,8 @@ import type {
   GetDeckDecksDeckIdGetData,
   GetDeckDecksDeckIdGetErrors,
   GetDeckDecksDeckIdGetResponses,
+  GetDeckSummariesDecksSummariesGetData,
+  GetDeckSummariesDecksSummariesGetResponses,
   GetElementElementsValueGetData,
   GetElementElementsValueGetErrors,
   GetElementElementsValueGetResponses,
@@ -854,7 +856,7 @@ export const deleteCardCardsCardIdDelete = <
 /**
  * Get All Decks
  *
- * Get all decks for the current user.
+ * Get all decks for the current user with full card data.
  */
 export const getAllDecksDecksGet = <ThrowOnError extends boolean = false>(
   options?: Options<GetAllDecksDecksGetData, ThrowOnError>,
@@ -889,6 +891,26 @@ export const createDeckDecksPost = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get Deck Summaries
+ *
+ * Get lightweight deck summaries (without card details) for the current user.
+ */
+export const getDeckSummariesDecksSummariesGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<GetDeckSummariesDecksSummariesGetData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    GetDeckSummariesDecksSummariesGetResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/decks/summaries",
+    ...options,
   });
 
 /**

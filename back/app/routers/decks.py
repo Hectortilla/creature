@@ -3,7 +3,7 @@ from fastapi.responses import Response
 from typing import List
 
 from app.database import DBSessionDep
-from app.models.schemas import DeckCreate, DeckUpdate, DeckRead, DeckReadWithCards
+from app.models.schemas import DeckCreate, DeckUpdate, DeckRead, DeckReadWithCards, DeckReadSummary
 from app.services.decks import DeckService
 from app.auth import get_current_active_user, CurrentActiveUser
 from app.models.db import User
@@ -20,8 +20,17 @@ def get_all_decks(
     db: DBSessionDep,
     current_user: CurrentActiveUser,
 ):
-    """Get all decks for the current user."""
+    """Get all decks for the current user with full card data."""
     return DeckService(db, current_user.id).get_all_enriched()
+
+
+@router.get("/summaries", response_model=List[DeckReadSummary])
+def get_deck_summaries(
+    db: DBSessionDep,
+    current_user: CurrentActiveUser,
+):
+    """Get lightweight deck summaries (without card details) for the current user."""
+    return DeckService(db, current_user.id).get_all_summaries()
 
 
 @router.get("/{deck_id}", response_model=DeckReadWithCards)

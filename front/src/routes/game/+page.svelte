@@ -3,27 +3,57 @@
 	import { goto } from '$app/navigation';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { auth } from '$lib/stores/auth.svelte';
+	import type { PageData } from './$types';
+
+	interface DeckSummary {
+		id: number;
+		name: string;
+		description: string | null;
+		card_count: number;
+		is_valid_for_playing: boolean;
+	}
+
+	let { data }: { data: PageData } = $props();
 
 	let messages: string[] = $state([]);
 	let messageText = $state('');
 	let ws: WebSocket | null = $state(null);
 	let connected = $state(false);
 	let connectionError = $state<string | null>(null);
+	let decks = $state<DeckSummary[]>(data.decks ?? []);
+	let selectedDeckId = $state<number | null>(null);
 
 	// Convert http(s):// to ws(s):// for WebSocket connection
-	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'game/ws');
+	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/$/, '');
 
 	function connect() {
-		const token = auth.getToken();
-		
+		if (!auth.isAuthenticated) {
+			connectionError = 'No authentication token. Please log in.';
+			goto('/login');
+			return;
+		}
+
+		const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
 		if (!token) {
 			connectionError = 'No authentication token. Please log in.';
 			goto('/login');
 			return;
 		}
 
+		if (!selectedDeckId) {
+			connectionError = 'Please select a valid deck to connect.';
+			return;
+		}
+
+		const selectedDeck = decks.find(d => d.id === selectedDeckId);
+		if (!selectedDeck || !selectedDeck.is_valid_for_playing) {
+			connectionError = 'Selected deck is not valid for playing.';
+			return;
+		}
+
 		connectionError = null;
-		ws = new WebSocket(`${wsUrl}/game/ws?token=${encodeURIComponent(token)}`);
+		const wsPath = `${wsUrl}/game/ws?token=${encodeURIComponent(token)}&deck_id=${selectedDeckId}`;
+		ws = new WebSocket(wsPath);
 
 		ws.onopen = () => {
 			connected = true;
@@ -43,10 +73,9 @@
 		ws.onclose = (event) => {
 			connected = false;
 			if (event.code === 1008) {
-				// Policy violation - authentication failed
-				connectionError = 'Authentication failed. Please log in again.';
-				auth.clearAuth();
-				goto('/login');
+				// Policy violation - could be auth or deck validation
+				const reason = event.reason || 'Connection refused';
+				connectionError = reason || 'Connection refused. Please check your deck and try again.';
 			}
 		};
 
@@ -57,7 +86,7 @@
 	}
 
 	onMount(() => {
-		connect();
+		// Decks are already loaded server-side via +page.server.ts
 	});
 
 	onDestroy(() => {
@@ -85,7 +114,11 @@
 		if (ws) {
 			ws.close();
 		}
-		connect();
+		connected = false;
+		selectedDeckId = null;
+		messages = [];
+		// Reload page to get fresh deck data
+		window.location.reload();
 	}
 </script>
 
@@ -110,6 +143,56 @@
 	{#if connectionError}
 		<div class="error-banner">
 			{connectionError}
+		</div>
+	{/if}
+
+	{#if !connected}
+		<div class="deck-selection">
+			<h2>Select a Deck</h2>
+			{#if decks.length === 0}
+				<div class="no-decks">
+					<p>No decks found. <a href="/decks">Create a deck</a> first.</p>
+				</div>
+			{:else}
+				<div class="deck-list">
+					{#each decks as deck}
+						<button
+							class="deck-item"
+							class:selected={selectedDeckId === deck.id}
+							class:invalid={!deck.is_valid_for_playing}
+							onclick={() => {
+								if (deck.is_valid_for_playing) {
+									selectedDeckId = deck.id;
+									connectionError = null;
+								}
+							}}
+							disabled={!deck.is_valid_for_playing}
+						>
+							<div class="deck-info">
+								<span class="deck-name">{deck.name}</span>
+								<span class="deck-meta">
+									{deck.card_count} cards
+									{#if deck.is_valid_for_playing}
+										<span class="valid-badge">✓ Valid</span>
+									{:else}
+										<span class="invalid-badge">✗ Invalid</span>
+									{/if}
+								</span>
+							</div>
+							{#if deck.description}
+								<p class="deck-description">{deck.description}</p>
+							{/if}
+						</button>
+					{/each}
+				</div>
+				<button
+					class="connect-btn"
+					onclick={connect}
+					disabled={!selectedDeckId || connected}
+				>
+					Connect to Game
+				</button>
+			{/if}
 		</div>
 	{/if}
 
@@ -216,6 +299,135 @@
 		color: #f85149;
 		font-size: 0.85rem;
 		margin-bottom: 1rem;
+	}
+
+	.deck-selection {
+		padding: 1.5rem;
+		background: #161b22;
+		border-radius: 8px;
+		border: 1px solid #30363d;
+		margin-bottom: 1rem;
+	}
+
+	.deck-selection h2 {
+		margin: 0 0 1rem 0;
+		font-size: 1.25rem;
+		color: #c9d1d9;
+	}
+
+	.no-decks {
+		padding: 1rem;
+		text-align: center;
+		color: #8b949e;
+	}
+
+	.no-decks a {
+		color: #58a6ff;
+		text-decoration: none;
+	}
+
+	.no-decks a:hover {
+		text-decoration: underline;
+	}
+
+	.deck-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+
+	.deck-item {
+		padding: 1rem;
+		background: #0d1117;
+		border: 2px solid #30363d;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		text-align: left;
+		width: 100%;
+	}
+
+	.deck-item:hover:not(:disabled) {
+		border-color: #58a6ff;
+		background: #161b22;
+	}
+
+	.deck-item.selected {
+		border-color: #3fb950;
+		background: rgba(63, 185, 80, 0.1);
+	}
+
+	.deck-item.invalid {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.deck-item:disabled {
+		cursor: not-allowed;
+		opacity: 0.6;
+	}
+
+	.deck-info {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.5rem;
+	}
+
+	.deck-name {
+		font-weight: 600;
+		color: #c9d1d9;
+		font-size: 1rem;
+	}
+
+	.deck-meta {
+		font-size: 0.85rem;
+		color: #8b949e;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.valid-badge {
+		color: #3fb950;
+		font-weight: 600;
+	}
+
+	.invalid-badge {
+		color: #f85149;
+		font-weight: 600;
+	}
+
+	.deck-description {
+		margin: 0;
+		font-size: 0.85rem;
+		color: #8b949e;
+		font-style: italic;
+	}
+
+	.connect-btn {
+		width: 100%;
+		padding: 0.875rem 1.5rem;
+		background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+		border: none;
+		border-radius: 8px;
+		color: #fff;
+		font-family: inherit;
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+	}
+
+	.connect-btn:hover:not(:disabled) {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
+	}
+
+	.connect-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.messages {
