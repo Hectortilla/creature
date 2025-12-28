@@ -13,6 +13,20 @@
 		is_valid_for_playing: boolean;
 	}
 
+	interface RoomSummary {
+		room_id: string;
+		host_id: string;
+		player1_id: string | null;
+		player1_name: string | null;
+		player2_id: string | null;
+		player2_name: string | null;
+		created_at: string;
+		is_full: boolean;
+		is_started: boolean;
+		can_join: boolean;
+		players: Array<{ player_id: string; name: string } | null>;
+	}
+
 	let { data }: { data: PageData } = $props();
 
 	let messages: string[] = $state([]);
@@ -21,10 +35,38 @@
 	let connected = $state(false);
 	let connectionError = $state<string | null>(null);
 	let decks = $state<DeckSummary[]>(data.decks ?? []);
+	let rooms = $state<RoomSummary[]>(data.rooms ?? []);
 	let selectedDeckId = $state<number | null>(null);
+	let selectedRoomId = $state<string | null>(null);
+	let createNewRoom = $state(false);
+	let loadingRooms = $state(false);
 
 	// Convert http(s):// to ws(s):// for WebSocket connection
 	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/$/, '');
+
+	async function fetchRooms() {
+		loadingRooms = true;
+		try {
+			const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+			if (!token) return;
+
+			const response = await fetch(`${PUBLIC_API_URL}/game/rooms`, {
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				rooms = data.rooms || [];
+			}
+		} catch (error) {
+			console.error('Error fetching rooms:', error);
+		} finally {
+			loadingRooms = false;
+		}
+	}
 
 	function connect() {
 		if (!auth.isAuthenticated) {
@@ -51,13 +93,35 @@
 			return;
 		}
 
+		// Validate room selection if not creating new room
+		if (!createNewRoom && !selectedRoomId) {
+			connectionError = 'Please select a room or choose to create a new one.';
+			return;
+		}
+
+		// If joining existing room, validate it can be joined
+		if (!createNewRoom && selectedRoomId) {
+			const selectedRoom = rooms.find(r => r.room_id === selectedRoomId);
+			if (!selectedRoom || !selectedRoom.can_join) {
+				connectionError = 'Selected room cannot be joined.';
+				return;
+			}
+		}
+
 		connectionError = null;
-		const wsPath = `${wsUrl}/game/ws?token=${encodeURIComponent(token)}&deck_id=${selectedDeckId}`;
+		let wsPath = `${wsUrl}/game/ws?token=${encodeURIComponent(token)}&deck_id=${selectedDeckId}`;
+		if (!createNewRoom && selectedRoomId) {
+			wsPath += `&room_id=${encodeURIComponent(selectedRoomId)}`;
+		}
 		ws = new WebSocket(wsPath);
 
 		ws.onopen = () => {
 			connected = true;
 			connectionError = null;
+			// If creating new room, automatically send create_game message
+			if (createNewRoom) {
+				ws.send(JSON.stringify({ type: 'create_game', data: {} }));
+			}
 		};
 
 		ws.onmessage = (event) => {
@@ -86,7 +150,14 @@
 	}
 
 	onMount(() => {
-		// Decks are already loaded server-side via +page.server.ts
+		// Decks and rooms are already loaded server-side via +page.server.ts
+		// Refresh rooms periodically when not connected
+		const interval = setInterval(() => {
+			if (!connected) {
+				fetchRooms();
+			}
+		}, 5000); // Refresh every 5 seconds
+		return () => clearInterval(interval);
 	});
 
 	onDestroy(() => {
@@ -116,8 +187,10 @@
 		}
 		connected = false;
 		selectedDeckId = null;
+		selectedRoomId = null;
+		createNewRoom = false;
 		messages = [];
-		// Reload page to get fresh deck data
+		// Reload page to get fresh deck and room data
 		window.location.reload();
 	}
 </script>
@@ -185,15 +258,105 @@
 						</button>
 					{/each}
 				</div>
+			{/if}
+		</div>
+
+		{#if selectedDeckId}
+			<div class="room-selection">
+				<h2>Select or Create a Room</h2>
+				<div class="room-options">
+					<button
+						class="room-option"
+						class:selected={createNewRoom}
+						onclick={() => {
+							createNewRoom = true;
+							selectedRoomId = null;
+							connectionError = null;
+						}}
+					>
+						<span class="room-option-icon">➕</span>
+						<span class="room-option-text">Create New Room</span>
+					</button>
+					<button
+						class="room-option"
+						class:selected={!createNewRoom}
+						onclick={() => {
+							createNewRoom = false;
+							connectionError = null;
+						}}
+					>
+						<span class="room-option-icon">🔍</span>
+						<span class="room-option-text">Join Existing Room</span>
+					</button>
+				</div>
+
+				{#if !createNewRoom}
+					<div class="rooms-section">
+						<div class="rooms-header">
+							<h3>Available Rooms</h3>
+							<button class="refresh-btn" onclick={fetchRooms} disabled={loadingRooms}>
+								{loadingRooms ? '⏳' : '🔄'} Refresh
+							</button>
+						</div>
+						{#if rooms.length === 0}
+							<div class="no-rooms">
+								<p>No available rooms. Create a new room to start playing.</p>
+							</div>
+						{:else}
+							<div class="room-list">
+								{#each rooms as room}
+									<button
+										class="room-item"
+										class:selected={selectedRoomId === room.room_id}
+										class:can-join={room.can_join}
+										class:cannot-join={!room.can_join}
+										onclick={() => {
+											if (room.can_join) {
+												selectedRoomId = room.room_id;
+												connectionError = null;
+											}
+										}}
+										disabled={!room.can_join}
+									>
+										<div class="room-info">
+											<span class="room-id">Room: {room.room_id.slice(0, 8)}...</span>
+											<span class="room-status">
+												{#if room.can_join}
+													<span class="status-badge can-join">✓ Can Join</span>
+												{:else if room.is_full}
+													<span class="status-badge full">Full</span>
+												{:else if room.is_started}
+													<span class="status-badge started">Started</span>
+												{:else}
+													<span class="status-badge waiting">Waiting</span>
+												{/if}
+											</span>
+										</div>
+										<div class="room-players">
+											Players: {room.players.filter(p => p !== null).length}/2
+											{#if room.player1_name}
+												<span class="player-name">• {room.player1_name}</span>
+											{/if}
+											{#if room.player2_name}
+												<span class="player-name">• {room.player2_name}</span>
+											{/if}
+										</div>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 				<button
 					class="connect-btn"
 					onclick={connect}
-					disabled={!selectedDeckId || connected}
+					disabled={!selectedDeckId || connected || (!createNewRoom && !selectedRoomId)}
 				>
-					Connect to Game
+					{createNewRoom ? 'Create Room & Connect' : 'Join Room & Connect'}
 				</button>
-			{/if}
-		</div>
+			</div>
+		{/if}
 	{/if}
 
 	<ul class="messages">
@@ -428,6 +591,199 @@
 	.connect-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+
+	.room-selection {
+		padding: 1.5rem;
+		background: #161b22;
+		border-radius: 8px;
+		border: 1px solid #30363d;
+		margin-bottom: 1rem;
+	}
+
+	.room-selection h2 {
+		margin: 0 0 1rem 0;
+		font-size: 1.25rem;
+		color: #c9d1d9;
+	}
+
+	.room-options {
+		display: flex;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+
+	.room-option {
+		flex: 1;
+		padding: 0.875rem 1rem;
+		background: #0d1117;
+		border: 2px solid #30363d;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		color: #c9d1d9;
+		font-family: inherit;
+		font-size: 0.9rem;
+	}
+
+	.room-option:hover:not(:disabled) {
+		border-color: #58a6ff;
+		background: #161b22;
+	}
+
+	.room-option.selected {
+		border-color: #3fb950;
+		background: rgba(63, 185, 80, 0.1);
+	}
+
+	.room-option-icon {
+		font-size: 1.1rem;
+	}
+
+	.rooms-section {
+		margin-top: 1rem;
+	}
+
+	.rooms-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.75rem;
+	}
+
+	.rooms-header h3 {
+		margin: 0;
+		font-size: 1rem;
+		color: #c9d1d9;
+	}
+
+	.refresh-btn {
+		padding: 0.4rem 0.75rem;
+		font-size: 0.75rem;
+		background: #30363d;
+		border: 1px solid #484f58;
+		border-radius: 6px;
+		color: #c9d1d9;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.refresh-btn:hover:not(:disabled) {
+		background: #484f58;
+	}
+
+	.refresh-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.no-rooms {
+		padding: 1rem;
+		text-align: center;
+		color: #8b949e;
+		font-size: 0.9rem;
+	}
+
+	.room-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+
+	.room-item {
+		padding: 1rem;
+		background: #0d1117;
+		border: 2px solid #30363d;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		text-align: left;
+		width: 100%;
+	}
+
+	.room-item:hover:not(:disabled) {
+		border-color: #58a6ff;
+		background: #161b22;
+	}
+
+	.room-item.selected {
+		border-color: #3fb950;
+		background: rgba(63, 185, 80, 0.1);
+	}
+
+	.room-item.cannot-join {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.room-item:disabled {
+		cursor: not-allowed;
+		opacity: 0.6;
+	}
+
+	.room-info {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.5rem;
+	}
+
+	.room-id {
+		font-weight: 600;
+		color: #c9d1d9;
+		font-size: 0.9rem;
+		font-family: 'JetBrains Mono', 'Fira Code', monospace;
+	}
+
+	.room-status {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.status-badge {
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+	}
+
+	.status-badge.can-join {
+		color: #3fb950;
+		background: rgba(63, 185, 80, 0.15);
+	}
+
+	.status-badge.full {
+		color: #f85149;
+		background: rgba(248, 81, 73, 0.15);
+	}
+
+	.status-badge.started {
+		color: #f85149;
+		background: rgba(248, 81, 73, 0.15);
+	}
+
+	.status-badge.waiting {
+		color: #8b949e;
+		background: rgba(139, 148, 158, 0.15);
+	}
+
+	.room-players {
+		font-size: 0.85rem;
+		color: #8b949e;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.player-name {
+		color: #c9d1d9;
 	}
 
 	.messages {

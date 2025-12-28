@@ -65,6 +65,10 @@ class RoomManager:
         if room.is_started:
             raise ValueError("Game already started")
         
+        # Validate that room can be joined (has exactly 1 player)
+        if not room.can_join:
+            raise ValueError("Room cannot be joined. Room must have exactly 1 player and game must not have started.")
+        
         room.add_player(player_id, connection.name, connection)
         self.player_rooms[player_id] = room_id
         connection.game_id = room_id

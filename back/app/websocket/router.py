@@ -18,18 +18,23 @@ async def game_websocket(
     websocket: WebSocket,
     user: WebSocketUser,
     deck_id: int = Query(..., description="Deck ID to use for the game"),
+    room_id: str = Query(None, description="Optional room ID to join an existing room"),
 ):
     """
     Authenticated WebSocket endpoint for game connections.
     
-    Connect with: ws://host/game/ws?token=<jwt_token>&deck_id=<deck_id>
+    Connect with: ws://host/game/ws?token=<jwt_token>&deck_id=<deck_id>[&room_id=<room_id>]
     
     Player ID is the user's database ID, name is the user's full_name or username.
+    
+    If room_id is provided, the player will automatically join that room after connecting.
+    If room_id is not provided, the player will need to create or join a room via messages.
     
     Validates:
     - Deck exists and belongs to the user
     - Deck is valid for playing (correct size)
     - Player doesn't have another active game
+    - If room_id is provided, room exists and can be joined (has 1 player, game not started)
     """
     from app.settings.lifespan import game_manager as gm
     if gm is None:
@@ -44,6 +49,7 @@ async def game_websocket(
         deck_id,
         gm.connection_manager,
         gm.room_manager,
+        room_id=room_id,
     )
 
 
@@ -54,10 +60,10 @@ async def list_rooms():
     
     Returns rooms that haven't started yet.
     """
-    from app.settings.lifespan import game_manager as gm
-    if gm is None:
+    from app.settings.lifespan import game_manager
+    if game_manager is None:
         return {"rooms": []}
-    return await list_game_rooms(gm.room_manager)
+    return await list_game_rooms(game_manager.room_manager)
 
 
 # ============================================================================

@@ -21,6 +21,7 @@ async def handle_websocket_connection(
     deck_id: int,
     connection_manager: ConnectionManager,
     room_manager: RoomManager,
+    room_id: str | None = None,
 ) -> None:
     """
     Handle WebSocket connection with validation.
@@ -29,6 +30,9 @@ async def handle_websocket_connection(
     - Deck exists and belongs to the user
     - Deck is valid for playing (correct size)
     - Player doesn't have another active game
+    - If room_id is provided, room exists and can be joined
+    
+    If room_id is provided, automatically joins the room after connection.
     """
     player_id = str(user.id)
     name = user.full_name or user.username
@@ -84,6 +88,20 @@ async def handle_websocket_connection(
         
         serialized_deck = serialize_deck_for_game(enriched_deck.cards)
         
+        # Validate room_id if provided
+        if room_id:
+            room = room_manager.get_room(room_id)
+            if not room:
+                raise WebSocketException(
+                    code=status.WS_1008_POLICY_VIOLATION,
+                    reason="Room not found",
+                )
+            if not room.can_join:
+                raise WebSocketException(
+                    code=status.WS_1008_POLICY_VIOLATION,
+                    reason="Room cannot be joined. Room must have exactly 1 player and game must not have started.",
+                )
+        
     finally:
         db.close()
     
@@ -96,7 +114,7 @@ async def handle_websocket_connection(
             code=status.WS_1011_INTERNAL_ERROR,
             reason="Game manager not initialized",
         )
-    await game_websocket_handler(websocket, player_id, name, gm, serialized_deck)
+    await game_websocket_handler(websocket, player_id, name, gm, serialized_deck, room_id=room_id)
 
 
 async def list_game_rooms(room_manager: RoomManager) -> dict:

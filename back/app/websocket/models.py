@@ -63,6 +63,22 @@ class GameRoom(GameBaseModel):
     
     @computed_field
     @property
+    def can_join(self) -> bool:
+        """
+        Check if a room can be joined.
+        
+        A room can be joined if:
+        - Game has never started (state is None or status is WAITING)
+        - Room has exactly 1 player (not full, but has at least one player)
+        """
+        if self.is_started:
+            return False
+        # Count active players
+        player_count = sum(1 for p in [self.player1_id, self.player2_id] if p is not None)
+        return player_count == 1
+    
+    @computed_field
+    @property
     def players(self) -> list[Optional[dict]]:
         """List of players for serialization."""
         return [

@@ -110,8 +110,8 @@ import type {
   GetTypeTypesValueGetData,
   GetTypeTypesValueGetErrors,
   GetTypeTypesValueGetResponses,
-  ListGameRoomsGameRoomsGetData,
-  ListGameRoomsGameRoomsGetResponses,
+  ListRoomsGameRoomsGetData,
+  ListRoomsGameRoomsGetResponses,
   LoginForAccessTokenAuthTokenPostData,
   LoginForAccessTokenAuthTokenPostErrors,
   LoginForAccessTokenAuthTokenPostResponses,
@@ -128,59 +128,59 @@ import type {
   UpdateDeckDecksDeckIdPutData,
   UpdateDeckDecksDeckIdPutErrors,
   UpdateDeckDecksDeckIdPutResponses,
-  WsActionResultTypeWebsocketMessagesActionResultGetData,
-  WsActionResultTypeWebsocketMessagesActionResultGetResponses,
-  WsActionTypeWebsocketMessagesActionPostData,
-  WsActionTypeWebsocketMessagesActionPostErrors,
-  WsActionTypeWebsocketMessagesActionPostResponses,
-  WsConnectedTypeWebsocketMessagesConnectedGetData,
-  WsConnectedTypeWebsocketMessagesConnectedGetResponses,
-  WsCreateGameTypeWebsocketMessagesCreateGamePostData,
-  WsCreateGameTypeWebsocketMessagesCreateGamePostErrors,
-  WsCreateGameTypeWebsocketMessagesCreateGamePostResponses,
-  WsErrorTypeWebsocketMessagesErrorGetData,
-  WsErrorTypeWebsocketMessagesErrorGetResponses,
-  WsGameCreatedTypeWebsocketMessagesGameCreatedGetData,
-  WsGameCreatedTypeWebsocketMessagesGameCreatedGetResponses,
-  WsGameJoinedTypeWebsocketMessagesGameJoinedGetData,
-  WsGameJoinedTypeWebsocketMessagesGameJoinedGetResponses,
-  WsGameLeftTypeWebsocketMessagesGameLeftGetData,
-  WsGameLeftTypeWebsocketMessagesGameLeftGetResponses,
-  WsGameStartedTypeWebsocketMessagesGameStartedGetData,
-  WsGameStartedTypeWebsocketMessagesGameStartedGetResponses,
-  WsGameStateTypeWebsocketMessagesGameStateGetData,
-  WsGameStateTypeWebsocketMessagesGameStateGetResponses,
-  WsGetStateTypeWebsocketMessagesGetStatePostData,
-  WsGetStateTypeWebsocketMessagesGetStatePostErrors,
-  WsGetStateTypeWebsocketMessagesGetStatePostResponses,
-  WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostData,
-  WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostErrors,
-  WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostResponses,
-  WsJoinGameTypeWebsocketMessagesJoinGamePostData,
-  WsJoinGameTypeWebsocketMessagesJoinGamePostErrors,
-  WsJoinGameTypeWebsocketMessagesJoinGamePostResponses,
-  WsLeaveGameTypeWebsocketMessagesLeaveGamePostData,
-  WsLeaveGameTypeWebsocketMessagesLeaveGamePostErrors,
-  WsLeaveGameTypeWebsocketMessagesLeaveGamePostResponses,
-  WsListRoomsTypeWebsocketMessagesListRoomsPostData,
-  WsListRoomsTypeWebsocketMessagesListRoomsPostErrors,
-  WsListRoomsTypeWebsocketMessagesListRoomsPostResponses,
-  WsPingTypeWebsocketMessagesPingPostData,
-  WsPingTypeWebsocketMessagesPingPostErrors,
-  WsPingTypeWebsocketMessagesPingPostResponses,
-  WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetData,
-  WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetResponses,
-  WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetData,
-  WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetResponses,
-  WsPongTypeWebsocketMessagesPongGetData,
-  WsPongTypeWebsocketMessagesPongGetResponses,
-  WsRoomsListTypeWebsocketMessagesRoomsListGetData,
-  WsRoomsListTypeWebsocketMessagesRoomsListGetResponses,
-  WsStartGameTypeWebsocketMessagesStartGamePostData,
-  WsStartGameTypeWebsocketMessagesStartGamePostErrors,
-  WsStartGameTypeWebsocketMessagesStartGamePostResponses,
-  WsValidActionsTypeWebsocketMessagesValidActionsGetData,
-  WsValidActionsTypeWebsocketMessagesValidActionsGetResponses,
+  WsActionResultTypeGameWebsocketMessagesActionResultGetData,
+  WsActionResultTypeGameWebsocketMessagesActionResultGetResponses,
+  WsActionTypeGameWebsocketMessagesActionPostData,
+  WsActionTypeGameWebsocketMessagesActionPostErrors,
+  WsActionTypeGameWebsocketMessagesActionPostResponses,
+  WsConnectedTypeGameWebsocketMessagesConnectedGetData,
+  WsConnectedTypeGameWebsocketMessagesConnectedGetResponses,
+  WsCreateGameTypeGameWebsocketMessagesCreateGamePostData,
+  WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors,
+  WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses,
+  WsErrorTypeGameWebsocketMessagesErrorGetData,
+  WsErrorTypeGameWebsocketMessagesErrorGetResponses,
+  WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetData,
+  WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetResponses,
+  WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetData,
+  WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetResponses,
+  WsGameLeftTypeGameWebsocketMessagesGameLeftGetData,
+  WsGameLeftTypeGameWebsocketMessagesGameLeftGetResponses,
+  WsGameStartedTypeGameWebsocketMessagesGameStartedGetData,
+  WsGameStartedTypeGameWebsocketMessagesGameStartedGetResponses,
+  WsGameStateTypeGameWebsocketMessagesGameStateGetData,
+  WsGameStateTypeGameWebsocketMessagesGameStateGetResponses,
+  WsGetStateTypeGameWebsocketMessagesGetStatePostData,
+  WsGetStateTypeGameWebsocketMessagesGetStatePostErrors,
+  WsGetStateTypeGameWebsocketMessagesGetStatePostResponses,
+  WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostData,
+  WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostErrors,
+  WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostResponses,
+  WsJoinGameTypeGameWebsocketMessagesJoinGamePostData,
+  WsJoinGameTypeGameWebsocketMessagesJoinGamePostErrors,
+  WsJoinGameTypeGameWebsocketMessagesJoinGamePostResponses,
+  WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostData,
+  WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostErrors,
+  WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostResponses,
+  WsListRoomsTypeGameWebsocketMessagesListRoomsPostData,
+  WsListRoomsTypeGameWebsocketMessagesListRoomsPostErrors,
+  WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses,
+  WsPingTypeGameWebsocketMessagesPingPostData,
+  WsPingTypeGameWebsocketMessagesPingPostErrors,
+  WsPingTypeGameWebsocketMessagesPingPostResponses,
+  WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetData,
+  WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetResponses,
+  WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetData,
+  WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetResponses,
+  WsPongTypeGameWebsocketMessagesPongGetData,
+  WsPongTypeGameWebsocketMessagesPongGetResponses,
+  WsRoomsListTypeGameWebsocketMessagesRoomsListGetData,
+  WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponses,
+  WsStartGameTypeGameWebsocketMessagesStartGamePostData,
+  WsStartGameTypeGameWebsocketMessagesStartGamePostErrors,
+  WsStartGameTypeGameWebsocketMessagesStartGamePostResponses,
+  WsValidActionsTypeGameWebsocketMessagesValidActionsGetData,
+  WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponses,
 } from "./types.gen";
 
 export type Options<
@@ -1070,37 +1070,40 @@ export const addCardToDeckDecksDeckIdCardsCardIdPost = <
   });
 
 /**
- * Root
+ * List Rooms
  *
- * Health check endpoint.
+ * List all available game rooms (HTTP endpoint for convenience).
+ *
+ * Returns rooms that haven't started yet.
  */
-export const rootGet = <ThrowOnError extends boolean = false>(
-  options?: Options<RootGetData, ThrowOnError>,
+export const listRoomsGameRoomsGet = <ThrowOnError extends boolean = false>(
+  options?: Options<ListRoomsGameRoomsGetData, ThrowOnError>,
 ) =>
-  (options?.client ?? client).get<RootGetResponses, unknown, ThrowOnError>({
-    url: "/",
-    ...options,
-  });
+  (options?.client ?? client).get<
+    ListRoomsGameRoomsGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/game/rooms", ...options });
 
 /**
  *  Ws Create Game Type
  *
  * WebSocket message type: create_game (dummy endpoint for type generation).
  */
-export const wsCreateGameTypeWebsocketMessagesCreateGamePost = <
+export const wsCreateGameTypeGameWebsocketMessagesCreateGamePost = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
-    WsCreateGameTypeWebsocketMessagesCreateGamePostData,
+    WsCreateGameTypeGameWebsocketMessagesCreateGamePostData,
     ThrowOnError
   >,
 ) =>
   (options.client ?? client).post<
-    WsCreateGameTypeWebsocketMessagesCreateGamePostResponses,
-    WsCreateGameTypeWebsocketMessagesCreateGamePostErrors,
+    WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses,
+    WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/create-game",
+    url: "/game/websocket-messages/create-game",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1113,20 +1116,20 @@ export const wsCreateGameTypeWebsocketMessagesCreateGamePost = <
  *
  * WebSocket message type: join_game (dummy endpoint for type generation).
  */
-export const wsJoinGameTypeWebsocketMessagesJoinGamePost = <
+export const wsJoinGameTypeGameWebsocketMessagesJoinGamePost = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
-    WsJoinGameTypeWebsocketMessagesJoinGamePostData,
+    WsJoinGameTypeGameWebsocketMessagesJoinGamePostData,
     ThrowOnError
   >,
 ) =>
   (options.client ?? client).post<
-    WsJoinGameTypeWebsocketMessagesJoinGamePostResponses,
-    WsJoinGameTypeWebsocketMessagesJoinGamePostErrors,
+    WsJoinGameTypeGameWebsocketMessagesJoinGamePostResponses,
+    WsJoinGameTypeGameWebsocketMessagesJoinGamePostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/join-game",
+    url: "/game/websocket-messages/join-game",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1139,20 +1142,20 @@ export const wsJoinGameTypeWebsocketMessagesJoinGamePost = <
  *
  * WebSocket message type: list_rooms (dummy endpoint for type generation).
  */
-export const wsListRoomsTypeWebsocketMessagesListRoomsPost = <
+export const wsListRoomsTypeGameWebsocketMessagesListRoomsPost = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
-    WsListRoomsTypeWebsocketMessagesListRoomsPostData,
+    WsListRoomsTypeGameWebsocketMessagesListRoomsPostData,
     ThrowOnError
   >,
 ) =>
   (options.client ?? client).post<
-    WsListRoomsTypeWebsocketMessagesListRoomsPostResponses,
-    WsListRoomsTypeWebsocketMessagesListRoomsPostErrors,
+    WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses,
+    WsListRoomsTypeGameWebsocketMessagesListRoomsPostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/list-rooms",
+    url: "/game/websocket-messages/list-rooms",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1165,20 +1168,20 @@ export const wsListRoomsTypeWebsocketMessagesListRoomsPost = <
  *
  * WebSocket message type: start_game (dummy endpoint for type generation).
  */
-export const wsStartGameTypeWebsocketMessagesStartGamePost = <
+export const wsStartGameTypeGameWebsocketMessagesStartGamePost = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
-    WsStartGameTypeWebsocketMessagesStartGamePostData,
+    WsStartGameTypeGameWebsocketMessagesStartGamePostData,
     ThrowOnError
   >,
 ) =>
   (options.client ?? client).post<
-    WsStartGameTypeWebsocketMessagesStartGamePostResponses,
-    WsStartGameTypeWebsocketMessagesStartGamePostErrors,
+    WsStartGameTypeGameWebsocketMessagesStartGamePostResponses,
+    WsStartGameTypeGameWebsocketMessagesStartGamePostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/start-game",
+    url: "/game/websocket-messages/start-game",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1191,17 +1194,20 @@ export const wsStartGameTypeWebsocketMessagesStartGamePost = <
  *
  * WebSocket message type: action (dummy endpoint for type generation).
  */
-export const wsActionTypeWebsocketMessagesActionPost = <
+export const wsActionTypeGameWebsocketMessagesActionPost = <
   ThrowOnError extends boolean = false,
 >(
-  options: Options<WsActionTypeWebsocketMessagesActionPostData, ThrowOnError>,
+  options: Options<
+    WsActionTypeGameWebsocketMessagesActionPostData,
+    ThrowOnError
+  >,
 ) =>
   (options.client ?? client).post<
-    WsActionTypeWebsocketMessagesActionPostResponses,
-    WsActionTypeWebsocketMessagesActionPostErrors,
+    WsActionTypeGameWebsocketMessagesActionPostResponses,
+    WsActionTypeGameWebsocketMessagesActionPostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/action",
+    url: "/game/websocket-messages/action",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1214,20 +1220,20 @@ export const wsActionTypeWebsocketMessagesActionPost = <
  *
  * WebSocket message type: get_state (dummy endpoint for type generation).
  */
-export const wsGetStateTypeWebsocketMessagesGetStatePost = <
+export const wsGetStateTypeGameWebsocketMessagesGetStatePost = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
-    WsGetStateTypeWebsocketMessagesGetStatePostData,
+    WsGetStateTypeGameWebsocketMessagesGetStatePostData,
     ThrowOnError
   >,
 ) =>
   (options.client ?? client).post<
-    WsGetStateTypeWebsocketMessagesGetStatePostResponses,
-    WsGetStateTypeWebsocketMessagesGetStatePostErrors,
+    WsGetStateTypeGameWebsocketMessagesGetStatePostResponses,
+    WsGetStateTypeGameWebsocketMessagesGetStatePostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/get-state",
+    url: "/game/websocket-messages/get-state",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1240,20 +1246,20 @@ export const wsGetStateTypeWebsocketMessagesGetStatePost = <
  *
  * WebSocket message type: get_valid_actions (dummy endpoint for type generation).
  */
-export const wsGetValidActionsTypeWebsocketMessagesGetValidActionsPost = <
+export const wsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPost = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
-    WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostData,
+    WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostData,
     ThrowOnError
   >,
 ) =>
   (options.client ?? client).post<
-    WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostResponses,
-    WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostErrors,
+    WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostResponses,
+    WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/get-valid-actions",
+    url: "/game/websocket-messages/get-valid-actions",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1266,20 +1272,20 @@ export const wsGetValidActionsTypeWebsocketMessagesGetValidActionsPost = <
  *
  * WebSocket message type: leave_game (dummy endpoint for type generation).
  */
-export const wsLeaveGameTypeWebsocketMessagesLeaveGamePost = <
+export const wsLeaveGameTypeGameWebsocketMessagesLeaveGamePost = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
-    WsLeaveGameTypeWebsocketMessagesLeaveGamePostData,
+    WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostData,
     ThrowOnError
   >,
 ) =>
   (options.client ?? client).post<
-    WsLeaveGameTypeWebsocketMessagesLeaveGamePostResponses,
-    WsLeaveGameTypeWebsocketMessagesLeaveGamePostErrors,
+    WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostResponses,
+    WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/leave-game",
+    url: "/game/websocket-messages/leave-game",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1292,17 +1298,17 @@ export const wsLeaveGameTypeWebsocketMessagesLeaveGamePost = <
  *
  * WebSocket message type: ping (dummy endpoint for type generation).
  */
-export const wsPingTypeWebsocketMessagesPingPost = <
+export const wsPingTypeGameWebsocketMessagesPingPost = <
   ThrowOnError extends boolean = false,
 >(
-  options: Options<WsPingTypeWebsocketMessagesPingPostData, ThrowOnError>,
+  options: Options<WsPingTypeGameWebsocketMessagesPingPostData, ThrowOnError>,
 ) =>
   (options.client ?? client).post<
-    WsPingTypeWebsocketMessagesPingPostResponses,
-    WsPingTypeWebsocketMessagesPingPostErrors,
+    WsPingTypeGameWebsocketMessagesPingPostResponses,
+    WsPingTypeGameWebsocketMessagesPingPostErrors,
     ThrowOnError
   >({
-    url: "/websocket-messages/ping",
+    url: "/game/websocket-messages/ping",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1315,254 +1321,251 @@ export const wsPingTypeWebsocketMessagesPingPost = <
  *
  * WebSocket message type: connected (dummy endpoint for type generation).
  */
-export const wsConnectedTypeWebsocketMessagesConnectedGet = <
+export const wsConnectedTypeGameWebsocketMessagesConnectedGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsConnectedTypeWebsocketMessagesConnectedGetData,
+    WsConnectedTypeGameWebsocketMessagesConnectedGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsConnectedTypeWebsocketMessagesConnectedGetResponses,
+    WsConnectedTypeGameWebsocketMessagesConnectedGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/connected", ...options });
+  >({ url: "/game/websocket-messages/connected", ...options });
 
 /**
  *  Ws Game Created Type
  *
  * WebSocket message type: game_created (dummy endpoint for type generation).
  */
-export const wsGameCreatedTypeWebsocketMessagesGameCreatedGet = <
+export const wsGameCreatedTypeGameWebsocketMessagesGameCreatedGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsGameCreatedTypeWebsocketMessagesGameCreatedGetData,
+    WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsGameCreatedTypeWebsocketMessagesGameCreatedGetResponses,
+    WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/game-created", ...options });
+  >({ url: "/game/websocket-messages/game-created", ...options });
 
 /**
  *  Ws Game Joined Type
  *
  * WebSocket message type: game_joined (dummy endpoint for type generation).
  */
-export const wsGameJoinedTypeWebsocketMessagesGameJoinedGet = <
+export const wsGameJoinedTypeGameWebsocketMessagesGameJoinedGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsGameJoinedTypeWebsocketMessagesGameJoinedGetData,
+    WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsGameJoinedTypeWebsocketMessagesGameJoinedGetResponses,
+    WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/game-joined", ...options });
+  >({ url: "/game/websocket-messages/game-joined", ...options });
 
 /**
  *  Ws Player Joined Type
  *
  * WebSocket message type: player_joined (dummy endpoint for type generation).
  */
-export const wsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGet = <
+export const wsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetData,
+    WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetResponses,
+    WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/player-joined", ...options });
+  >({ url: "/game/websocket-messages/player-joined", ...options });
 
 /**
  *  Ws Player Left Type
  *
  * WebSocket message type: player_left (dummy endpoint for type generation).
  */
-export const wsPlayerLeftTypeWebsocketMessagesPlayerLeftGet = <
+export const wsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetData,
+    WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetResponses,
+    WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/player-left", ...options });
+  >({ url: "/game/websocket-messages/player-left", ...options });
 
 /**
  *  Ws Game Started Type
  *
  * WebSocket message type: game_started (dummy endpoint for type generation).
  */
-export const wsGameStartedTypeWebsocketMessagesGameStartedGet = <
+export const wsGameStartedTypeGameWebsocketMessagesGameStartedGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsGameStartedTypeWebsocketMessagesGameStartedGetData,
+    WsGameStartedTypeGameWebsocketMessagesGameStartedGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsGameStartedTypeWebsocketMessagesGameStartedGetResponses,
+    WsGameStartedTypeGameWebsocketMessagesGameStartedGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/game-started", ...options });
+  >({ url: "/game/websocket-messages/game-started", ...options });
 
 /**
  *  Ws Game State Type
  *
  * WebSocket message type: game_state (dummy endpoint for type generation).
  */
-export const wsGameStateTypeWebsocketMessagesGameStateGet = <
+export const wsGameStateTypeGameWebsocketMessagesGameStateGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsGameStateTypeWebsocketMessagesGameStateGetData,
+    WsGameStateTypeGameWebsocketMessagesGameStateGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsGameStateTypeWebsocketMessagesGameStateGetResponses,
+    WsGameStateTypeGameWebsocketMessagesGameStateGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/game-state", ...options });
+  >({ url: "/game/websocket-messages/game-state", ...options });
 
 /**
  *  Ws Action Result Type
  *
  * WebSocket message type: action_result (dummy endpoint for type generation).
  */
-export const wsActionResultTypeWebsocketMessagesActionResultGet = <
+export const wsActionResultTypeGameWebsocketMessagesActionResultGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsActionResultTypeWebsocketMessagesActionResultGetData,
+    WsActionResultTypeGameWebsocketMessagesActionResultGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsActionResultTypeWebsocketMessagesActionResultGetResponses,
+    WsActionResultTypeGameWebsocketMessagesActionResultGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/action-result", ...options });
+  >({ url: "/game/websocket-messages/action-result", ...options });
 
 /**
  *  Ws Valid Actions Type
  *
  * WebSocket message type: valid_actions (dummy endpoint for type generation).
  */
-export const wsValidActionsTypeWebsocketMessagesValidActionsGet = <
+export const wsValidActionsTypeGameWebsocketMessagesValidActionsGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsValidActionsTypeWebsocketMessagesValidActionsGetData,
+    WsValidActionsTypeGameWebsocketMessagesValidActionsGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsValidActionsTypeWebsocketMessagesValidActionsGetResponses,
+    WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/valid-actions", ...options });
+  >({ url: "/game/websocket-messages/valid-actions", ...options });
 
 /**
  *  Ws Rooms List Type
  *
  * WebSocket message type: rooms_list (dummy endpoint for type generation).
  */
-export const wsRoomsListTypeWebsocketMessagesRoomsListGet = <
+export const wsRoomsListTypeGameWebsocketMessagesRoomsListGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsRoomsListTypeWebsocketMessagesRoomsListGetData,
+    WsRoomsListTypeGameWebsocketMessagesRoomsListGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsRoomsListTypeWebsocketMessagesRoomsListGetResponses,
+    WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/rooms-list", ...options });
+  >({ url: "/game/websocket-messages/rooms-list", ...options });
 
 /**
  *  Ws Game Left Type
  *
  * WebSocket message type: game_left (dummy endpoint for type generation).
  */
-export const wsGameLeftTypeWebsocketMessagesGameLeftGet = <
+export const wsGameLeftTypeGameWebsocketMessagesGameLeftGet = <
   ThrowOnError extends boolean = false,
 >(
   options?: Options<
-    WsGameLeftTypeWebsocketMessagesGameLeftGetData,
+    WsGameLeftTypeGameWebsocketMessagesGameLeftGetData,
     ThrowOnError
   >,
 ) =>
   (options?.client ?? client).get<
-    WsGameLeftTypeWebsocketMessagesGameLeftGetResponses,
+    WsGameLeftTypeGameWebsocketMessagesGameLeftGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/game-left", ...options });
+  >({ url: "/game/websocket-messages/game-left", ...options });
 
 /**
  *  Ws Error Type
  *
  * WebSocket message type: error (dummy endpoint for type generation).
  */
-export const wsErrorTypeWebsocketMessagesErrorGet = <
+export const wsErrorTypeGameWebsocketMessagesErrorGet = <
   ThrowOnError extends boolean = false,
 >(
-  options?: Options<WsErrorTypeWebsocketMessagesErrorGetData, ThrowOnError>,
+  options?: Options<WsErrorTypeGameWebsocketMessagesErrorGetData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    WsErrorTypeWebsocketMessagesErrorGetResponses,
+    WsErrorTypeGameWebsocketMessagesErrorGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/error", ...options });
+  >({ url: "/game/websocket-messages/error", ...options });
 
 /**
  *  Ws Pong Type
  *
  * WebSocket message type: pong (dummy endpoint for type generation).
  */
-export const wsPongTypeWebsocketMessagesPongGet = <
+export const wsPongTypeGameWebsocketMessagesPongGet = <
   ThrowOnError extends boolean = false,
 >(
-  options?: Options<WsPongTypeWebsocketMessagesPongGetData, ThrowOnError>,
+  options?: Options<WsPongTypeGameWebsocketMessagesPongGetData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    WsPongTypeWebsocketMessagesPongGetResponses,
+    WsPongTypeGameWebsocketMessagesPongGetResponses,
     unknown,
     ThrowOnError
-  >({ url: "/websocket-messages/pong", ...options });
+  >({ url: "/game/websocket-messages/pong", ...options });
 
 /**
- * List Game Rooms
+ * Root
  *
- * List all available game rooms (HTTP endpoint for convenience).
- *
- * Returns rooms that haven't started yet.
+ * Health check endpoint.
  */
-export const listGameRoomsGameRoomsGet = <ThrowOnError extends boolean = false>(
-  options?: Options<ListGameRoomsGameRoomsGetData, ThrowOnError>,
+export const rootGet = <ThrowOnError extends boolean = false>(
+  options?: Options<RootGetData, ThrowOnError>,
 ) =>
-  (options?.client ?? client).get<
-    ListGameRoomsGameRoomsGetResponses,
-    unknown,
-    ThrowOnError
-  >({ url: "/game/rooms", ...options });
+  (options?.client ?? client).get<RootGetResponses, unknown, ThrowOnError>({
+    url: "/",
+    ...options,
+  });

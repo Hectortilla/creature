@@ -2573,6 +2573,487 @@ export type AddCardToDeckDecksDeckIdCardsCardIdPostResponses = {
 export type AddCardToDeckDecksDeckIdCardsCardIdPostResponse =
   AddCardToDeckDecksDeckIdCardsCardIdPostResponses[keyof AddCardToDeckDecksDeckIdCardsCardIdPostResponses];
 
+export type ListRoomsGameRoomsGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/rooms";
+};
+
+export type ListRoomsGameRoomsGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostData = {
+  body: CreateGameMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/create-game";
+};
+
+export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostError =
+  WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors[keyof WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors];
+
+export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses = {
+  /**
+   * Successful Response
+   */
+  200: CreateGameMessage;
+};
+
+export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponse =
+  WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses[keyof WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses];
+
+export type WsJoinGameTypeGameWebsocketMessagesJoinGamePostData = {
+  body: JoinGameMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/join-game";
+};
+
+export type WsJoinGameTypeGameWebsocketMessagesJoinGamePostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsJoinGameTypeGameWebsocketMessagesJoinGamePostError =
+  WsJoinGameTypeGameWebsocketMessagesJoinGamePostErrors[keyof WsJoinGameTypeGameWebsocketMessagesJoinGamePostErrors];
+
+export type WsJoinGameTypeGameWebsocketMessagesJoinGamePostResponses = {
+  /**
+   * Successful Response
+   */
+  200: JoinGameMessage;
+};
+
+export type WsJoinGameTypeGameWebsocketMessagesJoinGamePostResponse =
+  WsJoinGameTypeGameWebsocketMessagesJoinGamePostResponses[keyof WsJoinGameTypeGameWebsocketMessagesJoinGamePostResponses];
+
+export type WsListRoomsTypeGameWebsocketMessagesListRoomsPostData = {
+  body: ListRoomsMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/list-rooms";
+};
+
+export type WsListRoomsTypeGameWebsocketMessagesListRoomsPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsListRoomsTypeGameWebsocketMessagesListRoomsPostError =
+  WsListRoomsTypeGameWebsocketMessagesListRoomsPostErrors[keyof WsListRoomsTypeGameWebsocketMessagesListRoomsPostErrors];
+
+export type WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses = {
+  /**
+   * Successful Response
+   */
+  200: ListRoomsMessage;
+};
+
+export type WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponse =
+  WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses[keyof WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses];
+
+export type WsStartGameTypeGameWebsocketMessagesStartGamePostData = {
+  body: StartGameMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/start-game";
+};
+
+export type WsStartGameTypeGameWebsocketMessagesStartGamePostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsStartGameTypeGameWebsocketMessagesStartGamePostError =
+  WsStartGameTypeGameWebsocketMessagesStartGamePostErrors[keyof WsStartGameTypeGameWebsocketMessagesStartGamePostErrors];
+
+export type WsStartGameTypeGameWebsocketMessagesStartGamePostResponses = {
+  /**
+   * Successful Response
+   */
+  200: StartGameMessage;
+};
+
+export type WsStartGameTypeGameWebsocketMessagesStartGamePostResponse =
+  WsStartGameTypeGameWebsocketMessagesStartGamePostResponses[keyof WsStartGameTypeGameWebsocketMessagesStartGamePostResponses];
+
+export type WsActionTypeGameWebsocketMessagesActionPostData = {
+  body: ActionMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/action";
+};
+
+export type WsActionTypeGameWebsocketMessagesActionPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsActionTypeGameWebsocketMessagesActionPostError =
+  WsActionTypeGameWebsocketMessagesActionPostErrors[keyof WsActionTypeGameWebsocketMessagesActionPostErrors];
+
+export type WsActionTypeGameWebsocketMessagesActionPostResponses = {
+  /**
+   * Successful Response
+   */
+  200: ActionMessage;
+};
+
+export type WsActionTypeGameWebsocketMessagesActionPostResponse =
+  WsActionTypeGameWebsocketMessagesActionPostResponses[keyof WsActionTypeGameWebsocketMessagesActionPostResponses];
+
+export type WsGetStateTypeGameWebsocketMessagesGetStatePostData = {
+  body: GetStateMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/get-state";
+};
+
+export type WsGetStateTypeGameWebsocketMessagesGetStatePostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsGetStateTypeGameWebsocketMessagesGetStatePostError =
+  WsGetStateTypeGameWebsocketMessagesGetStatePostErrors[keyof WsGetStateTypeGameWebsocketMessagesGetStatePostErrors];
+
+export type WsGetStateTypeGameWebsocketMessagesGetStatePostResponses = {
+  /**
+   * Successful Response
+   */
+  200: GetStateMessage;
+};
+
+export type WsGetStateTypeGameWebsocketMessagesGetStatePostResponse =
+  WsGetStateTypeGameWebsocketMessagesGetStatePostResponses[keyof WsGetStateTypeGameWebsocketMessagesGetStatePostResponses];
+
+export type WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostData =
+  {
+    body: GetValidActionsMessage;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/get-valid-actions";
+  };
+
+export type WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostErrors =
+  {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+  };
+
+export type WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostError =
+  WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostErrors[keyof WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostErrors];
+
+export type WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: GetValidActionsMessage;
+  };
+
+export type WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostResponse =
+  WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostResponses[keyof WsGetValidActionsTypeGameWebsocketMessagesGetValidActionsPostResponses];
+
+export type WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostData = {
+  body: LeaveGameMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/leave-game";
+};
+
+export type WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostError =
+  WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostErrors[keyof WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostErrors];
+
+export type WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostResponses = {
+  /**
+   * Successful Response
+   */
+  200: LeaveGameMessage;
+};
+
+export type WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostResponse =
+  WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostResponses[keyof WsLeaveGameTypeGameWebsocketMessagesLeaveGamePostResponses];
+
+export type WsPingTypeGameWebsocketMessagesPingPostData = {
+  body: PingMessage;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/ping";
+};
+
+export type WsPingTypeGameWebsocketMessagesPingPostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type WsPingTypeGameWebsocketMessagesPingPostError =
+  WsPingTypeGameWebsocketMessagesPingPostErrors[keyof WsPingTypeGameWebsocketMessagesPingPostErrors];
+
+export type WsPingTypeGameWebsocketMessagesPingPostResponses = {
+  /**
+   * Successful Response
+   */
+  200: PingMessage;
+};
+
+export type WsPingTypeGameWebsocketMessagesPingPostResponse =
+  WsPingTypeGameWebsocketMessagesPingPostResponses[keyof WsPingTypeGameWebsocketMessagesPingPostResponses];
+
+export type WsConnectedTypeGameWebsocketMessagesConnectedGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/connected";
+};
+
+export type WsConnectedTypeGameWebsocketMessagesConnectedGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: ConnectedMessage;
+};
+
+export type WsConnectedTypeGameWebsocketMessagesConnectedGetResponse =
+  WsConnectedTypeGameWebsocketMessagesConnectedGetResponses[keyof WsConnectedTypeGameWebsocketMessagesConnectedGetResponses];
+
+export type WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/game-created";
+};
+
+export type WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: GameCreatedMessage;
+};
+
+export type WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetResponse =
+  WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetResponses[keyof WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetResponses];
+
+export type WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/game-joined";
+};
+
+export type WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: GameJoinedMessage;
+};
+
+export type WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetResponse =
+  WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetResponses[keyof WsGameJoinedTypeGameWebsocketMessagesGameJoinedGetResponses];
+
+export type WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/player-joined";
+};
+
+export type WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: PlayerJoinedMessage;
+};
+
+export type WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetResponse =
+  WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetResponses[keyof WsPlayerJoinedTypeGameWebsocketMessagesPlayerJoinedGetResponses];
+
+export type WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/player-left";
+};
+
+export type WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: PlayerLeftMessage;
+};
+
+export type WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetResponse =
+  WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetResponses[keyof WsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGetResponses];
+
+export type WsGameStartedTypeGameWebsocketMessagesGameStartedGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/game-started";
+};
+
+export type WsGameStartedTypeGameWebsocketMessagesGameStartedGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: GameStartedMessage;
+};
+
+export type WsGameStartedTypeGameWebsocketMessagesGameStartedGetResponse =
+  WsGameStartedTypeGameWebsocketMessagesGameStartedGetResponses[keyof WsGameStartedTypeGameWebsocketMessagesGameStartedGetResponses];
+
+export type WsGameStateTypeGameWebsocketMessagesGameStateGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/game-state";
+};
+
+export type WsGameStateTypeGameWebsocketMessagesGameStateGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: GameStateMessage;
+};
+
+export type WsGameStateTypeGameWebsocketMessagesGameStateGetResponse =
+  WsGameStateTypeGameWebsocketMessagesGameStateGetResponses[keyof WsGameStateTypeGameWebsocketMessagesGameStateGetResponses];
+
+export type WsActionResultTypeGameWebsocketMessagesActionResultGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/action-result";
+};
+
+export type WsActionResultTypeGameWebsocketMessagesActionResultGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: ActionResultMessage;
+};
+
+export type WsActionResultTypeGameWebsocketMessagesActionResultGetResponse =
+  WsActionResultTypeGameWebsocketMessagesActionResultGetResponses[keyof WsActionResultTypeGameWebsocketMessagesActionResultGetResponses];
+
+export type WsValidActionsTypeGameWebsocketMessagesValidActionsGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/valid-actions";
+};
+
+export type WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: ValidActionsMessage;
+};
+
+export type WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponse =
+  WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponses[keyof WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponses];
+
+export type WsRoomsListTypeGameWebsocketMessagesRoomsListGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/rooms-list";
+};
+
+export type WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: RoomsListMessage;
+};
+
+export type WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponse =
+  WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponses[keyof WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponses];
+
+export type WsGameLeftTypeGameWebsocketMessagesGameLeftGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/game-left";
+};
+
+export type WsGameLeftTypeGameWebsocketMessagesGameLeftGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: GameLeftMessage;
+};
+
+export type WsGameLeftTypeGameWebsocketMessagesGameLeftGetResponse =
+  WsGameLeftTypeGameWebsocketMessagesGameLeftGetResponses[keyof WsGameLeftTypeGameWebsocketMessagesGameLeftGetResponses];
+
+export type WsErrorTypeGameWebsocketMessagesErrorGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/error";
+};
+
+export type WsErrorTypeGameWebsocketMessagesErrorGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: ErrorMessage;
+};
+
+export type WsErrorTypeGameWebsocketMessagesErrorGetResponse =
+  WsErrorTypeGameWebsocketMessagesErrorGetResponses[keyof WsErrorTypeGameWebsocketMessagesErrorGetResponses];
+
+export type WsPongTypeGameWebsocketMessagesPongGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/pong";
+};
+
+export type WsPongTypeGameWebsocketMessagesPongGetResponses = {
+  /**
+   * Successful Response
+   */
+  200: PongMessage;
+};
+
+export type WsPongTypeGameWebsocketMessagesPongGetResponse =
+  WsPongTypeGameWebsocketMessagesPongGetResponses[keyof WsPongTypeGameWebsocketMessagesPongGetResponses];
+
 export type RootGetData = {
   body?: never;
   path?: never;
@@ -2581,485 +3062,6 @@ export type RootGetData = {
 };
 
 export type RootGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: unknown;
-};
-
-export type WsCreateGameTypeWebsocketMessagesCreateGamePostData = {
-  body: CreateGameMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/create-game";
-};
-
-export type WsCreateGameTypeWebsocketMessagesCreateGamePostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsCreateGameTypeWebsocketMessagesCreateGamePostError =
-  WsCreateGameTypeWebsocketMessagesCreateGamePostErrors[keyof WsCreateGameTypeWebsocketMessagesCreateGamePostErrors];
-
-export type WsCreateGameTypeWebsocketMessagesCreateGamePostResponses = {
-  /**
-   * Successful Response
-   */
-  200: CreateGameMessage;
-};
-
-export type WsCreateGameTypeWebsocketMessagesCreateGamePostResponse =
-  WsCreateGameTypeWebsocketMessagesCreateGamePostResponses[keyof WsCreateGameTypeWebsocketMessagesCreateGamePostResponses];
-
-export type WsJoinGameTypeWebsocketMessagesJoinGamePostData = {
-  body: JoinGameMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/join-game";
-};
-
-export type WsJoinGameTypeWebsocketMessagesJoinGamePostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsJoinGameTypeWebsocketMessagesJoinGamePostError =
-  WsJoinGameTypeWebsocketMessagesJoinGamePostErrors[keyof WsJoinGameTypeWebsocketMessagesJoinGamePostErrors];
-
-export type WsJoinGameTypeWebsocketMessagesJoinGamePostResponses = {
-  /**
-   * Successful Response
-   */
-  200: JoinGameMessage;
-};
-
-export type WsJoinGameTypeWebsocketMessagesJoinGamePostResponse =
-  WsJoinGameTypeWebsocketMessagesJoinGamePostResponses[keyof WsJoinGameTypeWebsocketMessagesJoinGamePostResponses];
-
-export type WsListRoomsTypeWebsocketMessagesListRoomsPostData = {
-  body: ListRoomsMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/list-rooms";
-};
-
-export type WsListRoomsTypeWebsocketMessagesListRoomsPostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsListRoomsTypeWebsocketMessagesListRoomsPostError =
-  WsListRoomsTypeWebsocketMessagesListRoomsPostErrors[keyof WsListRoomsTypeWebsocketMessagesListRoomsPostErrors];
-
-export type WsListRoomsTypeWebsocketMessagesListRoomsPostResponses = {
-  /**
-   * Successful Response
-   */
-  200: ListRoomsMessage;
-};
-
-export type WsListRoomsTypeWebsocketMessagesListRoomsPostResponse =
-  WsListRoomsTypeWebsocketMessagesListRoomsPostResponses[keyof WsListRoomsTypeWebsocketMessagesListRoomsPostResponses];
-
-export type WsStartGameTypeWebsocketMessagesStartGamePostData = {
-  body: StartGameMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/start-game";
-};
-
-export type WsStartGameTypeWebsocketMessagesStartGamePostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsStartGameTypeWebsocketMessagesStartGamePostError =
-  WsStartGameTypeWebsocketMessagesStartGamePostErrors[keyof WsStartGameTypeWebsocketMessagesStartGamePostErrors];
-
-export type WsStartGameTypeWebsocketMessagesStartGamePostResponses = {
-  /**
-   * Successful Response
-   */
-  200: StartGameMessage;
-};
-
-export type WsStartGameTypeWebsocketMessagesStartGamePostResponse =
-  WsStartGameTypeWebsocketMessagesStartGamePostResponses[keyof WsStartGameTypeWebsocketMessagesStartGamePostResponses];
-
-export type WsActionTypeWebsocketMessagesActionPostData = {
-  body: ActionMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/action";
-};
-
-export type WsActionTypeWebsocketMessagesActionPostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsActionTypeWebsocketMessagesActionPostError =
-  WsActionTypeWebsocketMessagesActionPostErrors[keyof WsActionTypeWebsocketMessagesActionPostErrors];
-
-export type WsActionTypeWebsocketMessagesActionPostResponses = {
-  /**
-   * Successful Response
-   */
-  200: ActionMessage;
-};
-
-export type WsActionTypeWebsocketMessagesActionPostResponse =
-  WsActionTypeWebsocketMessagesActionPostResponses[keyof WsActionTypeWebsocketMessagesActionPostResponses];
-
-export type WsGetStateTypeWebsocketMessagesGetStatePostData = {
-  body: GetStateMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/get-state";
-};
-
-export type WsGetStateTypeWebsocketMessagesGetStatePostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsGetStateTypeWebsocketMessagesGetStatePostError =
-  WsGetStateTypeWebsocketMessagesGetStatePostErrors[keyof WsGetStateTypeWebsocketMessagesGetStatePostErrors];
-
-export type WsGetStateTypeWebsocketMessagesGetStatePostResponses = {
-  /**
-   * Successful Response
-   */
-  200: GetStateMessage;
-};
-
-export type WsGetStateTypeWebsocketMessagesGetStatePostResponse =
-  WsGetStateTypeWebsocketMessagesGetStatePostResponses[keyof WsGetStateTypeWebsocketMessagesGetStatePostResponses];
-
-export type WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostData = {
-  body: GetValidActionsMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/get-valid-actions";
-};
-
-export type WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostError =
-  WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostErrors[keyof WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostErrors];
-
-export type WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostResponses =
-  {
-    /**
-     * Successful Response
-     */
-    200: GetValidActionsMessage;
-  };
-
-export type WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostResponse =
-  WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostResponses[keyof WsGetValidActionsTypeWebsocketMessagesGetValidActionsPostResponses];
-
-export type WsLeaveGameTypeWebsocketMessagesLeaveGamePostData = {
-  body: LeaveGameMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/leave-game";
-};
-
-export type WsLeaveGameTypeWebsocketMessagesLeaveGamePostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsLeaveGameTypeWebsocketMessagesLeaveGamePostError =
-  WsLeaveGameTypeWebsocketMessagesLeaveGamePostErrors[keyof WsLeaveGameTypeWebsocketMessagesLeaveGamePostErrors];
-
-export type WsLeaveGameTypeWebsocketMessagesLeaveGamePostResponses = {
-  /**
-   * Successful Response
-   */
-  200: LeaveGameMessage;
-};
-
-export type WsLeaveGameTypeWebsocketMessagesLeaveGamePostResponse =
-  WsLeaveGameTypeWebsocketMessagesLeaveGamePostResponses[keyof WsLeaveGameTypeWebsocketMessagesLeaveGamePostResponses];
-
-export type WsPingTypeWebsocketMessagesPingPostData = {
-  body: PingMessage;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/ping";
-};
-
-export type WsPingTypeWebsocketMessagesPingPostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsPingTypeWebsocketMessagesPingPostError =
-  WsPingTypeWebsocketMessagesPingPostErrors[keyof WsPingTypeWebsocketMessagesPingPostErrors];
-
-export type WsPingTypeWebsocketMessagesPingPostResponses = {
-  /**
-   * Successful Response
-   */
-  200: PingMessage;
-};
-
-export type WsPingTypeWebsocketMessagesPingPostResponse =
-  WsPingTypeWebsocketMessagesPingPostResponses[keyof WsPingTypeWebsocketMessagesPingPostResponses];
-
-export type WsConnectedTypeWebsocketMessagesConnectedGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/connected";
-};
-
-export type WsConnectedTypeWebsocketMessagesConnectedGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: ConnectedMessage;
-};
-
-export type WsConnectedTypeWebsocketMessagesConnectedGetResponse =
-  WsConnectedTypeWebsocketMessagesConnectedGetResponses[keyof WsConnectedTypeWebsocketMessagesConnectedGetResponses];
-
-export type WsGameCreatedTypeWebsocketMessagesGameCreatedGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/game-created";
-};
-
-export type WsGameCreatedTypeWebsocketMessagesGameCreatedGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: GameCreatedMessage;
-};
-
-export type WsGameCreatedTypeWebsocketMessagesGameCreatedGetResponse =
-  WsGameCreatedTypeWebsocketMessagesGameCreatedGetResponses[keyof WsGameCreatedTypeWebsocketMessagesGameCreatedGetResponses];
-
-export type WsGameJoinedTypeWebsocketMessagesGameJoinedGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/game-joined";
-};
-
-export type WsGameJoinedTypeWebsocketMessagesGameJoinedGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: GameJoinedMessage;
-};
-
-export type WsGameJoinedTypeWebsocketMessagesGameJoinedGetResponse =
-  WsGameJoinedTypeWebsocketMessagesGameJoinedGetResponses[keyof WsGameJoinedTypeWebsocketMessagesGameJoinedGetResponses];
-
-export type WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/player-joined";
-};
-
-export type WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: PlayerJoinedMessage;
-};
-
-export type WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetResponse =
-  WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetResponses[keyof WsPlayerJoinedTypeWebsocketMessagesPlayerJoinedGetResponses];
-
-export type WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/player-left";
-};
-
-export type WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: PlayerLeftMessage;
-};
-
-export type WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetResponse =
-  WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetResponses[keyof WsPlayerLeftTypeWebsocketMessagesPlayerLeftGetResponses];
-
-export type WsGameStartedTypeWebsocketMessagesGameStartedGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/game-started";
-};
-
-export type WsGameStartedTypeWebsocketMessagesGameStartedGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: GameStartedMessage;
-};
-
-export type WsGameStartedTypeWebsocketMessagesGameStartedGetResponse =
-  WsGameStartedTypeWebsocketMessagesGameStartedGetResponses[keyof WsGameStartedTypeWebsocketMessagesGameStartedGetResponses];
-
-export type WsGameStateTypeWebsocketMessagesGameStateGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/game-state";
-};
-
-export type WsGameStateTypeWebsocketMessagesGameStateGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: GameStateMessage;
-};
-
-export type WsGameStateTypeWebsocketMessagesGameStateGetResponse =
-  WsGameStateTypeWebsocketMessagesGameStateGetResponses[keyof WsGameStateTypeWebsocketMessagesGameStateGetResponses];
-
-export type WsActionResultTypeWebsocketMessagesActionResultGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/action-result";
-};
-
-export type WsActionResultTypeWebsocketMessagesActionResultGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: ActionResultMessage;
-};
-
-export type WsActionResultTypeWebsocketMessagesActionResultGetResponse =
-  WsActionResultTypeWebsocketMessagesActionResultGetResponses[keyof WsActionResultTypeWebsocketMessagesActionResultGetResponses];
-
-export type WsValidActionsTypeWebsocketMessagesValidActionsGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/valid-actions";
-};
-
-export type WsValidActionsTypeWebsocketMessagesValidActionsGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: ValidActionsMessage;
-};
-
-export type WsValidActionsTypeWebsocketMessagesValidActionsGetResponse =
-  WsValidActionsTypeWebsocketMessagesValidActionsGetResponses[keyof WsValidActionsTypeWebsocketMessagesValidActionsGetResponses];
-
-export type WsRoomsListTypeWebsocketMessagesRoomsListGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/rooms-list";
-};
-
-export type WsRoomsListTypeWebsocketMessagesRoomsListGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: RoomsListMessage;
-};
-
-export type WsRoomsListTypeWebsocketMessagesRoomsListGetResponse =
-  WsRoomsListTypeWebsocketMessagesRoomsListGetResponses[keyof WsRoomsListTypeWebsocketMessagesRoomsListGetResponses];
-
-export type WsGameLeftTypeWebsocketMessagesGameLeftGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/game-left";
-};
-
-export type WsGameLeftTypeWebsocketMessagesGameLeftGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: GameLeftMessage;
-};
-
-export type WsGameLeftTypeWebsocketMessagesGameLeftGetResponse =
-  WsGameLeftTypeWebsocketMessagesGameLeftGetResponses[keyof WsGameLeftTypeWebsocketMessagesGameLeftGetResponses];
-
-export type WsErrorTypeWebsocketMessagesErrorGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/error";
-};
-
-export type WsErrorTypeWebsocketMessagesErrorGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: ErrorMessage;
-};
-
-export type WsErrorTypeWebsocketMessagesErrorGetResponse =
-  WsErrorTypeWebsocketMessagesErrorGetResponses[keyof WsErrorTypeWebsocketMessagesErrorGetResponses];
-
-export type WsPongTypeWebsocketMessagesPongGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/websocket-messages/pong";
-};
-
-export type WsPongTypeWebsocketMessagesPongGetResponses = {
-  /**
-   * Successful Response
-   */
-  200: PongMessage;
-};
-
-export type WsPongTypeWebsocketMessagesPongGetResponse =
-  WsPongTypeWebsocketMessagesPongGetResponses[keyof WsPongTypeWebsocketMessagesPongGetResponses];
-
-export type ListGameRoomsGameRoomsGetData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/game/rooms";
-};
-
-export type ListGameRoomsGameRoomsGetResponses = {
   /**
    * Successful Response
    */

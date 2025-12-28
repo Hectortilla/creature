@@ -126,7 +126,8 @@ async def game_websocket_handler(
     player_id: str,
     name: str,
     manager: GameManager,
-    deck: list[dict]
+    deck: list[dict],
+    room_id: str | None = None,
 ) -> None:
     """
     Main WebSocket handler for game connections.
@@ -137,9 +138,10 @@ async def game_websocket_handler(
         name: Display name for the player
         manager: The game manager instance
         deck: Serialized deck to use for the game
+        room_id: Optional room ID to auto-join after connection
     """
     from fastapi import WebSocketDisconnect
-    from app.models.schemas.websocket.server import ConnectedMessage, ConnectedData
+    from app.models.schemas.websocket.server import ConnectedMessage, ConnectedData, GameJoinedMessage, GameJoinedData
     
     connection = await manager.connect(websocket, player_id, name, deck)
     
@@ -162,6 +164,31 @@ async def game_websocket_handler(
                 message="Connected to game server",
             )
         ))
+    
+    # Auto-join room if room_id is provided
+    if room_id:
+        try:
+            room = await manager.join_room(player_id, room_id)
+            # Send game joined message
+            try:
+                await websocket.send_json(GameJoinedMessage(
+                    data=GameJoinedData(room=room.model_dump(mode='json'))
+                ).model_dump(mode='json'))
+            except Exception:
+                await manager.send_to_player(player_id, GameJoinedMessage(
+                    data=GameJoinedData(room=room.model_dump(mode='json'))
+                ))
+        except Exception as e:
+            # If auto-join fails, send error but don't disconnect
+            from app.models.schemas.websocket.server import ErrorMessage, ErrorData
+            try:
+                await websocket.send_json(ErrorMessage(
+                    data=ErrorData(message=f"Failed to join room: {str(e)}")
+                ).model_dump(mode='json'))
+            except Exception:
+                await manager.send_to_player(player_id, ErrorMessage(
+                    data=ErrorData(message=f"Failed to join room: {str(e)}")
+                ))
     
     try:
         while True:
