@@ -3,8 +3,9 @@ from fastapi import HTTPException, status
 from typing import Optional
 
 from app.models.db import Deck, Card, DeckCard
-from app.models.schemas import DeckCreate, DeckUpdate, DeckReadWithCards, DeckReadSummary, CardRead
+from app.models.schemas import DeckCreate, DeckUpdate, DeckReadWithCards, DeckReadSummary, CardRead, CardReadWithRelations
 from app.services.base import BaseService
+from app.services.cards import CardService
 from app.models.game.state import GameConfiguration
 
 
@@ -182,7 +183,10 @@ class DeckService(BaseService[Deck, DeckCreate]):
             .where(DeckCard.deck_id == deck.id)
             .order_by(DeckCard.id)  # Preserve insertion order
         )
-        cards = [CardRead.model_validate(card) for card in cards_query.all()]
+        
+        # Enrich each card with full relations for game serialization
+        card_service = CardService(self.db)
+        cards = [card_service.enrich(card) for card in cards_query.all()]
         
         return DeckReadWithCards(
             id=deck.id,

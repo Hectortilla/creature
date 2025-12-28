@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from app.models.base.deck import DeckBase
-from app.models.schemas.card import CardRead
+from app.models.schemas.card import CardRead, CardReadWithRelations
 
 
 class DeckCreate(DeckBase):
@@ -32,6 +32,6 @@ class DeckReadSummary(DeckRead):
 
 class DeckReadWithCards(DeckRead):
     """Schema for reading a deck with its cards."""
-    cards: list[CardRead] = []
+    cards: list[CardReadWithRelations] = []
     is_valid_for_playing: bool = False
 

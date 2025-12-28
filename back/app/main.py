@@ -33,7 +33,6 @@ from app.models.db import (
     Element, Type, Character, Attack, Ability, Association, Card, User, Deck, DeckCard
 )
 from app.settings.lifespan import lifespan
-from app.settings.lifespan import game_manager
 
 app = FastAPI(
     title="Creature Card Game API",
@@ -99,11 +98,12 @@ async def game_websocket(
     db = next(get_db_session())
     try:
         # Check if player already has an active game
-        if game_manager and player_id in game_manager.connections:
-            existing_connection = game_manager.connections[player_id]
+        from app.settings.lifespan import game_manager as gm
+        if gm and player_id in gm.connections:
+            existing_connection = gm.connections[player_id]
             if existing_connection.game_id:
                 # Check if the game is still active
-                room = game_manager.get_room(existing_connection.game_id)
+                room = gm.get_room(existing_connection.game_id)
                 if room:
                     # If game has started and is not finished, refuse connection
                     if room.state and room.state.status != GameStatus.FINISHED:
@@ -149,7 +149,14 @@ async def game_websocket(
         db.close()
     
     # Pass serialized deck to handler
-    await game_websocket_handler(websocket, player_id, name, game_manager, serialized_deck)
+    # Import here to ensure game_manager is initialized from lifespan
+    from app.settings.lifespan import game_manager as gm
+    if gm is None:
+        raise WebSocketException(
+            code=status.WS_1011_INTERNAL_ERROR,
+            reason="Game manager not initialized",
+        )
+    await game_websocket_handler(websocket, player_id, name, gm, serialized_deck)
 
 
 @app.get("/game/rooms")
@@ -159,6 +166,7 @@ async def list_game_rooms():
     
     Returns rooms that haven't started yet.
     """
-    if game_manager is None:
+    from app.settings.lifespan import game_manager as gm
+    if gm is None:
         return {"rooms": []}
-    return {"rooms": game_manager.list_rooms()}
+    return {"rooms": gm.list_rooms()}
