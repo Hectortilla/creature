@@ -11,11 +11,15 @@ Architecture:
 """
 
 import asyncio
-from typing import Optional, Set
+import logging
+from typing import Any, Set
 from fastapi import WebSocket
+from starlette.websockets import WebSocketState
 
 from broadcaster import Broadcast
 from app.websocket.models import PlayerConnection
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -68,12 +72,14 @@ class ConnectionManager:
         (their own player channel + room channels), and we need to merge these into
         a single stream to send to the WebSocket.
         """
+        # Get connection once at start - treat disconnect() as authoritative
         connection = self.connections.get(player_id)
         if not connection:
             return
         
         # Queue to merge messages from multiple channel subscriptions
-        message_queue: asyncio.Queue = asyncio.Queue()
+        # Unbounded queue - messages are put with put_nowait (no QueueFull possible)
+        message_queue: asyncio.Queue[Any] = asyncio.Queue()
         channels = self._active_channels.get(player_id, set()).copy()
         if not channels:
             return
@@ -89,17 +95,16 @@ class ConnectionManager:
             try:
                 async with self.broadcast.subscribe(channel=channel) as subscriber:
                     async for event in subscriber:
+                        # Check if connection still exists before queuing
                         if player_id not in self.connections:
                             break
                         # Put message in queue to be forwarded to WebSocket
-                        try:
-                            message_queue.put_nowait(event.message)
-                        except asyncio.QueueFull:
-                            pass  # Skip if queue is full (shouldn't happen with unbounded queue)
+                        # Queue is unbounded, so put_nowait will never raise QueueFull
+                        message_queue.put_nowait(event.message)
             except asyncio.CancelledError:
                 raise
-            except Exception:
-                pass
+            except Exception as e:
+                logger.exception("Error in subscription to channel %s for player %s", channel, player_id)
         
         # Start subscription tasks for all channels (player + room channels)
         subscription_tasks = [
@@ -114,21 +119,29 @@ class ConnectionManager:
                     # Wait for message with timeout to periodically check connection status
                     message = await asyncio.wait_for(message_queue.get(), timeout=1.0)
                     
-                    if player_id not in self.connections:
-                        break
+                    # Tighten connection check: get connection once per iteration
+                    # This avoids race conditions where disconnect() runs mid-loop
                     conn = self.connections.get(player_id)
-                    if not conn or conn.websocket.client_state.name != "CONNECTED":
+                    if not conn:
+                        break
+                    
+                    # Check WebSocket state using proper enum
+                    if conn.websocket.client_state != WebSocketState.CONNECTED:
                         break
                     
                     # Forward message from broadcaster channel to WebSocket
                     try:
                         await conn.websocket.send_json(message)
-                    except Exception:
-                        # Connection closed
+                    except Exception as e:
+                        # Connection closed or error sending
+                        logger.debug("Failed to send message to player %s: %s", player_id, e)
                         break
                 except asyncio.TimeoutError:
-                    # Periodic check: ensure connection still exists
-                    if player_id not in self.connections:
+                    # Periodic check: ensure connection still exists and is valid
+                    conn = self.connections.get(player_id)
+                    if not conn:
+                        break
+                    if conn.websocket.client_state != WebSocketState.CONNECTED:
                         break
                     continue
         except asyncio.CancelledError:
@@ -207,13 +220,16 @@ class ConnectionManager:
         if player_id in self._active_channels:
             del self._active_channels[player_id]
         
-        # Remove connection
+        # Remove connection (do this before closing to signal to other tasks)
         del self.connections[player_id]
         
+        # Close WebSocket if still connected (avoid double-close)
         try:
-            await connection.websocket.close()
-        except Exception:
-            pass
+            if connection.websocket.client_state == WebSocketState.CONNECTED:
+                await connection.websocket.close()
+        except Exception as e:
+            # Ignore errors if already closed or closing
+            logger.debug("Error closing WebSocket for player %s: %s", player_id, e)
     
     def get_connection(self, player_id: str) -> PlayerConnection | None:
         """Get a player connection by ID."""
