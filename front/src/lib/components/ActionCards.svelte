@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ActionData } from '$lib/api/types.gen';
+	import { ACTION_TYPE_CONFIGS, getAllActionTypes, type ActionTypeConfig, type ActionFieldConfig } from '$lib/utils/actionFields';
 
 	interface ActionCard {
 		type: string;
@@ -13,10 +14,11 @@
 	interface ActionField {
 		name: string;
 		label: string;
-		type: 'text' | 'number' | 'select' | 'multiselect';
+		type: 'text' | 'number' | 'select' | 'multiselect' | 'json';
 		required?: boolean;
 		options?: Array<{ value: string; label: string }>;
 		placeholder?: string;
+		description?: string;
 	}
 
 	interface ValidAction {
@@ -32,196 +34,27 @@
 
 	let { validActions = $bindable([]), onSendAction }: Props = $props();
 
-	// Define all possible action types with their form fields
-	const actionDefinitions: Record<string, Omit<ActionCard, 'enabled' | 'validAction'>> = {
-		draw: {
-			type: 'draw',
-			label: 'Draw Cards',
-			description: 'Draw cards from your deck',
-			fields: [
-				{
-					name: 'count',
-					label: 'Count',
-					type: 'number',
-					required: true,
-					placeholder: '1'
-				}
-			]
-		},
-		play_card: {
-			type: 'play_card',
-			label: 'Play Card',
-			description: 'Play a card from hand to supporting zone',
-			fields: [
-				{
-					name: 'card_id',
-					label: 'Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'card_instance_id'
-				}
-			]
-		},
-		multi_play_card: {
-			type: 'multi_play_card',
-			label: 'Play Multiple Cards',
-			description: 'Play multiple cards at once',
-			fields: [
-				{
-					name: 'card_ids',
-					label: 'Card IDs (comma-separated)',
-					type: 'text',
-					required: true,
-					placeholder: 'id1, id2, id3'
-				}
-			]
-		},
-		promote: {
-			type: 'promote',
-			label: 'Promote Card',
-			description: 'Promote a card from supporting to attacking zone',
-			fields: [
-				{
-					name: 'card_id',
-					label: 'Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'card_instance_id'
-				}
-			]
-		},
-		swap: {
-			type: 'swap',
-			label: 'Swap Cards',
-			description: 'Swap a supporting card with an attacking card',
-			fields: [
-				{
-					name: 'supporting_card_id',
-					label: 'Supporting Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'supporting_card_id'
-				},
-				{
-					name: 'attacking_card_id',
-					label: 'Attacking Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'attacking_card_id'
-				}
-			]
-		},
-		multi_swap: {
-			type: 'multi_swap',
-			label: 'Multiple Swaps',
-			description: 'Perform multiple swaps at once',
-			fields: [
-				{
-					name: 'swaps',
-					label: 'Swaps (JSON array)',
-					type: 'text',
-					required: true,
-					placeholder: '[{"supporting_card_id": "id1", "attacking_card_id": "id2"}]'
-				}
-			]
-		},
-		associate: {
-			type: 'associate',
-			label: 'Associate Card',
-			description: 'Associate a card with an active creature',
-			fields: [
-				{
-					name: 'association_card_id',
-					label: 'Association Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'association_card_id'
-				},
-				{
-					name: 'target_id',
-					label: 'Target Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'target_card_id'
-				}
-			]
-		},
-		evolve: {
-			type: 'evolve',
-			label: 'Evolve Card',
-			description: 'Evolve a creature with an evolution card',
-			fields: [
-				{
-					name: 'evolution_card_id',
-					label: 'Evolution Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'evolution_card_id'
-				},
-				{
-					name: 'target_id',
-					label: 'Target Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'target_card_id'
-				}
-			]
-		},
-		attack: {
-			type: 'attack',
-			label: 'Attack',
-			description: 'Attack with a creature',
-			fields: [
-				{
-					name: 'attacker_id',
-					label: 'Attacker Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'attacker_id'
-				},
-				{
-					name: 'attack_id',
-					label: 'Attack ID',
-					type: 'text',
-					required: true,
-					placeholder: 'attack_id'
-				},
-				{
-					name: 'target_id',
-					label: 'Target Card ID (empty if no defenders)',
-					type: 'text',
-					required: false,
-					placeholder: 'target_id or empty'
-				}
-			]
-		},
-		force_defend: {
-			type: 'force_defend',
-			label: 'Force Defend',
-			description: 'Move a supporting creature to defend',
-			fields: [
-				{
-					name: 'card_id',
-					label: 'Card ID',
-					type: 'text',
-					required: true,
-					placeholder: 'card_instance_id'
-				}
-			]
-		},
-		pass: {
-			type: 'pass',
-			label: 'Pass Phase',
-			description: 'Pass/end the current phase',
-			fields: []
-		},
-		concede: {
-			type: 'concede',
-			label: 'Concede',
-			description: 'Concede the game',
-			fields: []
-		}
-	};
+	// Convert ActionTypeConfig to ActionCard format
+	function configToCard(config: ActionTypeConfig): Omit<ActionCard, 'enabled' | 'validAction'> {
+		return {
+			type: config.type,
+			label: config.label,
+			description: config.description,
+			fields: config.fields.map((field) => ({
+				name: field.name,
+				label: field.label,
+				type: field.type,
+				required: field.required,
+				placeholder: field.placeholder || (typeof field.example === 'string' ? field.example : undefined),
+				description: field.description
+			}))
+		};
+	}
+
+	// Generate action definitions from the config
+	const actionDefinitions: Record<string, Omit<ActionCard, 'enabled' | 'validAction'>> = Object.fromEntries(
+		Object.values(ACTION_TYPE_CONFIGS).map((config) => [config.type, configToCard(config)])
+	);
 
 	// Create action cards from definitions
 	const actionCards = $derived(
@@ -312,12 +145,18 @@
 				if (field.name === 'card_ids') {
 					// Parse comma-separated card IDs
 					data.card_ids = value.split(',').map((id) => id.trim()).filter(Boolean);
-				} else if (field.name === 'swaps') {
-					// Parse JSON swaps
+				} else if (field.type === 'json' || field.name === 'swaps') {
+					// Parse JSON fields
 					try {
-						data.swaps = JSON.parse(value);
+						const parsed = JSON.parse(value);
+						if (field.name === 'swaps') {
+							data.swaps = parsed;
+						} else {
+							// For other JSON fields, assign directly
+							(data as any)[field.name] = parsed;
+						}
 					} catch {
-						console.error('Invalid swaps JSON');
+						console.error(`Invalid JSON for field ${field.name}`);
 						return;
 					}
 				} else if (field.type === 'number') {
@@ -382,6 +221,18 @@
 										<option value={option.value}>{option.label}</option>
 									{/each}
 								</select>
+							{:else if field.type === 'json'}
+								<textarea
+									id="{card.type}-{field.name}"
+									name={field.name}
+									value={getFormValue(card.type, field.name)}
+									oninput={(e) => setFormValue(card.type, field.name, (e.target as HTMLTextAreaElement).value)}
+									placeholder={field.placeholder}
+									required={field.required}
+									disabled={!card.enabled}
+									rows="3"
+									style="font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.85rem;"
+								/>
 							{:else}
 								<input
 									id="{card.type}-{field.name}"
@@ -393,6 +244,9 @@
 									required={field.required}
 									disabled={!card.enabled}
 								/>
+							{/if}
+							{#if field.description}
+								<small class="field-description">{field.description}</small>
 							{/if}
 						</div>
 					{/each}
@@ -528,9 +382,36 @@
 	}
 
 	.form-field input:disabled,
-	.form-field select:disabled {
+	.form-field select:disabled,
+	.form-field textarea:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+
+	.form-field textarea {
+		width: 100%;
+		padding: 0.5rem;
+		background: #0d1117;
+		border: 1px solid #30363d;
+		border-radius: 4px;
+		color: #c9d1d9;
+		font-family: inherit;
+		font-size: 0.85rem;
+		resize: vertical;
+	}
+
+	.form-field textarea:focus {
+		outline: none;
+		border-color: #58a6ff;
+		box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15);
+	}
+
+	.field-description {
+		display: block;
+		font-size: 0.75rem;
+		color: #8b949e;
+		margin-top: 0.25rem;
+		font-style: italic;
 	}
 
 	.send-button {

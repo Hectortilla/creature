@@ -49,19 +49,70 @@ class StartGameData(BaseModel):
 
 
 class ActionData(BaseModel):
-    """Data for action message."""
-    action_type: str
-    card_id: Optional[str] = None
-    card_ids: list[str] = Field(default_factory=list)
-    count: int = 1
-    target_id: Optional[str] = None
-    attacker_id: Optional[str] = None
-    attack_id: Optional[str] = None
-    supporting_card_id: Optional[str] = None
-    attacking_card_id: Optional[str] = None
-    swaps: list[dict[str, Any]] = Field(default_factory=list)
-    association_card_id: Optional[str] = None
-    evolution_card_id: Optional[str] = None
+    """Data for action message.
+    
+    This model represents all possible fields for game actions.
+    Different action types use different subsets of these fields.
+    """
+    action_type: str = Field(
+        description="The type of action to perform",
+        examples=["draw", "play_card", "promote", "swap", "associate", "evolve", "attack", "pass", "concede"]
+    )
+    card_id: Optional[str] = Field(
+        default=None,
+        description="Card instance ID (used by: play_card, promote, force_defend)",
+        examples=["card_instance_123"]
+    )
+    card_ids: list[str] = Field(
+        default_factory=list,
+        description="List of card instance IDs (used by: multi_play_card)",
+        examples=[["card_instance_123", "card_instance_456"]]
+    )
+    count: int = Field(
+        default=1,
+        description="Number of cards to draw (used by: draw)",
+        examples=[1, 2, 3]
+    )
+    target_id: Optional[str] = Field(
+        default=None,
+        description="Target card instance ID (used by: associate, evolve, attack)",
+        examples=["card_instance_789"]
+    )
+    attacker_id: Optional[str] = Field(
+        default=None,
+        description="Attacker card instance ID (used by: attack)",
+        examples=["card_instance_123"]
+    )
+    attack_id: Optional[str] = Field(
+        default=None,
+        description="Attack ID to use (used by: attack)",
+        examples=["1", "2"]
+    )
+    supporting_card_id: Optional[str] = Field(
+        default=None,
+        description="Supporting card instance ID (used by: swap)",
+        examples=["card_instance_123"]
+    )
+    attacking_card_id: Optional[str] = Field(
+        default=None,
+        description="Attacking card instance ID (used by: swap)",
+        examples=["card_instance_456"]
+    )
+    swaps: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of swap pairs (used by: multi_swap). Each swap is {supporting_card_id: str, attacking_card_id: str}",
+        examples=[[{"supporting_card_id": "card_1", "attacking_card_id": "card_2"}]]
+    )
+    association_card_id: Optional[str] = Field(
+        default=None,
+        description="Association card instance ID (used by: associate)",
+        examples=["card_instance_123"]
+    )
+    evolution_card_id: Optional[str] = Field(
+        default=None,
+        description="Evolution card instance ID (used by: evolve)",
+        examples=["card_instance_123"]
+    )
 
 
 class GetStateData(BaseModel):
