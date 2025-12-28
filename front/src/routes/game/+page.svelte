@@ -6,28 +6,7 @@
 	import ActionCards from '$lib/components/ActionCards.svelte';
 	import type { PageData } from './$types';
 	import type { ActionData } from '$lib/api/types.gen';
-
-	interface DeckSummary {
-		id: number;
-		name: string;
-		description: string | null;
-		card_count: number;
-		is_valid_for_playing: boolean;
-	}
-
-	interface RoomSummary {
-		room_id: string;
-		host_id: string;
-		player1_id: string | null;
-		player1_name: string | null;
-		player2_id: string | null;
-		player2_name: string | null;
-		created_at: string;
-		is_full: boolean;
-		is_started: boolean;
-		can_join: boolean;
-		players: Array<{ player_id: string; name: string } | null>;
-	}
+	import type { DeckReadSummary, RoomSummary } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
@@ -36,7 +15,7 @@
 	let ws: WebSocket | null = $state(null);
 	let connected = $state(false);
 	let connectionError = $state<string | null>(null);
-	let decks = $state<DeckSummary[]>(data.decks ?? []);
+	let decks = $state<DeckReadSummary[]>(data.decks ?? []);
 	let rooms = $state<RoomSummary[]>(data.rooms ?? []);
 	let selectedDeckId = $state<number | null>(null);
 	let selectedRoomId = $state<string | null>(null);

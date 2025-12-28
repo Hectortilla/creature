@@ -1,28 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { PUBLIC_API_URL } from '$env/static/public';
 import { getAuthHeaders } from '$lib/server/auth';
-
-interface DeckSummary {
-	id: number;
-	name: string;
-	description: string | null;
-	card_count: number;
-	is_valid_for_playing: boolean;
-}
-
-interface RoomSummary {
-	room_id: string;
-	host_id: string;
-	player1_id: string | null;
-	player1_name: string | null;
-	player2_id: string | null;
-	player2_name: string | null;
-	created_at: string;
-	is_full: boolean;
-	is_started: boolean;
-	can_join: boolean;
-	players: Array<{ player_id: string; name: string } | null>;
-}
+import type { DeckReadSummary, RoomSummary } from '$lib/types';
 
 export const load: PageServerLoad = async ({ locals, fetch }) => {
 	const headers = getAuthHeaders(locals);
@@ -43,7 +22,7 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
 		})
 	]);
 
-	let decks: DeckSummary[] = [];
+	let decks: DeckReadSummary[] = [];
 	let rooms: RoomSummary[] = [];
 
 	try {
