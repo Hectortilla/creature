@@ -7,9 +7,9 @@ Represents a card instance during gameplay with runtime state.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from typing import Optional, Any
 
-from pydantic import field_serializer, computed_field
+from pydantic import field_serializer, computed_field, model_validator
 
 from app.models.core.card import CardIdentityFields, CardCombatFields
 from app.models.game.base import GameBaseModel
@@ -156,5 +156,102 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
         self.turns_in_zone += 1
 
 
-__all__ = ["GameCard"]
+class GameCardInput(GameBaseModel):
+    """
+    Input format for card data when creating a game.
+    
+    This is the format expected by the game engine's create_game method.
+    Represents card data as it comes from the deck before being instantiated.
+    """
+    id: int
+    name: str
+    health: int = 10
+    physical_defence: int = 0
+    magic_defence: int = 0
+    element_ids: list[int] = []
+    element_contribution: list[dict[str, int]] = []
+    attacks: list[dict[str, Any]] = []
+    skill_ids: list[int] = []
+    association_ids: list[int] = []
+    is_evolution: bool = False
+    evolves_from_id: Optional[int] = None
+    
+    @classmethod
+    def from_card_read(cls, card: Any) -> "GameCardInput":
+        """
+        Create GameCardInput from CardReadWithRelations.
+        
+        Args:
+            card: CardReadWithRelations instance from deck enrichment
+            
+        Returns:
+            GameCardInput instance ready for game engine
+        """
+        # Build element_ids list
+        element_ids = []
+        if card.first_element_id:
+            element_ids.append(card.first_element_id)
+        if card.second_element_id:
+            element_ids.append(card.second_element_id)
+        
+        # Build element_contribution (default: 1 of each element)
+        element_contribution = []
+        if card.first_element_id:
+            element_contribution.append({"element_id": card.first_element_id, "amount": 1})
+        if card.second_element_id:
+            element_contribution.append({"element_id": card.second_element_id, "amount": 1})
+        
+        # Build attacks list
+        attacks = []
+        if card.first_attack:
+            attacks.append({
+                "id": card.first_attack.id,
+                "name": card.first_attack.name,
+                "damage": card.first_attack.damage or 0,
+                "type": card.first_attack.type or "physical",
+                "element_id": card.first_attack.element_id or 0,
+                "necessary_force": card.first_attack.necessary_force or [],
+                "effect": card.first_attack.effect,
+                "description": card.first_attack.description,
+                "dice_rolls": card.first_attack.dice_rolls,
+            })
+        if card.second_attack:
+            attacks.append({
+                "id": card.second_attack.id,
+                "name": card.second_attack.name,
+                "damage": card.second_attack.damage or 0,
+                "type": card.second_attack.type or "physical",
+                "element_id": card.second_attack.element_id or 0,
+                "necessary_force": card.second_attack.necessary_force or [],
+                "effect": card.second_attack.effect,
+                "description": card.second_attack.description,
+                "dice_rolls": card.second_attack.dice_rolls,
+            })
+        
+        # Build skill_ids and association_ids
+        skill_ids = []
+        if card.ability_id:
+            skill_ids.append(card.ability_id)
+        
+        association_ids = []
+        if card.association_id:
+            association_ids.append(card.association_id)
+        
+        return cls(
+            id=card.id,
+            name=card.name,
+            health=card.health or 10,
+            physical_defence=card.physical_defence or 0,
+            magic_defence=card.magic_defence or 0,
+            element_ids=element_ids,
+            element_contribution=element_contribution,
+            attacks=attacks,
+            skill_ids=skill_ids,
+            association_ids=association_ids,
+            is_evolution=card.is_evolution_id is not None,
+            evolves_from_id=card.is_evolution_id,
+        )
+
+
+__all__ = ["GameCard", "GameCardInput"]
 

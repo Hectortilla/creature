@@ -43,6 +43,7 @@ from pydantic import Field, field_serializer, computed_field
 
 from app.game.engine import get_engine
 from app.models.game import GameState, GameConfiguration, GameBaseModel, GameStatus
+from app.models.game.card import GameCardInput
 from app.game.actions import create_action
 
 
@@ -57,6 +58,7 @@ class PlayerConnection:
     name: str
     websocket: WebSocket
     game_id: Optional[str] = None
+    deck: Optional[list[dict]] = None  # Serialized deck stored in memory
 
 
 class GameRoom(GameBaseModel):
@@ -106,17 +108,20 @@ class GameRoom(GameBaseModel):
             if self.player2_id else None,
         ]
     
-    def add_player(self, player_id: str, name: str, deck: list[dict]) -> int:
+    def add_player(self, player_id: str, name: str, connection: PlayerConnection) -> int:
         """Add a player to the room. Returns slot number (1 or 2)."""
+        if connection.deck is None:
+            raise ValueError("Player connection does not have a deck")
+        
         if self.player1_id is None:
             self.player1_id = player_id
             self.player1_name = name
-            self.player1_deck = deck
+            self.player1_deck = connection.deck
             return 1
         elif self.player2_id is None:
             self.player2_id = player_id
             self.player2_name = name
-            self.player2_deck = deck
+            self.player2_deck = connection.deck
             return 2
         raise ValueError("Room is full")
     
@@ -149,6 +154,24 @@ def serialize_events(events) -> list[dict[str, Any]]:
     return [event.model_dump(mode='json') for event in events]
 
 
+def serialize_deck_for_game(deck_cards: list) -> list[dict[str, Any]]:
+    """
+    Serialize deck cards to the format expected by the game engine.
+    
+    Uses Pydantic's GameCardInput model for proper serialization.
+    
+    Args:
+        deck_cards: List of CardReadWithRelations from deck enrichment
+        
+    Returns:
+        List of card dicts in game engine format
+    """
+    return [
+        GameCardInput.from_card_read(card).model_dump(mode='json')
+        for card in deck_cards
+    ]
+
+
 # ============================================================================
 # Game Manager
 # ============================================================================
@@ -170,7 +193,7 @@ class GameManager:
     # Connection Management
     # ========================================================================
     
-    async def connect(self, websocket: WebSocket, player_id: str, name: str) -> PlayerConnection:
+    async def connect(self, websocket: WebSocket, player_id: str, name: str, deck: list[dict]) -> PlayerConnection:
         """Register a new player connection."""
         await websocket.accept()
         
@@ -182,6 +205,7 @@ class GameManager:
             player_id=player_id,
             name=name,
             websocket=websocket,
+            deck=deck,
         )
         self.connections[player_id] = connection
         return connection
@@ -210,24 +234,30 @@ class GameManager:
     # Room Management
     # ========================================================================
     
-    async def create_room(self, player_id: str, name: str, deck: list[dict]) -> GameRoom:
+    async def create_room(self, player_id: str) -> GameRoom:
         """Create a new game room."""
+        if player_id not in self.connections:
+            raise ValueError("Player not connected")
+        
+        connection = self.connections[player_id]
         room = GameRoom(
             room_id=str(uuid4()),
             host_id=player_id,
         )
-        room.add_player(player_id, name, deck)
+        room.add_player(player_id, connection.name, connection)
         
         self.rooms[room.room_id] = room
         self.player_rooms[player_id] = room.room_id
         
-        if player_id in self.connections:
-            self.connections[player_id].game_id = room.room_id
+        connection.game_id = room.room_id
         
         return room
     
-    async def join_room(self, player_id: str, name: str, room_id: str, deck: list[dict]) -> GameRoom:
+    async def join_room(self, player_id: str, room_id: str) -> GameRoom:
         """Join an existing game room."""
+        if player_id not in self.connections:
+            raise ValueError("Player not connected")
+        
         if room_id not in self.rooms:
             raise ValueError("Room not found")
         
@@ -239,18 +269,17 @@ class GameManager:
         if room.is_started:
             raise ValueError("Game already started")
         
-        room.add_player(player_id, name, deck)
+        connection = self.connections[player_id]
+        room.add_player(player_id, connection.name, connection)
         self.player_rooms[player_id] = room_id
-        
-        if player_id in self.connections:
-            self.connections[player_id].game_id = room_id
+        connection.game_id = room_id
         
         # Notify other players
         await self._broadcast_to_room(room_id, {
             "type": "player_joined",
             "data": {
                 "player_id": player_id,
-                "name": name,
+                "name": connection.name,
                 "room": room.model_dump(mode='json'),
             },
         }, exclude=player_id)
@@ -485,11 +514,7 @@ class GameManager:
         
         try:
             if msg_type == "create_game":
-                room = await self.create_room(
-                    player_id=player_id,
-                    name=data.get("name", "Player"),
-                    deck=data.get("deck", []),
-                )
+                room = await self.create_room(player_id=player_id)
                 await self.send_to_player(player_id, {
                     "type": "game_created",
                     "data": {"room": room.model_dump(mode='json')},
@@ -498,9 +523,7 @@ class GameManager:
             elif msg_type == "join_game":
                 room = await self.join_room(
                     player_id=player_id,
-                    name=data.get("name", "Player"),
                     room_id=data.get("room_id"),
-                    deck=data.get("deck", []),
                 )
                 await self.send_to_player(player_id, {
                     "type": "game_joined",
@@ -584,7 +607,8 @@ async def game_websocket_handler(
     websocket: WebSocket, 
     player_id: str, 
     name: str,
-    manager: GameManager
+    manager: GameManager,
+    deck: list[dict]
 ) -> None:
     """
     Main WebSocket handler for game connections.
@@ -594,8 +618,9 @@ async def game_websocket_handler(
         player_id: Unique identifier for the player
         name: Display name for the player
         manager: The game manager instance
+        deck: Serialized deck to use for the game
     """
-    connection = await manager.connect(websocket, player_id, name)
+    connection = await manager.connect(websocket, player_id, name, deck)
     
     # Send welcome message
     await manager.send_to_player(player_id, {

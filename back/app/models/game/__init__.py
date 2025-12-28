@@ -36,7 +36,7 @@ from app.models.game.attack import (
 )
 
 # Card
-from app.models.game.card import GameCard
+from app.models.game.card import GameCard, GameCardInput, GameCardInput
 
 # Zone
 from app.models.game.zone import ZoneState
@@ -95,6 +95,7 @@ __all__ = [
     "AttackResult",
     # Card
     "GameCard",
+    "GameCardInput",
     # Zone
     "ZoneState",
     # Player
