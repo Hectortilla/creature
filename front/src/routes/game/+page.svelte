@@ -303,6 +303,9 @@
 
 	.deck-selection {
 		padding: 1.5rem;
+		background: #161b22;
+		border-radius: 8px;
+		border: 1px solid #30363d;
 		margin-bottom: 1rem;
 	}
 
