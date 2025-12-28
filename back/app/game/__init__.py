@@ -88,13 +88,7 @@ from app.models.game import (
     EffectTriggeredEvent,
     EffectAppliedEvent,
 )
-from app.game.effects import (
-    Effect,
-    EffectTrigger,
-    EffectRegistry,
-    EffectContext,
-    EffectResult,
-)
+from app.game.effects import *
 from app.game.elements import (
     ElementMatrix,
     calculate_element_bonus,

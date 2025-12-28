@@ -7,6 +7,7 @@ from app.models.schemas.attack import AttackCreate, AttackRead, AttackReadWithEl
 from app.models.schemas.card import CardCreate, CardRead, CardReadWithRelations
 from app.models.schemas.user import UserCreate, UserRead, Token, TokenData
 from app.models.schemas.deck import DeckCreate, DeckUpdate, DeckRead, DeckReadWithCards, DeckReadSummary
+from app.models.schemas.websocket import *
 
 __all__ = [
     "ElementCreate", "ElementRead",
@@ -18,5 +19,28 @@ __all__ = [
     "CardCreate", "CardRead", "CardReadWithRelations",
     "UserCreate", "UserRead", "Token", "TokenData",
     "DeckCreate", "DeckUpdate", "DeckRead", "DeckReadWithCards", "DeckReadSummary",
+    # WebSocket messages
+    "CreateGameMessage",
+    "JoinGameMessage",
+    "ListRoomsMessage",
+    "StartGameMessage",
+    "ActionMessage",
+    "GetStateMessage",
+    "GetValidActionsMessage",
+    "LeaveGameMessage",
+    "PingMessage",
+    "ConnectedMessage",
+    "GameCreatedMessage",
+    "GameJoinedMessage",
+    "PlayerJoinedMessage",
+    "PlayerLeftMessage",
+    "GameStartedMessage",
+    "GameStateMessage",
+    "ActionResultMessage",
+    "ValidActionsMessage",
+    "RoomsListMessage",
+    "GameLeftMessage",
+    "ErrorMessage",
+    "PongMessage",
 ]
 

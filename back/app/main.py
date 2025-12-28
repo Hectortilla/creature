@@ -27,6 +27,7 @@ from app.websocket import GameManager, game_websocket_handler, serialize_deck_fo
 from app.auth import WebSocketUser
 from app.services.decks import DeckService
 from app.models.game.enums import GameStatus
+from app.models.schemas.websocket import *
 
 # Import models to ensure they're registered with SQLModel
 from app.models.db import (
@@ -67,6 +68,123 @@ app.include_router(decks_router)
 async def root():
     """Health check endpoint."""
     return {"message": "Creature Card Game API", "status": "healthy"}
+
+
+# ============================================================================
+# WebSocket Message Type Definitions (for TypeScript generation)
+# ============================================================================
+
+# Client → Server Messages
+@app.post("/websocket-messages/create-game", response_model=CreateGameMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_create_game_type(msg: CreateGameMessage) -> CreateGameMessage:
+    """WebSocket message type: create_game (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/join-game", response_model=JoinGameMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_join_game_type(msg: JoinGameMessage) -> JoinGameMessage:
+    """WebSocket message type: join_game (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/list-rooms", response_model=ListRoomsMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_list_rooms_type(msg: ListRoomsMessage) -> ListRoomsMessage:
+    """WebSocket message type: list_rooms (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/start-game", response_model=StartGameMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_start_game_type(msg: StartGameMessage) -> StartGameMessage:
+    """WebSocket message type: start_game (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/action", response_model=ActionMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_action_type(msg: ActionMessage) -> ActionMessage:
+    """WebSocket message type: action (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/get-state", response_model=GetStateMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_get_state_type(msg: GetStateMessage) -> GetStateMessage:
+    """WebSocket message type: get_state (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/get-valid-actions", response_model=GetValidActionsMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_get_valid_actions_type(msg: GetValidActionsMessage) -> GetValidActionsMessage:
+    """WebSocket message type: get_valid_actions (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/leave-game", response_model=LeaveGameMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_leave_game_type(msg: LeaveGameMessage) -> LeaveGameMessage:
+    """WebSocket message type: leave_game (dummy endpoint for type generation)."""
+    return msg
+
+@app.post("/websocket-messages/ping", response_model=PingMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_ping_type(msg: PingMessage) -> PingMessage:
+    """WebSocket message type: ping (dummy endpoint for type generation)."""
+    return msg
+
+# Server → Client Messages (return types)
+@app.get("/websocket-messages/connected", response_model=ConnectedMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_connected_type() -> ConnectedMessage:
+    """WebSocket message type: connected (dummy endpoint for type generation)."""
+    return ConnectedMessage()
+
+@app.get("/websocket-messages/game-created", response_model=GameCreatedMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_game_created_type() -> GameCreatedMessage:
+    """WebSocket message type: game_created (dummy endpoint for type generation)."""
+    return GameCreatedMessage()
+
+@app.get("/websocket-messages/game-joined", response_model=GameJoinedMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_game_joined_type() -> GameJoinedMessage:
+    """WebSocket message type: game_joined (dummy endpoint for type generation)."""
+    return GameJoinedMessage()
+
+@app.get("/websocket-messages/player-joined", response_model=PlayerJoinedMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_player_joined_type() -> PlayerJoinedMessage:
+    """WebSocket message type: player_joined (dummy endpoint for type generation)."""
+    return PlayerJoinedMessage()
+
+@app.get("/websocket-messages/player-left", response_model=PlayerLeftMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_player_left_type() -> PlayerLeftMessage:
+    """WebSocket message type: player_left (dummy endpoint for type generation)."""
+    return PlayerLeftMessage()
+
+@app.get("/websocket-messages/game-started", response_model=GameStartedMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_game_started_type() -> GameStartedMessage:
+    """WebSocket message type: game_started (dummy endpoint for type generation)."""
+    return GameStartedMessage()
+
+@app.get("/websocket-messages/game-state", response_model=GameStateMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_game_state_type() -> GameStateMessage:
+    """WebSocket message type: game_state (dummy endpoint for type generation)."""
+    return GameStateMessage()
+
+@app.get("/websocket-messages/action-result", response_model=ActionResultMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_action_result_type() -> ActionResultMessage:
+    """WebSocket message type: action_result (dummy endpoint for type generation)."""
+    return ActionResultMessage()
+
+@app.get("/websocket-messages/valid-actions", response_model=ValidActionsMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_valid_actions_type() -> ValidActionsMessage:
+    """WebSocket message type: valid_actions (dummy endpoint for type generation)."""
+    return ValidActionsMessage()
+
+@app.get("/websocket-messages/rooms-list", response_model=RoomsListMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_rooms_list_type() -> RoomsListMessage:
+    """WebSocket message type: rooms_list (dummy endpoint for type generation)."""
+    return RoomsListMessage()
+
+@app.get("/websocket-messages/game-left", response_model=GameLeftMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_game_left_type() -> GameLeftMessage:
+    """WebSocket message type: game_left (dummy endpoint for type generation)."""
+    return GameLeftMessage()
+
+@app.get("/websocket-messages/error", response_model=ErrorMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_error_type() -> ErrorMessage:
+    """WebSocket message type: error (dummy endpoint for type generation)."""
+    return ErrorMessage()
+
+@app.get("/websocket-messages/pong", response_model=PongMessage, tags=["WebSocket Messages"], include_in_schema=True)
+async def _ws_pong_type() -> PongMessage:
+    """WebSocket message type: pong (dummy endpoint for type generation)."""
+    return PongMessage()
 
 
 # ============================================================================

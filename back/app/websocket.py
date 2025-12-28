@@ -39,12 +39,14 @@ from uuid import uuid4
 
 from fastapi import WebSocket, WebSocketDisconnect
 from broadcaster import Broadcast
-from pydantic import Field, field_serializer, computed_field
+from pydantic import BaseModel, Field, field_serializer, computed_field
 
 from app.game.engine import get_engine
 from app.models.game import GameState, GameConfiguration, GameBaseModel, GameStatus
 from app.models.game.card import GameCardInput
 from app.game.actions import create_action
+from pydantic import ValidationError
+from app.models.schemas.websocket import *
 
 
 # ============================================================================
@@ -275,14 +277,13 @@ class GameManager:
         connection.game_id = room_id
         
         # Notify other players
-        await self._broadcast_to_room(room_id, {
-            "type": "player_joined",
-            "data": {
-                "player_id": player_id,
-                "name": connection.name,
-                "room": room.model_dump(mode='json'),
-            },
-        }, exclude=player_id)
+        await self._broadcast_to_room(room_id, PlayerJoinedMessage(
+            data=PlayerJoinedData(
+                player_id=player_id,
+                name=connection.name,
+                room=room.model_dump(mode='json'),
+            )
+        ), exclude=player_id)
         
         return room
     
@@ -301,13 +302,12 @@ class GameManager:
             self.connections[player_id].game_id = None
         
         # Notify remaining players
-        await self._broadcast_to_room(room_id, {
-            "type": "player_left",
-            "data": {
-                "player_id": player_id,
-                "room": room.model_dump(mode='json'),
-            },
-        })
+        await self._broadcast_to_room(room_id, PlayerLeftMessage(
+            data=PlayerLeftData(
+                player_id=player_id,
+                room=room.model_dump(mode='json'),
+            )
+        ))
         
         # Delete room if empty
         if not room.get_player_ids():
@@ -364,19 +364,19 @@ class GameManager:
         
         room.state = result.state
         
-        response = {
-            "success": True,
-            "game_state": result.state.model_dump(mode='json'),
-            "events": serialize_events(result.events),
-        }
-        
         # Broadcast to all players in room
-        await self._broadcast_to_room(room_id, {
-            "type": "game_started",
-            "data": response,
-        })
+        response_data = GameStartedData(
+            success=True,
+            game_state=result.state.model_dump(mode='json'),
+            events=serialize_events(result.events),
+        )
+        await self._broadcast_to_room(room_id, GameStartedMessage(data=response_data))
         
-        return response
+        return {
+            "success": response_data.success,
+            "game_state": response_data.game_state,
+            "events": response_data.events,
+        }
     
     async def process_action(self, player_id: str, room_id: str, action_data: dict) -> dict:
         """Process a game action."""
@@ -405,22 +405,25 @@ class GameManager:
         if result.success and result.state:
             room.state = result.state
         
-        response = {
-            "success": result.success,
-            "error": result.error,
-            "events": serialize_events(result.events),
-            "game_over": result.game_over,
-            "winner_id": result.winner_id,
-            "game_state": result.state.model_dump(mode='json') if result.state else None,
-        }
-        
         # Broadcast result to all players
-        await self._broadcast_to_room(room_id, {
-            "type": "action_result",
-            "data": response,
-        })
+        response_data = ActionResultData(
+            success=result.success,
+            error=result.error,
+            events=serialize_events(result.events),
+            game_over=result.game_over,
+            winner_id=result.winner_id,
+            game_state=result.state.model_dump(mode='json') if result.state else None,
+        )
+        await self._broadcast_to_room(room_id, ActionResultMessage(data=response_data))
         
-        return response
+        return {
+            "success": response_data.success,
+            "error": response_data.error,
+            "events": response_data.events,
+            "game_over": response_data.game_over,
+            "winner_id": response_data.winner_id,
+            "game_state": response_data.game_state,
+        }
     
     def _extract_action_params(self, action_type: str, data: dict) -> dict:
         """Extract action parameters from request data."""
@@ -477,13 +480,18 @@ class GameManager:
     # Messaging
     # ========================================================================
     
-    async def send_to_player(self, player_id: str, message: dict) -> bool:
+    async def send_to_player(self, player_id: str, message: dict | BaseModel) -> bool:
         """Send a message to a specific player."""
         if player_id not in self.connections:
             return False
         
         try:
-            await self.connections[player_id].websocket.send_json(message)
+            # Convert Pydantic model to dict if needed
+            if isinstance(message, BaseModel):
+                message_dict = message.model_dump(mode='json')
+            else:
+                message_dict = message
+            await self.connections[player_id].websocket.send_json(message_dict)
             return True
         except Exception:
             return False
@@ -491,7 +499,7 @@ class GameManager:
     async def _broadcast_to_room(
         self, 
         room_id: str, 
-        message: dict, 
+        message: dict | BaseModel, 
         exclude: Optional[str] = None
     ) -> None:
         """Broadcast a message to all players in a room."""
@@ -509,94 +517,113 @@ class GameManager:
     
     async def handle_message(self, player_id: str, message: dict) -> None:
         """Handle an incoming WebSocket message."""
+        # Validate message structure using Pydantic models
         msg_type = message.get("type")
         data = message.get("data", {})
         
+        # Map message types to their Pydantic models for validation
+        # Use ClassVar type directly from models instead of hardcoded strings
+        message_validators = {
+            CreateGameMessage.type: CreateGameMessage,
+            JoinGameMessage.type: JoinGameMessage,
+            ListRoomsMessage.type: ListRoomsMessage,
+            StartGameMessage.type: StartGameMessage,
+            ActionMessage.type: ActionMessage,
+            GetStateMessage.type: GetStateMessage,
+            GetValidActionsMessage.type: GetValidActionsMessage,
+            LeaveGameMessage.type: LeaveGameMessage,
+            PingMessage.type: PingMessage,
+        }
+        
+        # Validate message if we have a validator for it
+        if msg_type in message_validators:
+            try:
+                message_validators[msg_type].model_validate(message)
+            except ValidationError as e:
+                # Log validation error but continue processing (for backwards compatibility)
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"WebSocket message validation failed for player {player_id}: {e}")
+                # Still send error to client
+                await self.send_to_player(player_id, ErrorMessage(
+                    data=ErrorData(message=f"Invalid message format: {str(e)}")
+                ))
+                return
+        
         try:
-            if msg_type == "create_game":
+            if msg_type == CreateGameMessage.type:
                 room = await self.create_room(player_id=player_id)
-                await self.send_to_player(player_id, {
-                    "type": "game_created",
-                    "data": {"room": room.model_dump(mode='json')},
-                })
+                await self.send_to_player(player_id, GameCreatedMessage(
+                    data=GameCreatedData(room=room.model_dump(mode='json'))
+                ))
             
-            elif msg_type == "join_game":
+            elif msg_type == JoinGameMessage.type:
                 room = await self.join_room(
                     player_id=player_id,
                     room_id=data.get("room_id"),
                 )
-                await self.send_to_player(player_id, {
-                    "type": "game_joined",
-                    "data": {"room": room.model_dump(mode='json')},
-                })
+                await self.send_to_player(player_id, GameJoinedMessage(
+                    data=GameJoinedData(room=room.model_dump(mode='json'))
+                ))
             
-            elif msg_type == "list_rooms":
+            elif msg_type == ListRoomsMessage.type:
                 rooms = self.list_rooms()
-                await self.send_to_player(player_id, {
-                    "type": "rooms_list",
-                    "data": {"rooms": rooms},
-                })
+                await self.send_to_player(player_id, RoomsListMessage(
+                    data=RoomsListData(rooms=rooms)
+                ))
             
-            elif msg_type == "start_game":
+            elif msg_type == StartGameMessage.type:
                 room_id = self.player_rooms.get(player_id)
                 if not room_id:
                     raise ValueError("Not in a game room")
                 await self.start_game(player_id, room_id)
             
-            elif msg_type == "action":
+            elif msg_type == ActionMessage.type:
                 room_id = self.player_rooms.get(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
                 await self.process_action(player_id, room_id, data)
             
-            elif msg_type == "get_state":
+            elif msg_type == GetStateMessage.type:
                 room_id = self.player_rooms.get(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
                 state = self.get_game_state(room_id)
-                await self.send_to_player(player_id, {
-                    "type": "game_state",
-                    "data": {"state": state},
-                })
+                await self.send_to_player(player_id, GameStateMessage(
+                    data=GameStateData(state=state)
+                ))
             
-            elif msg_type == "get_valid_actions":
+            elif msg_type == GetValidActionsMessage.type:
                 room_id = self.player_rooms.get(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
                 actions = self.get_valid_actions(player_id, room_id)
-                await self.send_to_player(player_id, {
-                    "type": "valid_actions",
-                    "data": {"actions": actions},
-                })
+                await self.send_to_player(player_id, ValidActionsMessage(
+                    data=ValidActionsData(actions=actions)
+                ))
             
-            elif msg_type == "leave_game":
+            elif msg_type == LeaveGameMessage.type:
                 room_id = self.player_rooms.get(player_id)
                 if room_id:
                     await self._leave_room(player_id, room_id)
-                await self.send_to_player(player_id, {
-                    "type": "game_left",
-                    "data": {},
-                })
+                await self.send_to_player(player_id, GameLeftMessage())
             
-            elif msg_type == "ping":
-                await self.send_to_player(player_id, {"type": "pong"})
+            elif msg_type == PingMessage.type:
+                await self.send_to_player(player_id, PongMessage())
             
             else:
-                await self.send_to_player(player_id, {
-                    "type": "error",
-                    "data": {"message": f"Unknown message type: {msg_type}"},
-                })
+                await self.send_to_player(player_id, ErrorMessage(
+                    data=ErrorData(message=f"Unknown message type: {msg_type}")
+                ))
         
         except ValueError as e:
-            await self.send_to_player(player_id, {
-                "type": "error",
-                "data": {"message": str(e)},
-            })
+            await self.send_to_player(player_id, ErrorMessage(
+                data=ErrorData(message=str(e))
+            ))
         except Exception as e:
-            await self.send_to_player(player_id, {
-                "type": "error",
-                "data": {"message": f"Internal error: {str(e)}"},
-            })
+            await self.send_to_player(player_id, ErrorMessage(
+                data=ErrorData(message=f"Internal error: {str(e)}")
+            ))
 
 
 # ============================================================================
@@ -623,14 +650,13 @@ async def game_websocket_handler(
     connection = await manager.connect(websocket, player_id, name, deck)
     
     # Send welcome message
-    await manager.send_to_player(player_id, {
-        "type": "connected",
-        "data": {
-            "player_id": player_id,
-            "name": name,
-            "message": "Connected to game server",
-        },
-    })
+    await manager.send_to_player(player_id, ConnectedMessage(
+        data=ConnectedData(
+            player_id=player_id,
+            name=name,
+            message="Connected to game server",
+        )
+    ))
     
     try:
         while True:

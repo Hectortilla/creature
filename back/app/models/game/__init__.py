@@ -51,30 +51,7 @@ from app.models.game.state import (
 )
 
 # Events
-from app.models.game.events import (
-    GameEvent,
-    CardDrawnEvent,
-    CardMovedEvent,
-    CardPlayedEvent,
-    CardPromotedEvent,
-    CardSwappedEvent,
-    CardAssociatedEvent,
-    CardEvolvedEvent,
-    AttackDeclaredEvent,
-    DamageDealtEvent,
-    CardDestroyedEvent,
-    ElementsConsumedEvent,
-    ElementsRestoredEvent,
-    TurnStartedEvent,
-    TurnEndedEvent,
-    PhaseChangedEvent,
-    GameStartedEvent,
-    GameEndedEvent,
-    NoDefenderEvent,
-    EffectTriggeredEvent,
-    EffectAppliedEvent,
-    EVENT_TYPES,
-)
+from app.models.game.events import *
 
 
 __all__ = [

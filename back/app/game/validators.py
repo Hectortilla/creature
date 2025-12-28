@@ -10,21 +10,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 from app.models.game import Zone, TurnPhase, GameStatus
-from app.game.actions import (
-    Action,
-    DrawAction,
-    PlayCardAction,
-    PromoteAction,
-    SwapAction,
-    AssociationAction,
-    EvolutionAction,
-    AttackAction,
-    PassPhaseAction,
-    ForceDefendAction,
-    ConcedeAction,
-    MultiPlayCardAction,
-    MultiSwapAction,
-)
+from app.game.actions import *
 from app.game.elements import can_afford_attack
 
 if TYPE_CHECKING:

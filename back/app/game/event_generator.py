@@ -38,21 +38,7 @@ from app.models.game import (
     GameEndedEvent,
     NoDefenderEvent,
 )
-from app.game.actions import (
-    Action,
-    DrawAction,
-    PlayCardAction,
-    PromoteAction,
-    SwapAction,
-    AssociationAction,
-    EvolutionAction,
-    AttackAction,
-    PassPhaseAction,
-    ForceDefendAction,
-    ConcedeAction,
-    MultiPlayCardAction,
-    MultiSwapAction,
-)
+from app.game.actions import *
 from app.game.elements import calculate_damage
 
 if TYPE_CHECKING:
