@@ -9,8 +9,15 @@ import {
 	getAllAssociationsAssociationsGet
 } from '$lib/api';
 import { getAuthHeaders } from '$lib/server/auth';
+import { NO_AUTH_ROUTES } from '$lib/constants';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	// Skip loading data for public routes (login/register)
+	const isPublicRoute = NO_AUTH_ROUTES.some((route) => url.pathname === route || url.pathname.startsWith(route));
+	if (isPublicRoute) {
+		return {};
+	}
+
 	const headers = getAuthHeaders(locals);
 
 	const [cardsRes, elementsRes, typesRes, charactersRes, attacksRes, abilitiesRes, associationsRes] = await Promise.all([

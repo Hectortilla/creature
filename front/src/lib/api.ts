@@ -1,9 +1,25 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import { browser } from '$app/environment';
+import { redirect } from '@sveltejs/kit';
 import { client } from './api/client.gen';
 import { auth } from './stores/auth.svelte';
+import { NO_AUTH_ROUTES } from './constants';
 
 const TOKEN_KEY = 'auth_token';
+
+// Module-level variable to track current route (set by load functions)
+let currentServerRoute: string | null = null;
+
+// Function to set the current route (called from load functions)
+export function setCurrentRoute(path: string) {
+	currentServerRoute = path;
+}
+
+// Function to check if current route is public
+function isPublicRoute(path: string | null): boolean {
+	if (!path) return false;
+	return NO_AUTH_ROUTES.some((route) => path === route || path.startsWith(route));
+}
 
 // Configure the API client with the base URL from environment
 export function configureApiClient(baseUrl: string = PUBLIC_API_URL) {
@@ -34,20 +50,24 @@ export function configureApiClient(baseUrl: string = PUBLIC_API_URL) {
 			if (!isAuthEndpoint) {
 				// Clear auth state on unauthorized
 				auth.clearAuth();
-				// Redirect to login (only on client-side to avoid server-side redirect loops)
+				
 				if (browser) {
-					// Check if we're already on a public route to avoid redirect loops
+					// Client-side: Check if we're already on a public route to avoid redirect loops
 					const currentPath = window.location.pathname;
-
-					const isPublicRoute = currentPath === '/login' || currentPath === '/register';
 					
-					if (!isPublicRoute) {
+					if (!isPublicRoute(currentPath)) {
 						// Client-side redirect
 						window.location.href = '/login';
 					}
+				} else {
+					// Server-side: Check if we're already on a public route to avoid redirect loops
+					const isCurrentRoutePublic = isPublicRoute(currentServerRoute);
+					
+					if (!isCurrentRoutePublic) {
+						// Server-side: Throw redirect (will be caught by SvelteKit)
+						throw redirect(302, '/login');
+					}
 				}
-				// Note: Server-side 401s will propagate as errors to load functions
-				// which can handle them appropriately without causing redirect loops
 			}
 		}
 		return error;
