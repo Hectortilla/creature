@@ -59,6 +59,10 @@ class MessageBroadcaster:
         
         All players subscribed to this room channel will receive the message.
         ConnectionManager subscribes players to room channels when they join.
+        
+        Args:
+            room_id: The room ID to broadcast to
+            message: The message to send
         """
         try:
             # Convert Pydantic model to dict if needed

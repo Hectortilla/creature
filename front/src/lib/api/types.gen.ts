@@ -64,56 +64,83 @@ export type AbilityRead = {
  * ActionData
  *
  * Data for action message.
+ *
+ * This model represents all possible fields for game actions.
+ * Different action types use different subsets of these fields.
  */
 export type ActionData = {
   /**
    * Action Type
+   *
+   * The type of action to perform
    */
   action_type: string;
   /**
    * Card Id
+   *
+   * Card instance ID (used by: play_card, promote, force_defend)
    */
   card_id?: string | null;
   /**
    * Card Ids
+   *
+   * List of card instance IDs (used by: multi_play_card)
    */
   card_ids?: Array<string>;
   /**
    * Count
+   *
+   * Number of cards to draw (used by: draw)
    */
   count?: number;
   /**
    * Target Id
+   *
+   * Target card instance ID (used by: associate, evolve, attack)
    */
   target_id?: string | null;
   /**
    * Attacker Id
+   *
+   * Attacker card instance ID (used by: attack)
    */
   attacker_id?: string | null;
   /**
    * Attack Id
+   *
+   * Attack ID to use (used by: attack)
    */
   attack_id?: string | null;
   /**
    * Supporting Card Id
+   *
+   * Supporting card instance ID (used by: swap)
    */
   supporting_card_id?: string | null;
   /**
    * Attacking Card Id
+   *
+   * Attacking card instance ID (used by: swap)
    */
   attacking_card_id?: string | null;
   /**
    * Swaps
+   *
+   * List of swap pairs (used by: multi_swap). Each swap is {supporting_card_id: str, attacking_card_id: str}
    */
   swaps?: Array<{
     [key: string]: unknown;
   }>;
   /**
    * Association Card Id
+   *
+   * Association card instance ID (used by: associate)
    */
   association_card_id?: string | null;
   /**
    * Evolution Card Id
+   *
+   * Evolution card instance ID (used by: evolve)
    */
   evolution_card_id?: string | null;
 };

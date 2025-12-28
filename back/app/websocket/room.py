@@ -76,18 +76,17 @@ class RoomManager:
         # Subscribe to room channel
         await self.connection_manager.subscribe_to_room(player_id, room_id)
         
-        # Notify other players
-        await self.message_broadcaster.broadcast_to_room(
-            room_id,
-            PlayerJoinedMessage(
-                data=PlayerJoinedData(
-                    player_id=player_id,
-                    name=connection.name,
-                    room=room.model_dump(mode='json'),
-                )
-            ),
-            exclude=player_id
+        # Notify other players (exclude the joining player)
+        message = PlayerJoinedMessage(
+            data=PlayerJoinedData(
+                player_id=player_id,
+                name=connection.name,
+                room=room.model_dump(mode='json'),
+            )
         )
+        for other_player_id in room.get_player_ids():
+            if other_player_id != player_id:
+                await self.message_broadcaster.send_to_player(other_player_id, message)
         
         return room
     
