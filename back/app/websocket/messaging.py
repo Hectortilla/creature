@@ -1,38 +1,50 @@
 """
 WebSocket Messaging
 
-Handles sending messages to players and broadcasting to rooms.
+Publishes messages to broadcaster channels.
+This is a thin wrapper around broadcaster.publish() for convenience.
+
+Architecture:
+- This module PUBLISHES messages to channels (one-way: server -> channels)
+- connection.py SUBSCRIBES to channels and forwards to WebSocket (channels -> WebSocket)
+- The broadcaster library handles the pub/sub distribution (supports Redis for scaling)
 """
 
-from typing import Optional, TYPE_CHECKING
 from pydantic import BaseModel
 
-from app.websocket.connection import ConnectionManager
-
-if TYPE_CHECKING:
-    from app.websocket.room import RoomManager
+from broadcaster import Broadcast
 
 
 class MessageBroadcaster:
-    """Handles message broadcasting to players and rooms."""
+    """
+    Publishes messages to broadcaster channels.
     
-    def __init__(self, connection_manager: ConnectionManager, room_manager: Optional["RoomManager"] = None):
-        self.connection_manager = connection_manager
-        self.room_manager = room_manager
+    This does NOT manage queues or WebSocket connections.
+    It simply publishes messages to channels. The ConnectionManager
+    subscribes to these channels and forwards messages to WebSocket connections.
+    """
+    
+    def __init__(self, broadcast: Broadcast):
+        self.broadcast = broadcast
     
     async def send_to_player(self, player_id: str, message: dict | BaseModel) -> bool:
-        """Send a message to a specific player."""
-        connection = self.connection_manager.get_connection(player_id)
-        if not connection:
-            return False
+        """
+        Publish a message to a player-specific channel.
         
+        The ConnectionManager subscribes to this channel and forwards
+        the message to the player's WebSocket connection.
+        """
         try:
             # Convert Pydantic model to dict if needed
             if isinstance(message, BaseModel):
                 message_dict = message.model_dump(mode='json')
             else:
                 message_dict = message
-            await connection.websocket.send_json(message_dict)
+            
+            # Publish to player-specific channel
+            # ConnectionManager will pick this up and forward to WebSocket
+            channel = f"player:{player_id}"
+            await self.broadcast.publish(channel=channel, message=message_dict)
             return True
         except Exception:
             return False
@@ -40,15 +52,25 @@ class MessageBroadcaster:
     async def broadcast_to_room(
         self, 
         room_id: str, 
-        message: dict | BaseModel, 
-        exclude: Optional[str] = None
+        message: dict | BaseModel
     ) -> None:
-        """Broadcast a message to all players in a room."""
-        room = self.room_manager.get_room(room_id)
-        if not room:
-            return
+        """
+        Publish a message to a room channel.
         
-        for player_id in room.get_player_ids():
-            if player_id != exclude:
-                await self.send_to_player(player_id, message)
+        All players subscribed to this room channel will receive the message.
+        ConnectionManager subscribes players to room channels when they join.
+        """
+        try:
+            # Convert Pydantic model to dict if needed
+            if isinstance(message, BaseModel):
+                message_dict = message.model_dump(mode='json')
+            else:
+                message_dict = message
+            
+            # Publish to room channel
+            # All ConnectionManagers subscribed to this room will forward to their WebSockets
+            channel = f"room:{room_id}"
+            await self.broadcast.publish(channel=channel, message=message_dict)
+        except Exception:
+            pass
 

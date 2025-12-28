@@ -24,20 +24,14 @@ class GameManager:
     Uses broadcaster for pub/sub to support multiple server instances.
     """
     
-    def __init__(self, broadcast: Broadcast):
-        self.broadcast = broadcast
-        
-        # Initialize managers
-        self.connection_manager = ConnectionManager()
-        self.message_broadcaster = MessageBroadcaster(
-            self.connection_manager,
-            None  # Will be set after room_manager is created
-        )
+    def __init__(self, broadcast: Broadcast):        
+        # Initialize managers with broadcaster
+        self.connection_manager = ConnectionManager(broadcast)
+        self.message_broadcaster = MessageBroadcaster(broadcast)
         self.room_manager = RoomManager(
             self.connection_manager,
             self.message_broadcaster
         )
-        self.message_broadcaster.room_manager = self.room_manager  # Set reference
         
         self.game_logic_manager = GameLogicManager(
             self.room_manager,
@@ -149,14 +143,25 @@ async def game_websocket_handler(
     
     connection = await manager.connect(websocket, player_id, name, deck)
     
-    # Send welcome message
-    await manager.send_to_player(player_id, ConnectedMessage(
-        data=ConnectedData(
-            player_id=player_id,
-            name=name,
-            message="Connected to game server",
-        )
-    ))
+    # Send welcome message directly to WebSocket (before subscription is ready)
+    # This ensures the client receives the connection confirmation immediately
+    try:
+        await websocket.send_json(ConnectedMessage(
+            data=ConnectedData(
+                player_id=player_id,
+                name=name,
+                message="Connected to game server",
+            )
+        ).model_dump(mode='json'))
+    except Exception:
+        # If direct send fails, try via broadcaster (subscription should be ready soon)
+        await manager.send_to_player(player_id, ConnectedMessage(
+            data=ConnectedData(
+                player_id=player_id,
+                name=name,
+                message="Connected to game server",
+            )
+        ))
     
     try:
         while True:

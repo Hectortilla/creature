@@ -43,6 +43,9 @@ class RoomManager:
         
         connection.game_id = room.room_id
         
+        # Subscribe to room channel
+        await self.connection_manager.subscribe_to_room(player_id, room.room_id)
+        
         return room
     
     async def join_room(self, player_id: str, room_id: str) -> GameRoom:
@@ -65,6 +68,9 @@ class RoomManager:
         room.add_player(player_id, connection.name, connection)
         self.player_rooms[player_id] = room_id
         connection.game_id = room_id
+        
+        # Subscribe to room channel
+        await self.connection_manager.subscribe_to_room(player_id, room_id)
         
         # Notify other players
         await self.message_broadcaster.broadcast_to_room(
@@ -95,6 +101,8 @@ class RoomManager:
         connection = self.connection_manager.get_connection(player_id)
         if connection:
             connection.game_id = None
+            # Unsubscribe from room channel
+            await self.connection_manager.unsubscribe_from_room(player_id, room_id)
         
         # Notify remaining players
         await self.message_broadcaster.broadcast_to_room(
