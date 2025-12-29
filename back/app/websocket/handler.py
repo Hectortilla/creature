@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 from app.websocket.connection import ConnectionManager
 from app.websocket.room import RoomManager
-from app.websocket.game_logic import GameLogicManager
 from app.websocket.messaging import MessageBroadcaster
 from app.models.schemas.websocket.client import (
     CreateGameMessage,
@@ -49,12 +48,10 @@ class MessageHandler:
         self,
         connection_manager: ConnectionManager,
         room_manager: RoomManager,
-        game_logic_manager: GameLogicManager,
         message_broadcaster: MessageBroadcaster,
     ):
         self.connection_manager = connection_manager
         self.room_manager = room_manager
-        self.game_logic_manager = game_logic_manager
         self.message_broadcaster = message_broadcaster
     
     async def handle_message(self, player_id: str, message: dict) -> None:
@@ -115,19 +112,19 @@ class MessageHandler:
                 room_id = self.room_manager.get_player_room(player_id)
                 if not room_id:
                     raise ValueError("Not in a game room")
-                await self.game_logic_manager.start_game(player_id, room_id)
+                await self.room_manager.start_game(player_id, room_id)
             
             elif msg_type == ActionMessage.type:
                 room_id = self.room_manager.get_player_room(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
-                await self.game_logic_manager.process_action(player_id, room_id, data)
+                await self.room_manager.process_action(player_id, room_id, data)
             
             elif msg_type == GetStateMessage.type:
                 room_id = self.room_manager.get_player_room(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
-                state = self.game_logic_manager.get_game_state(room_id)
+                state = self.room_manager.get_game_state(room_id)
                 await self.message_broadcaster.send_to_player(player_id, GameStateMessage(
                     data=GameStateData(state=state)
                 ))
@@ -136,7 +133,7 @@ class MessageHandler:
                 room_id = self.room_manager.get_player_room(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
-                actions = self.game_logic_manager.get_valid_actions(player_id, room_id)
+                actions = self.room_manager.get_valid_actions(player_id, room_id)
                 await self.message_broadcaster.send_to_player(player_id, ValidActionsMessage(
                     data=ValidActionsData(actions=actions)
                 ))

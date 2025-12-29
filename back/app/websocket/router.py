@@ -36,19 +36,21 @@ async def game_websocket(
     - Player doesn't have another active game
     - If room_id is provided, room exists and can be joined (has 1 player, game not started)
     """
-    from app.settings.lifespan import game_manager as gm
-    if gm is None:
+    from app.settings.lifespan import connection_manager, room_manager, message_handler, message_broadcaster
+    if connection_manager is None or room_manager is None or message_handler is None or message_broadcaster is None:
         raise WebSocketException(
             code=status.WS_1011_INTERNAL_ERROR,
-            reason="Game manager not initialized",
+            reason="Game managers not initialized",
         )
     
     await handle_websocket_connection(
         websocket,
         user,
         deck_id,
-        gm.connection_manager,
-        gm.room_manager,
+        connection_manager,
+        room_manager,
+        message_handler,
+        message_broadcaster,
         room_id=room_id,
     )
 
@@ -60,10 +62,10 @@ async def list_rooms():
     
     Returns rooms that haven't started yet.
     """
-    from app.settings.lifespan import game_manager
-    if game_manager is None:
+    from app.settings.lifespan import room_manager
+    if room_manager is None:
         return {"rooms": []}
-    return await list_game_rooms(game_manager.room_manager)
+    return await list_game_rooms(room_manager)
 
 
 # ============================================================================

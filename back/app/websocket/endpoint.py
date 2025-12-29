@@ -12,6 +12,8 @@ from app.services.decks import DeckService
 from app.models.game.enums import GameStatus
 from app.websocket.connection import ConnectionManager
 from app.websocket.room import RoomManager
+from app.websocket.handler import MessageHandler
+from app.websocket.messaging import MessageBroadcaster
 from app.websocket.serialization import serialize_deck_for_game
 
 
@@ -21,6 +23,8 @@ async def handle_websocket_connection(
     deck_id: int,
     connection_manager: ConnectionManager,
     room_manager: RoomManager,
+    message_handler: MessageHandler,
+    message_broadcaster: MessageBroadcaster,
     room_id: str | None = None,
 ) -> None:
     """
@@ -41,8 +45,7 @@ async def handle_websocket_connection(
     db = next(get_db_session())
     try:
         # Check if player already has an active game
-        from app.settings.lifespan import game_manager as gm
-        if gm and connection_manager.has_connection(player_id):
+        if connection_manager.has_connection(player_id):
             existing_connection = connection_manager.get_connection(player_id)
             if existing_connection and existing_connection.game_id:
                 # Check if the game is still active
@@ -106,15 +109,18 @@ async def handle_websocket_connection(
         db.close()
     
     # Pass serialized deck to handler
-    # Import here to ensure game_manager is initialized from lifespan
-    from app.settings.lifespan import game_manager as gm
     from app.websocket import game_websocket_handler
-    if gm is None:
-        raise WebSocketException(
-            code=status.WS_1011_INTERNAL_ERROR,
-            reason="Game manager not initialized",
-        )
-    await game_websocket_handler(websocket, player_id, name, gm, serialized_deck, room_id=room_id)
+    await game_websocket_handler(
+        websocket, 
+        player_id, 
+        name, 
+        connection_manager,
+        room_manager,
+        message_handler,
+        message_broadcaster,
+        serialized_deck, 
+        room_id=room_id
+    )
 
 
 async def list_game_rooms(room_manager: RoomManager) -> dict:
