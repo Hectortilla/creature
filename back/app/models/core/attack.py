@@ -29,3 +29,4 @@ class AttackCoreFields(BaseModel):
     dice_rolls: int | None = None
 
 
+

@@ -36,3 +36,4 @@ class CardCombatFields(BaseModel):
     magic_defence: int | None = None
 
 
+
