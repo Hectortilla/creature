@@ -231,7 +231,7 @@ class AttackAction(Action):
     """Action to attack with a creature."""
     attacker_id: str = ""
     attack_id: int = 0
-    target_id: str = ""
+    target_card_id: str = ""
     
     @property
     def valid_phases(self) -> list[TurnPhase] | None:
@@ -253,9 +253,9 @@ class AttackAction(Action):
                         attack_name = atk.name
                         break
             
-            if self.target_id:
-                target = state.get_card(self.target_id)
-                target_name = target.name if target else self.target_id
+            if self.target_card_id:
+                target = state.get_card(self.target_card_id)
+                target_name = target.name if target else self.target_card_id
                 return f"{attacker_name} uses {attack_name} on {target_name}"
             else:
                 return f"{attacker_name} uses {attack_name} (no defenders)"
@@ -266,7 +266,7 @@ class AttackAction(Action):
         d = super().to_dict(state)
         if state:
             attacker = state.get_card(self.attacker_id)
-            target = state.get_card(self.target_id) if self.target_id else None
+            target = state.get_card(self.target_card_id) if self.target_card_id else None
             
             attack_name = None
             if attacker:

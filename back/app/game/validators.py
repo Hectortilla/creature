@@ -480,7 +480,7 @@ class RuleValidator:
         
         # Check target is in opponent's attacking zone
         opponent_attacking = opponent.zones[Zone.ATTACKING]
-        if action.target_id not in opponent_attacking.card_ids:
+        if action.target_card_id not in opponent_attacking.card_ids:
             # Check if opponent has no attackers (No Defenders rule)
             if len(opponent_attacking.card_ids) == 0:
                 # This will trigger the forced defend mechanic
@@ -493,7 +493,7 @@ class RuleValidator:
             )
         
         # Check target exists
-        target = state.get_card(action.target_id)
+        target = state.get_card(action.target_card_id)
         if not target:
             return ValidationResult(
                 valid=False,

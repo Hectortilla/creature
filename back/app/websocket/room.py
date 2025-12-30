@@ -217,7 +217,9 @@ class RoomManager:
         if not action_type:
             raise ValueError("Missing action_type")
         
-        action_params = self._extract_action_params(action_type, action_data)
+        # Prepare action params: remove action_type
+        action_params = {k: v for k, v in action_data.items() if k != "action_type"}
+        
         action = create_action(action_type, player_id=player_id, **action_params)
         
         # Process action
@@ -250,38 +252,6 @@ class RoomManager:
             "winner_id": response_data.winner_id,
             "game_state": response_data.game_state,
         }
-    
-    def _extract_action_params(self, action_type: str, data: dict) -> dict:
-        """Extract action parameters from request data."""
-        params = {}
-        
-        if action_type == "draw":
-            params["count"] = data.get("count", 1)
-        elif action_type == "play_card":
-            params["card_id"] = data.get("card_id")
-        elif action_type == "multi_play_card":
-            params["card_ids"] = data.get("card_ids", [])
-        elif action_type == "promote":
-            params["card_id"] = data.get("card_id")
-        elif action_type == "swap":
-            params["supporting_card_id"] = data.get("supporting_card_id")
-            params["attacking_card_id"] = data.get("attacking_card_id")
-        elif action_type == "multi_swap":
-            params["swaps"] = data.get("swaps", [])
-        elif action_type == "associate":
-            params["association_card_id"] = data.get("association_card_id")
-            params["target_card_id"] = data.get("target_id")
-        elif action_type == "evolve":
-            params["evolution_card_id"] = data.get("evolution_card_id")
-            params["target_card_id"] = data.get("target_id")
-        elif action_type == "attack":
-            params["attacker_id"] = data.get("attacker_id")
-            params["attack_id"] = data.get("attack_id")
-            params["target_id"] = data.get("target_id", "")
-        elif action_type == "force_defend":
-            params["card_id"] = data.get("card_id")
-        
-        return params
     
     def get_valid_actions(self, player_id: str, room_id: str) -> list[dict]:
         """Get valid actions for a player."""

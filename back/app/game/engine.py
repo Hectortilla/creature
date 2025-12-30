@@ -407,7 +407,7 @@ class GameEngine:
                                         player_id=player_id,
                                         attacker_id=attacker_id,
                                         attack_id=attack.attack_id,
-                                        target_id=target_id,
+                                        target_card_id=target_id,
                                     ))
                                 
                                 # If no defenders, can attack with empty target
@@ -416,7 +416,7 @@ class GameEngine:
                                         player_id=player_id,
                                         attacker_id=attacker_id,
                                         attack_id=attack.attack_id,
-                                        target_id="",
+                                        target_card_id="",
                                     ))
         
         return [action.to_dict(state) for action in valid_actions]

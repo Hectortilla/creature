@@ -73,7 +73,7 @@ class ActionData(BaseModel):
         description="Number of cards to draw (used by: draw)",
         examples=[1, 2, 3]
     )
-    target_id: Optional[str] = Field(
+    target_card_id: Optional[str] = Field(
         default=None,
         description="Target card instance ID (used by: associate, evolve, attack)",
         examples=["card_instance_789"]

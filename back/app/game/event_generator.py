@@ -273,7 +273,7 @@ class ActionToEventGenerator:
                 ))
                 return events
         
-        target = state.get_card(action.target_id)
+        target = state.get_card(action.target_card_id)
         if not target:
             return events
         
@@ -292,7 +292,7 @@ class ActionToEventGenerator:
             game_id=state.game_id,
             attacker_owner_id=action.player_id,
             attacker_id=action.attacker_id,
-            target_id=action.target_id,
+            target_id=action.target_card_id,
             attack_id=attack.attack_id,
             attack_name=attack.name,
         ))
@@ -305,7 +305,7 @@ class ActionToEventGenerator:
             events.append(DamageDealtEvent(
                 game_id=state.game_id,
                 source_id=action.attacker_id,
-                target_id=action.target_id,
+                target_id=action.target_card_id,
                 damage_type=attack.type,
                 base_damage=damage_calc.base_damage,
                 element_bonus=damage_calc.element_bonus,
@@ -318,7 +318,7 @@ class ActionToEventGenerator:
             if target.current_health - damage_calc.final_damage <= 0:
                 events.append(CardDestroyedEvent(
                     game_id=state.game_id,
-                    card_id=action.target_id,
+                    card_id=action.target_card_id,
                     owner_id=target.owner_id,
                     card_name=target.name,
                     destroyed_by=action.attacker_id,
@@ -328,7 +328,7 @@ class ActionToEventGenerator:
         if damage_calc.reflected_damage > 0:
             events.append(DamageDealtEvent(
                 game_id=state.game_id,
-                source_id=action.target_id,
+                source_id=action.target_card_id,
                 target_id=action.attacker_id,
                 damage_type=attack.type,
                 base_damage=0,
@@ -345,7 +345,7 @@ class ActionToEventGenerator:
                     card_id=action.attacker_id,
                     owner_id=attacker.owner_id,
                     card_name=attacker.name,
-                    destroyed_by=action.target_id,
+                    destroyed_by=action.target_card_id,
                 ))
         
         return events
