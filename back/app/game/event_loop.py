@@ -98,8 +98,9 @@ class EventLoop:
         """
         from app.models.game.player import PlayerState
         
+        # No need to copy - apply_event returns new objects each time
         current_state = state
-        current_players = players.copy()  # Make a copy to avoid mutating the original
+        current_players = players
         event_queue: deque[GameEvent] = deque(initial_events)
         all_events: list[GameEvent] = []
         triggered_events: list[GameEvent] = []

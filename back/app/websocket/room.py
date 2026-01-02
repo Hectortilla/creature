@@ -179,10 +179,16 @@ class RoomManager:
     async def _start_game(self, room: GameRoom) -> dict:
         """Start a game in a room."""
         # Create the game
-        
         state = self.engine.create_game(room)
+        room.state = state  # Set initial state
+        
         # Start the game
         result = self.engine.start_game(state)
+        
+        # Update room with the final state after starting
+        if result.success and result.state:
+            room.state = result.state
+            room.state.room.players = result.final_players
         
         # Broadcast to all players in room
         response_data = GameStartedData(

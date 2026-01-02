@@ -161,8 +161,10 @@ class GameEngine:
         # Process all events through the event loop
         result = self.event_loop.process(state, state.room.players, initial_events)
         
-        # Update room's players reference
-        state.room.players = result.final_players
+        # Update room's players reference in the final state
+        # (The reducer already does this, but ensure it's set correctly)
+        if result.final_state:
+            result.final_state.room.players = result.final_players
         
         # Get valid actions for the first player after game start
         valid_actions = []
@@ -202,7 +204,7 @@ class GameEngine:
         
         try:
             # 2. Transform action to events
-            events = self.event_generator.create(state, state.room.players, action)
+            events = self.event_generator.create(state, action)
             
             # 3. Process events through the event loop (applies reducer + triggers effects)
             result = self.event_loop.process(state, state.room.players, events)
