@@ -141,11 +141,9 @@ class RoomManager:
         return self.player_rooms.get(player_id)
     
     def list_rooms(self) -> list[dict]:
-        """List all available (not started) rooms."""
         return [
             room.model_dump(mode='json')
             for room in self.rooms.values()
-            if not room.is_started
         ]
     
     # Game logic methods (merged from GameLogicManager)
@@ -273,4 +271,3 @@ class RoomManager:
         if not room or not room.state:
             return None
         return room.state.model_dump(mode='json')
-

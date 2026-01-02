@@ -35,12 +35,6 @@ class GameRoom(GameBaseModel):
     host_id: str
     state: Optional[GameState] = None
     players: dict[str, PlayerState] = Field(default_factory=dict)  # Player ID -> PlayerState
-    player1_id: Optional[str] = None
-    player1_name: Optional[str] = None
-    player1_deck: Optional[list[dict]] = Field(default=None, exclude=True)
-    player2_id: Optional[str] = None
-    player2_name: Optional[str] = None
-    player2_deck: Optional[list[dict]] = Field(default=None, exclude=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     @field_serializer('created_at')
@@ -55,11 +49,7 @@ class GameRoom(GameBaseModel):
     @computed_field
     @property
     def is_full(self) -> bool:
-        # Check players dict first (after game starts)
-        if self.players:
-            return len(self.players) == 2
-        # Otherwise check room fields (before game starts)
-        return self.player1_id is not None and self.player2_id is not None
+        return len(self.players) == 2
     
     @computed_field
     @property
@@ -69,67 +59,7 @@ class GameRoom(GameBaseModel):
     @computed_field
     @property
     def can_join(self) -> bool:
-        """
-        Check if a room can be joined.
-        
-        A room can be joined if:
-        - Game has never started (state is None or status is WAITING)
-        - Room has exactly 1 player (not full, but has at least one player)
-        """
-        if self.is_started:
-            return False
-        # Count active players - prefer players dict if available
-        if self.players:
-            player_count = len(self.players)
-        else:
-            player_count = sum(1 for p in [self.player1_id, self.player2_id] if p is not None)
-        return player_count == 1
-    
-    @computed_field
-    @property
-    def players_list(self) -> list[Optional[dict]]:
-        """List of players for serialization."""
-        # If players dict exists (after game starts), use that
-        if self.players:
-            return [
-                {"player_id": pid, "name": player.name}
-                for pid, player in self.players.items()
-            ]
-        # Otherwise use room fields (before game starts)
-        return [
-            {"player_id": self.player1_id, "name": self.player1_name}
-            if self.player1_id else None,
-            {"player_id": self.player2_id, "name": self.player2_name}
-            if self.player2_id else None,
-        ]
-    
-    def get_player1_id(self) -> Optional[str]:
-        """Get player1_id, preferring players dict when available."""
-        if self.players:
-            player_list = list(self.players.keys())
-            return player_list[0] if len(player_list) > 0 else None
-        return self.player1_id
-    
-    def get_player1_name(self) -> Optional[str]:
-        """Get player1_name, preferring players dict when available."""
-        if self.players:
-            player_list = list(self.players.values())
-            return player_list[0].name if len(player_list) > 0 else None
-        return self.player1_name
-    
-    def get_player2_id(self) -> Optional[str]:
-        """Get player2_id, preferring players dict when available."""
-        if self.players:
-            player_list = list(self.players.keys())
-            return player_list[1] if len(player_list) > 1 else None
-        return self.player2_id
-    
-    def get_player2_name(self) -> Optional[str]:
-        """Get player2_name, preferring players dict when available."""
-        if self.players:
-            player_list = list(self.players.values())
-            return player_list[1].name if len(player_list) > 1 else None
-        return self.player2_name
+        return len(self.players) < 2 and not self.is_started
     
     def get_player(self, player_id: str) -> PlayerState:
         """Get a player's state."""
@@ -150,58 +80,26 @@ class GameRoom(GameBaseModel):
                 return player
         raise ValueError(f"No opponent found for player {player_id}")
     
-    def save_players(self, player1_id: str, player1_name: str, player2_id: str, player2_name: str) -> None:
-        """Initialize players dict for the game."""
-        from app.models.game.player import PlayerState
-        
-        self.players = {
-            player1_id: PlayerState(player_id=player1_id, name=player1_name),
-            player2_id: PlayerState(player_id=player2_id, name=player2_name),
-        }
-    
     def add_player(self, player_id: str, name: str, connection: PlayerConnection) -> int:
         """Add a player to the room. Returns slot number (1 or 2)."""
         if connection.deck is None:
             raise ValueError("Player connection does not have a deck")
         
-        if self.player1_id is None:
-            self.player1_id = player_id
-            self.player1_name = name
-            self.player1_deck = connection.deck
-            return 1
-        elif self.player2_id is None:
-            self.player2_id = player_id
-            self.player2_name = name
-            self.player2_deck = connection.deck
-            return 2
-        raise ValueError("Room is full")
+        if len(self.players) == 2:
+            raise ValueError("Room is full")
+
+        self.players[player_id] = PlayerState(player_id=player_id, name=name)
     
     def remove_player(self, player_id: str) -> bool:
         """Remove a player from the room."""
-        if self.player1_id == player_id:
-            self.player1_id = None
-            self.player1_name = None
-            self.player1_deck = None
-            return True
-        elif self.player2_id == player_id:
-            self.player2_id = None
-            self.player2_name = None
-            self.player2_deck = None
-            return True
-        return False
+        if player_id not in self.players:
+            raise ValueError(f"Player {player_id} not found in room")
+        del self.players[player_id]
     
     def get_player_ids(self) -> list[str]:
         """Get list of player IDs in the room."""
-        # If players dict exists (after game starts), use that
-        if self.players:
-            return list(self.players.keys())
-        # Otherwise, get from room fields (before game starts)
-        ids = []
-        if self.player1_id:
-            ids.append(self.player1_id)
-        if self.player2_id:
-            ids.append(self.player2_id)
-        return ids
+        return list(self.players.keys())
+        
     
     def game_ready_to_start(self) -> bool:
         """Check if the game is ready to start."""

@@ -8,7 +8,7 @@ from fastapi import APIRouter, WebSocket, Query, status, WebSocketException
 
 from app.auth import WebSocketUser
 from app.models.schemas.websocket import *
-from app.websocket.endpoint import handle_websocket_connection, list_game_rooms
+from app.websocket.endpoint import handle_websocket_connection
 
 router = APIRouter()
 
@@ -56,16 +56,14 @@ async def game_websocket(
 
 
 @router.get("/rooms")
-async def list_rooms():
+def list_rooms():
     """
     List all available game rooms (HTTP endpoint for convenience).
     
     Returns rooms that haven't started yet.
     """
     from app.settings.lifespan import room_manager
-    if room_manager is None:
-        return {"rooms": []}
-    return await list_game_rooms(room_manager)
+    return {"rooms": room_manager.list_rooms() if room_manager else []}
 
 
 # ============================================================================

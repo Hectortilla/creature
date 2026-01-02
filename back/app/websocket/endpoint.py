@@ -121,13 +121,3 @@ async def handle_websocket_connection(
         serialized_deck, 
         room_id=room_id
     )
-
-
-async def list_game_rooms(room_manager: RoomManager) -> dict:
-    """
-    List all available game rooms (HTTP endpoint for convenience).
-    
-    Returns rooms that haven't started yet.
-    """
-    return {"rooms": room_manager.list_rooms()}
-

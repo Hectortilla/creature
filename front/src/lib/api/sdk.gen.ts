@@ -176,9 +176,6 @@ import type {
   WsPongTypeGameWebsocketMessagesPongGetResponses,
   WsRoomsListTypeGameWebsocketMessagesRoomsListGetData,
   WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponses,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostData,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostErrors,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostResponses,
   WsValidActionsTypeGameWebsocketMessagesValidActionsGetData,
   WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponses,
 } from "./types.gen";
@@ -1156,32 +1153,6 @@ export const wsListRoomsTypeGameWebsocketMessagesListRoomsPost = <
     ThrowOnError
   >({
     url: "/game/websocket-messages/list-rooms",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
-
-/**
- *  Ws Start Game Type
- *
- * WebSocket message type: start_game (dummy endpoint for type generation).
- */
-export const wsStartGameTypeGameWebsocketMessagesStartGamePost = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<
-    WsStartGameTypeGameWebsocketMessagesStartGamePostData,
-    ThrowOnError
-  >,
-) =>
-  (options.client ?? client).post<
-    WsStartGameTypeGameWebsocketMessagesStartGamePostResponses,
-    WsStartGameTypeGameWebsocketMessagesStartGamePostErrors,
-    ThrowOnError
-  >({
-    url: "/game/websocket-messages/start-game",
     ...options,
     headers: {
       "Content-Type": "application/json",

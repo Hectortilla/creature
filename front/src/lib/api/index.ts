@@ -66,7 +66,6 @@ export {
   wsPlayerLeftTypeGameWebsocketMessagesPlayerLeftGet,
   wsPongTypeGameWebsocketMessagesPongGet,
   wsRoomsListTypeGameWebsocketMessagesRoomsListGet,
-  wsStartGameTypeGameWebsocketMessagesStartGamePost,
   wsValidActionsTypeGameWebsocketMessagesValidActionsGet,
 } from "./sdk.gen";
 export type {
@@ -312,8 +311,6 @@ export type {
   RoomsListMessage,
   RootGetData,
   RootGetResponses,
-  StartGameData,
-  StartGameMessage,
   Token,
   TypeCreate,
   TypeRead,
@@ -403,11 +400,6 @@ export type {
   WsRoomsListTypeGameWebsocketMessagesRoomsListGetData,
   WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponse,
   WsRoomsListTypeGameWebsocketMessagesRoomsListGetResponses,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostData,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostError,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostErrors,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostResponse,
-  WsStartGameTypeGameWebsocketMessagesStartGamePostResponses,
   WsValidActionsTypeGameWebsocketMessagesValidActionsGetData,
   WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponse,
   WsValidActionsTypeGameWebsocketMessagesValidActionsGetResponses,

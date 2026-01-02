@@ -11,7 +11,7 @@ from app.websocket.room import RoomManager
 from app.websocket.handler import MessageHandler
 from app.websocket.messaging import MessageBroadcaster
 from app.websocket.serialization import serialize_deck_for_game, serialize_events
-from app.websocket.endpoint import handle_websocket_connection, list_game_rooms
+from app.websocket.endpoint import handle_websocket_connection
 
 
 # WebSocket handler function
@@ -100,6 +100,5 @@ __all__ = [
     "serialize_events",
     "game_websocket_handler",
     "handle_websocket_connection",
-    "list_game_rooms",
 ]
 

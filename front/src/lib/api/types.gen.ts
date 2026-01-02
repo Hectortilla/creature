@@ -94,11 +94,11 @@ export type ActionData = {
    */
   count?: number;
   /**
-   * Target Id
+   * Target Card Id
    *
    * Target card instance ID (used by: associate, evolve, attack)
    */
-  target_id?: string | null;
+  target_card_id?: string | null;
   /**
    * Attacker Id
    *
@@ -1289,24 +1289,6 @@ export type RoomsListData = {
  */
 export type RoomsListMessage = {
   data?: RoomsListData;
-};
-
-/**
- * StartGameData
- *
- * Data for start_game message.
- */
-export type StartGameData = {
-  [key: string]: unknown;
-};
-
-/**
- * StartGameMessage
- *
- * Start the game (host only).
- */
-export type StartGameMessage = {
-  data?: StartGameData;
 };
 
 /**
@@ -2706,33 +2688,6 @@ export type WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses = {
 
 export type WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponse =
   WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses[keyof WsListRoomsTypeGameWebsocketMessagesListRoomsPostResponses];
-
-export type WsStartGameTypeGameWebsocketMessagesStartGamePostData = {
-  body: StartGameMessage;
-  path?: never;
-  query?: never;
-  url: "/game/websocket-messages/start-game";
-};
-
-export type WsStartGameTypeGameWebsocketMessagesStartGamePostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsStartGameTypeGameWebsocketMessagesStartGamePostError =
-  WsStartGameTypeGameWebsocketMessagesStartGamePostErrors[keyof WsStartGameTypeGameWebsocketMessagesStartGamePostErrors];
-
-export type WsStartGameTypeGameWebsocketMessagesStartGamePostResponses = {
-  /**
-   * Successful Response
-   */
-  200: StartGameMessage;
-};
-
-export type WsStartGameTypeGameWebsocketMessagesStartGamePostResponse =
-  WsStartGameTypeGameWebsocketMessagesStartGamePostResponses[keyof WsStartGameTypeGameWebsocketMessagesStartGamePostResponses];
 
 export type WsActionTypeGameWebsocketMessagesActionPostData = {
   body: ActionMessage;

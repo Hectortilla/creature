@@ -114,10 +114,6 @@ class GameEngine:
         """
         # Create state with room reference
         state = GameState.create(room, self.config)
-        
-        # Initialize players in room
-        room.save_players(player1_id, player1_name, player2_id, player2_name)
-        
         # Create cards for each player
         self._setup_deck(state, room.players, player1_id, player1_deck)
         self._setup_deck(state, room.players, player2_id, player2_deck)
