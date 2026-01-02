@@ -192,7 +192,7 @@ class GameEngine:
             ActionResult with new state (original state is unchanged)
         """
         # 1. Validate action
-        validation = self.validator.validate(state, state.room.players, action)
+        validation = self.validator.validate(state, action)
         if not validation.valid:
             return ActionResult(
                 success=False,
