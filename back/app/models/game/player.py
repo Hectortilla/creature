@@ -7,7 +7,7 @@ Represents a player's state in the game.
 from __future__ import annotations
 
 import random
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -27,6 +27,7 @@ class PlayerState(GameBaseModel):
     element_pool: ElementPool = Field(default_factory=ElementPool)
     zones: dict[str, ZoneState] = {}  # Zone name -> ZoneState
     has_passed_phase: bool = False
+    deck: Optional[list[dict]] = None  # Serialized deck data
     
     def model_post_init(self, __context: Any) -> None:
         """Initialize zones if not provided."""

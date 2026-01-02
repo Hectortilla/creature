@@ -12,12 +12,15 @@ Architecture:
 
 import asyncio
 import logging
-from typing import Any, Set
+from typing import Any, Set, TYPE_CHECKING
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
 from broadcaster import Broadcast
 from app.websocket.models import PlayerConnection
+
+if TYPE_CHECKING:
+    from app.models.game.player import PlayerState
 
 logger = logging.getLogger(__name__)
 
@@ -31,31 +34,29 @@ class ConnectionManager:
         self._subscription_tasks: dict[str, asyncio.Task] = {}  # player_id -> subscription task
         self._active_channels: dict[str, Set[str]] = {}  # player_id -> set of channel names
     
-    async def connect(self, websocket: WebSocket, player_id: str, name: str, deck: list[dict]) -> PlayerConnection:
+    async def connect(self, websocket: WebSocket, player: "PlayerState") -> PlayerConnection:
         """Register a new player connection and subscribe to channels."""
         await websocket.accept()
         
         # Disconnect existing connection if any
-        if player_id in self.connections:
-            await self.disconnect(player_id)
+        if player.player_id in self.connections:
+            await self.disconnect(player.player_id)
         
         connection = PlayerConnection(
-            player_id=player_id,
-            name=name,
+            player_id=player.player_id,
             websocket=websocket,
-            deck=deck,
         )
-        self.connections[player_id] = connection
+        self.connections[player.player_id] = connection
         
         # Subscribe to player-specific channel
-        player_channel = f"player:{player_id}"
-        self._active_channels[player_id] = {player_channel}
+        player_channel = f"player:{player.player_id}"
+        self._active_channels[player.player_id] = {player_channel}
         
         # Start background task to forward messages from broadcaster to WebSocket
         # Note: The subscription is established asynchronously, so the initial connection
         # message should be sent directly to WebSocket (see game_websocket_handler)
-        task = asyncio.create_task(self._forward_messages(player_id))
-        self._subscription_tasks[player_id] = task
+        task = asyncio.create_task(self._forward_messages(player.player_id))
+        self._subscription_tasks[player.player_id] = task
         
         return connection
     

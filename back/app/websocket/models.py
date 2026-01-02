@@ -19,10 +19,8 @@ from app.models.game import GameState, GameBaseModel, GameStatus, PlayerState
 class PlayerConnection:
     """Represents a connected player (kept as dataclass - not serialized)."""
     player_id: str
-    name: str
     websocket: WebSocket
     game_id: Optional[str] = None
-    deck: Optional[list[dict]] = None  # Serialized deck stored in memory
 
 
 class GameRoom(GameBaseModel):
@@ -80,15 +78,15 @@ class GameRoom(GameBaseModel):
                 return player
         raise ValueError(f"No opponent found for player {player_id}")
     
-    def add_player(self, player_id: str, name: str, connection: PlayerConnection) -> int:
+    def add_player(self, player: "PlayerState") -> int:
         """Add a player to the room. Returns slot number (1 or 2)."""
-        if connection.deck is None:
-            raise ValueError("Player connection does not have a deck")
+        if player.deck is None:
+            raise ValueError("Player deck is required")
         
         if len(self.players) == 2:
             raise ValueError("Room is full")
 
-        self.players[player_id] = PlayerState(player_id=player_id, name=name)
+        self.players[player.player_id] = player
     
     def remove_player(self, player_id: str) -> bool:
         """Remove a player from the room."""
@@ -103,21 +101,10 @@ class GameRoom(GameBaseModel):
     
     def game_ready_to_start(self) -> bool:
         """Check if the game is ready to start."""
-        if not self.state:
+        if self.state:
             return False
-        if self.state.status != GameStatus.STARTING:
-            return False
-        if len(self.players) != 2:
-            return False
-        # Check deck sizes using config
-        from app.models.game.enums import Zone
-        deck_size = self.state.config.deck_size
-        player_list = list(self.players.values())
-        if len(player_list) < 2:
-            return False
-        if len(player_list[0].zones[Zone.DECK.name].card_ids) != deck_size:
-            return False
-        if len(player_list[1].zones[Zone.DECK.name].card_ids) != deck_size:
+        if len(self.players.keys()) < 2:
             return False
         return True
 
+GameState.model_rebuild()

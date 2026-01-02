@@ -8,13 +8,11 @@ from fastapi import WebSocket, Query, status, WebSocketException
 
 from app.auth import WebSocketUser
 from app.database import get_db_session
-from app.services.decks import DeckService
 from app.models.game.enums import GameStatus
 from app.websocket.connection import ConnectionManager
 from app.websocket.room import RoomManager
 from app.websocket.handler import MessageHandler
 from app.websocket.messaging import MessageBroadcaster
-from app.websocket.serialization import serialize_deck_for_game
 
 
 async def handle_websocket_connection(
@@ -38,13 +36,11 @@ async def handle_websocket_connection(
     
     If room_id is provided, automatically joins the room after connection.
     """
-    player_id = str(user.id)
-    name = user.full_name or user.username
-    
     # Get database session
     db = next(get_db_session())
     try:
         # Check if player already has an active game
+        player_id = str(user.id)
         if connection_manager.has_connection(player_id):
             existing_connection = connection_manager.get_connection(player_id)
             if existing_connection and existing_connection.game_id:
@@ -64,32 +60,14 @@ async def handle_websocket_connection(
                             reason="Player already has an active game",
                         )
         
-        # Get and validate deck
-        deck_service = DeckService(db, user.id)
-        deck = deck_service.get_user_deck(deck_id)
-        
-        if not deck:
+        # Create player state from user (fetches, validates, and serializes deck)
+        try:
+            player = user.to_player_state(deck_id, db)
+        except ValueError as e:
             raise WebSocketException(
                 code=status.WS_1008_POLICY_VIOLATION,
-                reason="Deck not found or does not belong to user",
+                reason=str(e),
             )
-        
-        # Validate deck is valid for playing
-        if not deck.is_valid_for_playing(db):
-            raise WebSocketException(
-                code=status.WS_1008_POLICY_VIOLATION,
-                reason="Deck is not valid for playing",
-            )
-        
-        # Serialize deck
-        enriched_deck = deck_service.get_enriched(deck_id)
-        if not enriched_deck:
-            raise WebSocketException(
-                code=status.WS_1008_POLICY_VIOLATION,
-                reason="Failed to load deck",
-            )
-        
-        serialized_deck = serialize_deck_for_game(enriched_deck.cards)
         
         # Validate room_id if provided
         if room_id:
@@ -104,20 +82,18 @@ async def handle_websocket_connection(
                     code=status.WS_1008_POLICY_VIOLATION,
                     reason="Room cannot be joined. Room must have exactly 1 player and game must not have started.",
                 )
-        
+    
     finally:
         db.close()
     
-    # Pass serialized deck to handler
+    # Pass player to handler
     from app.websocket import game_websocket_handler
     await game_websocket_handler(
         websocket, 
-        player_id, 
-        name, 
+        player,
         connection_manager,
         room_manager,
         message_handler,
         message_broadcaster,
-        serialized_deck, 
         room_id=room_id
     )

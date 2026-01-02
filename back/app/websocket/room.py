@@ -4,7 +4,7 @@ Game Room Management
 Handles game room creation, joining, leaving, and game logic operations.
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import uuid4
 
 from app.websocket.models import GameRoom, PlayerConnection
@@ -12,6 +12,9 @@ from app.websocket.messaging import MessageBroadcaster
 from app.game.engine import get_engine
 from app.game.actions import create_action
 from app.websocket.serialization import serialize_events
+
+if TYPE_CHECKING:
+    from app.models.game.player import PlayerState
 from app.models.schemas.websocket.server import (
     PlayerJoinedMessage,
     PlayerJoinedData,
@@ -32,9 +35,32 @@ class RoomManager:
         self.message_broadcaster = message_broadcaster
         self.rooms: dict[str, GameRoom] = {}  # room_id -> room
         self.player_rooms: dict[str, str] = {}  # player_id -> room_id
+        self._connected_players: dict[str, "PlayerState"] = {}  # player_id -> PlayerState
+        self.engine = get_engine()
+    
+    def register_player(self, player: "PlayerState") -> None:
+        """Register a connected player."""
+        self._connected_players[player.player_id] = player
+    
+    def get_player(self, player_id: str) -> "PlayerState | None":
+        """Get a connected player by ID."""
+        # First try to get from connected players
+        if player_id in self._connected_players:
+            return self._connected_players[player_id]
+        # Otherwise try to get from a room
+        room_id = self.get_player_room(player_id)
+        if room_id:
+            room = self.get_room(room_id)
+            if room and player_id in room.players:
+                return room.players[player_id]
+        return None
     
     async def create_room(self, player_id: str) -> GameRoom:
         """Create a new game room."""
+        player = self.get_player(player_id)
+        if not player:
+            raise ValueError("Player not found")
+        
         connection = self.connection_manager.get_connection(player_id)
         if not connection:
             raise ValueError("Player not connected")
@@ -43,7 +69,7 @@ class RoomManager:
             room_id=str(uuid4()),
             host_id=player_id,
         )
-        room.add_player(player_id, connection.name, connection)
+        room.add_player(player)
         
         self.rooms[room.room_id] = room
         self.player_rooms[player_id] = room.room_id
@@ -57,9 +83,11 @@ class RoomManager:
     
     async def join_room(self, player_id: str, room_id: str) -> GameRoom:
         """Join an existing game room."""
+        player = self.get_player(player_id)
+        if not player:
+            raise ValueError("Player not found")
+        
         connection = self.connection_manager.get_connection(player_id)
-        if not connection:
-            raise ValueError("Player not connected")
         
         if room_id not in self.rooms:
             raise ValueError("Room not found")
@@ -76,7 +104,7 @@ class RoomManager:
         if not room.can_join:
             raise ValueError("Room cannot be joined. Room must have exactly 1 player and game must not have started.")
         
-        room.add_player(player_id, connection.name, connection)
+        room.add_player(player)
         self.player_rooms[player_id] = room_id
         connection.game_id = room_id
         
@@ -87,7 +115,7 @@ class RoomManager:
         message = PlayerJoinedMessage(
             data=PlayerJoinedData(
                 player_id=player_id,
-                name=connection.name,
+                name=player.name,
                 room=room.model_dump(mode='json'),
             )
         )
@@ -96,7 +124,7 @@ class RoomManager:
                 await self.message_broadcaster.send_to_player(other_player_id, message)
         
         if room.game_ready_to_start():
-            await self.start_game(room_id)
+            await self._start_game(room)
         
         return room
     
@@ -148,38 +176,13 @@ class RoomManager:
     
     # Game logic methods (merged from GameLogicManager)
     
-    async def start_game(self, room_id: str) -> dict:
+    async def _start_game(self, room: GameRoom) -> dict:
         """Start a game in a room."""
-        room = self.get_room(room_id)
-        if not room:
-            raise ValueError("Room not found")
-
-        if not room.is_full:
-            raise ValueError("Need 2 players to start")
-        
-        if room.is_started:
-            raise ValueError("Game already started")
-        
         # Create the game
-        engine = get_engine()
         
-        state = engine.create_game(
-            room=room,
-            player1_id=room.get_player1_id() or "",
-            player1_name=room.get_player1_name() or "",
-            player2_id=room.get_player2_id() or "",
-            player2_name=room.get_player2_name() or "",
-            player1_deck=room.player1_deck or [],
-            player2_deck=room.player2_deck or [],
-        )
-        
+        state = self.engine.create_game(room)
         # Start the game
-        result = engine.start_game(state)
-        
-        if not result.success:
-            raise ValueError(result.error or "Failed to start game")
-        
-        room.state = result.state
+        result = self.engine.start_game(state)
         
         # Broadcast to all players in room
         response_data = GameStartedData(
@@ -189,7 +192,7 @@ class RoomManager:
             valid_actions=result.valid_actions,
         )
         await self.message_broadcaster.broadcast_to_room(
-            room_id,
+            room.room_id,
             GameStartedMessage(data=response_data)
         )
         
@@ -222,8 +225,7 @@ class RoomManager:
         action = create_action(action_type, player_id=player_id, **action_params)
         
         # Process action
-        engine = get_engine()
-        result = engine.process_action(room.state, action)
+        result = self.engine.process_action(room.state, action)
         
         if result.success and result.state:
             room.state = result.state
@@ -262,8 +264,7 @@ class RoomManager:
         if player_id not in room.get_player_ids():
             return []
         
-        engine = get_engine()
-        return engine.get_valid_actions(room.state, player_id)
+        return self.engine.get_valid_actions(room.state, player_id)
     
     def get_game_state(self, room_id: str) -> Optional[dict]:
         """Get current game state."""

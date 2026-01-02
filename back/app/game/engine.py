@@ -22,11 +22,7 @@ from app.models.game import (
     Zone,
     TurnPhase,
     GameStatus,
-    DamageType,
     GameState,
-    GameCard,
-    ElementContribution,
-    AttackDefinition,
     GameConfiguration,
     GameEvent,
     GameStartedEvent,
@@ -98,13 +94,7 @@ class GameEngine:
     
     def create_game(
         self,
-        room: "GameRoom",
-        player1_id: str,
-        player1_name: str,
-        player2_id: str,
-        player2_name: str,
-        player1_deck: list[dict[str, Any]],
-        player2_deck: list[dict[str, Any]],
+        room: "GameRoom"
     ) -> GameState:
         """
         Create a new game state with decks set up.
@@ -115,78 +105,16 @@ class GameEngine:
         # Create state with room reference
         state = GameState.create(room, self.config)
         # Create cards for each player
-        self._setup_deck(state, room.players, player1_id, player1_deck)
-        self._setup_deck(state, room.players, player2_id, player2_deck)
         
         # Shuffle decks
         for player in room.players.values():
+            state._setup_deck(player)
             player.shuffle_deck()
         
         state.status = GameStatus.STARTING
         return state
     
-    
-    def _setup_deck(self, state: GameState, players: dict[str, PlayerState], player_id: str, deck_data: list[dict[str, Any]]) -> None:
-        """Setup a player's deck from card data."""
-        for card_data in deck_data:
-            card = self._create_game_card(card_data, player_id)
-            card.zone = Zone.DECK
-            state.cards[card.instance_id] = card
-            players[player_id].zones[Zone.DECK.name].add_card(card.instance_id)
-    
-    def _create_game_card(self, card_data: dict[str, Any], owner_id: str) -> GameCard:
-        """Create a GameCard from card data dict."""
-        attacks = []
-        for attack_data in card_data.get("attacks", []):
-            necessary_force = [
-                ElementContribution(element_id=e["element_id"], amount=e["amount"])
-                for e in attack_data.get("necessary_force", [])
-            ]
-            
-            attack_type = DamageType.PHYSICAL
-            if attack_data.get("type", "").lower() == "magical":
-                attack_type = DamageType.MAGICAL
-            
-            attacks.append(AttackDefinition(
-                attack_id=attack_data["id"],
-                name=attack_data["name"],
-                damage=attack_data.get("damage", 0),
-                type=attack_type,
-                element_id=attack_data.get("element_id", 0),
-                necessary_force=necessary_force,
-                effect=attack_data.get("effect"),
-                description=attack_data.get("description"),
-                dice_rolls=attack_data.get("dice_rolls"),
-            ))
-        
-        element_contribution = []
-        for contrib in card_data.get("element_contribution", []):
-            element_contribution.append(
-                ElementContribution(element_id=contrib["element_id"], amount=contrib["amount"])
-            )
-        
-        # Default: contribute 1 of each element the card has
-        if not element_contribution:
-            for elem_id in card_data.get("element_ids", []):
-                element_contribution.append(ElementContribution(element_id=elem_id, amount=1))
-        
-        return GameCard.create(
-            card_id=card_data["id"],
-            owner_id=owner_id,
-            name=card_data["name"],
-            health=card_data.get("health", 10),
-            physical_defence=card_data.get("physical_defence", 0),
-            magic_defence=card_data.get("magic_defence", 0),
-            element_ids=card_data.get("element_ids", []),
-            element_contribution=element_contribution,
-            attacks=attacks,
-            skill_ids=card_data.get("skill_ids", []),
-            association_ids=card_data.get("association_ids", []),
-            is_evolution=card_data.get("is_evolution", False),
-            evolves_from_id=card_data.get("evolves_from_id"),
-        )
-    
-    def start_game(self, state: GameState, first_player_id: Optional[str] = None) -> ActionResult:
+    def start_game(self, state: GameRoom) -> ActionResult:
         """
         Start a game - sets up first turn and draws initial cards.
         
@@ -197,9 +125,6 @@ class GameEngine:
         Returns:
             ActionResult with new state
         """
-        if first_player_id is None:
-            first_player_id = random.choice(list(state.room.players.keys()))
-        
         # Build initial events
         initial_events: list[GameEvent] = [
             GameStartedEvent(
