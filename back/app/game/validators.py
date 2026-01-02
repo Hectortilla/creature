@@ -164,7 +164,7 @@ class RuleValidator:
         
         # Check supporting zone has space
         supporting = player.zones[Zone.SUPPORTING]
-        if supporting.is_full():
+        if supporting.is_full:
             return ValidationResult(
                 valid=False,
                 error="Supporting zone is full (max 3 cards)",
@@ -222,7 +222,7 @@ class RuleValidator:
         
         # Check attacking zone has space
         attacking = player.zones[Zone.ATTACKING]
-        if attacking.is_full():
+        if attacking.is_full:
             return ValidationResult(
                 valid=False,
                 error="Attacking zone is full (max 2 cards)",
@@ -526,7 +526,7 @@ class RuleValidator:
         
         # Check attacking zone has space
         attacking = player.zones[Zone.ATTACKING]
-        if attacking.is_full():
+        if attacking.is_full:
             return ValidationResult(
                 valid=False,
                 error="Attacking zone is full",

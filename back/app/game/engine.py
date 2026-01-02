@@ -291,7 +291,7 @@ class GameEngine:
         if phase == TurnPhase.PLACEMENT:
             for card_id in player.zones[Zone.HAND.name].card_ids:
                 card = state.get_card(card_id)
-                if card and not player.zones[Zone.SUPPORTING.name].is_full():
+                if card and not player.zones[Zone.SUPPORTING.name].is_full:
                     valid_actions.append(PlayCardAction(
                         player_id=player_id,
                         card_id=card_id,
@@ -300,7 +300,7 @@ class GameEngine:
         elif phase == TurnPhase.PROMOTION:
             for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
                 card = state.get_card(card_id)
-                if card and card.can_promote() and not player.zones[Zone.ATTACKING.name].is_full():
+                if card and card.can_promote() and not player.zones[Zone.ATTACKING.name].is_full:
                     valid_actions.append(PromoteAction(
                         player_id=player_id,
                         card_id=card_id,

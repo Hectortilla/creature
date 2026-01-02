@@ -43,6 +43,7 @@ from app.models.game import (
 
 if TYPE_CHECKING:
     from app.models.game import GameState
+    from app.models.game.player import PlayerState
 
 
 def apply_event(state: "GameState", players: dict[str, "PlayerState"], event: GameEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
@@ -71,52 +72,50 @@ def apply_event(state: "GameState", players: dict[str, "PlayerState"], event: Ga
     new_state.room = state.room
     new_players = {pid: deepcopy(player) for pid, player in players.items()}
     
-    # Helper to update room.players after reducer call
-    def update_and_return(result_state, result_players):
-        result_state.room.players = result_players
-        return result_state, result_players
-    
     # Dispatch to specific handler
     if isinstance(event, CardDrawnEvent):
-        return update_and_return(*_apply_card_drawn(new_state, new_players, event))
+        result_state, result_players = _apply_card_drawn(new_state, new_players, event)
     elif isinstance(event, CardMovedEvent):
-        return update_and_return(*_apply_card_moved(new_state, new_players, event))
+        result_state, result_players = _apply_card_moved(new_state, new_players, event)
     elif isinstance(event, CardPlayedEvent):
-        return update_and_return(*_apply_card_played(new_state, new_players, event))
+        result_state, result_players = _apply_card_played(new_state, new_players, event)
     elif isinstance(event, CardPromotedEvent):
-        return update_and_return(*_apply_card_promoted(new_state, new_players, event))
+        result_state, result_players = _apply_card_promoted(new_state, new_players, event)
     elif isinstance(event, CardSwappedEvent):
-        return update_and_return(*_apply_card_swapped(new_state, new_players, event))
+        result_state, result_players = _apply_card_swapped(new_state, new_players, event)
     elif isinstance(event, CardAssociatedEvent):
-        return update_and_return(*_apply_card_associated(new_state, new_players, event))
+        result_state, result_players = _apply_card_associated(new_state, new_players, event)
     elif isinstance(event, CardEvolvedEvent):
-        return update_and_return(*_apply_card_evolved(new_state, new_players, event))
+        result_state, result_players = _apply_card_evolved(new_state, new_players, event)
     elif isinstance(event, DamageDealtEvent):
-        return update_and_return(*_apply_damage_dealt(new_state, new_players, event))
+        result_state, result_players = _apply_damage_dealt(new_state, new_players, event)
     elif isinstance(event, CardDestroyedEvent):
-        return update_and_return(*_apply_card_destroyed(new_state, new_players, event))
+        result_state, result_players = _apply_card_destroyed(new_state, new_players, event)
     elif isinstance(event, ElementsConsumedEvent):
-        return update_and_return(*_apply_elements_consumed(new_state, new_players, event))
+        result_state, result_players = _apply_elements_consumed(new_state, new_players, event)
     elif isinstance(event, ElementsRestoredEvent):
-        return update_and_return(*_apply_elements_restored(new_state, new_players, event))
+        result_state, result_players = _apply_elements_restored(new_state, new_players, event)
     elif isinstance(event, TurnStartedEvent):
-        return update_and_return(*_apply_turn_started(new_state, new_players, event))
+        result_state, result_players = _apply_turn_started(new_state, new_players, event)
     elif isinstance(event, TurnEndedEvent):
-        return update_and_return(*_apply_turn_ended(new_state, new_players, event))
+        result_state, result_players = _apply_turn_ended(new_state, new_players, event)
     elif isinstance(event, PhaseChangedEvent):
-        return update_and_return(*_apply_phase_changed(new_state, new_players, event))
+        result_state, result_players = _apply_phase_changed(new_state, new_players, event)
     elif isinstance(event, GameStartedEvent):
-        return update_and_return(*_apply_game_started(new_state, new_players, event))
+        result_state, result_players = _apply_game_started(new_state, new_players, event)
     elif isinstance(event, GameEndedEvent):
-        return update_and_return(*_apply_game_ended(new_state, new_players, event))
+        result_state, result_players = _apply_game_ended(new_state, new_players, event)
     elif isinstance(event, NoDefenderEvent):
-        return update_and_return(*_apply_no_defender(new_state, new_players, event))
+        result_state, result_players = _apply_no_defender(new_state, new_players, event)
     elif isinstance(event, AttackDeclaredEvent):
-        return update_and_return(*_apply_attack_declared(new_state, new_players, event))
+        result_state, result_players = _apply_attack_declared(new_state, new_players, event)
+    else:
+        # Unknown event type - return state and players unchanged
+        result_state, result_players = new_state, new_players
     
-    # Unknown event type - return state and players unchanged
-    new_state.room.players = new_players
-    return new_state, new_players
+    # Update room.players and return (players are already in state.room.players)
+    result_state.room.players = result_players
+    return result_state, result_players
 
 
 def apply_events(state: "GameState", players: dict[str, "PlayerState"], events: list[GameEvent]) -> tuple["GameState", dict[str, "PlayerState"]]:
@@ -159,7 +158,7 @@ def _apply_card_drawn(state: "GameState", players: dict[str, "PlayerState"], eve
         # Update card zone
         card.zone = Zone.HAND
     
-    return state, players, players
+    return state, players
 
 
 def _apply_card_moved(state: "GameState", players: dict[str, "PlayerState"], event: CardMovedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
@@ -493,7 +492,7 @@ def _recalculate_elements(state: "GameState", player_id: str) -> None:
     Note: This mutates the state in place (called from within reducers
     that already have a copy).
     """
-    player = players[player_id]
+    player = state.room.players[player_id]
     player.element_pool.elements.clear()
     player.element_pool.max_elements.clear()
     

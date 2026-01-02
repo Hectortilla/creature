@@ -31,6 +31,7 @@ from app.game.reducer import apply_event
 
 if TYPE_CHECKING:
     from app.models.game import GameState
+    from app.models.game.player import PlayerState
 
 
 @dataclass
@@ -112,7 +113,7 @@ class EventLoop:
             current_state, current_players = apply_event(current_state, current_players, event)
             
             # 2. Log the event
-            current_state.log_event(event.to_dict())
+            current_state.log_event(event.model_dump(mode='json'))
             all_events.append(event)
             
             # 3. Check for triggered effects

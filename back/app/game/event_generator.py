@@ -466,7 +466,7 @@ class ActionToEventGenerator:
         if phase == TurnPhase.PROMOTION:
             # Skip if no promotable cards or attacking zone full
             attacking = player.zones[Zone.ATTACKING]
-            if attacking.is_full():
+            if attacking.is_full:
                 return True
             supporting = player.zones[Zone.SUPPORTING]
             for card_id in supporting.card_ids:
