@@ -95,6 +95,9 @@ class RoomManager:
             if other_player_id != player_id:
                 await self.message_broadcaster.send_to_player(other_player_id, message)
         
+        if room.game_ready_to_start():
+            await self.start_game(room_id)
+        
         return room
     
     async def leave_room(self, player_id: str, room_id: str) -> None:
@@ -147,15 +150,12 @@ class RoomManager:
     
     # Game logic methods (merged from GameLogicManager)
     
-    async def start_game(self, player_id: str, room_id: str) -> dict:
+    async def start_game(self, room_id: str) -> dict:
         """Start a game in a room."""
         room = self.get_room(room_id)
         if not room:
             raise ValueError("Room not found")
-        
-        if room.host_id != player_id:
-            raise ValueError("Only the host can start the game")
-        
+
         if not room.is_full:
             raise ValueError("Need 2 players to start")
         
@@ -166,12 +166,13 @@ class RoomManager:
         engine = get_engine()
         
         state = engine.create_game(
-            player1_id=room.player1_id,
-            player1_name=room.player1_name,
-            player2_id=room.player2_id,
-            player2_name=room.player2_name,
-            player1_deck=room.player1_deck,
-            player2_deck=room.player2_deck,
+            room=room,
+            player1_id=room.get_player1_id() or "",
+            player1_name=room.get_player1_name() or "",
+            player2_id=room.get_player2_id() or "",
+            player2_name=room.get_player2_name() or "",
+            player1_deck=room.player1_deck or [],
+            player2_deck=room.player2_deck or [],
         )
         
         # Start the game
@@ -228,6 +229,7 @@ class RoomManager:
         
         if result.success and result.state:
             room.state = result.state
+            # Players are already updated in the room via state.room.players
         
         # Broadcast result to all players
         response_data = ActionResultData(

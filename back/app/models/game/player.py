@@ -6,6 +6,7 @@ Represents a player's state in the game.
 
 from __future__ import annotations
 
+import random
 from typing import Any
 
 from pydantic import Field
@@ -53,6 +54,10 @@ class PlayerState(GameBaseModel):
     def reset_turn_state(self) -> None:
         """Reset per-turn state at the start of a new turn."""
         self.has_passed_phase = False
+    
+    def shuffle_deck(self) -> None:
+        """Shuffle the player's deck."""
+        random.shuffle(self.zones[Zone.DECK.name].card_ids)
 
 
 __all__ = ["PlayerState"]

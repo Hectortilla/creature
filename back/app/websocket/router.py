@@ -88,11 +88,6 @@ async def _ws_list_rooms_type(msg: ListRoomsMessage) -> ListRoomsMessage:
     """WebSocket message type: list_rooms (dummy endpoint for type generation)."""
     return msg
 
-@router.post("/websocket-messages/start-game", response_model=StartGameMessage, tags=["WebSocket Messages"], include_in_schema=True)
-async def _ws_start_game_type(msg: StartGameMessage) -> StartGameMessage:
-    """WebSocket message type: start_game (dummy endpoint for type generation)."""
-    return msg
-
 @router.post("/websocket-messages/action", response_model=ActionMessage, tags=["WebSocket Messages"], include_in_schema=True)
 async def _ws_action_type(msg: ActionMessage) -> ActionMessage:
     """WebSocket message type: action (dummy endpoint for type generation)."""

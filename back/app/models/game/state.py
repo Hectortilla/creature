@@ -16,6 +16,10 @@ from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, TurnPhase, GameStatus
 from app.models.game.card import GameCard
 from app.models.game.player import PlayerState
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.websocket.models import GameRoom
 
 
 class GameConfiguration(GameBaseModel):
@@ -34,7 +38,7 @@ class GameState(GameBaseModel):
     Complete state of a game.
     """
     game_id: str
-    players: dict[str, PlayerState]
+    room: "GameRoom" = Field(exclude=True)  # Reference to room, excluded from serialization to avoid circular ref
     cards: dict[str, GameCard] = {}
     active_player_id: Optional[str] = None
     turn_number: int = 0
@@ -59,35 +63,14 @@ class GameState(GameBaseModel):
         return value.isoformat()
     
     @classmethod
-    def create(cls, player1_id: str, player1_name: str,
-               player2_id: str, player2_name: str,
+    def create(cls, room: "GameRoom",
                config: Optional[GameConfiguration] = None) -> "GameState":
         """Factory method to create a new game."""
         return cls(
             game_id=str(uuid.uuid4()),
-            players={
-                player1_id: PlayerState(player_id=player1_id, name=player1_name),
-                player2_id: PlayerState(player_id=player2_id, name=player2_name),
-            },
+            room=room,
             config=config or GameConfiguration(),
         )
-    
-    def get_player(self, player_id: str) -> PlayerState:
-        """Get a player's state."""
-        return self.players[player_id]
-    
-    def get_active_player(self) -> Optional[PlayerState]:
-        """Get the active player's state."""
-        if self.active_player_id:
-            return self.players[self.active_player_id]
-        return None
-    
-    def get_opponent(self, player_id: str) -> PlayerState:
-        """Get the opponent of a given player."""
-        for pid, player in self.players.items():
-            if pid != player_id:
-                return player
-        raise ValueError(f"No opponent found for player {player_id}")
     
     def get_card(self, instance_id: str) -> Optional[GameCard]:
         """Get a card by instance ID."""
@@ -95,13 +78,13 @@ class GameState(GameBaseModel):
     
     def get_cards_in_zone(self, player_id: str, zone: Zone) -> list[GameCard]:
         """Get all cards in a specific zone for a player."""
-        zone_state = self.players[player_id].zones[zone.name]
+        zone_state = self.room.players[player_id].zones[zone.name]
         return [self.cards[cid] for cid in zone_state.card_ids if cid in self.cards]
     
     def add_card(self, card: GameCard) -> None:
         """Add a card to the game."""
         self.cards[card.instance_id] = card
-        player = self.players[card.owner_id]
+        player = self.room.players[card.owner_id]
         player.zones[card.zone.name].add_card(card.instance_id)
     
     def move_card(self, card_id: str, to_zone: Zone) -> bool:
@@ -110,7 +93,7 @@ class GameState(GameBaseModel):
         if not card:
             return False
         
-        player = self.players[card.owner_id]
+        player = self.room.players[card.owner_id]
         from_zone = card.zone
         
         if not player.zones[from_zone.name].remove_card(card_id):
@@ -126,15 +109,15 @@ class GameState(GameBaseModel):
     
     def is_first_turn(self, player_id: str) -> bool:
         """Check if this is the first turn for a player."""
-        return self.players[player_id].turn_count == 0
+        return self.room.players[player_id].turn_count == 0
     
     def is_second_turn(self, player_id: str) -> bool:
         """Check if this is the second turn for a player."""
-        return self.players[player_id].turn_count == 1
+        return self.room.players[player_id].turn_count == 1
     
     def recalculate_elements(self, player_id: str) -> None:
         """Recalculate element pool for a player based on their active cards."""
-        player = self.players[player_id]
+        player = self.room.players[player_id]
         active_cards = [
             self.cards[cid] for cid in player.get_active_cards()
             if cid in self.cards
@@ -153,15 +136,17 @@ class GameState(GameBaseModel):
         Check if the game has ended.
         Returns the winner's player_id if game is over, None otherwise.
         """
-        for player_id, player in self.players.items():
+        for player_id, player in self.room.players.items():
             total_cards = (
                 len(player.zones[Zone.DECK.name].card_ids) +
                 len(player.zones[Zone.HAND.name].card_ids) +
                 len(player.get_active_cards())
             )
             if total_cards == 0:
-                opponent = self.get_opponent(player_id)
-                return opponent.player_id
+                # Find opponent
+                for pid, p in self.room.players.items():
+                    if pid != player_id:
+                        return p.player_id
         return None
 
 

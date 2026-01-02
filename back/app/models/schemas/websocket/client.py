@@ -43,11 +43,6 @@ class ListRoomsMessage(WebSocketMessage):
     data: ListRoomsData = Field(default_factory=ListRoomsData)
 
 
-class StartGameMessage(WebSocketMessage):
-    """Start the game (host only)."""
-    type: ClassVar[Literal["start_game"]] = "start_game"
-    data: StartGameData = Field(default_factory=StartGameData)
-
 
 class ActionMessage(WebSocketMessage):
     """Perform a game action."""

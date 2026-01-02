@@ -23,7 +23,6 @@ __all__ = [
     "CreateGameMessage",
     "JoinGameMessage",
     "ListRoomsMessage",
-    "StartGameMessage",
     "ActionMessage",
     "GetStateMessage",
     "GetValidActionsMessage",

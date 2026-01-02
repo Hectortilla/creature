@@ -45,109 +45,126 @@ if TYPE_CHECKING:
     from app.models.game import GameState
 
 
-def apply_event(state: "GameState", event: GameEvent) -> "GameState":
+def apply_event(state: "GameState", players: dict[str, "PlayerState"], event: GameEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """
-    Apply a single event to the game state.
+    Apply a single event to the game state and players.
     
     This is the main entry point for the reducer.
-    Returns a new state with the event applied.
+    Returns a new state and players dict with the event applied.
     
     Args:
         state: Current game state (not modified)
+        players: Current players dict (not modified) - kept for compatibility
         event: Event to apply
     
     Returns:
-        New game state with event applied
+        Tuple of (new game state, new players dict) with event applied
     """
-    # Create a deep copy to ensure immutability
-    new_state = deepcopy(state)
+    from app.models.game.player import PlayerState
+    
+    # Create deep copies to ensure immutability
+    # Note: We use a custom approach to handle the room reference
+    # We deep copy state but need to preserve the room reference
+    import copy
+    new_state = copy.deepcopy(state)
+    # Restore room reference (don't deep copy it to avoid circular issues)
+    new_state.room = state.room
+    new_players = {pid: deepcopy(player) for pid, player in players.items()}
+    
+    # Helper to update room.players after reducer call
+    def update_and_return(result_state, result_players):
+        result_state.room.players = result_players
+        return result_state, result_players
     
     # Dispatch to specific handler
     if isinstance(event, CardDrawnEvent):
-        return _apply_card_drawn(new_state, event)
+        return update_and_return(*_apply_card_drawn(new_state, new_players, event))
     elif isinstance(event, CardMovedEvent):
-        return _apply_card_moved(new_state, event)
+        return update_and_return(*_apply_card_moved(new_state, new_players, event))
     elif isinstance(event, CardPlayedEvent):
-        return _apply_card_played(new_state, event)
+        return update_and_return(*_apply_card_played(new_state, new_players, event))
     elif isinstance(event, CardPromotedEvent):
-        return _apply_card_promoted(new_state, event)
+        return update_and_return(*_apply_card_promoted(new_state, new_players, event))
     elif isinstance(event, CardSwappedEvent):
-        return _apply_card_swapped(new_state, event)
+        return update_and_return(*_apply_card_swapped(new_state, new_players, event))
     elif isinstance(event, CardAssociatedEvent):
-        return _apply_card_associated(new_state, event)
+        return update_and_return(*_apply_card_associated(new_state, new_players, event))
     elif isinstance(event, CardEvolvedEvent):
-        return _apply_card_evolved(new_state, event)
+        return update_and_return(*_apply_card_evolved(new_state, new_players, event))
     elif isinstance(event, DamageDealtEvent):
-        return _apply_damage_dealt(new_state, event)
+        return update_and_return(*_apply_damage_dealt(new_state, new_players, event))
     elif isinstance(event, CardDestroyedEvent):
-        return _apply_card_destroyed(new_state, event)
+        return update_and_return(*_apply_card_destroyed(new_state, new_players, event))
     elif isinstance(event, ElementsConsumedEvent):
-        return _apply_elements_consumed(new_state, event)
+        return update_and_return(*_apply_elements_consumed(new_state, new_players, event))
     elif isinstance(event, ElementsRestoredEvent):
-        return _apply_elements_restored(new_state, event)
+        return update_and_return(*_apply_elements_restored(new_state, new_players, event))
     elif isinstance(event, TurnStartedEvent):
-        return _apply_turn_started(new_state, event)
+        return update_and_return(*_apply_turn_started(new_state, new_players, event))
     elif isinstance(event, TurnEndedEvent):
-        return _apply_turn_ended(new_state, event)
+        return update_and_return(*_apply_turn_ended(new_state, new_players, event))
     elif isinstance(event, PhaseChangedEvent):
-        return _apply_phase_changed(new_state, event)
+        return update_and_return(*_apply_phase_changed(new_state, new_players, event))
     elif isinstance(event, GameStartedEvent):
-        return _apply_game_started(new_state, event)
+        return update_and_return(*_apply_game_started(new_state, new_players, event))
     elif isinstance(event, GameEndedEvent):
-        return _apply_game_ended(new_state, event)
+        return update_and_return(*_apply_game_ended(new_state, new_players, event))
     elif isinstance(event, NoDefenderEvent):
-        return _apply_no_defender(new_state, event)
+        return update_and_return(*_apply_no_defender(new_state, new_players, event))
     elif isinstance(event, AttackDeclaredEvent):
-        return _apply_attack_declared(new_state, event)
+        return update_and_return(*_apply_attack_declared(new_state, new_players, event))
     
-    # Unknown event type - return state unchanged
-    return new_state
+    # Unknown event type - return state and players unchanged
+    new_state.room.players = new_players
+    return new_state, new_players
 
 
-def apply_events(state: "GameState", events: list[GameEvent]) -> "GameState":
+def apply_events(state: "GameState", players: dict[str, "PlayerState"], events: list[GameEvent]) -> tuple["GameState", dict[str, "PlayerState"]]:
     """
     Apply multiple events in sequence.
     
     Args:
         state: Initial game state
+        players: Initial players dict
         events: List of events to apply in order
     
     Returns:
-        Final game state after all events applied
+        Tuple of (final game state, final players dict) after all events applied
     """
     current_state = state
+    current_players = players
     for event in events:
-        current_state = apply_event(current_state, event)
-    return current_state
+        current_state, current_players = apply_event(current_state, current_players, event)
+    return current_state, current_players
 
 
 # ============================================================================
 # Card Movement Reducers
 # ============================================================================
 
-def _apply_card_drawn(state: "GameState", event: CardDrawnEvent) -> "GameState":
+def _apply_card_drawn(state: "GameState", players: dict[str, "PlayerState"], event: CardDrawnEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card drawn event - move card from deck to hand."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     card = state.cards.get(event.card_id)
     
     if card:
         # Remove from deck
-        if event.card_id in player.zones[Zone.DECK].card_ids:
-            player.zones[Zone.DECK].card_ids.remove(event.card_id)
+        if event.card_id in player.zones[Zone.DECK.name].card_ids:
+            player.zones[Zone.DECK.name].card_ids.remove(event.card_id)
         
         # Add to hand
-        if event.card_id not in player.zones[Zone.HAND].card_ids:
-            player.zones[Zone.HAND].card_ids.append(event.card_id)
+        if event.card_id not in player.zones[Zone.HAND.name].card_ids:
+            player.zones[Zone.HAND.name].card_ids.append(event.card_id)
         
         # Update card zone
         card.zone = Zone.HAND
     
-    return state
+    return state, players, players
 
 
-def _apply_card_moved(state: "GameState", event: CardMovedEvent) -> "GameState":
+def _apply_card_moved(state: "GameState", players: dict[str, "PlayerState"], event: CardMovedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply generic card movement event."""
-    player = state.players[event.owner_id]
+    player = players[event.owner_id]
     card = state.cards.get(event.card_id)
     
     if card and event.from_zone and event.to_zone:
@@ -163,22 +180,22 @@ def _apply_card_moved(state: "GameState", event: CardMovedEvent) -> "GameState":
         card.zone = event.to_zone
         card.turns_in_zone = 0
     
-    return state
+    return state, players
 
 
-def _apply_card_played(state: "GameState", event: CardPlayedEvent) -> "GameState":
+def _apply_card_played(state: "GameState", players: dict[str, "PlayerState"], event: CardPlayedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card played event - move from hand to supporting zone."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     card = state.cards.get(event.card_id)
     
     if card:
         # Remove from hand
-        if event.card_id in player.zones[Zone.HAND].card_ids:
-            player.zones[Zone.HAND].card_ids.remove(event.card_id)
+        if event.card_id in player.zones[Zone.HAND.name].card_ids:
+            player.zones[Zone.HAND.name].card_ids.remove(event.card_id)
         
         # Add to supporting zone
-        if event.card_id not in player.zones[Zone.SUPPORTING].card_ids:
-            player.zones[Zone.SUPPORTING].card_ids.append(event.card_id)
+        if event.card_id not in player.zones[Zone.SUPPORTING.name].card_ids:
+            player.zones[Zone.SUPPORTING.name].card_ids.append(event.card_id)
         
         # Update card state
         card.zone = Zone.SUPPORTING
@@ -187,22 +204,22 @@ def _apply_card_played(state: "GameState", event: CardPlayedEvent) -> "GameState
         # Recalculate elements
         _recalculate_elements(state, event.player_id)
     
-    return state
+    return state, players
 
 
-def _apply_card_promoted(state: "GameState", event: CardPromotedEvent) -> "GameState":
+def _apply_card_promoted(state: "GameState", players: dict[str, "PlayerState"], event: CardPromotedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card promoted event - move from supporting to attacking zone."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     card = state.cards.get(event.card_id)
     
     if card:
         # Remove from supporting
-        if event.card_id in player.zones[Zone.SUPPORTING].card_ids:
-            player.zones[Zone.SUPPORTING].card_ids.remove(event.card_id)
+        if event.card_id in player.zones[Zone.SUPPORTING.name].card_ids:
+            player.zones[Zone.SUPPORTING.name].card_ids.remove(event.card_id)
         
         # Add to attacking
-        if event.card_id not in player.zones[Zone.ATTACKING].card_ids:
-            player.zones[Zone.ATTACKING].card_ids.append(event.card_id)
+        if event.card_id not in player.zones[Zone.ATTACKING.name].card_ids:
+            player.zones[Zone.ATTACKING.name].card_ids.append(event.card_id)
         
         # Update card state
         card.zone = Zone.ATTACKING
@@ -211,24 +228,24 @@ def _apply_card_promoted(state: "GameState", event: CardPromotedEvent) -> "GameS
         # Recalculate elements
         _recalculate_elements(state, event.player_id)
     
-    return state
+    return state, players
 
 
-def _apply_card_swapped(state: "GameState", event: CardSwappedEvent) -> "GameState":
+def _apply_card_swapped(state: "GameState", players: dict[str, "PlayerState"], event: CardSwappedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card swapped event - swap supporting and attacking cards."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     supporting_card = state.cards.get(event.supporting_card_id)
     attacking_card = state.cards.get(event.attacking_card_id)
     
     if supporting_card and attacking_card:
         # Swap in zones
-        if event.supporting_card_id in player.zones[Zone.SUPPORTING].card_ids:
-            player.zones[Zone.SUPPORTING].card_ids.remove(event.supporting_card_id)
-        if event.attacking_card_id in player.zones[Zone.ATTACKING].card_ids:
-            player.zones[Zone.ATTACKING].card_ids.remove(event.attacking_card_id)
+        if event.supporting_card_id in player.zones[Zone.SUPPORTING.name].card_ids:
+            player.zones[Zone.SUPPORTING.name].card_ids.remove(event.supporting_card_id)
+        if event.attacking_card_id in player.zones[Zone.ATTACKING.name].card_ids:
+            player.zones[Zone.ATTACKING.name].card_ids.remove(event.attacking_card_id)
         
-        player.zones[Zone.ATTACKING].card_ids.append(event.supporting_card_id)
-        player.zones[Zone.SUPPORTING].card_ids.append(event.attacking_card_id)
+        player.zones[Zone.ATTACKING.name].card_ids.append(event.supporting_card_id)
+        player.zones[Zone.SUPPORTING.name].card_ids.append(event.attacking_card_id)
         
         # Update card states
         supporting_card.zone = Zone.ATTACKING
@@ -242,16 +259,16 @@ def _apply_card_swapped(state: "GameState", event: CardSwappedEvent) -> "GameSta
         # Recalculate elements (swapped cards don't contribute this turn)
         _recalculate_elements(state, event.player_id)
     
-    return state
+    return state, players
 
 
 # ============================================================================
 # Association & Evolution Reducers
 # ============================================================================
 
-def _apply_card_associated(state: "GameState", event: CardAssociatedEvent) -> "GameState":
+def _apply_card_associated(state: "GameState", players: dict[str, "PlayerState"], event: CardAssociatedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card associated event."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     assoc_card = state.cards.get(event.association_card_id)
     target_card = state.cards.get(event.target_card_id)
     
@@ -271,12 +288,12 @@ def _apply_card_associated(state: "GameState", event: CardAssociatedEvent) -> "G
         # Recalculate elements
         _recalculate_elements(state, event.player_id)
     
-    return state
+    return state, players
 
 
-def _apply_card_evolved(state: "GameState", event: CardEvolvedEvent) -> "GameState":
+def _apply_card_evolved(state: "GameState", players: dict[str, "PlayerState"], event: CardEvolvedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card evolved event."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     base_card = state.cards.get(event.base_card_id)
     evo_card = state.cards.get(event.evolution_card_id)
     
@@ -284,8 +301,8 @@ def _apply_card_evolved(state: "GameState", event: CardEvolvedEvent) -> "GameSta
         target_zone = base_card.zone
         
         # Remove evolution from hand
-        if event.evolution_card_id in player.zones[Zone.HAND].card_ids:
-            player.zones[Zone.HAND].card_ids.remove(event.evolution_card_id)
+        if event.evolution_card_id in player.zones[Zone.HAND.name].card_ids:
+            player.zones[Zone.HAND.name].card_ids.remove(event.evolution_card_id)
         
         # Remove base from its zone
         if target_zone in (Zone.SUPPORTING, Zone.ATTACKING):
@@ -293,7 +310,7 @@ def _apply_card_evolved(state: "GameState", event: CardEvolvedEvent) -> "GameSta
                 player.zones[target_zone].card_ids.remove(event.base_card_id)
         
         # Move base to graveyard
-        player.zones[Zone.GRAVEYARD].card_ids.append(event.base_card_id)
+        player.zones[Zone.GRAVEYARD.name].card_ids.append(event.base_card_id)
         base_card.zone = Zone.GRAVEYARD
         
         # Place evolution in target zone
@@ -308,36 +325,36 @@ def _apply_card_evolved(state: "GameState", event: CardEvolvedEvent) -> "GameSta
         # Recalculate elements
         _recalculate_elements(state, event.player_id)
     
-    return state
+    return state, players
 
 
 # ============================================================================
 # Combat Reducers
 # ============================================================================
 
-def _apply_attack_declared(state: "GameState", event: AttackDeclaredEvent) -> "GameState":
+def _apply_attack_declared(state: "GameState", players: dict[str, "PlayerState"], event: AttackDeclaredEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply attack declared event - mark attacker as having attacked."""
     attacker = state.cards.get(event.attacker_id)
     
     if attacker:
         attacker.has_attacked_this_turn = True
     
-    return state
+    return state, players
 
 
-def _apply_damage_dealt(state: "GameState", event: DamageDealtEvent) -> "GameState":
+def _apply_damage_dealt(state: "GameState", players: dict[str, "PlayerState"], event: DamageDealtEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply damage dealt event - reduce target's health."""
     target = state.cards.get(event.target_id)
     
     if target and event.final_damage > 0:
         target.current_health -= event.final_damage
     
-    return state
+    return state, players
 
 
-def _apply_card_destroyed(state: "GameState", event: CardDestroyedEvent) -> "GameState":
+def _apply_card_destroyed(state: "GameState", players: dict[str, "PlayerState"], event: CardDestroyedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card destroyed event - move to graveyard."""
-    player = state.players[event.owner_id]
+    player = players[event.owner_id]
     card = state.cards.get(event.card_id)
     
     if card:
@@ -349,51 +366,51 @@ def _apply_card_destroyed(state: "GameState", event: CardDestroyedEvent) -> "Gam
                 player.zones[current_zone].card_ids.remove(event.card_id)
         
         # Add to graveyard
-        if event.card_id not in player.zones[Zone.GRAVEYARD].card_ids:
-            player.zones[Zone.GRAVEYARD].card_ids.append(event.card_id)
+        if event.card_id not in player.zones[Zone.GRAVEYARD.name].card_ids:
+            player.zones[Zone.GRAVEYARD.name].card_ids.append(event.card_id)
         
         card.zone = Zone.GRAVEYARD
         
         # Recalculate elements
         _recalculate_elements(state, event.owner_id)
     
-    return state
+    return state, players
 
 
 # ============================================================================
 # Element Reducers
 # ============================================================================
 
-def _apply_elements_consumed(state: "GameState", event: ElementsConsumedEvent) -> "GameState":
+def _apply_elements_consumed(state: "GameState", players: dict[str, "PlayerState"], event: ElementsConsumedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply elements consumed event - reduce element pool."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     
     for element_id, amount in event.elements.items():
         current = player.element_pool.elements.get(element_id, 0)
         player.element_pool.elements[element_id] = max(0, current - amount)
     
-    return state
+    return state, players
 
 
-def _apply_elements_restored(state: "GameState", event: ElementsRestoredEvent) -> "GameState":
+def _apply_elements_restored(state: "GameState", players: dict[str, "PlayerState"], event: ElementsRestoredEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply elements restored event - restore element pool."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     
     player.element_pool.elements = dict(event.elements)
     
-    return state
+    return state, players
 
 
 # ============================================================================
 # Turn & Phase Reducers
 # ============================================================================
 
-def _apply_turn_started(state: "GameState", event: TurnStartedEvent) -> "GameState":
+def _apply_turn_started(state: "GameState", players: dict[str, "PlayerState"], event: TurnStartedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply turn started event."""
     state.active_player_id = event.player_id
     state.turn_number = event.turn_number
     
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     player.has_passed_phase = False
     
     # Reset card turn flags
@@ -405,12 +422,12 @@ def _apply_turn_started(state: "GameState", event: TurnStartedEvent) -> "GameSta
             if card.status == CardStatus.SWAPPED:
                 card.status = CardStatus.READY
     
-    return state
+    return state, players
 
 
-def _apply_turn_ended(state: "GameState", event: TurnEndedEvent) -> "GameState":
+def _apply_turn_ended(state: "GameState", players: dict[str, "PlayerState"], event: TurnEndedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply turn ended event."""
-    player = state.players[event.player_id]
+    player = players[event.player_id]
     
     # Increment turns in zone for all active cards
     for card_id in player.get_active_cards():
@@ -421,38 +438,38 @@ def _apply_turn_ended(state: "GameState", event: TurnEndedEvent) -> "GameState":
     # Increment player turn count
     player.turn_count += 1
     
-    return state
+    return state, players
 
 
-def _apply_phase_changed(state: "GameState", event: PhaseChangedEvent) -> "GameState":
+def _apply_phase_changed(state: "GameState", players: dict[str, "PlayerState"], event: PhaseChangedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply phase changed event."""
     if event.to_phase:
         state.current_phase = event.to_phase
     
-    return state
+    return state, players
 
 
 # ============================================================================
 # Game-Level Reducers
 # ============================================================================
 
-def _apply_game_started(state: "GameState", event: GameStartedEvent) -> "GameState":
+def _apply_game_started(state: "GameState", players: dict[str, "PlayerState"], event: GameStartedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply game started event."""
     state.status = GameStatus.IN_PROGRESS
     state.active_player_id = event.first_player_id
     
-    return state
+    return state, players
 
 
-def _apply_game_ended(state: "GameState", event: GameEndedEvent) -> "GameState":
+def _apply_game_ended(state: "GameState", players: dict[str, "PlayerState"], event: GameEndedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply game ended event."""
     state.status = GameStatus.FINISHED
     state.winner_id = event.winner_id
     
-    return state
+    return state, players
 
 
-def _apply_no_defender(state: "GameState", event: NoDefenderEvent) -> "GameState":
+def _apply_no_defender(state: "GameState", players: dict[str, "PlayerState"], event: NoDefenderEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply no defender event."""
     if event.must_defend:
         state.status = GameStatus.PAUSED
@@ -462,7 +479,7 @@ def _apply_no_defender(state: "GameState", event: NoDefenderEvent) -> "GameState
         # Winner is the attacker
         state.winner_id = event.attacker_id
     
-    return state
+    return state, players
 
 
 # ============================================================================
@@ -476,7 +493,7 @@ def _recalculate_elements(state: "GameState", player_id: str) -> None:
     Note: This mutates the state in place (called from within reducers
     that already have a copy).
     """
-    player = state.players[player_id]
+    player = players[player_id]
     player.element_pool.elements.clear()
     player.element_pool.max_elements.clear()
     

@@ -12,7 +12,11 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.game.player import PlayerState
+    from app.websocket.models import GameRoom
 
 from app.models.game import (
     Zone,
@@ -62,6 +66,7 @@ class ActionResult:
         game_over: Whether the game ended
         winner_id: ID of winner if game ended
         state: The new game state after processing
+        final_players: The updated players dict after processing
         valid_actions: Valid actions for the acting player after this action
     """
     success: bool
@@ -70,6 +75,7 @@ class ActionResult:
     game_over: bool = False
     winner_id: Optional[str] = None
     state: Optional[GameState] = None
+    final_players: Optional[dict[str, PlayerState]] = None
     valid_actions: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -92,6 +98,7 @@ class GameEngine:
     
     def create_game(
         self,
+        room: "GameRoom",
         player1_id: str,
         player1_name: str,
         player2_id: str,
@@ -105,26 +112,31 @@ class GameEngine:
         Returns:
             Initialized GameState (status=STARTING)
         """
-        state = GameState.create(player1_id, player1_name, player2_id, player2_name, self.config)
+        # Create state with room reference
+        state = GameState.create(room, self.config)
+        
+        # Initialize players in room
+        room.save_players(player1_id, player1_name, player2_id, player2_name)
         
         # Create cards for each player
-        self._setup_deck(state, player1_id, player1_deck)
-        self._setup_deck(state, player2_id, player2_deck)
+        self._setup_deck(state, room.players, player1_id, player1_deck)
+        self._setup_deck(state, room.players, player2_id, player2_deck)
         
         # Shuffle decks
-        for player in state.players.values():
-            random.shuffle(player.zones[Zone.DECK].card_ids)
+        for player in room.players.values():
+            player.shuffle_deck()
         
         state.status = GameStatus.STARTING
         return state
     
-    def _setup_deck(self, state: GameState, player_id: str, deck_data: list[dict[str, Any]]) -> None:
+    
+    def _setup_deck(self, state: GameState, players: dict[str, PlayerState], player_id: str, deck_data: list[dict[str, Any]]) -> None:
         """Setup a player's deck from card data."""
         for card_data in deck_data:
             card = self._create_game_card(card_data, player_id)
             card.zone = Zone.DECK
             state.cards[card.instance_id] = card
-            state.players[player_id].zones[Zone.DECK].add_card(card.instance_id)
+            players[player_id].zones[Zone.DECK.name].add_card(card.instance_id)
     
     def _create_game_card(self, card_data: dict[str, Any], owner_id: str) -> GameCard:
         """Create a GameCard from card data dict."""
@@ -190,13 +202,13 @@ class GameEngine:
             ActionResult with new state
         """
         if first_player_id is None:
-            first_player_id = random.choice(list(state.players.keys()))
+            first_player_id = random.choice(list(state.room.players.keys()))
         
         # Build initial events
         initial_events: list[GameEvent] = [
             GameStartedEvent(
                 game_id=state.game_id,
-                player_ids=list(state.players.keys()),
+                player_ids=list(state.room.players.keys()),
                 first_player_id=first_player_id,
             ),
             TurnStartedEvent(
@@ -221,7 +233,10 @@ class GameEngine:
         ))
         
         # Process all events through the event loop
-        result = self.event_loop.process(state, initial_events)
+        result = self.event_loop.process(state, state.room.players, initial_events)
+        
+        # Update room's players reference
+        state.room.players = result.final_players
         
         # Get valid actions for the first player after game start
         valid_actions = []
@@ -232,6 +247,7 @@ class GameEngine:
             success=True,
             events=result.all_events,
             state=result.final_state,
+            final_players=result.final_players,
             valid_actions=valid_actions,
         )
     
@@ -250,7 +266,7 @@ class GameEngine:
             ActionResult with new state (original state is unchanged)
         """
         # 1. Validate action
-        validation = self.validator.validate(state, action)
+        validation = self.validator.validate(state, state.room.players, action)
         if not validation.valid:
             return ActionResult(
                 success=False,
@@ -260,25 +276,35 @@ class GameEngine:
         
         try:
             # 2. Transform action to events
-            events = self.event_generator.create(state, action)
+            events = self.event_generator.create(state, state.room.players, action)
             
             # 3. Process events through the event loop (applies reducer + triggers effects)
-            result = self.event_loop.process(state, events)
+            result = self.event_loop.process(state, state.room.players, events)
+            
+            # Update room's players reference
+            result.final_state.room.players = result.final_players
             
             # 4. Check for game end
             winner_id = result.final_state.check_game_end()
             game_over = winner_id is not None
             
             if game_over and result.final_state.status != GameStatus.FINISHED:
-                loser_id = result.final_state.get_opponent(winner_id).player_id
-                end_event = GameEndedEvent(
-                    game_id=result.final_state.game_id,
-                    winner_id=winner_id,
-                    loser_id=loser_id,
-                    reason="No cards remaining",
-                )
-                result.final_state = apply_event(result.final_state, end_event)
-                result.all_events.append(end_event)
+                # Find opponent
+                loser_id = None
+                for pid in result.final_players.keys():
+                    if pid != winner_id:
+                        loser_id = pid
+                        break
+                if loser_id:
+                    end_event = GameEndedEvent(
+                        game_id=result.final_state.game_id,
+                        winner_id=winner_id,
+                        loser_id=loser_id,
+                        reason="No cards remaining",
+                    )
+                    result.final_state, result.final_players = apply_event(result.final_state, result.final_players, end_event)
+                    result.final_state.room.players = result.final_players
+                    result.all_events.append(end_event)
             
             # Get valid actions for the acting player after the action
             valid_actions = []
@@ -291,6 +317,7 @@ class GameEngine:
                 game_over=game_over or result.final_state.status == GameStatus.FINISHED,
                 winner_id=result.final_state.winner_id,
                 state=result.final_state,
+                final_players=result.final_players,
                 valid_actions=valid_actions,
             )
             
@@ -308,7 +335,7 @@ class GameEngine:
         Returns a list of action dictionaries with action type, parameters, and description.
         """
         valid_actions: list[Action] = []
-        player = state.get_player(player_id)
+        player = state.room.players[player_id]
         
         # Can always pass or concede
         valid_actions.append(PassPhaseAction(player_id=player_id))
@@ -317,9 +344,14 @@ class GameEngine:
         # Check if it's this player's turn
         if state.active_player_id != player_id:
             if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
-                opponent = state.get_opponent(state.active_player_id or "")
-                if opponent.player_id == player_id:
-                    for card_id in player.zones[Zone.SUPPORTING].card_ids:
+                # Find opponent
+                active_opponent = None
+                for pid, p in state.room.players.items():
+                    if pid != state.active_player_id:
+                        active_opponent = p
+                        break
+                if active_opponent and active_opponent.player_id == player_id:
+                    for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
                         card = state.get_card(card_id)
                         if card:
                             valid_actions.append(ForceDefendAction(
@@ -331,26 +363,26 @@ class GameEngine:
         phase = state.current_phase
         
         if phase == TurnPhase.PLACEMENT:
-            for card_id in player.zones[Zone.HAND].card_ids:
+            for card_id in player.zones[Zone.HAND.name].card_ids:
                 card = state.get_card(card_id)
-                if card and not player.zones[Zone.SUPPORTING].is_full():
+                if card and not player.zones[Zone.SUPPORTING.name].is_full():
                     valid_actions.append(PlayCardAction(
                         player_id=player_id,
                         card_id=card_id,
                     ))
         
         elif phase == TurnPhase.PROMOTION:
-            for card_id in player.zones[Zone.SUPPORTING].card_ids:
+            for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
                 card = state.get_card(card_id)
-                if card and card.can_promote() and not player.zones[Zone.ATTACKING].is_full():
+                if card and card.can_promote() and not player.zones[Zone.ATTACKING.name].is_full():
                     valid_actions.append(PromoteAction(
                         player_id=player_id,
                         card_id=card_id,
                     ))
         
         elif phase == TurnPhase.SWAP:
-            for supp_id in player.zones[Zone.SUPPORTING].card_ids:
-                for atk_id in player.zones[Zone.ATTACKING].card_ids:
+            for supp_id in player.zones[Zone.SUPPORTING.name].card_ids:
+                for atk_id in player.zones[Zone.ATTACKING.name].card_ids:
                     valid_actions.append(SwapAction(
                         player_id=player_id,
                         supporting_card_id=supp_id,
@@ -359,8 +391,8 @@ class GameEngine:
         
         elif phase == TurnPhase.ASSOCIATION:
             if not state.is_first_turn(player_id):
-                for assoc_id in (player.zones[Zone.HAND].card_ids + 
-                                player.zones[Zone.SUPPORTING].card_ids):
+                for assoc_id in (player.zones[Zone.HAND.name].card_ids + 
+                                player.zones[Zone.SUPPORTING.name].card_ids):
                     assoc_card = state.get_card(assoc_id)
                     if assoc_card and assoc_card.association_ids:
                         for target_id in player.get_active_cards():
@@ -373,7 +405,7 @@ class GameEngine:
         
         elif phase == TurnPhase.EVOLUTION:
             if not state.is_first_turn(player_id) and not state.is_second_turn(player_id):
-                for evo_id in player.zones[Zone.HAND].card_ids:
+                for evo_id in player.zones[Zone.HAND.name].card_ids:
                     evo_card = state.get_card(evo_id)
                     if evo_card and evo_card.is_evolution:
                         for target_id in player.get_active_cards():
@@ -389,9 +421,16 @@ class GameEngine:
         
         elif phase == TurnPhase.ATTACK:
             if not state.is_first_turn(player_id):
-                opponent = state.get_opponent(player_id)
+                # Find opponent
+                opponent = None
+                for pid, p in state.room.players.items():
+                    if pid != player_id:
+                        opponent = p
+                        break
+                if not opponent:
+                    return [action.to_dict(state) for action in valid_actions]
                 
-                for attacker_id in player.zones[Zone.ATTACKING].card_ids:
+                for attacker_id in player.zones[Zone.ATTACKING.name].card_ids:
                     attacker = state.get_card(attacker_id)
                     if attacker and attacker.can_attack():
                         for attack in attacker.attacks:
@@ -402,7 +441,7 @@ class GameEngine:
                             
                             if can_afford:
                                 # Add attack for each valid target
-                                for target_id in opponent.zones[Zone.ATTACKING].card_ids:
+                                for target_id in opponent.zones[Zone.ATTACKING.name].card_ids:
                                     valid_actions.append(AttackAction(
                                         player_id=player_id,
                                         attacker_id=attacker_id,
@@ -411,7 +450,7 @@ class GameEngine:
                                     ))
                                 
                                 # If no defenders, can attack with empty target
-                                if len(opponent.zones[Zone.ATTACKING].card_ids) == 0:
+                                if len(opponent.zones[Zone.ATTACKING.name].card_ids) == 0:
                                     valid_actions.append(AttackAction(
                                         player_id=player_id,
                                         attacker_id=attacker_id,

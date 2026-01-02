@@ -14,7 +14,6 @@ from app.models.schemas.websocket.client import (
     CreateGameMessage,
     JoinGameMessage,
     ListRoomsMessage,
-    StartGameMessage,
     ActionMessage,
     GetStateMessage,
     GetValidActionsMessage,
@@ -65,7 +64,6 @@ class MessageHandler:
             CreateGameMessage.type: CreateGameMessage,
             JoinGameMessage.type: JoinGameMessage,
             ListRoomsMessage.type: ListRoomsMessage,
-            StartGameMessage.type: StartGameMessage,
             ActionMessage.type: ActionMessage,
             GetStateMessage.type: GetStateMessage,
             GetValidActionsMessage.type: GetValidActionsMessage,
@@ -107,12 +105,6 @@ class MessageHandler:
                 await self.message_broadcaster.send_to_player(player_id, RoomsListMessage(
                     data=RoomsListData(rooms=rooms)
                 ))
-            
-            elif msg_type == StartGameMessage.type:
-                room_id = self.room_manager.get_player_room(player_id)
-                if not room_id:
-                    raise ValueError("Not in a game room")
-                await self.room_manager.start_game(player_id, room_id)
             
             elif msg_type == ActionMessage.type:
                 room_id = self.room_manager.get_player_room(player_id)
