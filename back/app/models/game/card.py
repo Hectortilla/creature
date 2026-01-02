@@ -177,6 +177,49 @@ class GameCardInput(GameBaseModel):
     evolves_from_id: Optional[int] = None
     
     @classmethod
+    def _normalize_necessary_force(cls, necessary_force: list[dict] | None) -> list[dict]:
+        """
+        Normalize necessary_force structure: convert from {value, elementData} to {element_id, amount}.
+        
+        Handles both formats:
+        - Frontend format: {value: X, elementData: {id: Y}}
+        - Already normalized: {element_id: X, amount: Y}
+        """
+        if not necessary_force:
+            return []
+        
+        normalized = []
+        for force in necessary_force:
+            if isinstance(force, dict):
+                # Handle both formats: {value, elementData} or {element_id, amount}
+                if "elementData" in force and "value" in force:
+                    # Convert from frontend format: {value: X, elementData: {id: Y}}
+                    normalized.append({
+                        "element_id": force["elementData"]["id"],
+                        "amount": force["value"]
+                    })
+                elif "element_id" in force and "amount" in force:
+                    # Already in correct format
+                    normalized.append(force)
+        
+        return normalized
+    
+    @classmethod
+    def _build_attack_dict(cls, attack: Any) -> dict[str, Any]:
+        """Build attack dictionary from attack object."""
+        return {
+            "id": attack.id,
+            "name": attack.name,
+            "damage": attack.damage or 0,
+            "type": attack.type or "physical",
+            "element_id": attack.element_id or 0,
+            "necessary_force": cls._normalize_necessary_force(attack.necessary_force),
+            "effect": attack.effect,
+            "description": attack.description,
+            "dice_rolls": attack.dice_rolls,
+        }
+    
+    @classmethod
     def from_card_read(cls, card: Any) -> "GameCardInput":
         """
         Create GameCardInput from CardReadWithRelations.
@@ -204,29 +247,9 @@ class GameCardInput(GameBaseModel):
         # Build attacks list
         attacks = []
         if card.first_attack:
-            attacks.append({
-                "id": card.first_attack.id,
-                "name": card.first_attack.name,
-                "damage": card.first_attack.damage or 0,
-                "type": card.first_attack.type or "physical",
-                "element_id": card.first_attack.element_id or 0,
-                "necessary_force": card.first_attack.necessary_force or [],
-                "effect": card.first_attack.effect,
-                "description": card.first_attack.description,
-                "dice_rolls": card.first_attack.dice_rolls,
-            })
+            attacks.append(cls._build_attack_dict(card.first_attack))
         if card.second_attack:
-            attacks.append({
-                "id": card.second_attack.id,
-                "name": card.second_attack.name,
-                "damage": card.second_attack.damage or 0,
-                "type": card.second_attack.type or "physical",
-                "element_id": card.second_attack.element_id or 0,
-                "necessary_force": card.second_attack.necessary_force or [],
-                "effect": card.second_attack.effect,
-                "description": card.second_attack.description,
-                "dice_rolls": card.second_attack.dice_rolls,
-            })
+            attacks.append(cls._build_attack_dict(card.second_attack))
         
         # Build skill_ids and association_ids
         skill_ids = []

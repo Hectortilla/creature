@@ -69,9 +69,11 @@ async def game_websocket_handler(
             ).model_dump(mode='json'))
         except Exception as e:
             # If auto-join fails, send error directly to WebSocket
+            import traceback
             from app.models.schemas.websocket.server import ErrorMessage, ErrorData
+
             await websocket.send_json(ErrorMessage(
-                data=ErrorData(message=f"Failed to join room: {str(e)}")
+                data=ErrorData(message=f"Failed to join room:\n{traceback.format_exc()}")
             ).model_dump(mode='json'))
     
     try:
