@@ -94,7 +94,7 @@ class ActionToEventGenerator:
     def _create_draw_events(self, state: "GameState", action: DrawAction) -> list[GameEvent]:
         """Create draw events."""
         events = []
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         deck = player.zones[Zone.DECK]
         
         for i in range(min(action.count, len(deck.card_ids))):
@@ -227,7 +227,7 @@ class ActionToEventGenerator:
         3. Determining destruction
         """
         events = []
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         opponent = state.get_opponent(action.player_id)
         attacker = state.get_card(action.attacker_id)
         
@@ -354,7 +354,7 @@ class ActionToEventGenerator:
         """Create pass events - determine next phase or turn."""
         events = []
         current_phase = state.current_phase
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         
         next_phase = current_phase.next_phase()
         
@@ -385,7 +385,7 @@ class ActionToEventGenerator:
         else:
             # End of turn, switch to next player
             next_player_id = self._get_next_player(state, action.player_id)
-            next_player = state.get_player(next_player_id)
+            next_player = state.room.get_player(next_player_id)
             
             # End current turn
             events.append(TurnEndedEvent(
@@ -461,7 +461,7 @@ class ActionToEventGenerator:
     
     def _should_skip_phase(self, state: "GameState", phase: TurnPhase, player_id: str) -> bool:
         """Check if a phase should be skipped."""
-        player = state.get_player(player_id)
+        player = state.room.get_player(player_id)
         
         if phase == TurnPhase.PROMOTION:
             # Skip if no promotable cards or attacking zone full

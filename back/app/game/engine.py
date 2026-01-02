@@ -118,18 +118,23 @@ class GameEngine:
         """
         Start a game - sets up first turn and draws initial cards.
         
+        Randomly selects the first player from available players.
+        
         Args:
             state: Game state (status must be STARTING)
-            first_player_id: Who goes first (random if not specified)
         
         Returns:
             ActionResult with new state
         """
+        # Randomly select the first player
+        player_ids = list(state.room.players.keys())
+        first_player_id = random.choice(player_ids)
+        
         # Build initial events
         initial_events: list[GameEvent] = [
             GameStartedEvent(
                 game_id=state.game_id,
-                player_ids=list(state.room.players.keys()),
+                player_ids=player_ids,
                 first_player_id=first_player_id,
             ),
             TurnStartedEvent(

@@ -134,7 +134,7 @@ class RuleValidator:
     
     def _validate_draw(self, state: "GameState", action: DrawAction) -> ValidationResult:
         """Validate draw action."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         deck = player.zones[Zone.DECK]
         
         if len(deck.card_ids) < action.count:
@@ -148,7 +148,7 @@ class RuleValidator:
     
     def _validate_play_card(self, state: "GameState", action: PlayCardAction) -> ValidationResult:
         """Validate playing a card from hand to supporting zone."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         
         # Check first turn restrictions - can only place, not attack/associate/evolve
         # (but placement is allowed, so this check is OK)
@@ -175,7 +175,7 @@ class RuleValidator:
     
     def _validate_multi_play_card(self, state: "GameState", action: MultiPlayCardAction) -> ValidationResult:
         """Validate playing multiple cards."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         supporting = player.zones[Zone.SUPPORTING]
         hand = player.zones[Zone.HAND]
         
@@ -209,7 +209,7 @@ class RuleValidator:
     
     def _validate_promote(self, state: "GameState", action: PromoteAction) -> ValidationResult:
         """Validate promoting a card from supporting to attacking zone."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         
         # Check card is in supporting zone
         supporting = player.zones[Zone.SUPPORTING]
@@ -242,7 +242,7 @@ class RuleValidator:
     
     def _validate_swap(self, state: "GameState", action: SwapAction) -> ValidationResult:
         """Validate swapping a supporting card with an attacking card."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         
         # Check supporting card is in supporting zone
         supporting = player.zones[Zone.SUPPORTING]
@@ -266,7 +266,7 @@ class RuleValidator:
     
     def _validate_multi_swap(self, state: "GameState", action: MultiSwapAction) -> ValidationResult:
         """Validate multiple swaps."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         supporting_zone = player.zones[Zone.SUPPORTING]
         attacking_zone = player.zones[Zone.ATTACKING]
         
@@ -309,7 +309,7 @@ class RuleValidator:
     
     def _validate_association(self, state: "GameState", action: AssociationAction) -> ValidationResult:
         """Validate associating a card with another card."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         
         # Check first turn restriction
         if state.is_first_turn(action.player_id):
@@ -352,7 +352,7 @@ class RuleValidator:
     
     def _validate_evolution(self, state: "GameState", action: EvolutionAction) -> ValidationResult:
         """Validate evolving a card."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         
         # Check first and second turn restrictions
         if state.is_first_turn(action.player_id):
@@ -424,7 +424,7 @@ class RuleValidator:
     
     def _validate_attack(self, state: "GameState", action: AttackAction) -> ValidationResult:
         """Validate an attack action."""
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         opponent = state.get_opponent(action.player_id)
         
         # Check first turn restriction
@@ -513,7 +513,7 @@ class RuleValidator:
                 error_code="NO_FORCE_DEFEND"
             )
         
-        player = state.get_player(action.player_id)
+        player = state.room.get_player(action.player_id)
         
         # Check card is in supporting zone
         supporting = player.zones[Zone.SUPPORTING]
