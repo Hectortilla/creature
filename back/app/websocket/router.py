@@ -8,7 +8,8 @@ from fastapi import APIRouter, WebSocket, Query, status, WebSocketException
 
 from app.auth import WebSocketUser
 from app.models.schemas.websocket import *
-from app.websocket.endpoint import handle_websocket_connection
+from app.websocket import game_websocket_handler
+from app.game.validators import validate_game_socket_connection
 
 router = APIRouter()
 
@@ -25,33 +26,27 @@ async def game_websocket(
     
     Connect with: ws://host/game/ws?token=<jwt_token>&deck_id=<deck_id>[&room_id=<room_id>]
     
-    Player ID is the user's database ID, name is the user's full_name or username.
-    
     If room_id is provided, the player will automatically join that room after connecting.
     If room_id is not provided, the player will need to create or join a room via messages.
-    
-    Validates:
-    - Deck exists and belongs to the user
-    - Deck is valid for playing (correct size)
-    - Player doesn't have another active game
-    - If room_id is provided, room exists and can be joined (has 1 player, game not started)
     """
     from app.settings.lifespan import connection_manager, room_manager, message_handler, message_broadcaster
-    if connection_manager is None or room_manager is None or message_handler is None or message_broadcaster is None:
-        raise WebSocketException(
-            code=status.WS_1011_INTERNAL_ERROR,
-            reason="Game managers not initialized",
-        )
-    
-    await handle_websocket_connection(
-        websocket,
+
+    player = await validate_game_socket_connection(
         user,
         deck_id,
         connection_manager,
         room_manager,
+        room_id
+    )
+
+    await game_websocket_handler(
+        websocket, 
+        player,
+        connection_manager,
+        room_manager,
         message_handler,
         message_broadcaster,
-        room_id=room_id,
+        room_id=room_id
     )
 
 

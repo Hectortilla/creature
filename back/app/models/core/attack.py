@@ -27,9 +27,3 @@ class AttackCoreFields(BaseModel):
     damage: int | None = None
     effect: str | None = None
     dice_rolls: int | None = None
-
-
-
-
-
-
