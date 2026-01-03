@@ -16,6 +16,7 @@ class ConnectionManager:
         self.connections: dict[str, PlayerConnection] = {}
         self.player_tasks: dict[str, asyncio.Task] = {}
         self.channels: dict[str, set[str]] = {}
+        self.player_ready: dict[str, asyncio.Event] = {}
 
     async def connect(self, websocket: WebSocket, player: PlayerState) -> PlayerConnection:
         await websocket.accept()
@@ -31,9 +32,14 @@ class ConnectionManager:
         self.connections[player.player_id] = conn
         self.channels[player.player_id] = {f"player:{player.player_id}"}
 
+        ready = asyncio.Event()
+        self.player_ready[player.player_id] = ready
+
         self.player_tasks[player.player_id] = asyncio.create_task(
             self._player_loop(player.player_id)
         )
+    
+        await ready.wait()
 
         return conn
 
@@ -52,6 +58,7 @@ class ConnectionManager:
             return
 
         queue: asyncio.Queue = asyncio.Queue()
+        ready_event = self.player_ready[player_id]
 
         async def subscribe(channel: str):
             try:
@@ -69,6 +76,9 @@ class ConnectionManager:
             asyncio.create_task(subscribe(channel))
             for channel in channels
         ]
+
+        await asyncio.sleep(0)
+        ready_event.set()
 
         try:
             while True:
@@ -99,24 +109,19 @@ class ConnectionManager:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 
-        if player_id not in self.connections:
-            return
+        ready = asyncio.Event()
+        self.player_ready[player_id] = ready
 
         self.player_tasks[player_id] = asyncio.create_task(
             self._player_loop(player_id)
         )
+        await ready.wait()
 
     async def subscribe_to_room(self, player_id: str, room_id: str):
-        if player_id not in self.channels:
-            return
-
         self.channels[player_id].add(f"room:{room_id}")
         await self._restart_player_task(player_id)
 
     async def unsubscribe_from_room(self, player_id: str, room_id: str):
-        if player_id not in self.channels:
-            return
-
         self.channels[player_id].discard(f"room:{room_id}")
         await self._restart_player_task(player_id)
 
