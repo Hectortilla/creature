@@ -6,7 +6,7 @@ Data models for WebSocket connections and game rooms.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 from fastapi import WebSocket
@@ -43,7 +43,15 @@ class GameRoom(GameBaseModel):
     def serialize_state(self, value: Optional[GameState]) -> None:
         # Don't include full state in room serialization
         return None
-    
+
+    @field_serializer('players')
+    def serialize_players(self, value: dict[str, PlayerState]) -> dict[str, dict[str, Any]]:
+        """Serialize players dict, excluding deck from each player."""
+        return {
+            player_id: player.model_dump(mode='json', exclude={'deck'})
+            for player_id, player in value.items()
+        }
+
     @computed_field
     @property
     def is_full(self) -> bool:
