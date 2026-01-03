@@ -118,20 +118,22 @@
 				try {
 					const data = JSON.parse(event.data);
 					messages = [...messages, JSON.stringify(data, null, 2)];
-					
+
+					validActions = [];
+
 					// Handle action_result messages to update valid actions
 					if (data.type === 'action_result' && data.data?.valid_actions) {
-						validActions = data.data.valid_actions as ValidAction[];
+						data.data?.valid_actions.forEach((action: any) => addAction(action));
 					}
 					
 					// Handle game_started messages to update valid actions
 					if (data.type === 'game_started' && data.data?.valid_actions) {
-						validActions = data.data.valid_actions as ValidAction[];
+						data.data?.valid_actions.forEach((action: any) => addAction(action));
 					}
 					
 					// Handle valid_actions messages
 					if (data.type === 'valid_actions' && data.data?.actions) {
-						validActions = data.data.actions as ValidAction[];
+						data.data?.valid_actions.forEach((action: any) => addAction(action));
 					}
 				} catch {
 					messages = [...messages, event.data];
@@ -169,6 +171,11 @@
 				ws.close();
 			}
 		});
+
+		function addAction(action: any) {
+			if (action.player_id === String(auth.user?.id))
+				validActions.push(action);
+		}
 
 		function sendMessage(event: SubmitEvent) {
 			event.preventDefault();
