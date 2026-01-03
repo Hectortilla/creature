@@ -16,7 +16,7 @@ from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, TurnPhase, GameStatus
 from app.models.game.card import GameCard
 from app.models.game.player import PlayerState
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from app.models.game import AttackDefinition, DamageType, ElementContribution
 
@@ -65,6 +65,11 @@ class GameState(GameBaseModel):
     @field_serializer('created_at')
     def serialize_created_at(self, value: datetime) -> str:
         return value.isoformat()
+    
+    @field_serializer('cards')
+    def serialize_cards(self, value: dict[str, GameCard]) -> None:
+        """Exclude cards from serialization to prevent frontend access."""
+        return None
     
     @classmethod
     def create(cls, room: "GameRoom",
