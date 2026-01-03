@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 from broadcaster import Broadcast
@@ -6,12 +7,14 @@ from broadcaster import Broadcast
 from app.websocket.models import PlayerConnection, PlayerState
 
 
+logger = logging.getLogger(__name__)
+
 class ConnectionManager:
     def __init__(self, broadcast: Broadcast):
         self.broadcast = broadcast
 
         self.connections: dict[str, PlayerConnection] = {}
-        self.tasks: dict[str, asyncio.Task] = {}
+        self.player_tasks: dict[str, asyncio.Task] = {}
         self.channels: dict[str, set[str]] = {}
 
     async def connect(self, websocket: WebSocket, player: PlayerState) -> PlayerConnection:
@@ -28,13 +31,18 @@ class ConnectionManager:
         self.connections[player.player_id] = conn
         self.channels[player.player_id] = {f"player:{player.player_id}"}
 
-        self.tasks[player.player_id] = asyncio.create_task(
+        self.player_tasks[player.player_id] = asyncio.create_task(
             self._player_loop(player.player_id)
         )
 
         return conn
 
     async def _player_loop(self, player_id: str):
+        """
+        Fan-in loop:
+        - One subscription task per channel
+        - All messages forwarded to the websocket
+        """
         conn = self.connections.get(player_id)
         if not conn:
             return
@@ -43,25 +51,50 @@ class ConnectionManager:
         if not channels:
             return
 
+        queue: asyncio.Queue = asyncio.Queue()
+
+        async def subscribe(channel: str):
+            try:
+                async with self.broadcast.subscribe(channel=channel) as subscriber:
+                    async for event in subscriber:
+                        if player_id not in self.connections:
+                            break
+                        queue.put_nowait(event.message)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                logger.exception("Error in subscription to channel %s for player %s: %s", channel, player_id, e)
+
+        subscription_tasks = [
+            asyncio.create_task(subscribe(channel))
+            for channel in channels
+        ]
+
         try:
-            async with self.broadcast.subscribe(channels=channels) as subscriber:
-                async for event in subscriber:
-                    if player_id not in self.connections:
-                        break
+            while True:
+                if player_id not in self.connections:
+                    break
 
-                    if conn.websocket.client_state != WebSocketState.CONNECTED:
-                        break
+                if conn.websocket.client_state != WebSocketState.CONNECTED:
+                    break
 
-                    await conn.websocket.send_json(event.message)
+                try:
+                    message = await asyncio.wait_for(queue.get(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    continue
+
+                await conn.websocket.send_json(message)
 
         except asyncio.CancelledError:
             raise
-        except Exception:
-            # TODO: add logging
-            pass
+
+        finally:
+            for task in subscription_tasks:
+                task.cancel()
+            await asyncio.gather(*subscription_tasks, return_exceptions=True)
 
     async def _restart_player_task(self, player_id: str):
-        task = self.tasks.get(player_id)
+        task = self.player_tasks.get(player_id)
         if task:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
@@ -69,7 +102,7 @@ class ConnectionManager:
         if player_id not in self.connections:
             return
 
-        self.tasks[player_id] = asyncio.create_task(
+        self.player_tasks[player_id] = asyncio.create_task(
             self._player_loop(player_id)
         )
 
@@ -88,7 +121,7 @@ class ConnectionManager:
         await self._restart_player_task(player_id)
 
     async def disconnect(self, player_id: str):
-        task = self.tasks.pop(player_id, None)
+        task = self.player_tasks.pop(player_id, None)
         if task:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
