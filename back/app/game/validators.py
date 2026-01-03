@@ -573,24 +573,23 @@ async def validate_game_socket_connection (
     try:
         # Check if player already has an active game
         player_id = str(user.id)
-        if connection_manager.has_connection(player_id):
-            existing_connection = connection_manager.get_connection(player_id)
-            if existing_connection and existing_connection.game_id:
-                # Check if the game is still active
-                room = room_manager.get_room(existing_connection.game_id)
-                if room:
-                    # If game has started and is not finished, refuse connection
-                    if room.state and room.state.status != GameStatus.FINISHED:
-                        raise WebSocketException(
-                            code=status.WS_1008_POLICY_VIOLATION,
-                            reason="Player already has an active game",
-                        )
-                    # If game hasn't started but room exists, also refuse (player is in a waiting room)
-                    elif not room.state:
-                        raise WebSocketException(
-                            code=status.WS_1008_POLICY_VIOLATION,
-                            reason="Player already has an active game",
-                        )
+        existing_connection = connection_manager.get_connection(player_id)
+        if existing_connection and existing_connection.game_id:
+            # Check if the game is still active
+            room = room_manager.get_room(existing_connection.game_id)
+            if room:
+                # If game has started and is not finished, refuse connection
+                if room.state and room.state.status != GameStatus.FINISHED:
+                    raise WebSocketException(
+                        code=status.WS_1008_POLICY_VIOLATION,
+                        reason="Player already has an active game",
+                    )
+                # If game hasn't started but room exists, also refuse (player is in a waiting room)
+                elif not room.state:
+                    raise WebSocketException(
+                        code=status.WS_1008_POLICY_VIOLATION,
+                        reason="Player already has an active game",
+                    )
         
         # Create player state from user (fetches, validates, and serializes deck)
         try:

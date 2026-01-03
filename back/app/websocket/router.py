@@ -29,7 +29,7 @@ async def game_websocket(
     If room_id is provided, the player will automatically join that room after connecting.
     If room_id is not provided, the player will need to create or join a room via messages.
     """
-    from app.settings.lifespan import connection_manager, room_manager, message_handler, message_broadcaster
+    from app.settings.lifespan import connection_manager, room_manager, message_handler
 
     player = await validate_game_socket_connection(
         user,
@@ -45,7 +45,6 @@ async def game_websocket(
         connection_manager,
         room_manager,
         message_handler,
-        message_broadcaster,
         room_id=room_id
     )
 

@@ -39,7 +39,6 @@ class RoomManager:
         self.engine = get_engine()
     
     def register_player(self, player: "PlayerState") -> None:
-        """Register a connected player."""
         self._connected_players[player.player_id] = player
     
     def get_player(self, player_id: str) -> "PlayerState | None":
