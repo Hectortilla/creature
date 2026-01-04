@@ -75,8 +75,15 @@ class ConnectionManager:
                     message = await asyncio.wait_for(queue.get(), timeout=1.0)
                 except asyncio.TimeoutError:
                     continue
-
-                await self.connections[player_id].send_json(message)
+                try:
+                    await self.connections[player_id].send_json(message)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
+                    logger.exception("Error sending message to player %s: %s", player_id, e)
+                    logger.info("WebSocket disconnected for player %s, stopping player loop", player_id)
+                    await self.disconnect(player_id)
+                    break
 
         except asyncio.CancelledError:
             raise
@@ -116,3 +123,4 @@ class ConnectionManager:
 
         self.channels.pop(player_id, None)
         self.connections.pop(player_id, None)
+        self.player_ready.pop(player_id, None)
