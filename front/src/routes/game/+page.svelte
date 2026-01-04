@@ -110,32 +110,27 @@
 			};
 
 			ws.onmessage = (event) => {
-				// Parse JSON messages from server
-				try {
-					const data = JSON.parse(event.data);
-					messages = [...messages, JSON.stringify(data, null, 2)];
+				const data = JSON.parse(event.data);
+				messages = [...messages, JSON.stringify(data, null, 2)];
 
-					if (data.type === 'action_result' && !data.data?.success)
-						return;
+				if (data.type === 'action_result' && !data.data?.success)
+					return;
 
-					validActions = [];
+				validActions = [];
 
-					// Handle action_result messages to update valid actions
-					if (data.type === 'action_result' && data.data?.valid_actions) {
-						data.data?.valid_actions.forEach((action: any) => addAction(action));
-					}
-					
-					// Handle game_started messages to update valid actions
-					if (data.type === 'game_started' && data.data?.valid_actions) {
-						data.data?.valid_actions.forEach((action: any) => addAction(action));
-					}
-					
-					// Handle valid_actions messages
-					if (data.type === 'valid_actions' && data.data?.actions) {
-						data.data?.valid_actions.forEach((action: any) => addAction(action));
-					}
-				} catch {
-					messages = [...messages, event.data];
+				// Handle action_result messages to update valid actions
+				if (data.type === 'action_result' && data.data?.valid_actions) {
+					data.data?.valid_actions.forEach((action: any) => addAction(action));
+				}
+				
+				// Handle game_started messages to update valid actions
+				if (data.type === 'game_started' && data.data?.valid_actions) {
+					data.data?.valid_actions.forEach((action: any) => addAction(action));
+				}
+				
+				// Handle valid_actions messages
+				if (data.type === 'valid_actions' && data.data?.actions) {
+					data.data?.valid_actions.forEach((action: any) => addAction(action));
 				}
 			};
 
