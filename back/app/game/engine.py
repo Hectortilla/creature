@@ -13,6 +13,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, field
 from typing import Any, Optional, TYPE_CHECKING
+import traceback
 
 if TYPE_CHECKING:
     from app.models.game.player import PlayerState
@@ -169,7 +170,7 @@ class GameEngine:
         # Get valid actions for the first player after game start
         valid_actions = []
         if result.final_state:
-            valid_actions = self.get_valid_actions(result.final_state, first_player_id)
+            valid_actions = self.get_valid_actions(result.final_state)
         
         return ActionResult(
             success=True,
@@ -237,7 +238,7 @@ class GameEngine:
             # Get valid actions for the acting player after the action
             valid_actions = []
             if result.final_state and not game_over:
-                valid_actions = self.get_valid_actions(result.final_state, action.player_id)
+                valid_actions = self.get_valid_actions(result.final_state)
             
             return ActionResult(
                 success=True,
@@ -248,44 +249,41 @@ class GameEngine:
                 final_players=result.final_players,
                 valid_actions=valid_actions,
             )
-            
         except Exception as e:
             return ActionResult(
                 success=False,
-                error=str(e),
+                error=str(traceback.format_exc()),
                 state=state,
             )
 
-    def get_valid_actions(self, state: GameState, player_id: str) -> list[dict[str, Any]]:
+    def get_valid_actions(self, state: GameState) -> list[dict[str, Any]]:
         """
         Get all valid actions for a player in the current state.
         
         Returns a list of action dictionaries with action type, parameters, and description.
         """
         valid_actions: list[Action] = []
-        player = state.room.players[player_id]
+        player = state.room.players[state.active_player_id]
         
         # Can always pass or concede
-        valid_actions.append(PassPhaseAction(player_id=player_id))
-        valid_actions.append(ConcedeAction(player_id=player_id))
+        valid_actions.append(PassPhaseAction(player_id=state.active_player_id))
+        valid_actions.append(ConcedeAction(player_id=state.active_player_id))
          
-        # Check if it's this player's turn
-        if state.active_player_id != player_id:
-            if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
-                # Find opponent
-                active_opponent = None
-                for pid, p in state.room.players.items():
-                    if pid != state.active_player_id:
-                        active_opponent = p
-                        break
-                if active_opponent and active_opponent.player_id == player_id:
-                    for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
-                        card = state.get_card(card_id)
-                        if card:
-                            valid_actions.append(ForceDefendAction(
-                                player_id=player_id,
-                                card_id=card_id,
-                            ))
+        if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
+            # Find opponent
+            active_opponent = None
+            for pid, p in state.room.players.items():
+                if pid != state.active_player_id:
+                    active_opponent = p
+                    break
+            if active_opponent and active_opponent.player_id == state.active_player_id:
+                for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
+                    card = state.get_card(card_id)
+                    if card:
+                        valid_actions.append(ForceDefendAction(
+                            player_id=state.active_player_id,
+                            card_id=card_id,
+                        ))
             return [action.to_dict(state) for action in valid_actions]
         
         phase = state.current_phase
@@ -295,16 +293,16 @@ class GameEngine:
                 card = state.get_card(card_id)
                 if card and not player.zones[Zone.SUPPORTING.name].is_full:
                     valid_actions.append(PlayCardAction(
-                        player_id=player_id,
+                        player_id=state.active_player_id,
                         card_id=card_id,
                     ))
         
         elif phase == TurnPhase.PROMOTION:
             for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
                 card = state.get_card(card_id)
-                if card and card.can_promote() and not player.zones[Zone.ATTACKING.name].is_full:
+                if card and card.can_promote and not player.zones[Zone.ATTACKING.name].is_full:
                     valid_actions.append(PromoteAction(
-                        player_id=player_id,
+                        player_id=state.active_player_id,
                         card_id=card_id,
                     ))
         
@@ -312,13 +310,13 @@ class GameEngine:
             for supp_id in player.zones[Zone.SUPPORTING.name].card_ids:
                 for atk_id in player.zones[Zone.ATTACKING.name].card_ids:
                     valid_actions.append(SwapAction(
-                        player_id=player_id,
+                        player_id=state.active_player_id,
                         supporting_card_id=supp_id,
                         attacking_card_id=atk_id,
                     ))
         
         elif phase == TurnPhase.ASSOCIATION:
-            if not state.is_first_turn(player_id):
+            if not state.is_first_turn(state.active_player_id):
                 for assoc_id in (player.zones[Zone.HAND.name].card_ids + 
                                 player.zones[Zone.SUPPORTING.name].card_ids):
                     assoc_card = state.get_card(assoc_id)
@@ -326,33 +324,33 @@ class GameEngine:
                         for target_id in player.get_active_cards():
                             if target_id != assoc_id:
                                 valid_actions.append(AssociationAction(
-                                    player_id=player_id,
+                                    player_id=state.active_player_id,
                                     association_card_id=assoc_id,
                                     target_card_id=target_id,
                                 ))
         
         elif phase == TurnPhase.EVOLUTION:
-            if not state.is_first_turn(player_id) and not state.is_second_turn(player_id):
+            if not state.is_first_turn(state.active_player_id) and not state.is_second_turn(state.active_player_id):
                 for evo_id in player.zones[Zone.HAND.name].card_ids:
                     evo_card = state.get_card(evo_id)
                     if evo_card and evo_card.is_evolution:
                         for target_id in player.get_active_cards():
                             target_card = state.get_card(target_id)
                             if (target_card and 
-                                target_card.can_evolve() and
+                                target_card.can_evolve and
                                 target_card.card_id == evo_card.evolves_from_id):
                                 valid_actions.append(EvolutionAction(
-                                    player_id=player_id,
+                                    player_id=state.active_player_id,
                                     evolution_card_id=evo_id,
                                     target_card_id=target_id,
                                 ))
         
         elif phase == TurnPhase.ATTACK:
-            if not state.is_first_turn(player_id):
+            if not state.is_first_turn(state.active_player_id):
                 # Find opponent
                 opponent = None
                 for pid, p in state.room.players.items():
-                    if pid != player_id:
+                    if pid != state.active_player_id:
                         opponent = p
                         break
                 if not opponent:
@@ -360,7 +358,7 @@ class GameEngine:
                 
                 for attacker_id in player.zones[Zone.ATTACKING.name].card_ids:
                     attacker = state.get_card(attacker_id)
-                    if attacker and attacker.can_attack():
+                    if attacker and attacker.can_attack:
                         for attack in attacker.attacks:
                             can_afford = all(
                                 player.element_pool.get_available(cost.element_id) >= cost.amount
@@ -371,7 +369,7 @@ class GameEngine:
                                 # Add attack for each valid target
                                 for target_id in opponent.zones[Zone.ATTACKING.name].card_ids:
                                     valid_actions.append(AttackAction(
-                                        player_id=player_id,
+                                        player_id=state.active_player_id,
                                         attacker_id=attacker_id,
                                         attack_id=attack.attack_id,
                                         target_card_id=target_id,
@@ -380,7 +378,7 @@ class GameEngine:
                                 # If no defenders, can attack with empty target
                                 if len(opponent.zones[Zone.ATTACKING.name].card_ids) == 0:
                                     valid_actions.append(AttackAction(
-                                        player_id=player_id,
+                                        player_id=state.active_player_id,
                                         attacker_id=attacker_id,
                                         attack_id=attack.attack_id,
                                         target_card_id="",

@@ -269,7 +269,7 @@ class RoomManager:
         if player_id not in room.get_player_ids():
             return []
         
-        return self.engine.get_valid_actions(room.state, player_id)
+        return self.engine.get_valid_actions(room.state)
     
     def get_game_state(self, room_id: str) -> Optional[dict]:
         """Get current game state."""

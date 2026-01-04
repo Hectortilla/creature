@@ -471,7 +471,7 @@ class ActionToEventGenerator:
             supporting = player.zones[Zone.SUPPORTING]
             for card_id in supporting.card_ids:
                 card = state.get_card(card_id)
-                if card and card.can_promote():
+                if card and card.can_promote:
                     return False
             return True
         

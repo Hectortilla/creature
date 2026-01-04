@@ -241,7 +241,7 @@ class RuleValidator:
         
         # Check card has spent at least 1 full turn in supporting zone
         card = state.get_card(action.card_id)
-        if not card or not card.can_promote():
+        if not card or not card.can_promote:
             return ValidationResult(
                 valid=False,
                 error="Card must spend at least one full turn in supporting zone before promotion",
@@ -423,7 +423,7 @@ class RuleValidator:
             )
         
         # Check target has been in active zone for at least 1 turn
-        if not target_card.can_evolve():
+        if not target_card.can_evolve:
             return ValidationResult(
                 valid=False,
                 error="Target card must have been active for at least one full turn",
@@ -456,7 +456,7 @@ class RuleValidator:
         
         # Check attacker can attack
         attacker = state.get_card(action.attacker_id)
-        if not attacker or not attacker.can_attack():
+        if not attacker or not attacker.can_attack:
             return ValidationResult(
                 valid=False,
                 error="Card cannot attack (already attacked this turn or is associated)",
