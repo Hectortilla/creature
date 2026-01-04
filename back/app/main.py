@@ -7,24 +7,29 @@ Main FastAPI application entrypoint.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import (
-    elements_router,
-    types_router,
-    characters_router,
-    attacks_router,
-    abilities_router,
-    associations_router,
-    cards_router,
-    auth_router,
-    decks_router,
-)
+from app.routers.elements import router as elements_router
+from app.routers.types import router as types_router
+from app.routers.characters import router as characters_router
+from app.routers.attacks import router as attacks_router
+from app.routers.abilities import router as abilities_router
+from app.routers.associations import router as associations_router
+from app.routers.cards import router as cards_router
+from app.routers.auth import router as auth_router
+from app.routers.decks import router as decks_router
 from app.websocket.router import router as websocket_router
 from app.settings.lifespan import lifespan
 
 # Import models to ensure they're registered with SQLModel
-from app.models.db import (
-    Element, Type, Character, Attack, Ability, Association, Card, User, Deck, DeckCard
-)
+from app.models.db.element import Element
+from app.models.db.type import Type
+from app.models.db.character import Character
+from app.models.db.attack import Attack
+from app.models.db.ability import Ability
+from app.models.db.association import Association
+from app.models.db.card import Card
+from app.models.db.user import User
+from app.models.db.deck import Deck
+from app.models.db.deck_card import DeckCard
 
 app = FastAPI(
     title="Creature Card Game API",

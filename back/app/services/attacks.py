@@ -1,5 +1,6 @@
-from app.models.db import Attack
-from app.models.schemas import AttackCreate, AttackReadWithElement, ElementRead
+from app.models.db.attack import Attack
+from app.models.schemas.attack import AttackCreate, AttackReadWithElement
+from app.models.schemas.element import ElementRead
 from app.services.base import BaseService
 
 

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import DBSessionDep
-from app.models.schemas import AssociationCreate, AssociationRead
-from app.services import AssociationService
-from app.auth import get_current_active_user
+from app.models.schemas.association import AssociationCreate, AssociationRead
+from app.services.associations import AssociationService
+from app.auth.dependencies import get_current_active_user
 
 router = APIRouter(
     prefix="/associations",

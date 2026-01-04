@@ -12,7 +12,10 @@ from uuid import uuid4
 from fastapi import WebSocket
 from pydantic import Field, field_serializer, computed_field
 
-from app.models.game import GameState, GameBaseModel, GameStatus, PlayerState
+from app.models.game.state import GameState
+from app.models.game.base import GameBaseModel
+from app.models.game.enums import GameStatus
+from app.models.game.player import PlayerState
 
 
 @dataclass

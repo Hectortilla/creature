@@ -16,10 +16,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
-from app.models.game import (
-    Zone,
-    GameStatus,
-    CardStatus,
+from app.models.game.enums import Zone, GameStatus, CardStatus
+from app.models.game.events import (
     GameEvent,
     CardDrawnEvent,
     CardMovedEvent,
@@ -42,7 +40,7 @@ from app.models.game import (
 )
 
 if TYPE_CHECKING:
-    from app.models.game import GameState
+    from app.models.game.state import GameState
     from app.models.game.player import PlayerState
 
 

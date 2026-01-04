@@ -1,5 +1,5 @@
-from app.models.db import Ability
-from app.models.schemas import AbilityCreate
+from app.models.db.ability import Ability
+from app.models.schemas.ability import AbilityCreate
 from app.services.base import BaseService
 
 

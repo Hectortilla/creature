@@ -10,20 +10,3 @@ from app.models.base.deck import DeckBase
 
 # Re-export core models for convenience
 from app.models.core import CardCombatFields, CardIdentityFields, AttackCoreFields
-
-__all__ = [
-    "CharacterBase",
-    "TypeBase",
-    "ElementBase",
-    "AbilityBase",
-    "AssociationBase",
-    "AttackBase",
-    "CardBase",
-    "CardForeignKeys",
-    "UserBase",
-    "DeckBase",
-    # Core field definitions
-    "CardCombatFields",
-    "CardIdentityFields", 
-    "AttackCoreFields",
-]

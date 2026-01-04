@@ -8,16 +8,3 @@ from app.models.db.card import Card
 from app.models.db.user import User
 from app.models.db.deck import Deck
 from app.models.db.deck_card import DeckCard
-
-__all__ = [
-    "Element",
-    "Type",
-    "Character",
-    "Ability",
-    "Association",
-    "Attack",
-    "Card",
-    "User",
-    "Deck",
-    "DeckCard",
-]

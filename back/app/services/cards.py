@@ -1,11 +1,16 @@
 from sqlmodel import select, or_
 
-from app.models.db import Card, Attack, Ability, Association
-from app.models.schemas import (
-    CardCreate, CardRead, CardReadWithRelations,
-    ElementRead, TypeRead, CharacterRead,
-    AttackReadWithElement, AbilityRead, AssociationRead
-)
+from app.models.db.card import Card
+from app.models.db.attack import Attack
+from app.models.db.ability import Ability
+from app.models.db.association import Association
+from app.models.schemas.card import CardCreate, CardRead, CardReadWithRelations
+from app.models.schemas.element import ElementRead
+from app.models.schemas.type import TypeRead
+from app.models.schemas.character import CharacterRead
+from app.models.schemas.attack import AttackReadWithElement
+from app.models.schemas.ability import AbilityRead
+from app.models.schemas.association import AssociationRead
 from app.services.base import BaseService
 
 

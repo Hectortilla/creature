@@ -1,5 +1,5 @@
-from app.models.db import Element
-from app.models.schemas import ElementCreate
+from app.models.db.element import Element
+from app.models.schemas.element import ElementCreate
 from app.services.base import BaseService
 
 

@@ -2,8 +2,11 @@ from sqlmodel import select, Session, func
 from fastapi import HTTPException, status
 from typing import Optional
 
-from app.models.db import Deck, Card, DeckCard
-from app.models.schemas import DeckCreate, DeckUpdate, DeckReadWithCards, DeckReadSummary, CardRead, CardReadWithRelations
+from app.models.db.deck import Deck
+from app.models.db.card import Card
+from app.models.db.deck_card import DeckCard
+from app.models.schemas.deck import DeckCreate, DeckUpdate, DeckReadWithCards, DeckReadSummary
+from app.models.schemas.card import CardRead, CardReadWithRelations
 from app.services.base import BaseService
 from app.services.cards import CardService
 from app.models.game.state import GameConfiguration

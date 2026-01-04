@@ -1,5 +1,5 @@
-from app.models.db import Association
-from app.models.schemas import AssociationCreate
+from app.models.db.association import Association
+from app.models.schemas.association import AssociationCreate
 from app.services.base import BaseService
 
 

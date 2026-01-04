@@ -19,12 +19,9 @@ if TYPE_CHECKING:
     from app.models.game.player import PlayerState
     from app.websocket.models import GameRoom
 
-from app.models.game import (
-    Zone,
-    TurnPhase,
-    GameStatus,
-    GameState,
-    GameConfiguration,
+from app.models.game.enums import Zone, TurnPhase, GameStatus
+from app.models.game.state import GameState, GameConfiguration
+from app.models.game.events import (
     GameEvent,
     GameStartedEvent,
     GameEndedEvent,

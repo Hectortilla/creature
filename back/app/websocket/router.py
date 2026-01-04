@@ -6,7 +6,7 @@ FastAPI router for WebSocket and HTTP endpoints related to game connections.
 
 from fastapi import APIRouter, WebSocket, Query, status, WebSocketException
 
-from app.auth import WebSocketUser
+from app.auth.dependencies import WebSocketUser
 from app.models.schemas.websocket import *
 from app.websocket import game_websocket_handler
 from app.game.validators import validate_game_socket_connection

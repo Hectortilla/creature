@@ -1,5 +1,5 @@
-from app.models.db import Character
-from app.models.schemas import CharacterCreate
+from app.models.db.character import Character
+from app.models.schemas.character import CharacterCreate
 from app.services.base import BaseService
 
 

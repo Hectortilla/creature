@@ -16,7 +16,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from app.models.game import (
+from app.models.game.events import (
     GameEvent,
     CardPlayedEvent,
     CardPromotedEvent,
@@ -30,7 +30,7 @@ from app.game.effects import EffectTrigger, EffectContext, EffectRegistry
 from app.game.reducer import apply_event
 
 if TYPE_CHECKING:
-    from app.models.game import GameState
+    from app.models.game.state import GameState
     from app.models.game.player import PlayerState
 
 

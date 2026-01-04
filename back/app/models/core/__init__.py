@@ -13,10 +13,4 @@ SQLModel and Pydantic models without conflict.
 from app.models.core.card import CardCombatFields, CardIdentityFields
 from app.models.core.attack import AttackCoreFields
 
-__all__ = [
-    "CardCombatFields",
-    "CardIdentityFields",
-    "AttackCoreFields",
-]
-
 

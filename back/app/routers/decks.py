@@ -3,10 +3,10 @@ from fastapi.responses import Response
 from typing import List
 
 from app.database import DBSessionDep
-from app.models.schemas import DeckCreate, DeckUpdate, DeckRead, DeckReadWithCards, DeckReadSummary
+from app.models.schemas.deck import DeckCreate, DeckUpdate, DeckRead, DeckReadWithCards, DeckReadSummary
 from app.services.decks import DeckService
-from app.auth import get_current_active_user, CurrentActiveUser
-from app.models.db import User
+from app.auth.dependencies import get_current_active_user, CurrentActiveUser
+from app.models.db.user import User
 
 router = APIRouter(
     prefix="/decks",

@@ -4,7 +4,10 @@ from typing import Optional
 from broadcaster import Broadcast
 from fastapi import FastAPI
 
-from app.websocket import ConnectionManager, RoomManager, MessageHandler, MessageBroadcaster
+from app.websocket.connection import ConnectionManager
+from app.websocket.room import RoomManager
+from app.websocket.handler import MessageHandler
+from app.websocket.messaging import MessageBroadcaster
 from app.settings.config import get_settings
 
 settings = get_settings()

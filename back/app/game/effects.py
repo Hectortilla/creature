@@ -12,9 +12,8 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from app.models.game import (
-    Zone,
-    EffectTiming,
+from app.models.game.enums import Zone, EffectTiming
+from app.models.game.events import (
     GameEvent,
     CardDrawnEvent,
     CardPlayedEvent,
@@ -27,7 +26,8 @@ from app.models.game import (
 )
 
 if TYPE_CHECKING:
-    from app.models.game import GameState, GameCard
+    from app.models.game.state import GameState
+    from app.models.game.card import GameCard
 
 
 class EffectTrigger(Enum):

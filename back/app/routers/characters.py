@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import DBSessionDep
-from app.models.schemas import CharacterCreate, CharacterRead
-from app.services import CharacterService
-from app.auth import get_current_active_user
+from app.models.schemas.character import CharacterCreate, CharacterRead
+from app.services.characters import CharacterService
+from app.auth.dependencies import get_current_active_user
 
 router = APIRouter(
     prefix="/characters",

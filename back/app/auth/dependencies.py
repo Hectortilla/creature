@@ -4,8 +4,8 @@ from fastapi import Depends, HTTPException, status, Query, WebSocket, WebSocketE
 from fastapi.security import OAuth2PasswordBearer
 
 from app.database import DBSessionDep, get_db_session
-from app.models.db import User
-from app.models.schemas import TokenData
+from app.models.db.user import User
+from app.models.schemas.user import TokenData
 from app.auth.security import decode_access_token
 
 if TYPE_CHECKING:

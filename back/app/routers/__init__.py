@@ -8,15 +8,3 @@ from app.routers.cards import router as cards_router
 from app.routers.auth import router as auth_router
 from app.routers.decks import router as decks_router
 
-__all__ = [
-    "elements_router",
-    "types_router",
-    "characters_router",
-    "attacks_router",
-    "abilities_router",
-    "associations_router",
-    "cards_router",
-    "auth_router",
-    "decks_router",
-]
-

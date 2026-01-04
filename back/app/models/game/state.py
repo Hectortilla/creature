@@ -18,7 +18,9 @@ from app.models.game.card import GameCard
 from app.models.game.player import PlayerState
 from typing import TYPE_CHECKING, Any
 
-from app.models.game import AttackDefinition, DamageType, ElementContribution
+from app.models.game.attack import AttackDefinition
+from app.models.game.enums import DamageType
+from app.models.game.element import ElementContribution
 
 if TYPE_CHECKING:
     from app.websocket.models import GameRoom

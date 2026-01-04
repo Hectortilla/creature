@@ -13,11 +13,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from app.models.game import (
-    Zone,
-    TurnPhase,
-    GameStatus,
-    DamageType,
+from app.models.game.enums import Zone, TurnPhase, GameStatus, DamageType
+from app.models.game.events import (
     GameEvent,
     CardDrawnEvent,
     CardMovedEvent,
@@ -42,7 +39,8 @@ from app.game.actions import *
 from app.game.elements import calculate_damage
 
 if TYPE_CHECKING:
-    from app.models.game import GameState, GameCard
+    from app.models.game.state import GameState
+    from app.models.game.card import GameCard
 
 
 class ActionToEventGenerator:

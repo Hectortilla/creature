@@ -1,5 +1,5 @@
-from app.models.db import Type
-from app.models.schemas import TypeCreate
+from app.models.db.type import Type
+from app.models.schemas.type import TypeCreate
 from app.services.base import BaseService
 
 

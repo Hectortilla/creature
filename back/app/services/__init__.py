@@ -8,16 +8,3 @@ from app.services.attacks import AttackService
 from app.services.cards import CardService
 from app.services.users import UserService
 from app.services.decks import DeckService
-
-__all__ = [
-    "BaseService",
-    "ElementService",
-    "TypeService",
-    "CharacterService",
-    "AbilityService",
-    "AssociationService",
-    "AttackService",
-    "CardService",
-    "UserService",
-    "DeckService",
-]

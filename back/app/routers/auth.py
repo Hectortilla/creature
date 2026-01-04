@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.database import DBSessionDep
-from app.models.schemas import Token, UserCreate, UserRead
+from app.models.schemas.user import Token, UserCreate, UserRead
 from app.settings.config import get_settings
 from app.auth.security import create_access_token
 from app.services.users import UserService
