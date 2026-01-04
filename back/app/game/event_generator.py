@@ -503,7 +503,7 @@ class ActionToEventGenerator:
     
     def _get_next_player(self, state: "GameState", current_player_id: str) -> str:
         """Get the next player in turn order."""
-        player_ids = list(state.players.keys())
+        player_ids = list(state.room.players.keys())
         current_index = player_ids.index(current_player_id)
         next_index = (current_index + 1) % len(player_ids)
         return player_ids[next_index]

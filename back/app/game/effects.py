@@ -174,7 +174,7 @@ class StatModifierEffect(Effect):
             affected.append(context.source_card)
         
         if self.target_allies:
-            for card_id in context.state.players[owner_id].get_active_cards():
+            for card_id in context.state.room.players[owner_id].get_active_cards():
                 card = context.state.cards.get(card_id)
                 if card and card.instance_id != context.source_card.instance_id:
                     affected.append(card)
