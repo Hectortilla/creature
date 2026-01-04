@@ -5,13 +5,14 @@ Modular WebSocket-based game communication system.
 Handles game creation, player connections, actions, and real-time state updates.
 """
 
+import logging
 from typing import TYPE_CHECKING
-
 from fastapi.websockets import WebSocketState
 
 if TYPE_CHECKING:
     from app.models.game.player import PlayerState
 
+logger = logging.getLogger(__name__)
 
 # WebSocket handler function
 async def game_websocket_handler(
@@ -35,6 +36,7 @@ async def game_websocket_handler(
             await message_handler.handle_message(player.player_id, data)
 
     except Exception as e:
+        logger.exception("Error in game_websocket_handler: %s", e)
         room_id = room_manager.get_player_room(player.player_id)
         if room_id:
             await room_manager.leave_room(player.player_id, room_id)
