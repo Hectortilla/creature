@@ -8,7 +8,6 @@ from fastapi import APIRouter, WebSocket, Query, status, WebSocketException
 
 from app.auth.dependencies import WebSocketUser
 from app.models.schemas.websocket.client import (
-    CreateGameMessage,
     JoinGameMessage,
     ListRoomsMessage,
     ActionMessage,
@@ -53,7 +52,6 @@ async def game_websocket(
     If room_id is provided, the player will automatically join that room after connecting.
     If room_id is not provided, the player will need to create or join a room via messages.
     """
-    from app.settings.lifespan import connection_manager, room_manager, message_handler
 
     try:
         db = next(get_db_session())
@@ -70,9 +68,6 @@ async def game_websocket(
     await game_websocket_handler(
         websocket, 
         player,
-        connection_manager,
-        room_manager,
-        message_handler,
         room_id=room_id
     )
 
@@ -91,12 +86,6 @@ def list_rooms():
 # ============================================================================
 # WebSocket Message Type Definitions (for TypeScript generation)
 # ============================================================================
-
-# Client → Server Messages
-@router.post("/websocket-messages/create-game", response_model=CreateGameMessage, tags=["WebSocket Messages"], include_in_schema=True)
-async def _ws_create_game_type(msg: CreateGameMessage) -> CreateGameMessage:
-    """WebSocket message type: create_game (dummy endpoint for type generation)."""
-    return msg
 
 @router.post("/websocket-messages/join-game", response_model=JoinGameMessage, tags=["WebSocket Messages"], include_in_schema=True)
 async def _ws_join_game_type(msg: JoinGameMessage) -> JoinGameMessage:

@@ -107,10 +107,6 @@
 			ws.onopen = () => {
 				connected = true;
 				connectionError = null;
-				// If creating new room, automatically send create_game message
-				if (createNewRoom && ws) {
-					ws.send(JSON.stringify({ type: 'create_game', data: {} }));
-				}
 			};
 
 			ws.onmessage = (event) => {

@@ -9,22 +9,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-from app.models.game.player import PlayerState
 from app.models.game.enums import Zone, GameStatus
 from app.game.actions import *
 from app.game.elements import can_afford_attack
 
 
-from fastapi import status, WebSocketException
 
-from app.auth.dependencies import WebSocketUser
-from app.database import get_db_session
 from app.models.game.enums import GameStatus
-from app.websocket.connection import ConnectionManager
 
 if TYPE_CHECKING:
     from app.models.game.state import GameState
-    from app.websocket.room import RoomManager
 
 
 

@@ -18,14 +18,6 @@ from app.models.game.enums import GameStatus
 from app.models.game.player import PlayerState
 
 
-@dataclass
-class PlayerConnection:
-    """Represents a connected player (kept as dataclass - not serialized)."""
-    player_id: str
-    websocket: WebSocket
-    game_id: Optional[str] = None
-
-
 class GameRoom(GameBaseModel):
     """
     Represents a game room/lobby.
@@ -98,7 +90,7 @@ class GameRoom(GameBaseModel):
             raise ValueError("Room is full")
 
         self.players[player.player_id] = player
-    
+
     def remove_player(self, player_id: str) -> bool:
         """Remove a player from the room."""
         if player_id not in self.players:

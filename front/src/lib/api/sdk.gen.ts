@@ -135,9 +135,6 @@ import type {
   WsActionTypeGameWebsocketMessagesActionPostResponses,
   WsConnectedTypeGameWebsocketMessagesConnectedGetData,
   WsConnectedTypeGameWebsocketMessagesConnectedGetResponses,
-  WsCreateGameTypeGameWebsocketMessagesCreateGamePostData,
-  WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors,
-  WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses,
   WsErrorTypeGameWebsocketMessagesErrorGetData,
   WsErrorTypeGameWebsocketMessagesErrorGetResponses,
   WsGameCreatedTypeGameWebsocketMessagesGameCreatedGetData,
@@ -1081,32 +1078,6 @@ export const listRoomsGameRoomsGet = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({ url: "/game/rooms", ...options });
-
-/**
- *  Ws Create Game Type
- *
- * WebSocket message type: create_game (dummy endpoint for type generation).
- */
-export const wsCreateGameTypeGameWebsocketMessagesCreateGamePost = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<
-    WsCreateGameTypeGameWebsocketMessagesCreateGamePostData,
-    ThrowOnError
-  >,
-) =>
-  (options.client ?? client).post<
-    WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses,
-    WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors,
-    ThrowOnError
-  >({
-    url: "/game/websocket-messages/create-game",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
 
 /**
  *  Ws Join Game Type

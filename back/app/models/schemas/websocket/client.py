@@ -15,11 +15,6 @@ from app.models.schemas.websocket import WebSocketMessage
 # Client → Server Data Models
 # ============================================================================
 
-class CreateGameData(BaseModel):
-    """Data for create_game message."""
-    pass  # Empty data
-
-
 class JoinGameData(BaseModel):
     """Data for join_game message."""
     room_id: str
@@ -130,12 +125,6 @@ class PingData(BaseModel):
 # ============================================================================
 # Client → Server Messages
 # ============================================================================
-
-class CreateGameMessage(WebSocketMessage):
-    """Create a new game room."""
-    type: ClassVar[Literal["create_game"]] = "create_game"
-    data: CreateGameData = Field(default_factory=CreateGameData)
-
 
 class JoinGameMessage(WebSocketMessage):
     """Join an existing game room."""

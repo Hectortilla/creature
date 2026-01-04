@@ -739,24 +739,6 @@ export type ConnectedMessage = {
 };
 
 /**
- * CreateGameData
- *
- * Data for create_game message.
- */
-export type CreateGameData = {
-  [key: string]: unknown;
-};
-
-/**
- * CreateGameMessage
- *
- * Create a new game room.
- */
-export type CreateGameMessage = {
-  data?: CreateGameData;
-};
-
-/**
  * DeckCreate
  *
  * Schema for creating a deck.
@@ -2607,33 +2589,6 @@ export type ListRoomsGameRoomsGetResponses = {
    */
   200: unknown;
 };
-
-export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostData = {
-  body: CreateGameMessage;
-  path?: never;
-  query?: never;
-  url: "/game/websocket-messages/create-game";
-};
-
-export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostError =
-  WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors[keyof WsCreateGameTypeGameWebsocketMessagesCreateGamePostErrors];
-
-export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses = {
-  /**
-   * Successful Response
-   */
-  200: CreateGameMessage;
-};
-
-export type WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponse =
-  WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses[keyof WsCreateGameTypeGameWebsocketMessagesCreateGamePostResponses];
 
 export type WsJoinGameTypeGameWebsocketMessagesJoinGamePostData = {
   body: JoinGameMessage;

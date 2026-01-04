@@ -4,14 +4,17 @@ Game Room Management
 Handles game room creation, joining, leaving, and game logic operations.
 """
 
+import traceback
 from typing import Optional, TYPE_CHECKING
 from uuid import uuid4
 
-from app.websocket.models import GameRoom, PlayerConnection
+from app.websocket.models import GameRoom
 from app.websocket.messaging import MessageBroadcaster
 from app.game.engine import get_engine
 from app.game.actions import create_action
 from app.websocket.serialization import serialize_events
+from app.models.schemas.websocket.server import ErrorMessage, ErrorData, GameJoinedData, GameJoinedMessage
+from app.websocket.connection import ConnectionManager
 
 if TYPE_CHECKING:
     from app.models.game.player import PlayerState
@@ -30,92 +33,58 @@ from app.models.schemas.websocket.server import (
 class RoomManager:
     """Manages game rooms and game logic operations."""
     
-    def __init__(self, connection_manager, message_broadcaster: MessageBroadcaster):
+    def __init__(self, connection_manager: ConnectionManager, message_broadcaster: MessageBroadcaster):
         self.connection_manager = connection_manager
         self.message_broadcaster = message_broadcaster
         self.rooms: dict[str, GameRoom] = {}  # room_id -> room
         self.player_rooms: dict[str, str] = {}  # player_id -> room_id
-        self._connected_players: dict[str, "PlayerState"] = {}  # player_id -> PlayerState
         self.engine = get_engine()
-    
-    def register_player(self, player: "PlayerState") -> None:
-        self._connected_players[player.player_id] = player
-    
-    def get_player(self, player_id: str) -> "PlayerState | None":
-        """Get a connected player by ID."""
-        # First try to get from connected players
-        if player_id in self._connected_players:
-            return self._connected_players[player_id]
-        # Otherwise try to get from a room
-        room_id = self.get_player_room(player_id)
-        if room_id:
-            room = self.get_room(room_id)
-            if room and player_id in room.players:
-                return room.players[player_id]
-        return None
-    
-    async def create_room(self, player_id: str) -> GameRoom:
-        """Create a new game room."""
-        player = self.get_player(player_id)
-        if not player:
-            raise ValueError("Player not found")
-        
-        connection = self.connection_manager.get_connection(player_id)
-        if not connection:
-            raise ValueError("Player not connected")
-        
+
+    async def create_room(self, player: "PlayerState") -> GameRoom:
         room = GameRoom(
             room_id=str(uuid4()),
-            host_id=player_id,
+            host_id=player.player_id,
         )
+        await self.connection_manager.subscribe_to_room(player.player_id, room.room_id)
+
         room.add_player(player)
         
         self.rooms[room.room_id] = room
-        self.player_rooms[player_id] = room.room_id
+        self.player_rooms[player.player_id] = room.room_id
         
-        connection.game_id = room.room_id
-        
-        # Subscribe to room channel
-        await self.connection_manager.subscribe_to_room(player_id, room.room_id)
         
         return room
     
-    async def join_room(self, player_id: str, room_id: str) -> GameRoom:
-        """Join an existing game room."""
-        player = self.get_player(player_id)
-        if not player:
-            raise ValueError("Player not found")
-        
-        connection = self.connection_manager.get_connection(player_id)
-        
+    async def join_room(self, player: "PlayerState", room_id: str) -> GameRoom:
         if room_id not in self.rooms:
-            raise ValueError("Room not found")
-        
+            await self.send_failed_to_join_room(player.player_id)
+            return None
+
         room = self.rooms[room_id]
 
         # Validate that room can be joined (has exactly 1 player)
         if not room.can_join:
-            raise ValueError("Room cannot be joined. Room must have exactly 1 player and game must not have started.")
+            await self.send_failed_to_join_room(player.player_id)
+            return None
         
+        await self.connection_manager.subscribe_to_room(player.player_id, room_id)
         room.add_player(player)
-        self.player_rooms[player_id] = room_id
-        connection.game_id = room_id
-        
-        # Subscribe to room channel
-        await self.connection_manager.subscribe_to_room(player_id, room_id)
-        
+        await self.message_broadcaster.send_to_player(player.player_id, GameJoinedMessage(
+            data=GameJoinedData(room=room.model_dump(mode='json'))
+        ))
+
+        self.player_rooms[player.player_id] = room_id
+
         # Notify other players (exclude the joining player)
-        message = PlayerJoinedMessage(
-            data=PlayerJoinedData(
-                player_id=player_id,
-                name=player.name,
-                room=room.model_dump(mode='json'),
-            )
-        )
         for other_player_id in room.get_player_ids():
-            if other_player_id != player_id:
-                await self.message_broadcaster.send_to_player(other_player_id, message)
-        
+            if other_player_id != player.player_id:
+                await self.message_broadcaster.send_to_player(other_player_id, PlayerJoinedMessage(
+                    data=PlayerJoinedData(
+                        player_id=player.player_id,
+                        name=player.name,
+                        room=room.model_dump(mode='json'),
+                    )
+                ))
         if room.game_ready_to_start():
             await self._start_game(room)
         
@@ -123,20 +92,13 @@ class RoomManager:
     
     async def leave_room(self, player_id: str, room_id: str) -> None:
         """Leave a game room."""
-        if room_id not in self.rooms:
-            return
-        
         room = self.rooms[room_id]
         room.remove_player(player_id)
         
         if player_id in self.player_rooms:
             del self.player_rooms[player_id]
-        
-        connection = self.connection_manager.get_connection(player_id)
-        if connection:
-            connection.game_id = None
-            # Unsubscribe from room channel
-            await self.connection_manager.unsubscribe_from_room(player_id, room_id)
+
+        await self.connection_manager.unsubscribe_from_room(player_id, room_id)
         
         # Notify remaining players
         await self.message_broadcaster.broadcast_to_room(
@@ -271,3 +233,8 @@ class RoomManager:
         if not room or not room.state:
             return None
         return room.state.model_dump(mode='json')
+    
+    async def send_failed_to_join_room(self, player_id: str) -> None:
+        await self.message_broadcaster.send_to_player(player_id, ErrorMessage(
+            data=ErrorData(message=f"Failed to join room:\n{traceback.format_exc()}")
+        ).model_dump(mode='json'))

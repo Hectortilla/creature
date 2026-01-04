@@ -4,7 +4,8 @@ from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 from broadcaster import Broadcast
 
-from app.websocket.models import PlayerConnection, PlayerState
+from app.websocket.models import PlayerState
+from app.models.schemas.websocket.server import ConnectedData, ConnectedMessage
 
 
 logger = logging.getLogger(__name__)
@@ -12,24 +13,17 @@ logger = logging.getLogger(__name__)
 class ConnectionManager:
     def __init__(self, broadcast: Broadcast):
         self.broadcast = broadcast
+        self.connections: dict[str, WebSocket] = {}
 
-        self.connections: dict[str, PlayerConnection] = {}
         self.player_tasks: dict[str, asyncio.Task] = {}
         self.channels: dict[str, set[str]] = {}
         self.player_ready: dict[str, asyncio.Event] = {}
 
-    async def connect(self, websocket: WebSocket, player: PlayerState) -> PlayerConnection:
+    async def connect(self, websocket: WebSocket, player: PlayerState) -> None:
         await websocket.accept()
 
-        # Ensure clean slate
-        await self.disconnect(player.player_id)
+        self.connections[player.player_id] = websocket
 
-        conn = PlayerConnection(
-            player_id=player.player_id,
-            websocket=websocket,
-        )
-
-        self.connections[player.player_id] = conn
         self.channels[player.player_id] = {f"player:{player.player_id}"}
 
         ready = asyncio.Event()
@@ -41,16 +35,15 @@ class ConnectionManager:
     
         await ready.wait()
 
-    async def _player_loop(self, player_id: str):
-        """
-        Fan-in loop:
-        - One subscription task per channel
-        - All messages forwarded to the websocket
-        """
-        conn = self.connections.get(player_id)
-        if not conn:
-            return
+        await websocket.send_json(ConnectedMessage(
+            data=ConnectedData(
+                player_id=player.player_id,
+                name=player.name,
+                message="Connected to game server",
+            )
+        ).model_dump(mode='json'))
 
+    async def _player_loop(self, player_id: str):
         channels = self.channels.get(player_id, set()).copy()
         if not channels:
             return
@@ -62,8 +55,6 @@ class ConnectionManager:
             try:
                 async with self.broadcast.subscribe(channel=channel) as subscriber:
                     async for event in subscriber:
-                        if player_id not in self.connections:
-                            break
                         queue.put_nowait(event.message)
             except asyncio.CancelledError:
                 raise
@@ -80,18 +71,12 @@ class ConnectionManager:
 
         try:
             while True:
-                if player_id not in self.connections:
-                    break
-
-                if conn.websocket.client_state != WebSocketState.CONNECTED:
-                    break
-
                 try:
                     message = await asyncio.wait_for(queue.get(), timeout=1.0)
                 except asyncio.TimeoutError:
                     continue
 
-                await conn.websocket.send_json(message)
+                await self.connections[player_id].send_json(message)
 
         except asyncio.CancelledError:
             raise
@@ -129,11 +114,5 @@ class ConnectionManager:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 
-        conn = self.connections.pop(player_id, None)
         self.channels.pop(player_id, None)
-
-        if conn and conn.websocket.client_state == WebSocketState.CONNECTED:
-            await conn.websocket.close()
-
-    def get_connection(self, player_id: str) -> PlayerConnection | None:
-        return self.connections.get(player_id)
+        self.connections.pop(player_id, None)

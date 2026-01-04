@@ -11,7 +11,6 @@ from app.websocket.connection import ConnectionManager
 from app.websocket.room import RoomManager
 from app.websocket.messaging import MessageBroadcaster
 from app.models.schemas.websocket.client import (
-    CreateGameMessage,
     JoinGameMessage,
     ListRoomsMessage,
     ActionMessage,
@@ -61,7 +60,6 @@ class MessageHandler:
         
         # Map message types to their Pydantic models for validation
         message_validators = {
-            CreateGameMessage.type: CreateGameMessage,
             JoinGameMessage.type: JoinGameMessage,
             ListRoomsMessage.type: ListRoomsMessage,
             ActionMessage.type: ActionMessage,
@@ -85,13 +83,7 @@ class MessageHandler:
                 return
         
         try:
-            if msg_type == CreateGameMessage.type:
-                room = await self.room_manager.create_room(player_id=player_id)
-                await self.message_broadcaster.send_to_player(player_id, GameCreatedMessage(
-                    data=GameCreatedData(room=room.model_dump(mode='json'))
-                ))
-            
-            elif msg_type == JoinGameMessage.type:
+            if msg_type == JoinGameMessage.type:
                 room = await self.room_manager.join_room(
                     player_id=player_id,
                     room_id=data.get("room_id"),
