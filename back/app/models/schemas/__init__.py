@@ -7,5 +7,5 @@ from app.models.schemas.attack import AttackCreate, AttackRead, AttackReadWithEl
 from app.models.schemas.card import CardCreate, CardRead, CardReadWithRelations
 from app.models.schemas.user import UserCreate, UserRead, Token, TokenData
 from app.models.schemas.deck import DeckCreate, DeckUpdate, DeckRead, DeckReadWithCards, DeckReadSummary
-from app.models.schemas.websocket import *
+# WebSocket schemas are available via app.models.schemas.websocket.client and app.models.schemas.websocket.server
 

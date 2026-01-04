@@ -41,8 +41,6 @@ class ConnectionManager:
     
         await ready.wait()
 
-        return conn
-
     async def _player_loop(self, player_id: str):
         """
         Fan-in loop:

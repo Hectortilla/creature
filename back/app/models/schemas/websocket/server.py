@@ -4,25 +4,99 @@ Server → Client WebSocket Message Schemas
 These schemas define messages sent from server to client.
 """
 
-from typing import ClassVar, Literal
-from pydantic import Field
+from typing import Any, ClassVar, Literal, Optional
+from pydantic import BaseModel, Field
 
-from app.models.schemas.websocket.base import (
-    WebSocketMessage,
-    ConnectedData,
-    GameCreatedData,
-    GameJoinedData,
-    PlayerJoinedData,
-    PlayerLeftData,
-    GameStartedData,
-    GameStateData,
-    ActionResultData,
-    ValidActionsData,
-    RoomsListData,
-    GameLeftData,
-    ErrorData,
-    PongData,
-)
+# Import WebSocketMessage - defined in __init__.py
+from app.models.schemas.websocket import WebSocketMessage
+
+
+# ============================================================================
+# Server → Client Data Models
+# ============================================================================
+
+class ConnectedData(BaseModel):
+    """Data for connected message."""
+    player_id: str
+    name: str
+    message: str
+
+
+class GameCreatedData(BaseModel):
+    """Data for game_created message."""
+    room: dict[str, Any]  # GameRoom serialized
+
+
+class GameJoinedData(BaseModel):
+    """Data for game_joined message."""
+    room: dict[str, Any]  # GameRoom serialized
+
+
+class PlayerJoinedData(BaseModel):
+    """Data for player_joined message."""
+    player_id: str
+    name: str
+    room: dict[str, Any]  # GameRoom serialized
+
+
+class PlayerLeftData(BaseModel):
+    """Data for player_left message."""
+    player_id: str
+    room: dict[str, Any]  # GameRoom serialized
+
+
+class GameStartedData(BaseModel):
+    """Data for game_started message."""
+    success: bool
+    game_state: dict[str, Any]  # GameState serialized
+    events: list[dict[str, Any]]  # List of serialized events
+    valid_actions: list[dict[str, Any]] = Field(default_factory=list)  # Valid actions for the active player
+
+
+class GameStateData(BaseModel):
+    """Data for game_state message."""
+    state: Optional[dict[str, Any]] = None  # GameState serialized or None
+
+
+class ActionResultData(BaseModel):
+    """Data for action_result message."""
+    success: bool
+    error: Optional[str] = None
+    events: list[dict[str, Any]]  # List of serialized events
+    game_over: bool
+    winner_id: Optional[str] = None
+    game_state: Optional[dict[str, Any]] = None  # GameState serialized or None
+    valid_actions: list[dict[str, Any]] = Field(default_factory=list)  # Valid actions for the acting player
+
+
+class ValidActionsData(BaseModel):
+    """Data for valid_actions message."""
+    actions: list[dict[str, Any]]  # List of valid action dictionaries
+
+
+class RoomsListData(BaseModel):
+    """Data for rooms_list message."""
+    rooms: list[dict[str, Any]]  # List of GameRoom serialized
+
+
+class GameLeftData(BaseModel):
+    """Data for game_left message."""
+    pass  # Empty data
+
+
+class ErrorData(BaseModel):
+    """Data for error message."""
+    message: str
+
+
+class PongData(BaseModel):
+    """Data for pong message."""
+    pass  # Empty data
+
+
+# ============================================================================
+# Server → Client Messages
+# ============================================================================
 
 
 # ============================================================================

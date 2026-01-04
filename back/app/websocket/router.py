@@ -7,7 +7,31 @@ import traceback
 from fastapi import APIRouter, WebSocket, Query, status, WebSocketException
 
 from app.auth.dependencies import WebSocketUser
-from app.models.schemas.websocket import *
+from app.models.schemas.websocket.client import (
+    CreateGameMessage,
+    JoinGameMessage,
+    ListRoomsMessage,
+    ActionMessage,
+    GetStateMessage,
+    GetValidActionsMessage,
+    LeaveGameMessage,
+    PingMessage,
+)
+from app.models.schemas.websocket.server import (
+    ConnectedMessage,
+    GameCreatedMessage,
+    GameJoinedMessage,
+    PlayerJoinedMessage,
+    PlayerLeftMessage,
+    GameStartedMessage,
+    GameStateMessage,
+    ActionResultMessage,
+    ValidActionsMessage,
+    RoomsListMessage,
+    GameLeftMessage,
+    ErrorMessage,
+    PongMessage,
+)
 from app.websocket import game_websocket_handler
 from app.database import get_db_session
 

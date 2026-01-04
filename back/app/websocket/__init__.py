@@ -29,7 +29,7 @@ async def game_websocket_handler(
     from app.models.schemas.websocket.server import ConnectedMessage, ConnectedData, GameJoinedMessage, GameJoinedData
     
     room_manager.register_player(player)
-    connection = await connection_manager.connect(websocket, player)
+    await connection_manager.connect(websocket, player)
 
     await websocket.send_json(ConnectedMessage(
         data=ConnectedData(

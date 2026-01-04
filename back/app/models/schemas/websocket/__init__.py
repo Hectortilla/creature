@@ -5,31 +5,21 @@ These schemas define the structure of all WebSocket messages.
 They're exposed via dummy HTTP endpoints to generate TypeScript types.
 """
 
-# Re-export all message types for backwards compatibility
-from app.models.schemas.websocket.base import *
-from app.models.schemas.websocket.client import (
-    CreateGameMessage,
-    JoinGameMessage,
-    ListRoomsMessage,
-    ActionMessage,
-    GetStateMessage,
-    GetValidActionsMessage,
-    LeaveGameMessage,
-    PingMessage,
-)
-from app.models.schemas.websocket.server import (
-    ConnectedMessage,
-    GameCreatedMessage,
-    GameJoinedMessage,
-    PlayerJoinedMessage,
-    PlayerLeftMessage,
-    GameStartedMessage,
-    GameStateMessage,
-    ActionResultMessage,
-    ValidActionsMessage,
-    RoomsListMessage,
-    GameLeftMessage,
-    ErrorMessage,
-    PongMessage,
-)
+from typing import Any
+from pydantic import BaseModel
+
+
+# ============================================================================
+# Base Message Class
+# ============================================================================
+
+class WebSocketMessage(BaseModel):
+    """Base class for WebSocket messages that ensures type is included in serialization."""
+    
+    def model_dump(self, **kwargs) -> dict[str, Any]:
+        """Override to include the ClassVar type in serialization."""
+        result = super().model_dump(**kwargs)
+        # Include the type from the class variable
+        result['type'] = self.__class__.type
+        return result
 
