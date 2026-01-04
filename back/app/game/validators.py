@@ -435,7 +435,7 @@ class RuleValidator:
     def _validate_attack(self, state: "GameState", action: AttackAction) -> ValidationResult:
         """Validate an attack action."""
         player = state.room.get_player(action.player_id)
-        opponent = state.get_opponent(action.player_id)
+        opponent = state.room.get_opponent(action.player_id)
         
         # Check first turn restriction
         if state.is_first_turn(action.player_id):

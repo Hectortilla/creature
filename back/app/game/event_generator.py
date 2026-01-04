@@ -228,7 +228,7 @@ class ActionToEventGenerator:
         """
         events = []
         player = state.room.get_player(action.player_id)
-        opponent = state.get_opponent(action.player_id)
+        opponent = state.room.get_opponent(action.player_id)
         attacker = state.get_card(action.attacker_id)
         
         if not attacker:
@@ -448,7 +448,7 @@ class ActionToEventGenerator:
     def _create_concede_events(self, state: "GameState", action: ConcedeAction) -> list[GameEvent]:
         """Create concede events."""
         events = []
-        opponent = state.get_opponent(action.player_id)
+        opponent = state.room.get_opponent(action.player_id)
         
         events.append(GameEndedEvent(
             game_id=state.game_id,

@@ -119,6 +119,9 @@
 					const data = JSON.parse(event.data);
 					messages = [...messages, JSON.stringify(data, null, 2)];
 
+					if (data.type === 'action_result' && !data.data?.success)
+						return;
+
 					validActions = [];
 
 					// Handle action_result messages to update valid actions

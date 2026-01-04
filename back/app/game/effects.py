@@ -180,7 +180,7 @@ class StatModifierEffect(Effect):
                     affected.append(card)
         
         if self.target_enemies:
-            opponent = context.state.get_opponent(owner_id)
+            opponent = context.state.room.get_opponent(owner_id)
             for card_id in opponent.get_active_cards():
                 card = context.state.cards.get(card_id)
                 if card:
