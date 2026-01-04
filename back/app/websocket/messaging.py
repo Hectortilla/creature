@@ -28,53 +28,21 @@ class MessageBroadcaster:
         self.broadcast = broadcast
     
     async def send_to_player(self, player_id: str, message: dict | BaseModel) -> bool:
-        """
-        Publish a message to a player-specific channel.
-        
-        The ConnectionManager subscribes to this channel and forwards
-        the message to the player's WebSocket connection.
-        """
-        try:
-            # Convert Pydantic model to dict if needed
-            if isinstance(message, BaseModel):
-                message_dict = message.model_dump(mode='json')
-            else:
-                message_dict = message
-            
-            # Publish to player-specific channel
-            # ConnectionManager will pick this up and forward to WebSocket
-            channel = f"player:{player_id}"
-            await self.broadcast.publish(channel=channel, message=message_dict)
-            return True
-        except Exception:
-            return False
+        if isinstance(message, BaseModel):
+            message_dict = message.model_dump(mode='json')
+        else:
+            message_dict = message
+        channel = f"player:{player_id}"
+        await self.broadcast.publish(channel=channel, message=message_dict)
     
     async def broadcast_to_room(
         self, 
         room_id: str, 
         message: dict | BaseModel
     ) -> None:
-        """
-        Publish a message to a room channel.
-        
-        All players subscribed to this room channel will receive the message.
-        ConnectionManager subscribes players to room channels when they join.
-        
-        Args:
-            room_id: The room ID to broadcast to
-            message: The message to send
-        """
-        try:
-            # Convert Pydantic model to dict if needed
-            if isinstance(message, BaseModel):
-                message_dict = message.model_dump(mode='json')
-            else:
-                message_dict = message
-            
-            # Publish to room channel
-            # All ConnectionManagers subscribed to this room will forward to their WebSockets
-            channel = f"room:{room_id}"
-            await self.broadcast.publish(channel=channel, message=message_dict)
-        except Exception:
-            pass
-
+        if isinstance(message, BaseModel):
+            message_dict = message.model_dump(mode='json')
+        else:
+            message_dict = message
+        channel = f"room:{room_id}"
+        await self.broadcast.publish(channel=channel, message=message_dict)

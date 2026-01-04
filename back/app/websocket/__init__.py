@@ -6,7 +6,9 @@ Handles game creation, player connections, actions, and real-time state updates.
 """
 
 import logging
+import traceback
 from typing import TYPE_CHECKING
+from fastapi import WebSocketDisconnect
 from fastapi.websockets import WebSocketState
 
 if TYPE_CHECKING:
@@ -34,9 +36,11 @@ async def game_websocket_handler(
         while True:
             data = await websocket.receive_json()
             await message_handler.handle_message(player.player_id, data)
-
-    except Exception as e:
-        logger.exception("Error in game_websocket_handler: %s", e)
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        logger.exception(f"Error in game_websocket_handler: {traceback.format_exc()}")
+    finally:
         room_id = room_manager.get_player_room(player.player_id)
         if room_id:
             await room_manager.leave_room(player.player_id, room_id)
