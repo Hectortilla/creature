@@ -9,8 +9,8 @@
 		import type { DeckReadSummary, RoomSummary } from '$lib/types';
 
 		let { data }: { data: PageData } = $props();
-
-		let messages: string[] = $state([]);
+		
+		let messages: Record<string, any>[] = $state([]);
 		let messageText = $state('');
 		let ws: WebSocket | null = $state(null);
 		let connected = $state(false);
@@ -111,7 +111,7 @@
 
 			ws.onmessage = (event) => {
 				const data = JSON.parse(event.data);
-				messages = [...messages, JSON.stringify(data, null, 2)];
+				messages = [...messages, data];
 
 				if (data.type === 'action_result' && !data.data?.success)
 					return;
@@ -390,8 +390,9 @@
 
 		<ul class="messages">
 			{#each messages as message, i}
-				<li class="message" style="animation-delay: {i * 0.05}s">
-					<pre>{message}</pre>
+				<li class="message" style="animation-delay: {i * 0.05}s" class:failed={message.data.success !== undefined && !message.data.success}>
+					<h3>{message.type}</h3>
+					<pre>{JSON.stringify(message, null, 2)}</pre>
 				</li>
 			{/each}
 		</ul>
@@ -919,6 +920,17 @@
 			word-break: break-word;
 			font-size: 0.8rem;
 			line-height: 1.4;
+		}
+
+		.message h3 {
+			margin: 0;
+			font-size: 0.8rem;
+			color: #8b949e;
+			font-weight: 600;
+		}
+
+		.message.failed {
+			border-left-color: #f85149;
 		}
 
 		@keyframes slideIn {
