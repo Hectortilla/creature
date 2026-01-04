@@ -9,12 +9,9 @@ from typing import TYPE_CHECKING
 import traceback
 
 from app.models.schemas.websocket.server import ErrorMessage, ErrorData
-from app.websocket.models import PlayerConnection, GameRoom
 from app.websocket.connection import ConnectionManager
 from app.websocket.room import RoomManager
 from app.websocket.handler import MessageHandler
-from app.websocket.messaging import MessageBroadcaster
-from app.websocket.serialization import serialize_deck_for_game, serialize_events
 
 if TYPE_CHECKING:
     from app.models.game.player import PlayerState
@@ -29,17 +26,6 @@ async def game_websocket_handler(
     message_handler: MessageHandler,
     room_id: str | None = None,
 ) -> None:
-    """
-    Main WebSocket handler for game connections.
-    
-    Args:
-        websocket: The WebSocket connection
-        player: PlayerState object with player info and deck
-        connection_manager: The connection manager instance
-        room_manager: The room manager instance
-        message_handler: The message handler instance
-        room_id: Optional room ID to auto-join after connection
-    """
     from app.models.schemas.websocket.server import ConnectedMessage, ConnectedData, GameJoinedMessage, GameJoinedData
     
     room_manager.register_player(player)

@@ -3,13 +3,13 @@ WebSocket Router
 
 FastAPI router for WebSocket and HTTP endpoints related to game connections.
 """
-
+import traceback
 from fastapi import APIRouter, WebSocket, Query, status, WebSocketException
 
 from app.auth.dependencies import WebSocketUser
 from app.models.schemas.websocket import *
 from app.websocket import game_websocket_handler
-from app.game.validators import validate_game_socket_connection
+from app.database import get_db_session
 
 router = APIRouter()
 
@@ -31,13 +31,17 @@ async def game_websocket(
     """
     from app.settings.lifespan import connection_manager, room_manager, message_handler
 
-    player = await validate_game_socket_connection(
-        user,
-        deck_id,
-        connection_manager,
-        room_manager,
-        room_id
-    )
+    try:
+        db = next(get_db_session())
+        player = user.to_player_state(deck_id, db)
+    except Exception as e:
+        db.close()
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason=traceback.format_exc(),
+        )
+    finally:
+        db.close()
 
     await game_websocket_handler(
         websocket, 

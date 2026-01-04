@@ -68,7 +68,7 @@ class GameRoom(GameBaseModel):
     @computed_field
     @property
     def can_join(self) -> bool:
-        return len(self.players) < 2 and not self.is_started
+        return not self.is_full and not self.is_started
     
     def get_player(self, player_id: str) -> PlayerState:
         """Get a player's state."""

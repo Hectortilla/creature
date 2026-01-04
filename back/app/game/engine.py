@@ -249,7 +249,7 @@ class GameEngine:
         except Exception as e:
             return ActionResult(
                 success=False,
-                error=str(traceback.format_exc()),
+                error=traceback.format_exc(),
                 state=state,
             )
 
