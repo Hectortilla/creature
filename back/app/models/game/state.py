@@ -72,6 +72,10 @@ class GameState(GameBaseModel):
     def serialize_cards(self, value: dict[str, GameCard]) -> None:
         """Exclude cards from serialization to prevent frontend access."""
         return None
+
+    @field_serializer('event_log')
+    def serialize_event_log(self, value: list[dict[str, Any]]) -> str:
+        return None
     
     @classmethod
     def create(cls, room: "GameRoom",
