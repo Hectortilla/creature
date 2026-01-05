@@ -1,9 +1,23 @@
 /**
  * Action field mappings
  * 
- * Maps action types to their required and optional fields.
- * This is derived from the backend Action classes.
+ * Fully dynamically derived from the generated OpenAPI client SDK.
+ * Field metadata is auto-generated from types.gen.ts by scripts/generate-action-metadata.ts
+ * 
+ * To regenerate metadata after API changes:
+ *   npm run generate-action-metadata
+ *   or
+ *   npm run generate (generates client + metadata)
  */
+
+import type { ActionData } from '$lib/api/types.gen';
+// Import auto-generated metadata (regenerate with: npm run generate-action-metadata)
+import {
+	FIELD_METADATA as GENERATED_FIELD_METADATA,
+	NO_FIELD_ACTION_TYPES as GENERATED_NO_FIELD_ACTION_TYPES,
+	ALL_ACTION_TYPES as GENERATED_ALL_ACTION_TYPES,
+	type FieldMetadata
+} from './actionFields.metadata';
 
 export interface ActionFieldConfig {
 	name: string;
@@ -23,234 +37,155 @@ export interface ActionTypeConfig {
 }
 
 /**
- * Mapping of action types to their field configurations
- * Based on the backend Action classes in back/app/game/actions.py
+ * Special cases for field requirements per action type
+ * Overrides the default isOptional behavior for specific action+field combinations
  */
-export const ACTION_TYPE_CONFIGS: Record<string, ActionTypeConfig> = {
-	draw: {
-		type: 'draw',
-		label: 'Draw Cards',
-		description: 'Draw cards from your deck',
-		fields: [
-			{
-				name: 'count',
-				label: 'Count',
-				type: 'number',
-				required: true,
-				description: 'Number of cards to draw',
-				example: 1,
-				placeholder: '1'
-			}
-		]
-	},
-	play_card: {
-		type: 'play_card',
-		label: 'Play Card',
-		description: 'Play a card from hand to supporting zone',
-		fields: [
-			{
-				name: 'card_id',
-				label: 'Card ID',
-				type: 'text',
-				required: true,
-				description: 'Card instance ID',
-				example: 'card_instance_123',
-				placeholder: 'card_instance_id'
-			}
-		]
-	},
-	multi_play_card: {
-		type: 'multi_play_card',
-		label: 'Play Multiple Cards',
-		description: 'Play multiple cards at once',
-		fields: [
-			{
-				name: 'card_ids',
-				label: 'Card IDs',
-				type: 'text',
-				required: true,
-				description: 'Comma-separated list of card instance IDs',
-				example: 'card_instance_123, card_instance_456',
-				placeholder: 'id1, id2, id3'
-			}
-		]
-	},
-	promote: {
-		type: 'promote',
-		label: 'Promote Card',
-		description: 'Promote a card from supporting to attacking zone',
-		fields: [
-			{
-				name: 'card_id',
-				label: 'Card ID',
-				type: 'text',
-				required: true,
-				description: 'Card instance ID',
-				example: 'card_instance_123',
-				placeholder: 'card_instance_id'
-			}
-		]
-	},
-	swap: {
-		type: 'swap',
-		label: 'Swap Cards',
-		description: 'Swap a supporting card with an attacking card',
-		fields: [
-			{
-				name: 'supporting_card_id',
-				label: 'Supporting Card ID',
-				type: 'text',
-				required: true,
-				description: 'Supporting card instance ID',
-				example: 'card_instance_123',
-				placeholder: 'supporting_card_id'
-			},
-			{
-				name: 'attacking_card_id',
-				label: 'Attacking Card ID',
-				type: 'text',
-				required: true,
-				description: 'Attacking card instance ID',
-				example: 'card_instance_456',
-				placeholder: 'attacking_card_id'
-			}
-		]
-	},
-	multi_swap: {
-		type: 'multi_swap',
-		label: 'Multiple Swaps',
-		description: 'Perform multiple swaps at once',
-		fields: [
-			{
-				name: 'swaps',
-				label: 'Swaps',
-				type: 'json',
-				required: true,
-				description: 'JSON array of swap pairs',
-				example: '[{"supporting_card_id": "id1", "attacking_card_id": "id2"}]',
-				placeholder: '[{"supporting_card_id": "id1", "attacking_card_id": "id2"}]'
-			}
-		]
-	},
-	associate: {
-		type: 'associate',
-		label: 'Associate Card',
-		description: 'Associate a card with an active creature',
-		fields: [
-			{
-				name: 'association_card_id',
-				label: 'Association Card ID',
-				type: 'text',
-				required: true,
-				description: 'Association card instance ID',
-				example: 'card_instance_123',
-				placeholder: 'association_card_id'
-			},
-			{
-				name: 'target_id',
-				label: 'Target Card ID',
-				type: 'text',
-				required: true,
-				description: 'Target card instance ID',
-				example: 'card_instance_789',
-				placeholder: 'target_card_id'
-			}
-		]
-	},
-	evolve: {
-		type: 'evolve',
-		label: 'Evolve Card',
-		description: 'Evolve a creature with an evolution card',
-		fields: [
-			{
-				name: 'evolution_card_id',
-				label: 'Evolution Card ID',
-				type: 'text',
-				required: true,
-				description: 'Evolution card instance ID',
-				example: 'card_instance_123',
-				placeholder: 'evolution_card_id'
-			},
-			{
-				name: 'target_id',
-				label: 'Target Card ID',
-				type: 'text',
-				required: true,
-				description: 'Target card instance ID',
-				example: 'card_instance_789',
-				placeholder: 'target_card_id'
-			}
-		]
-	},
+const FIELD_REQUIREMENT_OVERRIDES: Record<string, Record<string, boolean>> = {
 	attack: {
-		type: 'attack',
-		label: 'Attack',
-		description: 'Attack with a creature',
-		fields: [
-			{
-				name: 'attacker_id',
-				label: 'Attacker Card ID',
-				type: 'text',
-				required: true,
-				description: 'Attacker card instance ID',
-				example: 'card_instance_123',
-				placeholder: 'attacker_id'
-			},
-			{
-				name: 'attack_id',
-				label: 'Attack ID',
-				type: 'text',
-				required: true,
-				description: 'Attack ID to use',
-				example: '1',
-				placeholder: 'attack_id'
-			},
-			{
-				name: 'target_id',
-				label: 'Target Card ID',
-				type: 'text',
-				required: false,
-				description: 'Target card instance ID (empty if no defenders)',
-				example: 'card_instance_789',
-				placeholder: 'target_id or empty'
-			}
-		]
-	},
-	force_defend: {
-		type: 'force_defend',
-		label: 'Force Defend',
-		description: 'Move a supporting creature to defend',
-		fields: [
-			{
-				name: 'card_id',
-				label: 'Card ID',
-				type: 'text',
-				required: true,
-				description: 'Card instance ID',
-				example: 'card_instance_123',
-				placeholder: 'card_instance_id'
-			}
-		]
-	},
-	pass: {
-		type: 'pass',
-		label: 'Pass Phase',
-		description: 'Pass/end the current phase',
-		fields: []
-	},
-	concede: {
-		type: 'concede',
-		label: 'Concede',
-		description: 'Concede the game',
-		fields: []
+		target_card_id: false // target_card_id is optional for attack
 	}
 };
+
+/**
+ * Convert TypeScript type to field input type
+ */
+function tsTypeToFieldType(tsType: string): 'text' | 'number' | 'select' | 'multiselect' | 'json' {
+	if (tsType.includes('Array')) {
+		if (tsType.includes('swaps') || tsType.includes('{') || tsType.includes('unknown')) {
+			return 'json';
+		}
+		return 'multiselect';
+	}
+	if (tsType === 'number' || tsType.includes('number')) {
+		return 'number';
+	}
+	return 'text';
+}
+
+/**
+ * Generate human-readable label from action type
+ */
+function generateActionLabel(actionType: string): string {
+	return actionType
+		.split('_')
+		.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
+}
+
+/**
+ * Generate description from action type
+ */
+function generateActionDescription(actionType: string): string {
+	const label = generateActionLabel(actionType);
+	return `${label} action`;
+}
+
+/**
+ * Generate label from field name
+ */
+function generateFieldLabel(fieldName: string): string {
+	return fieldName
+		.split('_')
+		.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
+}
+
+/**
+ * Generate placeholder from example
+ */
+function generatePlaceholder(example: string | number | string[] | undefined, fieldName: string): string | undefined {
+	if (example === undefined) {
+		return undefined;
+	}
+	if (typeof example === 'string') {
+		return example;
+	}
+	if (typeof example === 'number') {
+		return example.toString();
+	}
+	if (Array.isArray(example)) {
+		if (example.length > 0 && typeof example[0] === 'string') {
+			return example.join(', ');
+		}
+		return JSON.stringify(example);
+	}
+	return undefined;
+}
+
+/**
+ * Build field config from metadata
+ */
+function buildFieldConfig(metadata: FieldMetadata, actionType: string): ActionFieldConfig {
+	const fieldType = tsTypeToFieldType(metadata.tsType);
+	
+	// Check for requirement overrides first
+	const override = FIELD_REQUIREMENT_OVERRIDES[actionType]?.[metadata.name];
+	const isRequired = override !== undefined 
+		? override 
+		: !metadata.isOptional; // Required if not optional
+	
+	return {
+		name: metadata.name,
+		label: generateFieldLabel(metadata.name),
+		type: fieldType,
+		required: isRequired,
+		description: metadata.description,
+		placeholder: generatePlaceholder(undefined, metadata.name) // Examples not in metadata yet
+	};
+}
+
+/**
+ * Get fields for a specific action type
+ */
+function getFieldsForActionType(actionType: string): ActionFieldConfig[] {
+	const fields: ActionFieldConfig[] = [];
+	
+	// Find all fields used by this action type
+	for (const fieldMeta of GENERATED_FIELD_METADATA) {
+		if (fieldMeta.usedBy.includes(actionType)) {
+			const fieldConfig = buildFieldConfig(fieldMeta, actionType);
+			fields.push(fieldConfig);
+		}
+	}
+
+	return fields;
+}
+
+/**
+ * Build action type config dynamically
+ */
+function buildActionTypeConfig(actionType: string): ActionTypeConfig {
+	return {
+		type: actionType,
+		label: generateActionLabel(actionType),
+		description: generateActionDescription(actionType),
+		fields: getFieldsForActionType(actionType)
+	};
+}
+
+/**
+ * Dynamically generated action type configurations
+ * All action types are inferred from auto-generated FIELD_METADATA
+ */
+export const ACTION_TYPE_CONFIGS: Record<string, ActionTypeConfig> = Object.fromEntries(
+	GENERATED_ALL_ACTION_TYPES.map(actionType => [
+		actionType,
+		buildActionTypeConfig(actionType)
+	])
+);
+
+// Add no-field action types
+for (const actionType of GENERATED_NO_FIELD_ACTION_TYPES) {
+	if (!ACTION_TYPE_CONFIGS[actionType]) {
+		ACTION_TYPE_CONFIGS[actionType] = buildActionTypeConfig(actionType);
+	}
+}
 
 /**
  * Get all known action types
  */
 export function getAllActionTypes(): string[] {
-	return Object.keys(ACTION_TYPE_CONFIGS);
+	return Object.keys(ACTION_TYPE_CONFIGS).sort();
 }
 
 /**
@@ -266,4 +201,3 @@ export function getActionConfig(actionType: string): ActionTypeConfig | undefine
 export function getActionFields(actionType: string): ActionFieldConfig[] {
 	return ACTION_TYPE_CONFIGS[actionType]?.fields ?? [];
 }
-
