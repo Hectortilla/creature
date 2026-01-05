@@ -5,7 +5,7 @@
  * Run this after generating the API client: npm run generate-client
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -247,7 +247,11 @@ export const ALL_ACTION_TYPES: string[] = ${JSON.stringify(
 		)};
 `;
 
-		const outputPath = join(__dirname, '../src/lib/utils/actionFields.metadata.ts');
+		// Ensure the generated directory exists
+		const generatedDir = join(__dirname, '../src/lib/utils/generated');
+		mkdirSync(generatedDir, { recursive: true });
+		
+		const outputPath = join(generatedDir, 'actionFields.metadata.ts');
 		writeFileSync(outputPath, metadataContent, 'utf-8');
 		
 		console.log('✅ Generated action field metadata successfully!');

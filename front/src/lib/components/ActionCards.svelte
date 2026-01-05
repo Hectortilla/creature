@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ActionData } from '$lib/api/types.gen';
-	import { ACTION_TYPE_CONFIGS, getAllActionTypes, type ActionTypeConfig, type ActionFieldConfig } from '$lib/utils/actionFields';
+	import { ACTION_TYPE_CONFIGS, type ActionTypeConfig } from '$lib/utils/actionFields';
 
 	interface ActionCard {
 		type: string;

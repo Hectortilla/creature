@@ -17,7 +17,7 @@ import {
 	NO_FIELD_ACTION_TYPES as GENERATED_NO_FIELD_ACTION_TYPES,
 	ALL_ACTION_TYPES as GENERATED_ALL_ACTION_TYPES,
 	type FieldMetadata
-} from './actionFields.metadata';
+} from './generated/actionFields.metadata';
 
 export interface ActionFieldConfig {
 	name: string;
