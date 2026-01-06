@@ -2,7 +2,7 @@
 		import { onMount, onDestroy } from 'svelte';
 		import { goto } from '$app/navigation';
 		import { PUBLIC_API_URL } from '$env/static/public';
-		import { auth } from '$lib/stores/auth.svelte';
+		import { authStore } from '$lib/stores/auth.svelte';
 		import ActionCards from '$lib/components/ActionCards.svelte';
 		import type { PageData } from './$types';
 		import type { ActionData } from '$lib/api/types.gen';
@@ -11,7 +11,7 @@
 		let { data }: { data: PageData } = $props();
 		
 		let messages: Record<string, any>[] = $state([]);
-		let messageText = $state('');
+		let promptText = $state('');
 		let ws: WebSocket | null = $state(null);
 		let connected = $state(false);
 		let connectionError = $state<string | null>(null);
@@ -58,7 +58,7 @@
 		}
 
 		function connect() {
-			if (!auth.isAuthenticated) {
+			if (!authStore.isAuthenticated) {
 				connectionError = 'No authentication token. Please log in.';
 				goto('/login');
 				return;
@@ -167,22 +167,22 @@
 		});
 
 		function addAction(action: any) {
-			if (action.player_id === String(auth.user?.id))
+			if (action.player_id === String(authStore.user?.id))
 				validActions.push(action);
 		}
 
 		function sendMessage(event: SubmitEvent) {
 			event.preventDefault();
-			if (ws && messageText.trim()) {
+			if (ws && promptText.trim()) {
 				// Send as JSON message
 				try {
-					const parsed = JSON.parse(messageText);
+					const parsed = JSON.parse(promptText);
 					ws.send(JSON.stringify(parsed));
 				} catch {
 					// If not valid JSON, wrap it
-					ws.send(JSON.stringify({ type: 'raw', data: messageText }));
+					ws.send(JSON.stringify({ type: 'raw', data: promptText }));
 				}
-				messageText = '';
+				promptText = '';
 			}
 		}
 
@@ -228,8 +228,8 @@
 			<header>
 				<div class="header-left">
 					<h1>Game WebSocket</h1>
-					{#if auth.user}
-						<span class="user-info">Playing as: {auth.user.full_name || auth.user.username}</span>
+					{#if authStore.user}
+						<span class="user-info">Playing as: {authStore.user.full_name || authStore.user.username}</span>
 					{/if}
 				</div>
 				<div class="header-right">
@@ -400,12 +400,12 @@
 		<form onsubmit={sendMessage}>
 			<input
 				type="text"
-				bind:value={messageText}
+				bind:value={promptText}
 				placeholder={'Send JSON: {"type": "ping"} or {"type": "list_rooms"}'}
 				autocomplete="off"
 				disabled={!connected}
 			/>
-			<button type="submit" disabled={!connected || !messageText.trim()}>
+			<button type="submit" disabled={!connected || !promptText.trim()}>
 				Send
 			</button>
 		</form>

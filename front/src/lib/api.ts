@@ -2,7 +2,7 @@ import { PUBLIC_API_URL } from '$env/static/public';
 import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 import { client } from './api/client.gen';
-import { auth } from './stores/auth.svelte';
+import { authStore } from './stores/auth.svelte';
 import { NO_AUTH_ROUTES } from './constants';
 
 const TOKEN_KEY = 'auth_token';
@@ -49,7 +49,7 @@ export function configureApiClient(baseUrl: string = PUBLIC_API_URL) {
 			
 			if (!isAuthEndpoint) {
 				// Clear auth state on unauthorized
-				auth.clearAuth();
+				authStore.clearAuth();
 				
 				if (browser) {
 					// Client-side: Check if we're already on a public route to avoid redirect loops

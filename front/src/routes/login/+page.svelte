@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { auth } from '$lib/stores/auth.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import { loginApi, getMeApi } from '$lib/api';
 	import Button from '$lib/components/Button.svelte';
 
@@ -23,7 +23,7 @@
 			const user = await getMeApi(token);
 
 			// Store auth state
-			auth.setAuth(token, user);
+			authStore.setAuth(token, user);
 
 			// Redirect to home
 			goto('/');

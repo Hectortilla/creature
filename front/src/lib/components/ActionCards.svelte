@@ -232,7 +232,7 @@
 									disabled={!card.enabled}
 									rows="3"
 									style="font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.85rem;"
-								/>
+								></textarea>
 							{:else}
 								<input
 									id="{card.type}-{field.name}"

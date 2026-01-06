@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { blur } from 'svelte/transition';
-	import { auth } from '$lib/stores/auth.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
 
 	// Icons
 	import arrowIcon from '$lib/icons/arrow.svg?raw'
@@ -39,7 +39,7 @@
 	}
 
 	function handleLogout() {
-		auth.clearAuth();
+		authStore.clearAuth();
 		goto('/login');
 	}
 </script>
@@ -83,9 +83,9 @@
 		{/each}
 	</ul>
 
-	{#if auth.isAuthenticated}
+	{#if authStore.isAuthenticated}
 		<div class="user-section">
-			<span class="username">{auth.user?.username}</span>
+			<span class="username">{authStore.user?.username}</span>
 			<button class="logout-btn" onclick={handleLogout}>Salir</button>
 		</div>
 	{/if}
