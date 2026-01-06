@@ -75,16 +75,17 @@ class RoomManager:
 
         self.player_rooms[player.player_id] = room_id
 
-        # Notify other players (exclude the joining player)
-        for other_player_id in room.get_player_ids():
-            if other_player_id != player.player_id:
-                await self.message_broadcaster.send_to_player(other_player_id, PlayerJoinedMessage(
-                    data=PlayerJoinedData(
-                        player_id=player.player_id,
-                        name=player.name,
-                        room=room.model_dump(mode='json'),
-                    )
-                ))
+        await self.message_broadcaster.broadcast_to_room(
+            room_id,
+            PlayerJoinedMessage(
+                data=PlayerJoinedData(
+                    player_id=player.player_id,
+                    name=player.name,
+                    room=room.model_dump(mode='json'),
+                )
+            )
+        )
+        
         if room.game_ready_to_start():
             await self._start_game(room)
         
