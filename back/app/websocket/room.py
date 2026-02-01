@@ -9,7 +9,6 @@ from typing import Optional, TYPE_CHECKING
 from uuid import uuid4
 
 from app.websocket.models import GameRoom
-from app.websocket.messaging import MessageBroadcaster
 from app.game.engine import get_engine
 from app.game.actions import create_action
 from app.websocket.serialization import serialize_events
@@ -33,9 +32,8 @@ from app.models.schemas.websocket.server import (
 class RoomManager:
     """Manages game rooms and game logic operations."""
     
-    def __init__(self, connection_manager: ConnectionManager, message_broadcaster: MessageBroadcaster):
+    def __init__(self, connection_manager: ConnectionManager):
         self.connection_manager = connection_manager
-        self.message_broadcaster = message_broadcaster
         self.rooms: dict[str, GameRoom] = {}  # room_id -> room
         self.player_rooms: dict[str, str] = {}  # player_id -> room_id
         self.engine = get_engine()
@@ -69,13 +67,13 @@ class RoomManager:
         
         await self.connection_manager.subscribe_to_room(player.player_id, room_id)
         room.add_player(player)
-        await self.message_broadcaster.send_to_player(player.player_id, GameJoinedMessage(
+        await self.connection_manager.send_to_player(player.player_id, GameJoinedMessage(
             data=GameJoinedData(room=room.model_dump(mode='json'))
         ))
 
         self.player_rooms[player.player_id] = room_id
 
-        await self.message_broadcaster.broadcast_to_room(
+        await self.connection_manager.send_to_room(
             room_id,
             PlayerJoinedMessage(
                 data=PlayerJoinedData(
@@ -102,7 +100,7 @@ class RoomManager:
         await self.connection_manager.unsubscribe_from_room(player_id, room_id)
         
         # Notify remaining players
-        await self.message_broadcaster.broadcast_to_room(
+        await self.connection_manager.send_to_room(
             room_id,
             PlayerLeftMessage(
                 data=PlayerLeftData(
@@ -153,7 +151,7 @@ class RoomManager:
             events=serialize_events(result.events),
             valid_actions=result.valid_actions,
         )
-        await self.message_broadcaster.broadcast_to_room(
+        await self.connection_manager.send_to_room(
             room.room_id,
             GameStartedMessage(data=response_data)
         )
@@ -203,7 +201,7 @@ class RoomManager:
             game_state=result.state.model_dump(mode='json') if result.state else None,
             valid_actions=result.valid_actions,
         )
-        await self.message_broadcaster.broadcast_to_room(
+        await self.connection_manager.send_to_room(
             room_id,
             ActionResultMessage(data=response_data)
         )
@@ -236,6 +234,6 @@ class RoomManager:
         return room.state.model_dump(mode='json')
     
     async def send_failed_to_join_room(self, player_id: str) -> None:
-        await self.message_broadcaster.send_to_player(player_id, ErrorMessage(
+        await self.connection_manager.send_to_player(player_id, ErrorMessage(
             data=ErrorData(message=f"Failed to join room:\n{traceback.format_exc()}")
-        ).model_dump(mode='json'))
+        ))

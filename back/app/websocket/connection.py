@@ -1,30 +1,43 @@
 import asyncio
+import json
 import logging
 from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 from broadcaster import Broadcast
+from redis import asyncio as redis
 
 from app.websocket.models import PlayerState
 from app.models.schemas.websocket.server import ConnectedData, ConnectedMessage
+from app.settings.config import get_settings
+from app.models.schemas.websocket import WebSocketMessage
 
+settings = get_settings()
 
 logger = logging.getLogger(__name__)
 
 class ConnectionManager:
-    def __init__(self, broadcast: Broadcast):
-        self.broadcast = broadcast
+    def __init__(self):
+
+        self.broadcast = Broadcast(settings.broadcast_url)
         self.connections: dict[str, WebSocket] = {}
 
         self.player_tasks: dict[str, asyncio.Task] = {}
-        self.channels: dict[str, set[str]] = {}
         self.player_ready: dict[str, asyncio.Event] = {}
+
+        self.redis = redis.Redis.from_url(settings.redis_url)
+
+    async def async_init(self):
+        await self.broadcast.connect()
+
+    async def async_deinit(self):
+        await self.broadcast.disconnect()
+
+    # ---------------------------- Raw Connection Management ----------------------------
 
     async def connect(self, websocket: WebSocket, player: PlayerState) -> None:
         await websocket.accept()
 
         self.connections[player.player_id] = websocket
-
-        self.channels[player.player_id] = {f"player:{player.player_id}"}
 
         ready = asyncio.Event()
         self.player_ready[player.player_id] = ready
@@ -35,19 +48,15 @@ class ConnectionManager:
     
         await ready.wait()
 
-        await websocket.send_json(ConnectedMessage(
+        await self.send_to_player(player.player_id, ConnectedMessage(
             data=ConnectedData(
                 player_id=player.player_id,
                 name=player.name,
                 message="Connected to game server",
             )
-        ).model_dump(mode='json'))
+        ))
 
     async def _player_loop(self, player_id: str):
-        channels = self.channels.get(player_id, set()).copy()
-        if not channels:
-            return
-
         queue: asyncio.Queue = asyncio.Queue()
         ready_event = self.player_ready[player_id]
 
@@ -61,10 +70,7 @@ class ConnectionManager:
             except Exception as e:
                 logger.exception("Error in subscription to channel %s for player %s: %s", channel, player_id, e)
 
-        subscription_tasks = [
-            asyncio.create_task(subscribe(channel))
-            for channel in channels
-        ]
+        subscription_task = asyncio.create_task(subscribe(player_id))
 
         await asyncio.sleep(0)
         ready_event.set()
@@ -76,7 +82,8 @@ class ConnectionManager:
                 except asyncio.TimeoutError:
                     continue
                 try:
-                    await self.connections[player_id].send_json(message)
+                    logger.info("Sending message to player %s: %s", player_id, message)
+                    await self.connections[player_id].send_json(json.loads(message))
                 except asyncio.CancelledError:
                     raise
                 except Exception as e:
@@ -89,31 +96,8 @@ class ConnectionManager:
             raise
 
         finally:
-            for task in subscription_tasks:
-                task.cancel()
-            await asyncio.gather(*subscription_tasks, return_exceptions=True)
-
-    async def _restart_player_task(self, player_id: str):
-        task = self.player_tasks.get(player_id)
-        if task:
-            task.cancel()
-            await asyncio.gather(task, return_exceptions=True)
-
-        ready = asyncio.Event()
-        self.player_ready[player_id] = ready
-
-        self.player_tasks[player_id] = asyncio.create_task(
-            self._player_loop(player_id)
-        )
-        await ready.wait()
-
-    async def subscribe_to_room(self, player_id: str, room_id: str):
-        self.channels[player_id].add(f"room:{room_id}")
-        await self._restart_player_task(player_id)
-
-    async def unsubscribe_from_room(self, player_id: str, room_id: str):
-        self.channels[player_id].discard(f"room:{room_id}")
-        await self._restart_player_task(player_id)
+            subscription_task.cancel()
+            await asyncio.gather(subscription_task, return_exceptions=True)
 
     async def disconnect(self, player_id: str):
         task = self.player_tasks.pop(player_id, None)
@@ -121,6 +105,43 @@ class ConnectionManager:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 
-        self.channels.pop(player_id, None)
         self.connections.pop(player_id, None)
         self.player_ready.pop(player_id, None)
+
+    async def send_to_player(self, player_id: str, message: WebSocketMessage):
+        await self.broadcast.publish(
+            channel=player_id,
+            message=json.dumps(message.model_dump(mode='json')),
+        )
+
+    # ---------------------------- Room Management ----------------------------
+
+    async def send_to_room(self, room_id: str, message: WebSocketMessage):
+        players = await self.get_players(room_id)
+
+        await asyncio.gather(
+            *[
+                self.send_to_player(player_id, message)
+                for player_id in players
+            ]
+        )
+
+    async def subscribe_to_room(self, player_id: str, room_id: str):
+        await self.redis.sadd(f"room:{room_id}", player_id)
+        await self.redis.sadd(f"player:{player_id}", room_id)
+
+    async def unsubscribe_from_room(self, player_id: str, room_id: str):
+        await self.redis.srem(f"room:{room_id}", player_id)
+        await self.redis.srem(f"player:{player_id}", room_id)
+
+    async def get_players(self, room_id: str) -> set[str]:
+        return {
+            pid.decode()
+            for pid in await self.redis.smembers(f"room:{room_id}")
+        }
+
+    async def remove_player(self, player_id: str):
+        rooms = await self.redis.smembers(f"player:{player_id}")
+        for room_id in rooms:
+            await self.redis.srem(f"room:{room_id.decode()}", player_id)
+        await self.redis.delete(f"player:{player_id}")

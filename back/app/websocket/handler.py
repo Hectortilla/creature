@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 from app.websocket.connection import ConnectionManager
 from app.websocket.room import RoomManager
-from app.websocket.messaging import MessageBroadcaster
 from app.models.schemas.websocket.client import (
     JoinGameMessage,
     ListRoomsMessage,
@@ -46,11 +45,9 @@ class MessageHandler:
         self,
         connection_manager: ConnectionManager,
         room_manager: RoomManager,
-        message_broadcaster: MessageBroadcaster,
     ):
         self.connection_manager = connection_manager
         self.room_manager = room_manager
-        self.message_broadcaster = message_broadcaster
     
     async def handle_message(self, player_id: str, message: dict) -> None:
         """Handle an incoming WebSocket message."""
@@ -77,7 +74,7 @@ class MessageHandler:
                 # Log validation error but continue processing (for backwards compatibility)
                 logger.warning(f"WebSocket message validation failed for player {player_id}: {e}")
                 # Still send error to client
-                await self.message_broadcaster.send_to_player(player_id, ErrorMessage(
+                await self.connection_manager.send_to_player(player_id, ErrorMessage(
                     data=ErrorData(message=f"Invalid message format: {str(e)}")
                 ))
                 return
@@ -88,13 +85,13 @@ class MessageHandler:
                     player_id=player_id,
                     room_id=data.get("room_id"),
                 )
-                await self.message_broadcaster.send_to_player(player_id, GameJoinedMessage(
+                await self.connection_manager.send_to_player(player_id, GameJoinedMessage(
                     data=GameJoinedData(room=room.model_dump(mode='json'))
                 ))
             
             elif msg_type == ListRoomsMessage.type:
                 rooms = self.room_manager.list_rooms()
-                await self.message_broadcaster.send_to_player(player_id, RoomsListMessage(
+                await self.connection_manager.send_to_player(player_id, RoomsListMessage(
                     data=RoomsListData(rooms=rooms)
                 ))
             
@@ -109,7 +106,7 @@ class MessageHandler:
                 if not room_id:
                     raise ValueError("Not in a game")
                 state = self.room_manager.get_game_state(room_id)
-                await self.message_broadcaster.send_to_player(player_id, GameStateMessage(
+                await self.connection_manager.send_to_player(player_id, GameStateMessage(
                     data=GameStateData(state=state)
                 ))
             
@@ -118,7 +115,7 @@ class MessageHandler:
                 if not room_id:
                     raise ValueError("Not in a game")
                 actions = self.room_manager.get_valid_actions(player_id, room_id)
-                await self.message_broadcaster.send_to_player(player_id, ValidActionsMessage(
+                await self.connection_manager.send_to_player(player_id, ValidActionsMessage(
                     data=ValidActionsData(actions=actions)
                 ))
             
@@ -126,22 +123,22 @@ class MessageHandler:
                 room_id = self.room_manager.get_player_room(player_id)
                 if room_id:
                     await self.room_manager.leave_room(player_id, room_id)
-                await self.message_broadcaster.send_to_player(player_id, GameLeftMessage())
+                await self.connection_manager.send_to_player(player_id, GameLeftMessage())
             
             elif msg_type == PingMessage.type:
-                await self.message_broadcaster.send_to_player(player_id, PongMessage())
+                await self.connection_manager.send_to_player(player_id, PongMessage())
             
             else:
-                await self.message_broadcaster.send_to_player(player_id, ErrorMessage(
+                await self.connection_manager.send_to_player(player_id, ErrorMessage(
                     data=ErrorData(message=f"Unknown message type: {msg_type}")
                 ))
         
         except ValueError as e:
-            await self.message_broadcaster.send_to_player(player_id, ErrorMessage(
+            await self.connection_manager.send_to_player(player_id, ErrorMessage(
                 data=ErrorData(message=str(e))
             ))
         except Exception as e:
-            await self.message_broadcaster.send_to_player(player_id, ErrorMessage(
+            await self.connection_manager.send_to_player(player_id, ErrorMessage(
                 data=ErrorData(message=f"Internal error: {str(e)}")
             ))
 
