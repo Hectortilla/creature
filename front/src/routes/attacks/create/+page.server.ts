@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import {
 	getAllAttacksAttacksGet,
-	getAllElementsElementsGet
+	getAllElementsGet
 } from '$lib/api';
 import { getAuthHeaders } from '$lib/server/auth';
 
@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const [attacksRes, elementsRes] = await Promise.all([
 		getAllAttacksAttacksGet({ headers }),
-		getAllElementsElementsGet({ headers })
+		getAllElementsGet({ headers })
 	]);
 
 	return {

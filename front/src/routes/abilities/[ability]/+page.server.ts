@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import {
-	getAbilityAbilitiesValueGet,
+	getOneAbilitiesValueGet,
 	getCardsByAbilityCardsByAbilityAbilityCodeGet
 } from '$lib/api';
 import { getAuthHeaders } from '$lib/server/auth';
@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	const [abilityRes, cardsRes] = await Promise.all([
-		getAbilityAbilitiesValueGet({ path: { value: ability }, headers }),
+		getOneAbilitiesValueGet({ path: { value: ability }, headers }),
 		getCardsByAbilityCardsByAbilityAbilityCodeGet({ path: { ability_code: Number(ability) }, headers })
 	]);
 

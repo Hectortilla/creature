@@ -1,3 +1,9 @@
+"""
+Card Service
+
+CRUD operations for cards with enrichment logic.
+"""
+
 from sqlmodel import select, or_
 
 from app.models.db.card import Card
@@ -8,9 +14,9 @@ from app.models.schemas.card import CardCreate, CardRead, CardReadWithRelations
 from app.models.schemas.element import ElementRead
 from app.models.schemas.type import TypeRead
 from app.models.schemas.character import CharacterRead
-from app.models.schemas.attack import AttackReadWithElement
 from app.models.schemas.ability import AbilityRead
 from app.models.schemas.association import AssociationRead
+from app.services.attacks import enrich_attack
 from app.services.base import BaseService
 
 
@@ -22,48 +28,14 @@ class CardService(BaseService[Card, CardCreate]):
     lookup_str_field = "name"
     has_handle = True
     
-    def _get_strengths(self, first_element, second_element) -> list[int] | None:
-        """Calculate card strengths based on both elements."""
-        strengths = set()
-        if first_element and first_element.strengths:
-            strengths.update(first_element.strengths)
-        if second_element and second_element.strengths:
-            strengths.update(second_element.strengths)
-        return list(strengths) if strengths else None
-    
-    def _get_weaknesses(self, first_element, second_element) -> list[int] | None:
-        """Calculate card weaknesses based on both elements."""
-        weaknesses = set()
-        if first_element and first_element.weaknesses:
-            weaknesses.update(first_element.weaknesses)
-        if second_element and second_element.weaknesses:
-            weaknesses.update(second_element.weaknesses)
-        return list(weaknesses) if weaknesses else None
-    
-    def _enrich_attack(self, attack) -> AttackReadWithElement | None:
-        """Convert attack to AttackReadWithElement."""
-        if not attack:
-            return None
-        
-        element_read = ElementRead.model_validate(attack.element) if attack.element else None
-        
-        return AttackReadWithElement(
-            id=attack.id,
-            created_at=attack.created_at,
-            code=attack.code,
-            name=attack.name,
-            handle=attack.handle,
-            description=attack.description,
-            damage=attack.damage,
-            type=attack.type,
-            element_id=attack.element_id,
-            element=element_read,
-            dice_rolls=attack.dice_rolls,
-            necessary_force=attack.necessary_force,
-            effect=attack.effect,
-            strengths=attack.element.strengths if attack.element else None,
-            weaknesses=attack.element.weaknesses if attack.element else None,
-        )
+    @staticmethod
+    def _aggregate_element_property(first_element, second_element, prop: str) -> list[int] | None:
+        """Aggregate an element property (strengths/weaknesses) from both elements."""
+        values = set()
+        for elem in (first_element, second_element):
+            if elem and (attr_val := getattr(elem, prop, None)):
+                values.update(attr_val)
+        return list(values) if values else None
     
     def _to_card_read(self, card: Card) -> CardRead:
         """Convert Card to CardRead schema."""
@@ -136,14 +108,14 @@ class CardService(BaseService[Card, CardCreate]):
             second_element=ElementRead.model_validate(card.second_element) if card.second_element else None,
             type=TypeRead.model_validate(card.type) if card.type else None,
             character=CharacterRead.model_validate(card.character) if card.character else None,
-            first_attack=self._enrich_attack(card.first_attack),
-            second_attack=self._enrich_attack(card.second_attack),
+            first_attack=enrich_attack(card.first_attack),
+            second_attack=enrich_attack(card.second_attack),
             ability=AbilityRead.model_validate(card.ability) if card.ability else None,
             association=AssociationRead.model_validate(card.association) if card.association else None,
             is_evolution=is_evolution_read,
             next_evolutions=next_evolutions_read,
-            strengths=self._get_strengths(card.first_element, card.second_element),
-            weaknesses=self._get_weaknesses(card.first_element, card.second_element),
+            strengths=self._aggregate_element_property(card.first_element, card.second_element, "strengths"),
+            weaknesses=self._aggregate_element_property(card.first_element, card.second_element, "weaknesses"),
         )
     
     def get_all_enriched(self) -> list[CardReadWithRelations]:

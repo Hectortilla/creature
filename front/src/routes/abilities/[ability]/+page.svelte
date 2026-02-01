@@ -2,7 +2,7 @@
     import type { Ability, Creature } from "$lib/types";
     import { onMount } from 'svelte';
     import { goto } from "$app/navigation";
-    import { deleteAbilityAbilitiesAbilityIdDelete } from '$lib/api';
+    import { deleteAbilitiesItemIdDelete } from '$lib/api';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';
@@ -44,7 +44,7 @@
 
     const handleDeleteAbility = async () => {
         if (!ability) return;
-        await deleteAbilityAbilitiesAbilityIdDelete({ path: { ability_id: ability.id } });
+        await deleteAbilitiesItemIdDelete({ path: { item_id: ability.id } });
         goto('/abilities');
 	};
 

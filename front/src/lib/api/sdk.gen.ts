@@ -11,76 +11,70 @@ import type {
   AddCardToDeckDecksDeckIdCardsCardIdPostData,
   AddCardToDeckDecksDeckIdCardsCardIdPostErrors,
   AddCardToDeckDecksDeckIdCardsCardIdPostResponses,
-  CreateAbilityAbilitiesPostData,
-  CreateAbilityAbilitiesPostErrors,
-  CreateAbilityAbilitiesPostResponses,
-  CreateAssociationAssociationsPostData,
-  CreateAssociationAssociationsPostErrors,
-  CreateAssociationAssociationsPostResponses,
+  CreateAbilitiesPostData,
+  CreateAbilitiesPostErrors,
+  CreateAbilitiesPostResponses,
+  CreateAssociationsPostData,
+  CreateAssociationsPostErrors,
+  CreateAssociationsPostResponses,
   CreateAttackAttacksPostData,
   CreateAttackAttacksPostErrors,
   CreateAttackAttacksPostResponses,
   CreateCardCardsPostData,
   CreateCardCardsPostErrors,
   CreateCardCardsPostResponses,
-  CreateCharacterCharactersPostData,
-  CreateCharacterCharactersPostErrors,
-  CreateCharacterCharactersPostResponses,
+  CreateCharactersPostData,
+  CreateCharactersPostErrors,
+  CreateCharactersPostResponses,
   CreateDeckDecksPostData,
   CreateDeckDecksPostErrors,
   CreateDeckDecksPostResponses,
-  CreateElementElementsPostData,
-  CreateElementElementsPostErrors,
-  CreateElementElementsPostResponses,
-  CreateTypeTypesPostData,
-  CreateTypeTypesPostErrors,
-  CreateTypeTypesPostResponses,
-  DeleteAbilityAbilitiesAbilityIdDeleteData,
-  DeleteAbilityAbilitiesAbilityIdDeleteErrors,
-  DeleteAbilityAbilitiesAbilityIdDeleteResponses,
-  DeleteAssociationAssociationsAssociationIdDeleteData,
-  DeleteAssociationAssociationsAssociationIdDeleteErrors,
-  DeleteAssociationAssociationsAssociationIdDeleteResponses,
+  CreateElementsPostData,
+  CreateElementsPostErrors,
+  CreateElementsPostResponses,
+  CreateTypesPostData,
+  CreateTypesPostErrors,
+  CreateTypesPostResponses,
+  DeleteAbilitiesItemIdDeleteData,
+  DeleteAbilitiesItemIdDeleteErrors,
+  DeleteAbilitiesItemIdDeleteResponses,
+  DeleteAssociationsItemIdDeleteData,
+  DeleteAssociationsItemIdDeleteErrors,
+  DeleteAssociationsItemIdDeleteResponses,
   DeleteAttackAttacksAttackIdDeleteData,
   DeleteAttackAttacksAttackIdDeleteErrors,
   DeleteAttackAttacksAttackIdDeleteResponses,
   DeleteCardCardsCardIdDeleteData,
   DeleteCardCardsCardIdDeleteErrors,
   DeleteCardCardsCardIdDeleteResponses,
-  DeleteCharacterCharactersCharacterIdDeleteData,
-  DeleteCharacterCharactersCharacterIdDeleteErrors,
-  DeleteCharacterCharactersCharacterIdDeleteResponses,
+  DeleteCharactersItemIdDeleteData,
+  DeleteCharactersItemIdDeleteErrors,
+  DeleteCharactersItemIdDeleteResponses,
   DeleteDeckDecksDeckIdDeleteData,
   DeleteDeckDecksDeckIdDeleteErrors,
   DeleteDeckDecksDeckIdDeleteResponses,
-  DeleteElementElementsElementIdDeleteData,
-  DeleteElementElementsElementIdDeleteErrors,
-  DeleteElementElementsElementIdDeleteResponses,
-  DeleteTypeTypesTypeIdDeleteData,
-  DeleteTypeTypesTypeIdDeleteErrors,
-  DeleteTypeTypesTypeIdDeleteResponses,
-  GetAbilityAbilitiesValueGetData,
-  GetAbilityAbilitiesValueGetErrors,
-  GetAbilityAbilitiesValueGetResponses,
-  GetAllAbilitiesAbilitiesGetData,
-  GetAllAbilitiesAbilitiesGetResponses,
-  GetAllAssociationsAssociationsGetData,
-  GetAllAssociationsAssociationsGetResponses,
+  DeleteElementsItemIdDeleteData,
+  DeleteElementsItemIdDeleteErrors,
+  DeleteElementsItemIdDeleteResponses,
+  DeleteTypesItemIdDeleteData,
+  DeleteTypesItemIdDeleteErrors,
+  DeleteTypesItemIdDeleteResponses,
+  GetAllAbilitiesGetData,
+  GetAllAbilitiesGetResponses,
+  GetAllAssociationsGetData,
+  GetAllAssociationsGetResponses,
   GetAllAttacksAttacksGetData,
   GetAllAttacksAttacksGetResponses,
   GetAllCardsCardsGetData,
   GetAllCardsCardsGetResponses,
-  GetAllCharactersCharactersGetData,
-  GetAllCharactersCharactersGetResponses,
+  GetAllCharactersGetData,
+  GetAllCharactersGetResponses,
   GetAllDecksDecksGetData,
   GetAllDecksDecksGetResponses,
-  GetAllElementsElementsGetData,
-  GetAllElementsElementsGetResponses,
-  GetAllTypesTypesGetData,
-  GetAllTypesTypesGetResponses,
-  GetAssociationAssociationsValueGetData,
-  GetAssociationAssociationsValueGetErrors,
-  GetAssociationAssociationsValueGetResponses,
+  GetAllElementsGetData,
+  GetAllElementsGetResponses,
+  GetAllTypesGetData,
+  GetAllTypesGetResponses,
   GetAttackAttacksValueGetData,
   GetAttackAttacksValueGetErrors,
   GetAttackAttacksValueGetResponses,
@@ -96,20 +90,26 @@ import type {
   GetCardsByAttackCardsByAttackAttackCodeGetData,
   GetCardsByAttackCardsByAttackAttackCodeGetErrors,
   GetCardsByAttackCardsByAttackAttackCodeGetResponses,
-  GetCharacterCharactersValueGetData,
-  GetCharacterCharactersValueGetErrors,
-  GetCharacterCharactersValueGetResponses,
   GetDeckDecksDeckIdGetData,
   GetDeckDecksDeckIdGetErrors,
   GetDeckDecksDeckIdGetResponses,
   GetDeckSummariesDecksSummariesGetData,
   GetDeckSummariesDecksSummariesGetResponses,
-  GetElementElementsValueGetData,
-  GetElementElementsValueGetErrors,
-  GetElementElementsValueGetResponses,
-  GetTypeTypesValueGetData,
-  GetTypeTypesValueGetErrors,
-  GetTypeTypesValueGetResponses,
+  GetOneAbilitiesValueGetData,
+  GetOneAbilitiesValueGetErrors,
+  GetOneAbilitiesValueGetResponses,
+  GetOneAssociationsValueGetData,
+  GetOneAssociationsValueGetErrors,
+  GetOneAssociationsValueGetResponses,
+  GetOneCharactersValueGetData,
+  GetOneCharactersValueGetErrors,
+  GetOneCharactersValueGetResponses,
+  GetOneElementsValueGetData,
+  GetOneElementsValueGetErrors,
+  GetOneElementsValueGetResponses,
+  GetOneTypesValueGetData,
+  GetOneTypesValueGetErrors,
+  GetOneTypesValueGetResponses,
   ListRoomsGameRoomsGetData,
   ListRoomsGameRoomsGetResponses,
   LoginForAccessTokenAuthTokenPostData,
@@ -260,15 +260,15 @@ export const readUsersMeAuthMeGet = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Get All Elements
+ * Get All
  *
- * Get all elements.
+ * Get all records.
  */
-export const getAllElementsElementsGet = <ThrowOnError extends boolean = false>(
-  options?: Options<GetAllElementsElementsGetData, ThrowOnError>,
+export const getAllElementsGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAllElementsGetData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    GetAllElementsElementsGetResponses,
+    GetAllElementsGetResponses,
     unknown,
     ThrowOnError
   >({
@@ -278,16 +278,16 @@ export const getAllElementsElementsGet = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Create Element
+ * Create
  *
- * Create a new element.
+ * Create a new record.
  */
-export const createElementElementsPost = <ThrowOnError extends boolean = false>(
-  options: Options<CreateElementElementsPostData, ThrowOnError>,
+export const createElementsPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateElementsPostData, ThrowOnError>,
 ) =>
   (options.client ?? client).post<
-    CreateElementElementsPostResponses,
-    CreateElementElementsPostErrors,
+    CreateElementsPostResponses,
+    CreateElementsPostErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -300,18 +300,16 @@ export const createElementElementsPost = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Get Element
+ * Get One
  *
- * Get element by ID or label.
+ * Get record by ID or lookup field.
  */
-export const getElementElementsValueGet = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<GetElementElementsValueGetData, ThrowOnError>,
+export const getOneElementsValueGet = <ThrowOnError extends boolean = false>(
+  options: Options<GetOneElementsValueGetData, ThrowOnError>,
 ) =>
   (options.client ?? client).get<
-    GetElementElementsValueGetResponses,
-    GetElementElementsValueGetErrors,
+    GetOneElementsValueGetResponses,
+    GetOneElementsValueGetErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -320,35 +318,35 @@ export const getElementElementsValueGet = <
   });
 
 /**
- * Delete Element
+ * Delete
  *
- * Delete an element by ID.
+ * Delete a record by ID.
  */
-export const deleteElementElementsElementIdDelete = <
+export const deleteElementsItemIdDelete = <
   ThrowOnError extends boolean = false,
 >(
-  options: Options<DeleteElementElementsElementIdDeleteData, ThrowOnError>,
+  options: Options<DeleteElementsItemIdDeleteData, ThrowOnError>,
 ) =>
   (options.client ?? client).delete<
-    DeleteElementElementsElementIdDeleteResponses,
-    DeleteElementElementsElementIdDeleteErrors,
+    DeleteElementsItemIdDeleteResponses,
+    DeleteElementsItemIdDeleteErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
-    url: "/elements/{element_id}",
+    url: "/elements/{item_id}",
     ...options,
   });
 
 /**
- * Get All Types
+ * Get All
  *
- * Get all types.
+ * Get all records.
  */
-export const getAllTypesTypesGet = <ThrowOnError extends boolean = false>(
-  options?: Options<GetAllTypesTypesGetData, ThrowOnError>,
+export const getAllTypesGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAllTypesGetData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    GetAllTypesTypesGetResponses,
+    GetAllTypesGetResponses,
     unknown,
     ThrowOnError
   >({
@@ -358,16 +356,16 @@ export const getAllTypesTypesGet = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Create Type
+ * Create
  *
- * Create a new type.
+ * Create a new record.
  */
-export const createTypeTypesPost = <ThrowOnError extends boolean = false>(
-  options: Options<CreateTypeTypesPostData, ThrowOnError>,
+export const createTypesPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateTypesPostData, ThrowOnError>,
 ) =>
   (options.client ?? client).post<
-    CreateTypeTypesPostResponses,
-    CreateTypeTypesPostErrors,
+    CreateTypesPostResponses,
+    CreateTypesPostErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -380,16 +378,16 @@ export const createTypeTypesPost = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Get Type
+ * Get One
  *
- * Get type by ID or label.
+ * Get record by ID or lookup field.
  */
-export const getTypeTypesValueGet = <ThrowOnError extends boolean = false>(
-  options: Options<GetTypeTypesValueGetData, ThrowOnError>,
+export const getOneTypesValueGet = <ThrowOnError extends boolean = false>(
+  options: Options<GetOneTypesValueGetData, ThrowOnError>,
 ) =>
   (options.client ?? client).get<
-    GetTypeTypesValueGetResponses,
-    GetTypeTypesValueGetErrors,
+    GetOneTypesValueGetResponses,
+    GetOneTypesValueGetErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -398,37 +396,33 @@ export const getTypeTypesValueGet = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Delete Type
+ * Delete
  *
- * Delete a type by ID.
+ * Delete a record by ID.
  */
-export const deleteTypeTypesTypeIdDelete = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<DeleteTypeTypesTypeIdDeleteData, ThrowOnError>,
+export const deleteTypesItemIdDelete = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteTypesItemIdDeleteData, ThrowOnError>,
 ) =>
   (options.client ?? client).delete<
-    DeleteTypeTypesTypeIdDeleteResponses,
-    DeleteTypeTypesTypeIdDeleteErrors,
+    DeleteTypesItemIdDeleteResponses,
+    DeleteTypesItemIdDeleteErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
-    url: "/types/{type_id}",
+    url: "/types/{item_id}",
     ...options,
   });
 
 /**
- * Get All Characters
+ * Get All
  *
- * Get all characters.
+ * Get all records.
  */
-export const getAllCharactersCharactersGet = <
-  ThrowOnError extends boolean = false,
->(
-  options?: Options<GetAllCharactersCharactersGetData, ThrowOnError>,
+export const getAllCharactersGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAllCharactersGetData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    GetAllCharactersCharactersGetResponses,
+    GetAllCharactersGetResponses,
     unknown,
     ThrowOnError
   >({
@@ -438,18 +432,16 @@ export const getAllCharactersCharactersGet = <
   });
 
 /**
- * Create Character
+ * Create
  *
- * Create a new character.
+ * Create a new record.
  */
-export const createCharacterCharactersPost = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<CreateCharacterCharactersPostData, ThrowOnError>,
+export const createCharactersPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateCharactersPostData, ThrowOnError>,
 ) =>
   (options.client ?? client).post<
-    CreateCharacterCharactersPostResponses,
-    CreateCharacterCharactersPostErrors,
+    CreateCharactersPostResponses,
+    CreateCharactersPostErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -462,18 +454,16 @@ export const createCharacterCharactersPost = <
   });
 
 /**
- * Get Character
+ * Get One
  *
- * Get character by ID or label.
+ * Get record by ID or lookup field.
  */
-export const getCharacterCharactersValueGet = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<GetCharacterCharactersValueGetData, ThrowOnError>,
+export const getOneCharactersValueGet = <ThrowOnError extends boolean = false>(
+  options: Options<GetOneCharactersValueGetData, ThrowOnError>,
 ) =>
   (options.client ?? client).get<
-    GetCharacterCharactersValueGetResponses,
-    GetCharacterCharactersValueGetErrors,
+    GetOneCharactersValueGetResponses,
+    GetOneCharactersValueGetErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -482,25 +472,22 @@ export const getCharacterCharactersValueGet = <
   });
 
 /**
- * Delete Character
+ * Delete
  *
- * Delete a character by ID.
+ * Delete a record by ID.
  */
-export const deleteCharacterCharactersCharacterIdDelete = <
+export const deleteCharactersItemIdDelete = <
   ThrowOnError extends boolean = false,
 >(
-  options: Options<
-    DeleteCharacterCharactersCharacterIdDeleteData,
-    ThrowOnError
-  >,
+  options: Options<DeleteCharactersItemIdDeleteData, ThrowOnError>,
 ) =>
   (options.client ?? client).delete<
-    DeleteCharacterCharactersCharacterIdDeleteResponses,
-    DeleteCharacterCharactersCharacterIdDeleteErrors,
+    DeleteCharactersItemIdDeleteResponses,
+    DeleteCharactersItemIdDeleteErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
-    url: "/characters/{character_id}",
+    url: "/characters/{item_id}",
     ...options,
   });
 
@@ -583,17 +570,15 @@ export const deleteAttackAttacksAttackIdDelete = <
   });
 
 /**
- * Get All Abilities
+ * Get All
  *
- * Get all abilities.
+ * Get all records.
  */
-export const getAllAbilitiesAbilitiesGet = <
-  ThrowOnError extends boolean = false,
->(
-  options?: Options<GetAllAbilitiesAbilitiesGetData, ThrowOnError>,
+export const getAllAbilitiesGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAllAbilitiesGetData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    GetAllAbilitiesAbilitiesGetResponses,
+    GetAllAbilitiesGetResponses,
     unknown,
     ThrowOnError
   >({
@@ -603,18 +588,16 @@ export const getAllAbilitiesAbilitiesGet = <
   });
 
 /**
- * Create Ability
+ * Create
  *
- * Create a new ability.
+ * Create a new record.
  */
-export const createAbilityAbilitiesPost = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<CreateAbilityAbilitiesPostData, ThrowOnError>,
+export const createAbilitiesPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateAbilitiesPostData, ThrowOnError>,
 ) =>
   (options.client ?? client).post<
-    CreateAbilityAbilitiesPostResponses,
-    CreateAbilityAbilitiesPostErrors,
+    CreateAbilitiesPostResponses,
+    CreateAbilitiesPostErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -627,18 +610,16 @@ export const createAbilityAbilitiesPost = <
   });
 
 /**
- * Get Ability
+ * Get One
  *
- * Get ability by code or name.
+ * Get record by ID or lookup field.
  */
-export const getAbilityAbilitiesValueGet = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<GetAbilityAbilitiesValueGetData, ThrowOnError>,
+export const getOneAbilitiesValueGet = <ThrowOnError extends boolean = false>(
+  options: Options<GetOneAbilitiesValueGetData, ThrowOnError>,
 ) =>
   (options.client ?? client).get<
-    GetAbilityAbilitiesValueGetResponses,
-    GetAbilityAbilitiesValueGetErrors,
+    GetOneAbilitiesValueGetResponses,
+    GetOneAbilitiesValueGetErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -647,37 +628,35 @@ export const getAbilityAbilitiesValueGet = <
   });
 
 /**
- * Delete Ability
+ * Delete
  *
- * Delete an ability by ID.
+ * Delete a record by ID.
  */
-export const deleteAbilityAbilitiesAbilityIdDelete = <
+export const deleteAbilitiesItemIdDelete = <
   ThrowOnError extends boolean = false,
 >(
-  options: Options<DeleteAbilityAbilitiesAbilityIdDeleteData, ThrowOnError>,
+  options: Options<DeleteAbilitiesItemIdDeleteData, ThrowOnError>,
 ) =>
   (options.client ?? client).delete<
-    DeleteAbilityAbilitiesAbilityIdDeleteResponses,
-    DeleteAbilityAbilitiesAbilityIdDeleteErrors,
+    DeleteAbilitiesItemIdDeleteResponses,
+    DeleteAbilitiesItemIdDeleteErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
-    url: "/abilities/{ability_id}",
+    url: "/abilities/{item_id}",
     ...options,
   });
 
 /**
- * Get All Associations
+ * Get All
  *
- * Get all associations.
+ * Get all records.
  */
-export const getAllAssociationsAssociationsGet = <
-  ThrowOnError extends boolean = false,
->(
-  options?: Options<GetAllAssociationsAssociationsGetData, ThrowOnError>,
+export const getAllAssociationsGet = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAllAssociationsGetData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    GetAllAssociationsAssociationsGetResponses,
+    GetAllAssociationsGetResponses,
     unknown,
     ThrowOnError
   >({
@@ -687,18 +666,16 @@ export const getAllAssociationsAssociationsGet = <
   });
 
 /**
- * Create Association
+ * Create
  *
- * Create a new association.
+ * Create a new record.
  */
-export const createAssociationAssociationsPost = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<CreateAssociationAssociationsPostData, ThrowOnError>,
+export const createAssociationsPost = <ThrowOnError extends boolean = false>(
+  options: Options<CreateAssociationsPostData, ThrowOnError>,
 ) =>
   (options.client ?? client).post<
-    CreateAssociationAssociationsPostResponses,
-    CreateAssociationAssociationsPostErrors,
+    CreateAssociationsPostResponses,
+    CreateAssociationsPostErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -711,18 +688,18 @@ export const createAssociationAssociationsPost = <
   });
 
 /**
- * Get Association
+ * Get One
  *
- * Get association by code or name.
+ * Get record by ID or lookup field.
  */
-export const getAssociationAssociationsValueGet = <
+export const getOneAssociationsValueGet = <
   ThrowOnError extends boolean = false,
 >(
-  options: Options<GetAssociationAssociationsValueGetData, ThrowOnError>,
+  options: Options<GetOneAssociationsValueGetData, ThrowOnError>,
 ) =>
   (options.client ?? client).get<
-    GetAssociationAssociationsValueGetResponses,
-    GetAssociationAssociationsValueGetErrors,
+    GetOneAssociationsValueGetResponses,
+    GetOneAssociationsValueGetErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
@@ -731,25 +708,22 @@ export const getAssociationAssociationsValueGet = <
   });
 
 /**
- * Delete Association
+ * Delete
  *
- * Delete an association by ID.
+ * Delete a record by ID.
  */
-export const deleteAssociationAssociationsAssociationIdDelete = <
+export const deleteAssociationsItemIdDelete = <
   ThrowOnError extends boolean = false,
 >(
-  options: Options<
-    DeleteAssociationAssociationsAssociationIdDeleteData,
-    ThrowOnError
-  >,
+  options: Options<DeleteAssociationsItemIdDeleteData, ThrowOnError>,
 ) =>
   (options.client ?? client).delete<
-    DeleteAssociationAssociationsAssociationIdDeleteResponses,
-    DeleteAssociationAssociationsAssociationIdDeleteErrors,
+    DeleteAssociationsItemIdDeleteResponses,
+    DeleteAssociationsItemIdDeleteErrors,
     ThrowOnError
   >({
     security: [{ scheme: "bearer", type: "http" }],
-    url: "/associations/{association_id}",
+    url: "/associations/{item_id}",
     ...options,
   });
 

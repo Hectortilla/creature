@@ -2,12 +2,12 @@ import type { PageServerLoad } from './$types';
 import {
 	getAllCardsCardsGet,
 	getCardCardsValueGet,
-	getAllElementsElementsGet,
-	getAllTypesTypesGet,
-	getAllCharactersCharactersGet,
+	getAllElementsGet,
+	getAllTypesGet,
+	getAllCharactersGet,
 	getAllAttacksAttacksGet,
-	getAllAbilitiesAbilitiesGet,
-	getAllAssociationsAssociationsGet
+	getAllAbilitiesGet,
+	getAllAssociationsGet
 } from '$lib/api';
 import { getAuthHeaders } from '$lib/server/auth';
 
@@ -22,12 +22,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const [allCardsRes, cardsRes, elementsRes, typesRes, charactersRes, attacksRes, abilitiesRes, associationsRes] = await Promise.all([
 		getAllCardsCardsGet({ headers }),
 		getCardCardsValueGet({ path: { value: card }, headers }),
-		getAllElementsElementsGet({ headers }),
-		getAllTypesTypesGet({ headers }),
-		getAllCharactersCharactersGet({ headers }),
+		getAllElementsGet({ headers }),
+		getAllTypesGet({ headers }),
+		getAllCharactersGet({ headers }),
 		getAllAttacksAttacksGet({ headers }),
-		getAllAbilitiesAbilitiesGet({ headers }),
-		getAllAssociationsAssociationsGet({ headers })
+		getAllAbilitiesGet({ headers }),
+		getAllAssociationsGet({ headers })
 	]);
 
 	return {

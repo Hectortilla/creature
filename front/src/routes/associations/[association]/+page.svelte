@@ -2,7 +2,7 @@
     import type { Association, Creature } from "$lib/types";
     import { onMount } from 'svelte';
     import { goto } from "$app/navigation";
-    import { deleteAssociationAssociationsAssociationIdDelete } from '$lib/api';
+    import { deleteAssociationsItemIdDelete } from '$lib/api';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';
@@ -31,7 +31,7 @@
 
     const handleDeleteAssociation = async () => {
         if (!association) return;
-        await deleteAssociationAssociationsAssociationIdDelete({ path: { association_id: association.id } });
+        await deleteAssociationsItemIdDelete({ path: { item_id: association.id } });
         goto('/associations');
 	};
 

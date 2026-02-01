@@ -1489,53 +1489,53 @@ export type ReadUsersMeAuthMeGetResponses = {
 export type ReadUsersMeAuthMeGetResponse =
   ReadUsersMeAuthMeGetResponses[keyof ReadUsersMeAuthMeGetResponses];
 
-export type GetAllElementsElementsGetData = {
+export type GetAllElementsGetData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/elements";
 };
 
-export type GetAllElementsElementsGetResponses = {
+export type GetAllElementsGetResponses = {
   /**
-   * Response Get All Elements Elements Get
+   * Response Get All Elements Get
    *
    * Successful Response
    */
   200: Array<ElementRead>;
 };
 
-export type GetAllElementsElementsGetResponse =
-  GetAllElementsElementsGetResponses[keyof GetAllElementsElementsGetResponses];
+export type GetAllElementsGetResponse =
+  GetAllElementsGetResponses[keyof GetAllElementsGetResponses];
 
-export type CreateElementElementsPostData = {
+export type CreateElementsPostData = {
   body: ElementCreate;
   path?: never;
   query?: never;
   url: "/elements";
 };
 
-export type CreateElementElementsPostErrors = {
+export type CreateElementsPostErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type CreateElementElementsPostError =
-  CreateElementElementsPostErrors[keyof CreateElementElementsPostErrors];
+export type CreateElementsPostError =
+  CreateElementsPostErrors[keyof CreateElementsPostErrors];
 
-export type CreateElementElementsPostResponses = {
+export type CreateElementsPostResponses = {
   /**
    * Successful Response
    */
   201: ElementRead;
 };
 
-export type CreateElementElementsPostResponse =
-  CreateElementElementsPostResponses[keyof CreateElementElementsPostResponses];
+export type CreateElementsPostResponse =
+  CreateElementsPostResponses[keyof CreateElementsPostResponses];
 
-export type GetElementElementsValueGetData = {
+export type GetOneElementsValueGetData = {
   body?: never;
   path: {
     /**
@@ -1547,102 +1547,102 @@ export type GetElementElementsValueGetData = {
   url: "/elements/{value}";
 };
 
-export type GetElementElementsValueGetErrors = {
+export type GetOneElementsValueGetErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type GetElementElementsValueGetError =
-  GetElementElementsValueGetErrors[keyof GetElementElementsValueGetErrors];
+export type GetOneElementsValueGetError =
+  GetOneElementsValueGetErrors[keyof GetOneElementsValueGetErrors];
 
-export type GetElementElementsValueGetResponses = {
+export type GetOneElementsValueGetResponses = {
   /**
    * Successful Response
    */
   200: ElementRead;
 };
 
-export type GetElementElementsValueGetResponse =
-  GetElementElementsValueGetResponses[keyof GetElementElementsValueGetResponses];
+export type GetOneElementsValueGetResponse =
+  GetOneElementsValueGetResponses[keyof GetOneElementsValueGetResponses];
 
-export type DeleteElementElementsElementIdDeleteData = {
+export type DeleteElementsItemIdDeleteData = {
   body?: never;
   path: {
     /**
-     * Element Id
+     * Item Id
      */
-    element_id: number;
+    item_id: number;
   };
   query?: never;
-  url: "/elements/{element_id}";
+  url: "/elements/{item_id}";
 };
 
-export type DeleteElementElementsElementIdDeleteErrors = {
+export type DeleteElementsItemIdDeleteErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type DeleteElementElementsElementIdDeleteError =
-  DeleteElementElementsElementIdDeleteErrors[keyof DeleteElementElementsElementIdDeleteErrors];
+export type DeleteElementsItemIdDeleteError =
+  DeleteElementsItemIdDeleteErrors[keyof DeleteElementsItemIdDeleteErrors];
 
-export type DeleteElementElementsElementIdDeleteResponses = {
+export type DeleteElementsItemIdDeleteResponses = {
   /**
    * Successful Response
    */
   200: unknown;
 };
 
-export type GetAllTypesTypesGetData = {
+export type GetAllTypesGetData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/types";
 };
 
-export type GetAllTypesTypesGetResponses = {
+export type GetAllTypesGetResponses = {
   /**
-   * Response Get All Types Types Get
+   * Response Get All Types Get
    *
    * Successful Response
    */
   200: Array<TypeRead>;
 };
 
-export type GetAllTypesTypesGetResponse =
-  GetAllTypesTypesGetResponses[keyof GetAllTypesTypesGetResponses];
+export type GetAllTypesGetResponse =
+  GetAllTypesGetResponses[keyof GetAllTypesGetResponses];
 
-export type CreateTypeTypesPostData = {
+export type CreateTypesPostData = {
   body: TypeCreate;
   path?: never;
   query?: never;
   url: "/types";
 };
 
-export type CreateTypeTypesPostErrors = {
+export type CreateTypesPostErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type CreateTypeTypesPostError =
-  CreateTypeTypesPostErrors[keyof CreateTypeTypesPostErrors];
+export type CreateTypesPostError =
+  CreateTypesPostErrors[keyof CreateTypesPostErrors];
 
-export type CreateTypeTypesPostResponses = {
+export type CreateTypesPostResponses = {
   /**
    * Successful Response
    */
   201: TypeRead;
 };
 
-export type CreateTypeTypesPostResponse =
-  CreateTypeTypesPostResponses[keyof CreateTypeTypesPostResponses];
+export type CreateTypesPostResponse =
+  CreateTypesPostResponses[keyof CreateTypesPostResponses];
 
-export type GetTypeTypesValueGetData = {
+export type GetOneTypesValueGetData = {
   body?: never;
   path: {
     /**
@@ -1654,102 +1654,102 @@ export type GetTypeTypesValueGetData = {
   url: "/types/{value}";
 };
 
-export type GetTypeTypesValueGetErrors = {
+export type GetOneTypesValueGetErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type GetTypeTypesValueGetError =
-  GetTypeTypesValueGetErrors[keyof GetTypeTypesValueGetErrors];
+export type GetOneTypesValueGetError =
+  GetOneTypesValueGetErrors[keyof GetOneTypesValueGetErrors];
 
-export type GetTypeTypesValueGetResponses = {
+export type GetOneTypesValueGetResponses = {
   /**
    * Successful Response
    */
   200: TypeRead;
 };
 
-export type GetTypeTypesValueGetResponse =
-  GetTypeTypesValueGetResponses[keyof GetTypeTypesValueGetResponses];
+export type GetOneTypesValueGetResponse =
+  GetOneTypesValueGetResponses[keyof GetOneTypesValueGetResponses];
 
-export type DeleteTypeTypesTypeIdDeleteData = {
+export type DeleteTypesItemIdDeleteData = {
   body?: never;
   path: {
     /**
-     * Type Id
+     * Item Id
      */
-    type_id: number;
+    item_id: number;
   };
   query?: never;
-  url: "/types/{type_id}";
+  url: "/types/{item_id}";
 };
 
-export type DeleteTypeTypesTypeIdDeleteErrors = {
+export type DeleteTypesItemIdDeleteErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type DeleteTypeTypesTypeIdDeleteError =
-  DeleteTypeTypesTypeIdDeleteErrors[keyof DeleteTypeTypesTypeIdDeleteErrors];
+export type DeleteTypesItemIdDeleteError =
+  DeleteTypesItemIdDeleteErrors[keyof DeleteTypesItemIdDeleteErrors];
 
-export type DeleteTypeTypesTypeIdDeleteResponses = {
+export type DeleteTypesItemIdDeleteResponses = {
   /**
    * Successful Response
    */
   200: unknown;
 };
 
-export type GetAllCharactersCharactersGetData = {
+export type GetAllCharactersGetData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/characters";
 };
 
-export type GetAllCharactersCharactersGetResponses = {
+export type GetAllCharactersGetResponses = {
   /**
-   * Response Get All Characters Characters Get
+   * Response Get All Characters Get
    *
    * Successful Response
    */
   200: Array<CharacterRead>;
 };
 
-export type GetAllCharactersCharactersGetResponse =
-  GetAllCharactersCharactersGetResponses[keyof GetAllCharactersCharactersGetResponses];
+export type GetAllCharactersGetResponse =
+  GetAllCharactersGetResponses[keyof GetAllCharactersGetResponses];
 
-export type CreateCharacterCharactersPostData = {
+export type CreateCharactersPostData = {
   body: CharacterCreate;
   path?: never;
   query?: never;
   url: "/characters";
 };
 
-export type CreateCharacterCharactersPostErrors = {
+export type CreateCharactersPostErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type CreateCharacterCharactersPostError =
-  CreateCharacterCharactersPostErrors[keyof CreateCharacterCharactersPostErrors];
+export type CreateCharactersPostError =
+  CreateCharactersPostErrors[keyof CreateCharactersPostErrors];
 
-export type CreateCharacterCharactersPostResponses = {
+export type CreateCharactersPostResponses = {
   /**
    * Successful Response
    */
   201: CharacterRead;
 };
 
-export type CreateCharacterCharactersPostResponse =
-  CreateCharacterCharactersPostResponses[keyof CreateCharacterCharactersPostResponses];
+export type CreateCharactersPostResponse =
+  CreateCharactersPostResponses[keyof CreateCharactersPostResponses];
 
-export type GetCharacterCharactersValueGetData = {
+export type GetOneCharactersValueGetData = {
   body?: never;
   path: {
     /**
@@ -1761,49 +1761,49 @@ export type GetCharacterCharactersValueGetData = {
   url: "/characters/{value}";
 };
 
-export type GetCharacterCharactersValueGetErrors = {
+export type GetOneCharactersValueGetErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type GetCharacterCharactersValueGetError =
-  GetCharacterCharactersValueGetErrors[keyof GetCharacterCharactersValueGetErrors];
+export type GetOneCharactersValueGetError =
+  GetOneCharactersValueGetErrors[keyof GetOneCharactersValueGetErrors];
 
-export type GetCharacterCharactersValueGetResponses = {
+export type GetOneCharactersValueGetResponses = {
   /**
    * Successful Response
    */
   200: CharacterRead;
 };
 
-export type GetCharacterCharactersValueGetResponse =
-  GetCharacterCharactersValueGetResponses[keyof GetCharacterCharactersValueGetResponses];
+export type GetOneCharactersValueGetResponse =
+  GetOneCharactersValueGetResponses[keyof GetOneCharactersValueGetResponses];
 
-export type DeleteCharacterCharactersCharacterIdDeleteData = {
+export type DeleteCharactersItemIdDeleteData = {
   body?: never;
   path: {
     /**
-     * Character Id
+     * Item Id
      */
-    character_id: number;
+    item_id: number;
   };
   query?: never;
-  url: "/characters/{character_id}";
+  url: "/characters/{item_id}";
 };
 
-export type DeleteCharacterCharactersCharacterIdDeleteErrors = {
+export type DeleteCharactersItemIdDeleteErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type DeleteCharacterCharactersCharacterIdDeleteError =
-  DeleteCharacterCharactersCharacterIdDeleteErrors[keyof DeleteCharacterCharactersCharacterIdDeleteErrors];
+export type DeleteCharactersItemIdDeleteError =
+  DeleteCharactersItemIdDeleteErrors[keyof DeleteCharactersItemIdDeleteErrors];
 
-export type DeleteCharacterCharactersCharacterIdDeleteResponses = {
+export type DeleteCharactersItemIdDeleteResponses = {
   /**
    * Successful Response
    */
@@ -1917,53 +1917,53 @@ export type DeleteAttackAttacksAttackIdDeleteResponses = {
   200: unknown;
 };
 
-export type GetAllAbilitiesAbilitiesGetData = {
+export type GetAllAbilitiesGetData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/abilities";
 };
 
-export type GetAllAbilitiesAbilitiesGetResponses = {
+export type GetAllAbilitiesGetResponses = {
   /**
-   * Response Get All Abilities Abilities Get
+   * Response Get All Abilities Get
    *
    * Successful Response
    */
   200: Array<AbilityRead>;
 };
 
-export type GetAllAbilitiesAbilitiesGetResponse =
-  GetAllAbilitiesAbilitiesGetResponses[keyof GetAllAbilitiesAbilitiesGetResponses];
+export type GetAllAbilitiesGetResponse =
+  GetAllAbilitiesGetResponses[keyof GetAllAbilitiesGetResponses];
 
-export type CreateAbilityAbilitiesPostData = {
+export type CreateAbilitiesPostData = {
   body: AbilityCreate;
   path?: never;
   query?: never;
   url: "/abilities";
 };
 
-export type CreateAbilityAbilitiesPostErrors = {
+export type CreateAbilitiesPostErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type CreateAbilityAbilitiesPostError =
-  CreateAbilityAbilitiesPostErrors[keyof CreateAbilityAbilitiesPostErrors];
+export type CreateAbilitiesPostError =
+  CreateAbilitiesPostErrors[keyof CreateAbilitiesPostErrors];
 
-export type CreateAbilityAbilitiesPostResponses = {
+export type CreateAbilitiesPostResponses = {
   /**
    * Successful Response
    */
   201: AbilityRead;
 };
 
-export type CreateAbilityAbilitiesPostResponse =
-  CreateAbilityAbilitiesPostResponses[keyof CreateAbilityAbilitiesPostResponses];
+export type CreateAbilitiesPostResponse =
+  CreateAbilitiesPostResponses[keyof CreateAbilitiesPostResponses];
 
-export type GetAbilityAbilitiesValueGetData = {
+export type GetOneAbilitiesValueGetData = {
   body?: never;
   path: {
     /**
@@ -1975,102 +1975,102 @@ export type GetAbilityAbilitiesValueGetData = {
   url: "/abilities/{value}";
 };
 
-export type GetAbilityAbilitiesValueGetErrors = {
+export type GetOneAbilitiesValueGetErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type GetAbilityAbilitiesValueGetError =
-  GetAbilityAbilitiesValueGetErrors[keyof GetAbilityAbilitiesValueGetErrors];
+export type GetOneAbilitiesValueGetError =
+  GetOneAbilitiesValueGetErrors[keyof GetOneAbilitiesValueGetErrors];
 
-export type GetAbilityAbilitiesValueGetResponses = {
+export type GetOneAbilitiesValueGetResponses = {
   /**
    * Successful Response
    */
   200: AbilityRead;
 };
 
-export type GetAbilityAbilitiesValueGetResponse =
-  GetAbilityAbilitiesValueGetResponses[keyof GetAbilityAbilitiesValueGetResponses];
+export type GetOneAbilitiesValueGetResponse =
+  GetOneAbilitiesValueGetResponses[keyof GetOneAbilitiesValueGetResponses];
 
-export type DeleteAbilityAbilitiesAbilityIdDeleteData = {
+export type DeleteAbilitiesItemIdDeleteData = {
   body?: never;
   path: {
     /**
-     * Ability Id
+     * Item Id
      */
-    ability_id: number;
+    item_id: number;
   };
   query?: never;
-  url: "/abilities/{ability_id}";
+  url: "/abilities/{item_id}";
 };
 
-export type DeleteAbilityAbilitiesAbilityIdDeleteErrors = {
+export type DeleteAbilitiesItemIdDeleteErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type DeleteAbilityAbilitiesAbilityIdDeleteError =
-  DeleteAbilityAbilitiesAbilityIdDeleteErrors[keyof DeleteAbilityAbilitiesAbilityIdDeleteErrors];
+export type DeleteAbilitiesItemIdDeleteError =
+  DeleteAbilitiesItemIdDeleteErrors[keyof DeleteAbilitiesItemIdDeleteErrors];
 
-export type DeleteAbilityAbilitiesAbilityIdDeleteResponses = {
+export type DeleteAbilitiesItemIdDeleteResponses = {
   /**
    * Successful Response
    */
   200: unknown;
 };
 
-export type GetAllAssociationsAssociationsGetData = {
+export type GetAllAssociationsGetData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/associations";
 };
 
-export type GetAllAssociationsAssociationsGetResponses = {
+export type GetAllAssociationsGetResponses = {
   /**
-   * Response Get All Associations Associations Get
+   * Response Get All Associations Get
    *
    * Successful Response
    */
   200: Array<AssociationRead>;
 };
 
-export type GetAllAssociationsAssociationsGetResponse =
-  GetAllAssociationsAssociationsGetResponses[keyof GetAllAssociationsAssociationsGetResponses];
+export type GetAllAssociationsGetResponse =
+  GetAllAssociationsGetResponses[keyof GetAllAssociationsGetResponses];
 
-export type CreateAssociationAssociationsPostData = {
+export type CreateAssociationsPostData = {
   body: AssociationCreate;
   path?: never;
   query?: never;
   url: "/associations";
 };
 
-export type CreateAssociationAssociationsPostErrors = {
+export type CreateAssociationsPostErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type CreateAssociationAssociationsPostError =
-  CreateAssociationAssociationsPostErrors[keyof CreateAssociationAssociationsPostErrors];
+export type CreateAssociationsPostError =
+  CreateAssociationsPostErrors[keyof CreateAssociationsPostErrors];
 
-export type CreateAssociationAssociationsPostResponses = {
+export type CreateAssociationsPostResponses = {
   /**
    * Successful Response
    */
   201: AssociationRead;
 };
 
-export type CreateAssociationAssociationsPostResponse =
-  CreateAssociationAssociationsPostResponses[keyof CreateAssociationAssociationsPostResponses];
+export type CreateAssociationsPostResponse =
+  CreateAssociationsPostResponses[keyof CreateAssociationsPostResponses];
 
-export type GetAssociationAssociationsValueGetData = {
+export type GetOneAssociationsValueGetData = {
   body?: never;
   path: {
     /**
@@ -2082,49 +2082,49 @@ export type GetAssociationAssociationsValueGetData = {
   url: "/associations/{value}";
 };
 
-export type GetAssociationAssociationsValueGetErrors = {
+export type GetOneAssociationsValueGetErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type GetAssociationAssociationsValueGetError =
-  GetAssociationAssociationsValueGetErrors[keyof GetAssociationAssociationsValueGetErrors];
+export type GetOneAssociationsValueGetError =
+  GetOneAssociationsValueGetErrors[keyof GetOneAssociationsValueGetErrors];
 
-export type GetAssociationAssociationsValueGetResponses = {
+export type GetOneAssociationsValueGetResponses = {
   /**
    * Successful Response
    */
   200: AssociationRead;
 };
 
-export type GetAssociationAssociationsValueGetResponse =
-  GetAssociationAssociationsValueGetResponses[keyof GetAssociationAssociationsValueGetResponses];
+export type GetOneAssociationsValueGetResponse =
+  GetOneAssociationsValueGetResponses[keyof GetOneAssociationsValueGetResponses];
 
-export type DeleteAssociationAssociationsAssociationIdDeleteData = {
+export type DeleteAssociationsItemIdDeleteData = {
   body?: never;
   path: {
     /**
-     * Association Id
+     * Item Id
      */
-    association_id: number;
+    item_id: number;
   };
   query?: never;
-  url: "/associations/{association_id}";
+  url: "/associations/{item_id}";
 };
 
-export type DeleteAssociationAssociationsAssociationIdDeleteErrors = {
+export type DeleteAssociationsItemIdDeleteErrors = {
   /**
    * Validation Error
    */
   422: HttpValidationError;
 };
 
-export type DeleteAssociationAssociationsAssociationIdDeleteError =
-  DeleteAssociationAssociationsAssociationIdDeleteErrors[keyof DeleteAssociationAssociationsAssociationIdDeleteErrors];
+export type DeleteAssociationsItemIdDeleteError =
+  DeleteAssociationsItemIdDeleteErrors[keyof DeleteAssociationsItemIdDeleteErrors];
 
-export type DeleteAssociationAssociationsAssociationIdDeleteResponses = {
+export type DeleteAssociationsItemIdDeleteResponses = {
   /**
    * Successful Response
    */

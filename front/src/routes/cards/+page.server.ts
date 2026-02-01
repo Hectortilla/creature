@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
 import {
 	getAllCardsCardsGet,
-	getAllElementsElementsGet,
-	getAllTypesTypesGet,
-	getAllCharactersCharactersGet
+	getAllElementsGet,
+	getAllTypesGet,
+	getAllCharactersGet
 } from '$lib/api';
 import { getAuthHeaders } from '$lib/server/auth';
 
@@ -12,9 +12,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const [cardsRes, elementsRes, typesRes, charactersRes] = await Promise.all([
 		getAllCardsCardsGet({ headers }),
-		getAllElementsElementsGet({ headers }),
-		getAllTypesTypesGet({ headers }),
-		getAllCharactersCharactersGet({ headers })
+		getAllElementsGet({ headers }),
+		getAllTypesGet({ headers }),
+		getAllCharactersGet({ headers })
 	]);
 
 	return {

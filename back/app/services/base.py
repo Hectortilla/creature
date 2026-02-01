@@ -1,3 +1,9 @@
+"""
+Base Service Classes
+
+Provides common CRUD operations and simple service definitions.
+"""
+
 from abc import ABC
 from typing import TypeVar, Generic, ClassVar
 import re
@@ -57,7 +63,6 @@ class BaseService(ABC, Generic[T, C]):
     def create(self, data: C) -> T:
         """Create a new record."""
         if self.has_handle:
-            # Generate handle from name field
             handle = format_handle(data.name)
             db_obj = self.model(**data.model_dump(), handle=handle)
         else:
@@ -79,4 +84,62 @@ class BaseService(ABC, Generic[T, C]):
             self.db.commit()
             return True
         return False
+
+
+# =============================================================================
+# Simple Service Definitions
+# These services have no custom methods, only configuration.
+# Imports are at module level since these models have no circular deps.
+# =============================================================================
+
+from app.models.db.element import Element
+from app.models.db.type import Type
+from app.models.db.ability import Ability
+from app.models.db.character import Character
+from app.models.db.association import Association
+from app.models.schemas.element import ElementCreate
+from app.models.schemas.type import TypeCreate
+from app.models.schemas.ability import AbilityCreate
+from app.models.schemas.character import CharacterCreate
+from app.models.schemas.association import AssociationCreate
+
+
+class ElementService(BaseService[Element, ElementCreate]):
+    """Service for Element CRUD operations."""
+    model = Element
+    lookup_id_field = "id"
+    lookup_str_field = "label"
+    has_handle = False
+
+
+class TypeService(BaseService[Type, TypeCreate]):
+    """Service for Type CRUD operations."""
+    model = Type
+    lookup_id_field = "id"
+    lookup_str_field = "label"
+    has_handle = False
+
+
+class AbilityService(BaseService[Ability, AbilityCreate]):
+    """Service for Ability CRUD operations."""
+    model = Ability
+    lookup_id_field = "code"
+    lookup_str_field = "name"
+    has_handle = True
+
+
+class CharacterService(BaseService[Character, CharacterCreate]):
+    """Service for Character CRUD operations."""
+    model = Character
+    lookup_id_field = "id"
+    lookup_str_field = "label"
+    has_handle = False
+
+
+class AssociationService(BaseService[Association, AssociationCreate]):
+    """Service for Association CRUD operations."""
+    model = Association
+    lookup_id_field = "code"
+    lookup_str_field = "name"
+    has_handle = True
 
