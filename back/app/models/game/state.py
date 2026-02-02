@@ -1,0 +1,235 @@
+"""
+Game State Models
+
+Core game state models including configuration and full game state.
+"""
+
+from __future__ import annotations
+
+import uuid
+from typing import Annotated, Any, Optional
+from datetime import datetime
+
+from pydantic import Field, SkipValidation, field_serializer
+
+from app.models.game.base import GameBaseModel
+from app.models.game.enums import Zone, TurnPhase, GameStatus
+from app.models.game.card import GameCard
+from app.models.game.player import PlayerState
+from typing import TYPE_CHECKING, Any
+
+from app.models.game.attack import AttackDefinition
+from app.models.game.enums import DamageType
+from app.models.game.element import ElementContribution
+
+if TYPE_CHECKING:
+    from app.websocket.models import GameRoom
+
+
+class GameConfiguration(GameBaseModel):
+    """
+    Configuration options for a game.
+    """
+    deck_size: int = 22
+    initial_draw: int = 4
+    normal_draw: int = 1
+    supporting_zone_size: int = 3
+    attacking_zone_size: int = 2
+
+
+class GameState(GameBaseModel):
+    """
+    Complete state of a game.
+    """
+    game_id: str
+    room:  Annotated["GameRoom", SkipValidation] = Field(
+        exclude=True
+    )
+    cards: dict[str, GameCard] = {}
+    active_player_id: Optional[str] = None
+    turn_number: int = 0
+    current_phase: TurnPhase = TurnPhase.DRAW
+    status: GameStatus = GameStatus.WAITING
+    winner_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    event_log: list[dict[str, Any]] = []
+    pending_action: Optional[str] = None
+    config: GameConfiguration = Field(default_factory=GameConfiguration)
+    
+    @field_serializer('current_phase')
+    def serialize_phase(self, value: TurnPhase) -> str:
+        return value.name
+    
+    @field_serializer('status')
+    def serialize_status(self, value: GameStatus) -> str:
+        return value.name
+    
+    @field_serializer('created_at')
+    def serialize_created_at(self, value: datetime) -> str:
+        return value.isoformat()
+    
+    @field_serializer('cards')
+    def serialize_cards(self, value: dict[str, GameCard]) -> None:
+        """Exclude cards from serialization to prevent frontend access."""
+        return None
+
+    @field_serializer('event_log')
+    def serialize_event_log(self, value: list[dict[str, Any]]) -> str:
+        return None
+    
+    @classmethod
+    def create(cls, room: "GameRoom",
+               config: Optional[GameConfiguration] = None) -> "GameState":
+        """Factory method to create a new game."""
+        instance = cls(
+            game_id=str(uuid.uuid4()),
+            room=room,
+            config=config or GameConfiguration(),
+        )
+        room.state = instance
+        return instance
+    
+    def get_card(self, instance_id: str) -> Optional[GameCard]:
+        """Get a card by instance ID."""
+        return self.cards.get(instance_id)
+    
+    def get_cards_in_zone(self, player_id: str, zone: Zone) -> list[GameCard]:
+        """Get all cards in a specific zone for a player."""
+        zone_state = self.room.players[player_id].zones[zone.name]
+        return [self.cards[cid] for cid in zone_state.card_ids if cid in self.cards]
+    
+    def add_card(self, card: GameCard) -> None:
+        """Add a card to the game."""
+        self.cards[card.instance_id] = card
+        player = self.room.players[card.owner_id]
+        player.zones[card.zone.name].add_card(card.instance_id)
+    
+    def move_card(self, card_id: str, to_zone: Zone) -> bool:
+        """Move a card to a different zone. Returns False if not possible."""
+        card = self.cards.get(card_id)
+        if not card:
+            return False
+        
+        player = self.room.players[card.owner_id]
+        from_zone = card.zone
+        
+        if not player.zones[from_zone.name].remove_card(card_id):
+            return False
+        
+        if not player.zones[to_zone.name].add_card(card_id):
+            player.zones[from_zone.name].add_card(card_id)
+            return False
+        
+        card.zone = to_zone
+        card.turns_in_zone = 0
+        return True
+    
+    def is_first_turn(self, player_id: str) -> bool:
+        """Check if this is the first turn for a player."""
+        return self.room.players[player_id].turn_count == 0
+    
+    def is_second_turn(self, player_id: str) -> bool:
+        """Check if this is the second turn for a player."""
+        return self.room.players[player_id].turn_count == 1
+    
+    def recalculate_elements(self, player_id: str) -> None:
+        """Recalculate element pool for a player based on their active cards."""
+        player = self.room.players[player_id]
+        active_cards = [
+            self.cards[cid] for cid in player.get_active_cards()
+            if cid in self.cards
+        ]
+        player.element_pool.recalculate_from_cards(active_cards)
+    
+    def log_event(self, event_data: dict[str, Any]) -> None:
+        """Add an event to the event log."""
+        event_data["timestamp"] = datetime.utcnow().isoformat()
+        event_data["turn"] = self.turn_number
+        event_data["phase"] = self.current_phase.name
+        self.event_log.append(event_data)
+    
+    def check_game_end(self) -> Optional[str]:
+        """
+        Check if the game has ended.
+        Returns the winner's player_id if game is over, None otherwise.
+        """
+        for player_id, player in self.room.players.items():
+            total_cards = (
+                len(player.zones[Zone.DECK.name].card_ids) +
+                len(player.zones[Zone.HAND.name].card_ids) +
+                len(player.get_active_cards())
+            )
+            if total_cards == 0:
+                # Find opponent
+                for pid, p in self.room.players.items():
+                    if pid != player_id:
+                        return p.player_id
+        return None
+
+    def _setup_deck(self, player: PlayerState) -> None:
+        """Setup a player's deck from card data."""
+        for card in player.deck:
+            card = self._create_game_card(card, player.player_id)
+            card.zone = Zone.DECK
+            self.cards[card.instance_id] = card
+            player.zones[Zone.DECK.name].add_card(card.instance_id)
+
+
+    @staticmethod
+    def _create_game_card(card_data: dict[str, Any], owner_id: str) -> GameCard:
+        """Create a GameCard from card data dict."""
+        attacks = []
+        for attack_data in card_data.get("attacks", []):
+            necessary_force = [
+                ElementContribution(element_id=e["element_id"], amount=e["amount"])
+                for e in attack_data.get("necessary_force", [])
+            ]
+            
+            attack_type = DamageType.PHYSICAL
+            if attack_data.get("type", "").lower() == "magical":
+                attack_type = DamageType.MAGICAL
+            
+            attacks.append(AttackDefinition(
+                attack_id=attack_data["id"],
+                name=attack_data["name"],
+                damage=attack_data.get("damage", 0),
+                type=attack_type,
+                element_id=attack_data.get("element_id", 0),
+                necessary_force=necessary_force,
+                effect=attack_data.get("effect"),
+                description=attack_data.get("description"),
+                dice_rolls=attack_data.get("dice_rolls"),
+            ))
+        
+        element_contribution = []
+        for contrib in card_data.get("element_contribution", []):
+            element_contribution.append(
+                ElementContribution(element_id=contrib["element_id"], amount=contrib["amount"])
+            )
+        
+        # Default: contribute 1 of each element the card has
+        if not element_contribution:
+            for elem_id in card_data.get("element_ids", []):
+                element_contribution.append(ElementContribution(element_id=elem_id, amount=1))
+        
+        return GameCard.create(
+            card_id=card_data["id"],
+            owner_id=owner_id,
+            name=card_data["name"],
+            health=card_data.get("health", 10),
+            physical_defence=card_data.get("physical_defence", 0),
+            magic_defence=card_data.get("magic_defence", 0),
+            element_ids=card_data.get("element_ids", []),
+            element_contribution=element_contribution,
+            attacks=attacks,
+            skill_ids=card_data.get("skill_ids", []),
+            association_ids=card_data.get("association_ids", []),
+            is_evolution=card_data.get("is_evolution", False),
+            evolves_from_id=card_data.get("evolves_from_id"),
+        )
+
+__all__ = [
+    "GameConfiguration",
+    "GameState",
+]
+

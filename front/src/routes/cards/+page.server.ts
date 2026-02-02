@@ -1,19 +1,26 @@
 import type { PageServerLoad } from './$types';
-import * as cardsDB from '$lib/server/cards/database';
-import * as elementsDB from '$lib/server/elements/database';
-import * as typesDB from '$lib/server/types/database';
-import * as charactersDB from '$lib/server/characters/database';
+import {
+	getAllCardsCardsGet,
+	getAllElementsGet,
+	getAllTypesGet,
+	getAllCharactersGet
+} from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async () => {
-    const cards = cardsDB.getAllCards();
-    const elements = elementsDB.getAllElements();
-    const types = typesDB.getAllTypes();
-    const characters = charactersDB.getAllCharacters();
+export const load: PageServerLoad = async ({ locals }) => {
+	const headers = getAuthHeaders(locals);
 
-    return {
-        cards,
-        elements,
-        types,
-        characters
-    };
+	const [cardsRes, elementsRes, typesRes, charactersRes] = await Promise.all([
+		getAllCardsCardsGet({ headers }),
+		getAllElementsGet({ headers }),
+		getAllTypesGet({ headers }),
+		getAllCharactersGet({ headers })
+	]);
+
+	return {
+		cards: cardsRes.data ?? [],
+		elements: elementsRes.data ?? [],
+		types: typesRes.data ?? [],
+		characters: charactersRes.data ?? []
+	};
 };

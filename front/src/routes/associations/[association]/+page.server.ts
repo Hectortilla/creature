@@ -1,18 +1,26 @@
 import type { PageServerLoad } from './$types';
-import * as associationsDB from '$lib/server/associations/database';
-import * as cardsDB from '$lib/server/cards/database';
+import {
+	getOneAssociationsValueGet,
+	getCardsByAssociationCardsByAssociationAssociationCodeGet
+} from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ params }) => {
-    const { association } = params;
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const headers = getAuthHeaders(locals);
+	const { association } = params;
 
-    if (!association) {
-        throw new Error("Ability parameter is missing");
-    }
+	if (!association) {
+		throw new Error("Association parameter is missing");
+	}
 
+	const [associationRes, cardsRes] = await Promise.all([
+		getOneAssociationsValueGet({ path: { value: association }, headers }),
+		getCardsByAssociationCardsByAssociationAssociationCodeGet({ path: { association_code: Number(association) }, headers })
+	]);
 
-    let data: Record<string, unknown> = {};
-	data.association = associationsDB.getAssociation(association);
-    data.cards_use_association = cardsDB.getCardsByAssociation(Number(association));
-
-	return { params, ...data };
+	return {
+		params,
+		association: associationRes.data ?? null,
+		cards_use_association: cardsRes.data ?? []
+	};
 };

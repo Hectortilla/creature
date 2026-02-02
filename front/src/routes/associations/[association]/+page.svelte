@@ -1,7 +1,8 @@
 <script lang="ts">
-    import type { Ability, Creature } from "$lib/types";
+    import type { Association, Creature } from "$lib/types";
     import { onMount } from 'svelte';
     import { goto } from "$app/navigation";
+    import { deleteAssociationsItemIdDelete } from '$lib/api';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';
@@ -14,7 +15,7 @@
             params: {
                 association?: string;
             };
-            association?: Ability;
+            association?: Association | null;
             cards_use_association: Creature[]
         };
     }
@@ -30,11 +31,7 @@
 
     const handleDeleteAssociation = async () => {
         if (!association) return;
-		await fetch('/api/associations', {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ id: association.id })
-		});
+        await deleteAssociationsItemIdDelete({ path: { item_id: association.id } });
         goto('/associations');
 	};
 
@@ -50,7 +47,9 @@
                 <p class="name">{association.name}</p>
             </div>
             <Divider title={false} hasMargins={false}/>
-            <NarrativeText text={association.description}/>
+            {#if association.description}
+                <NarrativeText text={association.description}/>
+            {/if}
             {#if data.cards_use_association.length > 0}
                 <Divider title={`Cartas con esta asociación (${data.cards_use_association.length})`} hasMargins={false}/>
                 <div class="cards-gallery">

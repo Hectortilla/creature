@@ -1,0 +1,13 @@
+from sqlmodel import Field
+from datetime import datetime
+
+from app.models.base.association import AssociationBase
+
+
+class Association(AssociationBase, table=True):
+    __tablename__ = "associations"
+    
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    code: int = Field(unique=True)
+    handle: str = Field(default="", max_length=255)

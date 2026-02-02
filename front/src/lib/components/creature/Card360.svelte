@@ -170,10 +170,10 @@
         {#if showInfo}
             <div class="hover-info">
                 <div class="classification">
-                    {#if data.type}
+                    {#if data.type?.icon}
                         <Icon name={data.type.icon} size={0} isBackground={true} />
                     {/if}
-                    {#if data.character} 
+                    {#if data.character?.icon} 
                         <Icon name={data.character.icon} size={0} isBackground={true} />
                     {/if}
                 </div>
@@ -187,12 +187,12 @@
                             />
                         </div>
                     {/if}
-                    {#if data.second_element && data.second_element !== "null"}
+                    {#if data.second_element}
                         <div class="element">
                             <img
                                 src={data.second_element.icon}
                                 alt={data.second_element.label}
-                                style="--color-element:#{data.first_element.color}"
+                                style="--color-element:#{data.second_element.color}"
                             />
                         </div>
                     {/if}

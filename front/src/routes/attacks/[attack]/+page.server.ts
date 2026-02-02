@@ -1,17 +1,26 @@
 import type { PageServerLoad } from './$types';
-import * as attacksDB from '$lib/server/attacks/database';
-import * as cardsDB from '$lib/server/cards/database';
+import {
+	getAttackAttacksValueGet,
+	getCardsByAttackCardsByAttackAttackCodeGet
+} from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ params }) => {
-    const { attack } = params;
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const headers = getAuthHeaders(locals);
+	const { attack } = params;
 
-    if (!attack) {
-        throw new Error("Attack parameter is missing");
-    }
+	if (!attack) {
+		throw new Error("Attack parameter is missing");
+	}
 
-    let data: Record<string, unknown> = {};
-	data.attack = attacksDB.getAttack(attack);
-    data.cards_use_attack = cardsDB.getCardsByAttack(Number(attack));
+	const [attackRes, cardsRes] = await Promise.all([
+		getAttackAttacksValueGet({ path: { value: attack }, headers }),
+		getCardsByAttackCardsByAttackAttackCodeGet({ path: { attack_code: Number(attack) }, headers })
+	]);
 
-	return { params, ...data };
+	return {
+		params,
+		attack: attackRes.data ?? null,
+		cards_use_attack: cardsRes.data ?? []
+	};
 };

@@ -27,7 +27,7 @@
     <div class="info">
         <p class="name">{data.name}</p>
     </div>
-    {#if showDescription}
+    {#if showDescription && data.description}
         <NarrativeText text={data.description}/>
     {/if}
 </a>

@@ -66,7 +66,11 @@
     let cardHealth = $state(card?.health ?? 0);
     let cardPhysicalDefence = $state(card?.physical_defence ?? 0);
     let cardMagicDefence = $state(card?.magic_defence ?? 0);
-    let cardForces = $state(card?.forces?.map((f: { elementData: { id: number }; value: number }) => ({ element: f.elementData.id, value: f.value })) ?? []);
+    let cardForces = $state(
+        card?.forces && Array.isArray(card.forces) 
+            ? (card.forces as Array<{ elementData: { id: number }; value: number }>).map(f => ({ element: f.elementData.id, value: f.value })) 
+            : []
+    );
     let cardAbility = $state(card?.ability?.code ?? null);
     let cardAssociation = $state(card?.association?.code ?? null);
 
@@ -268,9 +272,11 @@
 
     let dataCardPreview = $derived.by(() => {
         return {
+            id: card?.id ?? 0,
+            created_at: card?.created_at ?? new Date().toISOString(),
             code: cardCode,
             name: cardName,
-            is_evolution: cardIsEvolution ? { code: evolutionNumber } : null,
+            is_evolution: cardIsEvolution ? { id: 0, created_at: '', code: evolutionNumber, name: '', handle: '', description: null, image: null, overlay_image: null, health: null, physical_defence: null, magic_defence: null, forces: null, is_evolution_id: null, first_element_id: null, second_element_id: null, type_id: null, character_id: null, first_attack_id: null, second_attack_id: null, ability_id: null, association_id: null } : null,
             handle: formatHandle(cardName),
             image: cardImagePreview,
             overlay_image: cardOverlayImagePreview,
@@ -278,7 +284,7 @@
             second_element: secondElement,
             type: type,
             character: character,
-        };
+        } as import('$lib/types').Creature;
     });
 
     onMount (() => {

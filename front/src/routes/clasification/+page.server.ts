@@ -1,16 +1,23 @@
 import type { PageServerLoad } from './$types';
-import * as elementsDB from '$lib/server/elements/database';
-import * as typesDB from '$lib/server/types/database';
-import * as charactersDB from '$lib/server/characters/database';
+import {
+	getAllElementsGet,
+	getAllTypesGet,
+	getAllCharactersGet
+} from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async () => {
-	const elements = elementsDB.getAllElements();
-	const types = typesDB.getAllTypes();
-	const characters = charactersDB.getAllCharacters();
+export const load: PageServerLoad = async ({ locals }) => {
+	const headers = getAuthHeaders(locals);
+
+	const [elementsRes, typesRes, charactersRes] = await Promise.all([
+		getAllElementsGet({ headers }),
+		getAllTypesGet({ headers }),
+		getAllCharactersGet({ headers })
+	]);
 
 	return {
-		elements,
-		types,
-		characters
+		elements: elementsRes.data ?? [],
+		types: typesRes.data ?? [],
+		characters: charactersRes.data ?? []
 	};
 };

@@ -139,7 +139,7 @@
                             <img src={element.icon} alt={element.label} style="--color-element:#{element.color}44" />
                             <div class="item">
                                 <p>Debil frente a:</p>
-                                {#each element.weaknesses as weakness}
+                                {#each element.weaknesses ?? [] as weakness}
                                     <img
                                         src={findElement(weakness)?.icon}
                                         alt={findElement(weakness)?.label}
@@ -148,7 +148,7 @@
                             </div>
                             <div class="item">
                                 <p>Fuerte frente a:</p>
-                                {#each element.strengths as strength}
+                                {#each element.strengths ?? [] as strength}
                                     <img
                                         src={findElement(strength)?.icon}
                                         alt={findElement(strength)?.label}

@@ -1,18 +1,26 @@
 import type { PageServerLoad } from './$types';
-import * as abilitiesDB from '$lib/server/abilities/database';
-import * as cardsDB from '$lib/server/cards/database';
+import {
+	getOneAbilitiesValueGet,
+	getCardsByAbilityCardsByAbilityAbilityCodeGet
+} from '$lib/api';
+import { getAuthHeaders } from '$lib/server/auth';
 
-export const load: PageServerLoad = async ({ params }) => {
-    const { ability } = params;
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const headers = getAuthHeaders(locals);
+	const { ability } = params;
 
-    if (!ability) {
-        throw new Error("Ability parameter is missing");
-    }
+	if (!ability) {
+		throw new Error("Ability parameter is missing");
+	}
 
+	const [abilityRes, cardsRes] = await Promise.all([
+		getOneAbilitiesValueGet({ path: { value: ability }, headers }),
+		getCardsByAbilityCardsByAbilityAbilityCodeGet({ path: { ability_code: Number(ability) }, headers })
+	]);
 
-    let data: Record<string, unknown> = {};
-	data.ability = abilitiesDB.getAbility(ability);
-    data.cards_use_ability = cardsDB.getCardsByAbility(Number(ability));
-
-	return { params, ...data };
+	return {
+		params,
+		ability: abilityRes.data ?? null,
+		cards_use_ability: cardsRes.data ?? []
+	};
 };

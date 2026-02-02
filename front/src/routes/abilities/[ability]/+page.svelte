@@ -2,6 +2,7 @@
     import type { Ability, Creature } from "$lib/types";
     import { onMount } from 'svelte';
     import { goto } from "$app/navigation";
+    import { deleteAbilitiesItemIdDelete } from '$lib/api';
 
     // Components
     import NarrativeText from '$lib/components/NarrativeText.svelte';
@@ -18,7 +19,7 @@
             params: {
                 ability?: string;
             };
-            ability?: Ability;
+            ability?: Ability | null;
             cards_use_ability: Creature[]
         };
     }
@@ -43,11 +44,7 @@
 
     const handleDeleteAbility = async () => {
         if (!ability) return;
-		await fetch('/api/abilities', {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ id: ability.id })
-		});
+        await deleteAbilitiesItemIdDelete({ path: { item_id: ability.id } });
         goto('/abilities');
 	};
 
@@ -68,7 +65,9 @@
                 {/if}
             </div>
             <Divider title={false} hasMargins={false}/>
-            <NarrativeText text={ability.description}/>
+            {#if ability.description}
+                <NarrativeText text={ability.description}/>
+            {/if}
             {#if data.cards_use_ability.length > 0}
                 <Divider title={`Cartas con esta habilidad (${data.cards_use_ability.length})`} hasMargins={false}/>
                 <div class="cards-gallery">
