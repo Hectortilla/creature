@@ -1,26 +1,30 @@
 """
 Creature Card Game Engine
 
-Event-driven game engine with clean architecture:
-    Action → Validator → Evaluator → Events → EventLoop → Reducer → New State
+Event-driven game engine with a unidirectional data flow pipeline.
 
-All models use Pydantic BaseModel with model_dump() for serialization.
-Use @computed_field for derived properties that should be included in output.
+Pipeline Architecture:
+┌─────────┐    ┌───────────┐    ┌────────────────┐    ┌───────────┐    ┌─────────┐    ┌───────────┐
+│ Action  │ -> │ Validator │ -> │ EventGenerator │ -> │ EventLoop │ -> │ Reducer │ -> │ New State │
+└─────────┘    └───────────┘    └────────────────┘    └───────────┘    └─────────┘    └───────────┘
+     │              │                   │                   │               │
+     │              │                   │                   │               └── Pure state mutations
+     │              │                   │                   └── Processes events, triggers effects
+     │              │                   └── Transforms action into events with computed data
+     │              └── Validates rules for current game state (returns error or continues)
+     └── Player intent (play card, attack, etc.) - no game logic
 
-Modules:
-- enums: Game enumerations (zones, phases, damage types)
-- actions: Player action definitions (intent only, no computation)
-- events: Game events with computed data
-- event_generator: ActionToEventGenerator - transforms actions into events
-- event_loop: Processes events, triggers effects
-- reducer: Pure functions that apply events to state
-- effects: Effect/skill system
-- elements: Element interaction matrix
-- validators: Rule validation
-- engine: Orchestrates the pipeline
-- router: FastAPI endpoints
+Module Responsibilities:
+- actions.py        : Player action definitions (intent only, no computation)
+- validators.py     : Rule validation against current state
+- event_generator.py: Transforms validated actions into events with computed data
+- event_loop.py     : Processes events sequentially, triggers card effects
+- reducer.py        : Pure functions that apply events to state (only place state mutates)
+- effects.py        : Card effect/skill system triggered by events
+- elements.py       : Element interaction matrix and damage calculations
+- engine.py         : Orchestrates the full pipeline (stateless coordinator)
 
-Game state models are located in app.models.game:
+Game state models are in app.models.game:
     from app.models.game import (
         GameBaseModel, GameCard, PlayerState, ZoneState, GameState,
         ElementContribution, AttackDefinition, AttackResult,
@@ -33,9 +37,13 @@ Usage:
     from app.game.actions import PlayCardAction
     
     engine = get_engine()
-    state = engine.create_game(...)
+    state = engine.create_game(room)
     result = engine.start_game(state)
     state = result.state
+    
+    # Process player action
+    action = PlayCardAction(player_id="...", card_uid="...", target_zone=Zone.ATTACK)
+    result = engine.process_action(state, action)
     
     # Serialize using Pydantic's model_dump()
     state_dict = state.model_dump(mode='json')
