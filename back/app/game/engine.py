@@ -41,6 +41,7 @@ from app.game.actions import (
     AssociationAction,
     EvolutionAction,
     AttackAction,
+    create_action,
 )
 from app.game.validators import RuleValidator
 from app.game.event_generator import ActionToEventGenerator
@@ -250,6 +251,52 @@ class GameEngine:
             return ActionResult(
                 success=False,
                 error=traceback.format_exc(),
+                state=state,
+            )
+    
+    def process_action_from_dict(
+        self,
+        state: GameState,
+        player_id: str,
+        action_data: dict
+    ) -> ActionResult:
+        """
+        Process a player action from a dictionary.
+        
+        Handles action creation from dict and validation that player is in the game.
+        Then delegates to process_action.
+        
+        Args:
+            state: Current game state (NOT modified)
+            player_id: ID of the player taking the action
+            action_data: Dictionary containing action_type and parameters
+        
+        Returns:
+            ActionResult with new state (original state is unchanged)
+        """
+        if player_id not in state.room.players:
+            return ActionResult(
+                success=False,
+                error="Player not in this game",
+                state=state,
+            )
+        
+        action_type = action_data.get("action_type")
+        if not action_type:
+            return ActionResult(
+                success=False,
+                error="Missing action_type",
+                state=state,
+            )
+        
+        try:
+            action_params = {k: v for k, v in action_data.items() if k != "action_type"}
+            action = create_action(action_type, player_id=player_id, **action_params)
+            return self.process_action(state, action)
+        except Exception as e:
+            return ActionResult(
+                success=False,
+                error=str(e),
                 state=state,
             )
 

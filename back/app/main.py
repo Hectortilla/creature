@@ -18,7 +18,7 @@ from app.routers import (
     auth_router,
     decks_router,
 )
-from app.websocket.router import router as websocket_router
+from app.websocket.routes import router as websocket_router
 from app.settings.lifespan import lifespan
 
 # Import models to ensure they're registered with SQLModel

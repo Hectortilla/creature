@@ -8,7 +8,7 @@ import logging
 from pydantic import ValidationError
 
 from app.websocket.connection import ConnectionManager
-from app.websocket.room import RoomManager
+from app.websocket.room_manager import RoomManager
 from app.models.schemas.websocket.client import (
     JoinGameMessage,
     ListRoomsMessage,

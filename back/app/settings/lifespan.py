@@ -5,8 +5,8 @@ from broadcaster import Broadcast
 from fastapi import FastAPI
 
 from app.websocket.connection import ConnectionManager
-from app.websocket.room import RoomManager
-from app.websocket.handler import MessageHandler
+from app.websocket.room_manager import RoomManager
+from app.websocket.message_handler import MessageHandler
 from app.settings.config import get_settings
 
 settings = get_settings()
