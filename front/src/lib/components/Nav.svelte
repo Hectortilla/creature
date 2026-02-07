@@ -25,6 +25,7 @@
 		{ href: '/abilities', label: 'Habilidades', subMenu: [] },
 		{ href: '/associations', label: 'Asociaciones', subMenu: [] },
 		{ href: '/decks', label: 'Mazos', subMenu: [] },
+		{ href: '/debug', label: 'Debug', subMenu: [] },
 		{ href: '/game', label: 'Jugar', subMenu: [] },
 	];
 

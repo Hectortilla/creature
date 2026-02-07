@@ -17,6 +17,8 @@
 		"generate": "npm run generate-client && npm run generate-action-metadata"
 	},
 	"devDependencies": {
+		"@babylonjs/core": "^8.50.2",
+		"@babylonjs/inspector": "^8.50.2",
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@hey-api/openapi-ts": "^0.89.2",
