@@ -5,13 +5,15 @@
 
 html,
 body {
-    font-family: variables.$font-main;
-    font-weight: 400;
     text-rendering: geometricPrecision;
-    padding-bottom: functions.rem(40);
+    padding: 0;
     margin: 0;
-    background-color: var(--color-background);
+    background: var(--color-background);
     color: var(--color-text);
+    min-height: 100vh;
+    min-height: 100dvh;
+
+    @include mixins.fontProps("main", 400, 85, normal);
 
     &.no-scroll {
         overflow-y: hidden;
@@ -20,10 +22,6 @@ body {
 
 * {
     box-sizing: border-box;
-}
-
-body {
-    text-rendering: geometricPrecision;
 }
 
 svg {

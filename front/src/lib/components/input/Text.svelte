@@ -3,7 +3,7 @@
     import { fade } from "svelte/transition"
 
     // Icons
-    import refreshIcon from "$lib/icons/refresh.svg?raw"
+    import refreshIcon from "$lib/assets/icons/refresh.svg?raw"
 
     interface Props {
         type: "text" | "textarea";

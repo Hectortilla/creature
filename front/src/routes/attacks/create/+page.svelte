@@ -13,7 +13,7 @@
     import Button from "$lib/components/Button.svelte"
 
     // Icons
-    import diceRollsIcon from "$lib/icons/dice-rolls.svg?raw"
+    import diceRollsIcon from "$lib/assets/icons/dice-rolls.svg?raw"
 
     interface PageProps {
         data: {

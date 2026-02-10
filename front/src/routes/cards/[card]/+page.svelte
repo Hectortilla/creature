@@ -16,9 +16,9 @@
     import CardAssociation from "$lib/components/cards/Association.svelte"
 
     // Icons
-    import healthIcon from "$lib/icons/health.svg?raw"
-    import physicalDefenceIcon from "$lib/icons/physical-type.svg?raw"
-    import magicDefenceIcon from "$lib/icons/magical-type.svg?raw"
+    import healthIcon from "$lib/assets/icons/health.svg?raw"
+    import physicalDefenceIcon from "$lib/assets/icons/physical-type.svg?raw"
+    import magicDefenceIcon from "$lib/assets/icons/magical-type.svg?raw"
 	import NarrativeText from '$lib/components/NarrativeText.svelte';
 
     interface PageProps {

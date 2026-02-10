@@ -5,7 +5,7 @@
     import Button from "$lib/components/Button.svelte";
 
     // Icons
-    import diceIcon from "$lib/icons/dice-rolls.svg?raw";
+    import diceIcon from "$lib/assets/icons/dice-rolls.svg?raw";
 
     let isOpenRollDiceScreen = $state<boolean>(false);
     let diceNumber = $state<number | null>(null);

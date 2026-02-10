@@ -8,7 +8,7 @@
     import Icon from "$lib/components/creature/Icon.svelte";
 
     // Icons
-    import arrowIcon from "$lib/icons/arrow.svg?raw";
+    import arrowIcon from "$lib/assets/icons/arrow.svg?raw";
 
     interface Props {
         label: string;

@@ -89,9 +89,9 @@
 </div>
 
 <style lang="scss">
-	@use '$lib/styles/abstracts/variables' as variables;
-	@use '$lib/styles/abstracts/mixins' as mixins;
-	@use '$lib/styles/abstracts/functions' as functions;
+	@use '../../lib/styles/abstracts/variables' as variables;
+	@use '../../lib/styles/abstracts/mixins' as mixins;
+	@use '../../lib/styles/abstracts/functions' as functions;
 
 	.login-container {
 		width: 100%;

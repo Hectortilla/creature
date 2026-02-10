@@ -8,30 +8,30 @@
     }: PageProps = $props();
 
     // Icons Types
-    import primordial from '$lib/icons/primordial.svg?raw';
-    import warrior from '$lib/icons/warrior.svg?raw';
-    import wizard from '$lib/icons/wizard.svg?raw';
-    import creature from '$lib/icons/creature.svg?raw';
-    import weapon from '$lib/icons/weapon.svg?raw';
-    import object from '$lib/icons/object.svg?raw';
-    import field from '$lib/icons/field.svg?raw';
+    import primordial from '$lib/assets/icons/primordial.svg?raw';
+    import warrior from '$lib/assets/icons/warrior.svg?raw';
+    import wizard from '$lib/assets/icons/wizard.svg?raw';
+    import creature from '$lib/assets/icons/creature.svg?raw';
+    import weapon from '$lib/assets/icons/weapon.svg?raw';
+    import object from '$lib/assets/icons/object.svg?raw';
+    import field from '$lib/assets/icons/field.svg?raw';
 
     // Icons Characters
-    import ancestral from '$lib/icons/ancestral.svg?raw';
-    import elemental from '$lib/icons/elemental.svg?raw';
-    import leyend from '$lib/icons/leyend.svg?raw';
-    import hero from '$lib/icons/hero.svg?raw';
-    import magic from '$lib/icons/magic.svg?raw';
-    import undead from '$lib/icons/undead.svg?raw';
-    import common from '$lib/icons/common.svg?raw';
+    import ancestral from '$lib/assets/icons/ancestral.svg?raw';
+    import elemental from '$lib/assets/icons/elemental.svg?raw';
+    import leyend from '$lib/assets/icons/leyend.svg?raw';
+    import hero from '$lib/assets/icons/hero.svg?raw';
+    import magic from '$lib/assets/icons/magic.svg?raw';
+    import undead from '$lib/assets/icons/undead.svg?raw';
+    import common from '$lib/assets/icons/common.svg?raw';
 
     // Icons Types
-    import physical from "$lib/icons/physical-type.svg?raw";
-    import magical from "$lib/icons/magical-type.svg?raw";
+    import physical from "$lib/assets/icons/physical-type.svg?raw";
+    import magical from "$lib/assets/icons/magical-type.svg?raw";
 
     // Icons others
-    import dice from "$lib/icons/dice-rolls.svg?raw";
-    import health from "$lib/icons/health.svg?raw";
+    import dice from "$lib/assets/icons/dice-rolls.svg?raw";
+    import health from "$lib/assets/icons/health.svg?raw";
 
     type IconName =
         | "primordial"

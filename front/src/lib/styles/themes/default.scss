@@ -4,14 +4,21 @@
 
 .theme-default {
     //-- Base colors
-    --color-background: #{color(base, 200, 18%, 9%)};
+    --color-background: radial-gradient(circle, #{color(base, 200, 24%, 14%)} 0%, #{color(base, 200, 14%, 4%)} 100%);
     --color-text: #{color(base, 100, 30%, 90%)};
 
+    //-- Stylished text
+    --color-stylished-gradient-text: linear-gradient(180deg, #{color(base, 100, 72%, 78%, 1)} 0%, #{color(base, 100, 20%, 45%, 1)} 100%);
+
+    // Icon Mark
+    --color-icon-mark-start: #{color(base, 100, 72%, 78%, 1)};
+    --color-icon-mark-end: #{color(base, 100, 20%, 45%, 1)};
+
     //-- Nav colors
-    --color-nav-active-background: #{color(base, 100, 4%, 28%, .2)};
-    --color-nav-active-light-top: #{color(base, 100, 100%, 80%, .6)};
-    --color-nav-active-light-bottom: #{color(base, 200, 30%, 60%, .2)};
-    --color-nav-active-text-shadow: #{color(base, 200, 26%, 18%)};
+    --color-nav-active-color: #{color(base, 100, 73%, 78%)};
+    --color-nav-dropdown-icon: #{color(base, 100, 73%, 78%)};
+    --color-nav-quick-access-background: #{color(base, 200, 0%, 0%, .4)};
+    --color-nav-quick-access-divider: #{color(base, 200, 42%, 27%)};
     --color-nav-active-point-light: #{color(base, 100, 100%, 60%)};
 
     //-- Input colors
@@ -28,6 +35,8 @@
     --color-input-search-background: #{color(base, 200, 10%, 20%, .84)};
 
     //-- Button
+    --color-button-stylished-background: #{color(base, 100, 42%, 27%)};
+    --color-button-stylished-color: #{color(base, 100, 73%, 86%)};
     --color-button-primary-background: #{color(base, 100, 80%, 50%)};
     --color-button-primary-text: #{color(base, 100, 80%, 10%)};
     --color-button-secondary-background: #{color(base, 100, 80%, 10%)};

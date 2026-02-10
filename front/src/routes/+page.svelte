@@ -1,51 +1,88 @@
 <script lang="ts">
     import type { PageProps } from "./$types";
+    import { parallax } from '$lib/actions/parallax';
 
-    // Components
-    import CreatureCard360 from "$lib/components/creature/Card360.svelte"
+    // Images
+    import logoFill from "$lib/assets/logo/logo-fill.svg?raw"
+    import logoLine from "$lib/assets/logo/logo-line.svg?raw"
 
     let { data }: PageProps = $props();
-    console.log(data);
-
-    /// Creature card
-    let cardContainer = $state<HTMLElement>();
-    let cardContainerPosition = $state(0);
+    $inspect(data);
 
 </script>
 
 <div class="home-container">
-    <div class="last-info">
-        <div class="info">
-            <p>Cartas creadas: {data.cards.length}</p>
-            <p>Ataques creados: {data.attacks.length}</p>
-            <p>Habilidades creadas: {data.abilities.length}</p>
-            <p>Asociaciones creadas: {data.associations.length}</p>
+    <div class="header">
+        <h1 class="title">Alen TCG</h1>
+        <div class="pos-center">
+            <div class="logo">
+                {@html logoFill}
+            </div>
+        </div>
+        
+        <div class="pos-center">
+            <img
+                use:parallax={{ intensity: 25, reverse: false }}
+                src="/images/iso/iso-base.png"
+                alt="iso"
+                draggable="false"
+            />
+        </div>
+        
+        <div class="pos-center">
+            <div class="logo">
+                {@html logoLine}
+            </div>
         </div>
     </div>
 </div>
 
 <style lang="scss">
-    @use "$lib/styles/abstracts/mixins" as mixins;
-	@use "$lib/styles/abstracts/functions" as functions;
+    @use "../lib/styles/abstracts/mixins" as mixins;
+	@use "../lib/styles/abstracts/functions" as functions;
 
     .home-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-
         @include mixins.margins;
 
-        .last-info {
+        .header {
+            position: relative;
             width: 100%;
-            height: auto;
-            padding: functions.rem(20);
-            border-radius: functions.rem(32);
-            //background-color: var(--color-button-secondary-background);
-            grid-column: 1/3;
-            box-shadow:
-                0 functions.rem(2) functions.rem(4) functions.rem(-2) var(--color-input-button-light-top) inset,
-                0 functions.rem(-2) functions.rem(6) functions.rem(1) var(--color-input-button-light-bottom) inset;
+            height: 100vh; // prevent browser
+            height: 100dvh;
+            user-select: none;
 
-            @include mixins.displayFlex(row, 20, flex-start, flex-start, wrap);
+
+            h1 {
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+                position: absolute;
+                top: -1px;
+                left: -1px;
+            }
+
+            .pos-center {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                padding-top: functions.rem(20);
+
+                @include mixins.displayFlex(column, 0, center, center, nowrap);
+            }
+
+            .logo {
+                width: 80%;
+                max-width: functions.rem(1200);
+                height: auto;
+            }
+
+            img {
+                width: 60%;
+                max-width: functions.rem(900);
+                height: auto;
+            }
         }
     }
 </style>

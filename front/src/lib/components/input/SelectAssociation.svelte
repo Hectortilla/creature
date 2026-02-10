@@ -9,7 +9,7 @@
     import InputSearch from "$lib/components/input/Search.svelte"
 
     // Icons
-    import plusIcon from "$lib/icons/plus.svg?raw"
+    import plusIcon from "$lib/assets/icons/plus.svg?raw"
 
     interface Props {
         associations: Association[];

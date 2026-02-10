@@ -3,8 +3,8 @@
     import { fade } from "svelte/transition"
 
     // Icons
-    import searchIcon from "$lib/icons/search.svg?raw"
-    import refreshIcon from "$lib/icons/refresh.svg?raw"
+    import searchIcon from "$lib/assets/icons/search.svg?raw"
+    import refreshIcon from "$lib/assets/icons/refresh.svg?raw"
 
     interface Props {
         placeholder: string,

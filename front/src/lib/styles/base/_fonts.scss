@@ -1,1 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,600;1,600&family=Cormorant:ital,wght@0,300..700;1,300..700&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap');
+/*
+* Open Sans
+* Font: https://fonts.google.com/specimen/Open+Sans
+* Italic: 0-1
+* Weight: 300-800
+* Width: 300-800 (Condensed)
+*/
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&display=swap');
+
+/*
+*  Sinistre Regular
+*  Font: https://www.fontsquirrel.com/fonts/sinistre
+*/
+@font-face {
+    font-family: 'Sinistre';
+    src: url('../../assets/fonts/sinistre-regular-webfont.woff2') format('woff2'),
+         url('../../assets/fonts/sinistre-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
