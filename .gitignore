@@ -130,3 +130,10 @@ wheels/
 .venv
 
 .DS_Store
+
+# Babylon Editor - in front/src/babylon-editor/
+front/src/babylon-editor/node_modules/
+front/src/babylon-editor/.bjseditor/
+front/src/babylon-editor/public/scene/
+front/src/babylon-editor/dist/
+front/src/babylon-editor/electron-packages/

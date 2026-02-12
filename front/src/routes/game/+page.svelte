@@ -1,14 +1,14 @@
 <script lang="ts">
-	import BabylonScene from '$lib/components/BabylonScene.svelte';
+	import BabylonEditorScene from '$lib/components/BabylonEditorScene.svelte';
 </script>
 
 <div class="game-page">
 	<header>
 		<h1>Jugar</h1>
-		<p class="hint">Press <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>I</kbd> to toggle inspector</p>
+		<p class="hint">Press <kbd>Ctrl</kbd> + <kbd>I</kbd> to toggle inspector</p>
 	</header>
 	<div class="scene-wrapper">
-		<BabylonScene />
+		<BabylonEditorScene scenePath="/scene/" sceneFile="example.babylon" />
 	</div>
 </div>
 
