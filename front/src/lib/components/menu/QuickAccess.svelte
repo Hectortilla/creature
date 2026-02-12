@@ -1,106 +1,212 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
-	import { authStore } from '$lib/stores/auth.svelte';
-    import { blur } from 'svelte/transition';
+    import { page } from "$app/state";
+    import { goto } from "$app/navigation";
+    import { afterNavigate } from '$app/navigation';
+    import { onMount } from 'svelte';
+    import { tick } from 'svelte';
+	import { FONT_BASE_SIZE } from "$lib/constants";
 
     // Components
-    import StylishedButton from '$lib/components/buttons/StylishedButton.svelte';
+    import IconButton from "$lib/components/buttons/IconButton.svelte";
+
+    // Icons
+    import Arrow from "$lib/assets/icons/arrow.svg?raw";
+
+    interface Menu {
+        label: string,
+        submenu_label: string,
+        amount_label: string,
+        image: string,
+        path: string,
+    }
+
+    interface Props {
+        menu: Menu[],
+        maxWidth?: number | null;
+    }
+
+    let {
+        menu,
+        maxWidth = null,
+    }: Props = $props();
+
+    let currentMenuIndex = $derived.by(() => {
+        return menu.findIndex((m) => m.path === page.url.pathname);
+    })
+    let ulEl = $state<HTMLElement>();
+    let translateX = $state(0);
+
+    async function correctSelectedPosition() {
+        if (!ulEl) return;
+        await tick();
+
+        const activeLi = ulEl.querySelector('li a.active')?.parentElement as HTMLElement;
+        if (!activeLi) return;
+
+        const viewport = ulEl.parentElement as HTMLElement;
+        if (!viewport) return;
+
+        const viewportWidth = viewport.offsetWidth;
+        const ulWidth = ulEl.scrollWidth;
+
+        const liLeft = activeLi.offsetLeft;
+
+        const viewportStyle = getComputedStyle(viewport);
+
+        const viewportPaddingLeft = parseFloat(viewportStyle.paddingLeft || '0');
+        const viewportPaddingRight = parseFloat(viewportStyle.paddingRight || '0');
+
+        console.log(viewportPaddingRight);
+
+        let target = -liLeft + viewportPaddingRight;
+
+        const maxTranslate = viewportWidth - ulWidth - (viewportPaddingRight + viewportPaddingLeft);
+        if (target < maxTranslate) target = maxTranslate;
+
+        if (target > 0) target = 0;
+
+        console.log('target:', target);
+
+        translateX = target;
+    }
 
 
-    function handleLogout() {
-		authStore.clearAuth();
-		goto('/login');
-	}
+    function changeSubPage(mov: number) {
+        if (currentMenuIndex === -1) return;
+
+        const nextIndex = currentMenuIndex + mov;
+
+        if (nextIndex < 0 || nextIndex >= menu.length) return;
+
+        const nextPath = menu[nextIndex].path;
+
+        if (nextPath === page.url.pathname) return;
+
+        goto(nextPath, { keepFocus: true });
+    }
+
+    onMount(() => {
+        correctSelectedPosition();
+    });
+
+    afterNavigate(() => {
+        correctSelectedPosition();
+    });
 </script>
 
-<div class="quick-access-container">
-    <svg class="reverse" width="100%" height="100%" viewBox="0 0 15 68" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14.0835 34C14.0835 21.2475 9.0176 9.01736 0.000242456 -1.2312e-06L0.000235558 68C9.0176 58.9826 14.0835 46.7525 14.0835 34Z" fill="currentColor"/>
-    </svg>
-    <ul class="quick-access-ul">
-        {#if authStore.isAuthenticated}
-            <li class="quick-access-li">
-                <button class="logout-btn" onclick={handleLogout}>
-                    {authStore.user?.username}
-                </button>
-            </li>
-        {/if}
-        <li class="quick-access-li">
-            <a class="nav-link" href="/attacks/create">Shop</a>
-        </li>
-        <li class="quick-access-li">
-            <StylishedButton
-                label="Play"
-                link="/game"
-            />
-        </li>
-    </ul>
-    <svg width="100%" height="100%" viewBox="0 0 15 68" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14.0835 34C14.0835 21.2475 9.0176 9.01736 0.000242456 -1.2312e-06L0.000235558 68C9.0176 58.9826 14.0835 46.7525 14.0835 34Z" fill="currentColor"/>
-    </svg>
+<div class="collection-quick-menu variables">
+    <div class="menu-items">
+        <IconButton
+            onClick={() => changeSubPage(-1)}
+            rotateIcon={90}
+            isDisabled={currentMenuIndex === 0}
+            ariaLabel={currentMenuIndex === 0 ? 'Disabled': `Go to ${menu[currentMenuIndex - 1].submenu_label}`}
+        >
+            {@html Arrow}
+        </IconButton>
+        <div class="scroll-wrapper" style={`--max-width:${maxWidth ? maxWidth / FONT_BASE_SIZE + 'rem' : 'none'}`}>
+            <ul bind:this={ulEl} style={`transform: translateX(${translateX}px)`}>
+                {#each menu as {submenu_label, path}}
+                    <li>
+                        <a
+                            class:active={page.url.pathname === path}
+                            href={path}
+                        >
+                            {submenu_label}
+                        </a>
+                    </li>
+                {/each}
+            </ul>
+        </div>
+        <IconButton
+            onClick={() => changeSubPage(+1)}
+            rotateIcon={-90}
+            isDisabled={currentMenuIndex === menu.length - 1}
+            ariaLabel={currentMenuIndex === menu.length - 1 ? 'Disabled': `Go to ${menu[currentMenuIndex + 1].submenu_label}`}
+        >
+            {@html Arrow}
+        </IconButton>
+    </div>
 </div>
 
+
 <style lang="scss">
-    @use "../../styles/abstracts/variables" as variables;
-	@use "../../styles/abstracts/mixins" as mixins;
-	@use "../../styles/abstracts/functions" as functions;
+    @use "../../../lib/styles/abstracts/variables" as variables;
+    @use "../../../lib/styles/abstracts/mixins" as mixins;
+	@use "../../../lib/styles/abstracts/functions" as functions;
 
-    .quick-access-container {        
-        height: functions.rem(68);
+    .variables {
+		--padding: #{
+			0
+			functions.rem(variables.$margin-page-desktop)
+		};
+	}
 
-        @include mixins.displayFlex(row, 0, center, center, nowrap);
+    .collection-quick-menu {
+        position: absolute;
+        top: functions.rem(140);
+        left: 0;
+        width: 100%;
+        padding: var(--padding);
+        z-index: 1;
 
-        svg {
-            width: auto;
-            color: var(--color-nav-quick-access-background);
+        .menu-items {
+            @include mixins.displayFlex(row, 0, flex-start, center, nowrap);
 
-            &.reverse {
-                transform: rotate(180deg);
-            }
-        }
+            .scroll-wrapper {
+                width: max-content;
+                max-width: var(--max-width);
+                height: auto;
+                overflow: hidden;
+                padding: 0 functions.rem(18);
 
-        .quick-access-ul {
-            $gap-space: 20;
+                -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+                -webkit-mask-repeat: no-repeat;
+                -webkit-mask-size: 100% 100%;
+                mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+                mask-repeat: no-repeat;
+                mask-size: 100% 100%;
 
-            height: 100%;
-            background-color: var(--color-nav-quick-access-background);
-            padding: functions.rem(8) 0 functions.rem(8) functions.rem(12);
+                ul {
+                    width: max-content;
+                    height: functions.rem(50);
+                    will-change: transform;
 
-            @include mixins.displayFlex(row, $gap-space, center, center);
+                    @include mixins.displayFlex(row, 0, flex-start, baseline, nowrap);
+                    @include mixins.transition(.4s, transform);
 
-            .quick-access-li {
-                position: relative;
+                    li {
+                        position: relative;
+                        height: functions.rem(50);
 
-                &:not(:first-child) {
-                    padding-left: functions.rem($gap-space);
-                }
+                        @include mixins.displayFlex(row, 0, center, center, nowrap);
 
-                a, button {
-                    display: block;
-                    position: relative;
-                    font-size: functions.rem(20);
-                    padding-top: functions.rem(4);
-                    border: none;
-                    cursor: pointer;
-                    
-                    @include mixins.fontProps("title", 400, 100, normal);
-                    @include mixins.transition();
+                        a {
+                            font-size: functions.rem(24);
+                            color: var(--color-submenu-color);
+                            padding: functions.rem(6) functions.rem(10) 0 functions.rem(10);
 
-                    &:hover {
-                        color: var(--color-nav-active-color);
+                            @include mixins.fontProps('title', 400, 100, normal);
+                            @include mixins.transition(.3s);
+                            
+
+                            &:not(.active) {
+                                opacity: .4;
+
+                                &:hover {
+                                    opacity: .6;
+                                }
+                            }
+
+                            &.active {
+                                font-size: functions.rem(32);
+                                opacity: 1;
+                                pointer-events: none;
+
+                                @include mixins.stylishedText();
+                            }
+                        }
                     }
-                }
-
-                &:not(:first-child)::before {
-                    content: "";
-                    position: absolute;
-                    top: 50%;
-                    left: 0;
-                    transform: translateY(-50%);
-                    display: block;
-                    width: 1px;
-                    height: functions.rem(16);
-                    background-color: var(--color-nav-quick-access-divider);
                 }
             }
         }

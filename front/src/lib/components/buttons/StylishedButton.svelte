@@ -12,6 +12,10 @@
         onClick,
     }: Props = $props();
 
+    let bttBgSize = $derived.by(() => {
+        return label.length >= 8 ? 'medium' : 'small';
+    });
+
 </script>
 
 <svelte:element
@@ -24,21 +28,21 @@
 >
     <picture>
         <source 
-            type="image/webp"
-            srcset="
-                /images/button/button-bg.webp 1x,
-                /images/button/button-bg@2x.webp 2x,
-                /images/button/button-bg@3x.webp 3x
-            "
+            type="image/png"
+            srcset={`
+                /images/button/button-bg-${bttBgSize}.webp 1x,
+                /images/button/button-bg-${bttBgSize}@2x.webp 2x,
+                /images/button/button-bg-${bttBgSize}@3x.webp 3x
+            `}
         >
             
         <img 
-            src="/images/button/button-bg.png"
-            srcset="
-                /images/button/button-bg.png 1x,
-                /images/button/button-bg@2x.png 2x,
-                /images/button/button-bg@3x.png 3x
-            "
+            src={`/images/button/button-bg-${bttBgSize}.webp`}
+            srcset={`
+                /images/button/button-bg-${bttBgSize}.webp 1x,
+                /images/button/button-bg-${bttBgSize}@2x.webp 2x,
+                /images/button/button-bg-${bttBgSize}@3x.webp 3x
+            `}
             alt=""
             width="auto"
             height="52"

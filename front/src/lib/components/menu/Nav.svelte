@@ -6,7 +6,7 @@
 
 	// Components
 	import Dropdown from '$lib/components/menu/Dropdown.svelte';
-	import QuickAccess from '$lib/components/menu/QuickAccess.svelte';
+	import Feature from '$lib/components/menu/Feature.svelte';
 
 	interface NavLink {
 		href?: string | null;
@@ -79,7 +79,7 @@
 			{/each}
 		</ul>
 	</div>
-	<QuickAccess />
+	<Feature />
 </nav>
 
 <style lang="scss">

@@ -53,6 +53,7 @@
         position: relative;
         width: var(--size);
         height: var(--size);
+        pointer-events: none;
 
         .selector-mark-icon {
             position: absolute;

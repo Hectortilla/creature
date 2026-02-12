@@ -2,6 +2,7 @@
     import type { PageProps } from "./$types";
 
     // Components
+    import HorizontalScroll from "$lib/components/HorizontalScroll.svelte";
     import CollectionCard from "$lib/components/cards/Collection.svelte";
 
     // Constants
@@ -13,16 +14,18 @@
 </script>
 
 <div class="collection-container">
-    {#each COLLECTION_MENU as { name, path, amount_label, image }, i}
-        <CollectionCard
-            index={i}
-            text={name}
-            amount={data?.[`${amount_label}_amount`] ?? 0}
-            amount_label={amount_label}
-            image={image}
-            link={path}
-        />
-    {/each}
+    <HorizontalScroll>
+        {#each COLLECTION_MENU as { label, path, amount_label, image }, i}
+            <CollectionCard
+                index={i}
+                text={label}
+                amount={data?.[`${amount_label}_amount`] ?? 0}
+                amount_label={amount_label}
+                image={image}
+                link={path}
+            />
+        {/each}
+    </HorizontalScroll>
 </div>
 
 <style lang="scss">
@@ -35,6 +38,7 @@
         width: 100%;
         height: 100vh; // prevent browser
         height: 100dvh;
+        overflow: hidden;
 
         @include mixins.displayFlex(row, 60, center, center, nowrap);
     }

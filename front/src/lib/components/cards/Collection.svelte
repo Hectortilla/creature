@@ -21,7 +21,7 @@
         amount = 0,
         amount_label = "cards",
         image = "cards",
-        link = "/collection/cards",
+        link = "/my-collection/cards",
         onClick,
     }: Props = $props();
 
@@ -98,6 +98,9 @@
 
     .collection-card {
         position: relative;
+        width: 100%;
+        max-width: functions.rem(400);
+        min-width: functions.rem(300);
         opacity: 0;
         cursor: pointer;
 
