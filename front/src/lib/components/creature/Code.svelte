@@ -8,12 +8,13 @@
 
 <div class="code">
     <p class:smaller={code >= 100}>{code}</p>
+    <img src="/images/code-icon.png" alt="">
 </div>
 
 <style lang="scss">
-    @use "$lib/styles/abstracts/variables" as variables;
-    @use "$lib/styles/abstracts/mixins" as mixins;
-	@use "$lib/styles/abstracts/functions" as functions;
+    @use "../../styles/abstracts/variables" as variables;
+    @use "../../styles/abstracts/mixins" as mixins;
+	@use "../../styles/abstracts/functions" as functions;
 
     .code {
         position: relative;
@@ -26,6 +27,10 @@
         @include mixins.displayFlex(row, 0, center, center, nowrap);
 
         &::before {
+            //
+            //
+            display: none;
+            //
             content: "";
             position: absolute;
             top: 50%;
@@ -62,6 +67,13 @@
                 font-size: functions.rem(19);
                 letter-spacing: functions.rem(-1);
             }
+        }
+
+        img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
         }
 
     }

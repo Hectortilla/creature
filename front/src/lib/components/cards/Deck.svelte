@@ -62,9 +62,8 @@
                 <Card360
                     data={cards[0]}
                     key={cards[0].id}
-                    containerPos={0}
-                    allowLink={false}
-                    allowHoverEffect={false}
+                    role="div"
+                    allow360Effect={false}
                     showInfo={false}
                 />
             </div>
@@ -77,9 +76,8 @@
                     <Card360
                         data={card}
                         key={card.id}
-                        containerPos={i}
-                        allowLink={false}
-                        allowHoverEffect={false}
+                        role="div"
+                        allow360Effect={false}
                         showInfo={false}
                     />
                 </div>
@@ -136,6 +134,7 @@
             width: calc(100% - functions.rem(20));
             height: auto;
             transform: scale(.9);
+            perspective: 1000px;
             //overflow: hidden;
 
             .card {
@@ -144,7 +143,7 @@
                 top: 0;
                 left: 0;
                 z-index: var(--index);
-                transform: rotate(0);
+                transform: rotate3d(0, 0, 0, 0);
                 transform-origin: bottom center;
                 pointer-events: none;
 
@@ -168,7 +167,7 @@
             .image-wrapper {
                 .card {
                     opacity: 1;
-                    transform: rotate(calc(var(--rotate-index) * 4deg));
+                    transform: rotate3d(.2, 1, 2, calc(var(--rotate-index) * 6deg));
                 }
             }
 
@@ -189,7 +188,8 @@
 
             .image-wrapper {
                 .card {
-                    transform: rotate(calc(var(--rotate-index) * 8deg));                }
+                    transform: rotate3d(.2, -.2, .4, calc(var(--rotate-index) * 8deg));
+                }
             }
         }
     }

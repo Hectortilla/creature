@@ -140,12 +140,13 @@
                 mask-repeat: no-repeat;
                 mask-position: center;
                 mask-size: cover;
+                perspective: 1000px;
 
                 img {
                     width: 100%;
                     height: auto;
                     display: block;
-                    transform: translateY(functions.rem(-40)) scale(1.02);
+                    transform: translateY(functions.rem(-40)) scale(1.02) rotate3d(1, 1, 1, 6deg);
 
                     @include mixins.transition(.6s);
                 }
@@ -166,7 +167,7 @@
             opacity: 1;
 
             .masked img {
-                transform: translateY(0) scale(1);
+                transform: translateY(0) scale(1) rotate3d(0, 0, 0, 0);
             }
 
             .text-wrapper {
@@ -180,7 +181,7 @@
             outline: none;
 
             .masked img {
-                transform: translateY(functions.rem(-20)) scale(1.02);
+                transform: translateY(functions.rem(-20)) scale(1.02) rotate3d(1, 1, .2, 8deg);
             }
 
             .selector-mark-container {

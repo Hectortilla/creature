@@ -12,6 +12,8 @@
         top?: number;
         smoothFactor?: number;
         showScrollReference?: boolean;
+        height?: number | null;
+        scrollVelocity?: number;
         children?: Snippet;
     }
 
@@ -21,7 +23,9 @@
         top = 0,
         smoothFactor = 1,
         showScrollReference = true,
+        height = null,
         children,
+        scrollVelocity = $bindable(0)
     }: Props = $props();
 
     const TRACK_WIDTH = 100;
@@ -36,6 +40,7 @@
     let scrollPercent = $state(0);
     let barWidth = $state(0)
     let refBarIsLoaded = $state(false);
+    let cardsAreLoaded = $state(false);
 
     function handleWheel(e: WheelEvent) {
         e.preventDefault();
@@ -58,12 +63,15 @@
 
         if (Math.abs(diff) < 0.1) {
             scrollLeft = targetScroll;
+            scrollVelocity = 0;
         } else {
-            scrollLeft += diff * smoothFactorMix;
+            const movement = diff * smoothFactorMix;
+
+            scrollLeft += movement;
+            scrollVelocity = movement;
         }
 
         const maxScroll = wrapperWidth - containerWidth;
-
         scrollPercent = maxScroll ? -scrollLeft / maxScroll : 0;
 
         requestAnimationFrame(animate);
@@ -71,7 +79,6 @@
 
 
     onMount(() => {
-
         setTimeout(() => {
             containerWidth = container.getBoundingClientRect().width;
             wrapperWidth = wrapper.getBoundingClientRect().width;
@@ -93,6 +100,7 @@
 
 <div
     class="horizontal-scroll"
+    style={`height:${height ? height/FONT_BASE_SIZE + 'rem': '100%'}`}
     role="slider"
     aria-valuenow={0}
     tabindex="0"
@@ -103,6 +111,7 @@
         <div
             bind:this={wrapper}
             class="horizontal-wrapper"
+            class:card-animation={cardsAreLoaded}
             style={`
                 transform:translateX(${scrollLeft}px);
                 --gap:${gap / FONT_BASE_SIZE}rem;
@@ -115,7 +124,12 @@
     </div>
 
     {#if showScrollReference && refBarIsLoaded && containerWidth < wrapperWidth}
-        <div transition:fade class="scroll-reference" style={`--reference-width:${TRACK_WIDTH / FONT_BASE_SIZE}rem`}>
+        <div 
+            transition:fade 
+            class="scroll-reference" 
+            class:height={height}
+            style={`--reference-width:${TRACK_WIDTH / FONT_BASE_SIZE}rem`}
+        >
             <div
                 class="scroll-bar"
                 style={`--bar-width:${barWidth}%; margin-left:${scrollPercent * (100 - (barWidth))}%;`}
@@ -130,13 +144,14 @@
 	@use "../styles/abstracts/functions" as functions;
 
     .horizontal-scroll {
+        position: relative;
         width: 100%;
-        height: 100%;
 
         @include mixins.displayFlex(row, 0, flex-start, center, nowrap);
 
         .horizontal-center {
             width: 100%;
+            height: auto;
             min-width: max-content;
 
             @include mixins.displayFlex(row, 0, center, flex-start, nowrap);
@@ -160,11 +175,18 @@
             width: var(--reference-width);
             height: functions.rem(4);
             right: functions.rem(variables.$margin-page-desktop);
-            bottom: functions.rem(variables.$margin-page-desktop);
             background-color: var(--color-scroll-reference-background);
             border-radius: functions.rem(20);
             backdrop-filter: blur(functions.rem(12));
             overflow: hidden;
+
+            &:not(.height) {
+                bottom: functions.rem(variables.$margin-page-desktop);
+            }
+
+            &.height {
+                bottom: 0;
+            }
 
             .scroll-bar {
                 position: relative;

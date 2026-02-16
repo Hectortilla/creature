@@ -57,6 +57,6 @@
 		height: 116vh;
 		object-fit: cover;
 		filter: contrast(1.8);
-		opacity: .4;
+		opacity: .2;
 	}
 </style>

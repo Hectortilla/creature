@@ -1,3 +1,11 @@
-<svg width="107" height="154" viewBox="0 0 107 154" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M0.983887 6C0.983887 2.68629 3.67018 0 6.98389 0H100.984C104.298 0 106.984 2.68629 106.984 6V148C106.984 151.314 104.298 154 100.984 154H6.98389C3.67018 154 0.983887 151.314 0.983887 148V6Z" fill="white"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 745 1040" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,0.001417,-0.000417)">
+        <g transform="matrix(4.166667,0,0,4.166667,0,0)">
+            <g transform="matrix(1,0,0,1,178.58266,8.5041)">
+                <path d="M0,232.441C0,237.138 -3.807,240.945 -8.504,240.945L-170.079,240.945C-174.775,240.945 -178.583,237.138 -178.583,232.441L-178.583,0C-178.583,-4.697 -174.775,-8.504 -170.079,-8.504L-8.504,-8.504C-3.807,-8.504 0,-4.697 0,0L0,232.441Z" style="fill:rgb(176,176,175);fill-rule:nonzero;"/>
+            </g>
+        </g>
+    </g>
 </svg>

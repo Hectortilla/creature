@@ -1,41 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
+	// Constants
+	import { NAV_LINKS } from "$lib/constants";
+
 	// Icons
 	import isoType from '$lib/assets/icons/iso-type.svg?raw';
 
 	// Components
 	import Dropdown from '$lib/components/menu/Dropdown.svelte';
 	import Feature from '$lib/components/menu/Feature.svelte';
-
-	interface NavLink {
-		href?: string | null;
-		label: string;
-		subMenu?: NavLink[] | null;
-	}
-
-	const navLinks:NavLink[] = [
-		{ href: '/my-collection', label: 'My collection' },
-		{ href: '/cards', label: 'Cards & Set'},
-		{ href: '#', label: 'Rewards' },
-		{ href: '#', label: 'How to play' },
-		{ 
-			label: 'Dev',
-			subMenu: [
-				{ href: '/cards/create', label: 'Crear Carta' },
-				{ href: '/attacks/create', label: 'Crear Ataque' },
-				{ href: '/abilities/create', label: 'Crear Habilidad' },
-				{ href: '/associations/create', label: 'Crear Asociación' },
-				{ href: '/cards', label: 'Cartas' },
-				{ href: '/clasification', label: 'Clasificación' },
-				{ href: '/attacks', label: 'Ataques' },
-				{ href: '/abilities', label: 'Habilidades' },
-				{ href: '/associations', label: 'Asociaciones' },
-				{ href: '/decks', label: 'Mazos' },
-				{ href: '/debug', label: 'Debug' },
-			]
-		},
-	];
 
 	let shownIndex = $state<number | null>(null)
 
@@ -54,7 +28,7 @@
 			{@html isoType}
 		</a>
 		<ul class="nav-ul">
-			{#each navLinks as item, i}
+			{#each NAV_LINKS as item, i}
 				<li 
 					class="nav-li" 
 					onmouseenter={() => {showSubItem(i)}} 

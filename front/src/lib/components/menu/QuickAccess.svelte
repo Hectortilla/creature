@@ -194,7 +194,7 @@
                                 opacity: .4;
 
                                 &:hover {
-                                    opacity: .6;
+                                    opacity: .7¡6;
                                 }
                             }
 

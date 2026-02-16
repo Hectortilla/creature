@@ -71,6 +71,7 @@
         height: 100vh; // prevent browser
         height: 100dvh;
         overflow: hidden;
+        perspective: 2000px;
 
         @include mixins.displayFlex(row, 0, center, center, nowrap);
     }

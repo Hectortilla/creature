@@ -26,6 +26,7 @@
     role="button"
     tabindex="0"
     aria-label={ariaLabel}
+    href={link}
     onclick={onClick}
     class:disabled={isDisabled}
     disabled={isDisabled}
