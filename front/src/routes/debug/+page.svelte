@@ -4,31 +4,31 @@
     import { PUBLIC_API_URL } from '$env/static/public';
     import { authStore } from '$lib/stores/auth.svelte';
     import ActionCards from '$lib/components/ActionCards.svelte';
+    import { GameConnection, type ValidAction, type GameMessage, type ActionData } from '$lib/game';
     import type { PageData } from './$types';
-    import type { ActionData } from '$lib/api/types.gen';
     import type { DeckReadSummary, RoomSummary } from '$lib/types';
 
     let { data }: { data: PageData } = $props();
     
-    let messages: Record<string, any>[] = $state([]);
-    let promptText = $state('');
-    let ws: WebSocket | null = $state(null);
-    let connected = $state(false);
-    let connectionError = $state<string | null>(null);
+    // Lobby state (stays in this component)
     let decks = $state<DeckReadSummary[]>(data.decks ?? []);
     let rooms = $state<RoomSummary[]>(data.rooms ?? []);
     let selectedDeckId = $state<number | null>(null);
     let selectedRoomId = $state<string | null>(null);
     let createNewRoom = $state(false);
     let loadingRooms = $state(false);
-    interface ValidAction {
-        action: string;
-        player_id: string;
-        [key: string]: unknown;
-    }
-    
+    let connectionError = $state<string | null>(null);
+
+    // Game state (bridged from GameConnection)
+    let ws: WebSocket | null = $state(null);
+    let gameConnection: GameConnection | null = $state(null);
+    let connected = $state(false);
+    let messages = $state<GameMessage[]>([]);
     let validActions = $state<ValidAction[]>([]);
     let actionCardsCollapsed = $state(false);
+
+    // Debug input
+    let promptText = $state('');
 
     // Convert http(s):// to ws(s):// for WebSocket connection
     const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/$/, '');
@@ -47,8 +47,8 @@
             });
 
             if (response.ok) {
-                const data = await response.json();
-                rooms = data.rooms || [];
+                const fetchedData = await response.json();
+                rooms = fetchedData.rooms || [];
             }
         } catch (error) {
             console.error('Error fetching rooms:', error);
@@ -58,7 +58,7 @@
     }
 
     function connect() {
-        if (!authStore.isAuthenticated) {
+        if (!authStore.isAuthenticated || !authStore.user) {
             connectionError = 'No authentication token. Please log in.';
             goto('/login');
             return;
@@ -102,44 +102,40 @@
         if (!createNewRoom && selectedRoomId) {
             wsPath += `&room_id=${encodeURIComponent(selectedRoomId)}`;
         }
+        
+        // Create WebSocket and hand off to GameConnection
         ws = new WebSocket(wsPath);
-
+        
         ws.onopen = () => {
+            // Initialize GameConnection once WebSocket is open
+            gameConnection = new GameConnection({
+                ws: ws!,
+                playerId: String(authStore.user!.id),
+                callbacks: {
+                    onMessage: (msg) => {
+                        messages = [...messages, msg];
+                    },
+                    onValidActionsChange: (actions) => {
+                        validActions = actions;
+                    },
+                    onConnectionChange: (isConnected) => {
+                        connected = isConnected;
+                    },
+                    onError: (error) => {
+                        connectionError = error;
+                    }
+                }
+            });
             connected = true;
             connectionError = null;
         };
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            messages = [...messages, data];
-
-            if (data.type === 'action_result' && !data.data?.success)
-                return;
-
-            validActions = [];
-
-            // Handle action_result messages to update valid actions
-            if (data.type === 'action_result' && data.data?.valid_actions) {
-                data.data?.valid_actions.forEach((action: any) => addAction(action));
-            }
-            
-            // Handle game_started messages to update valid actions
-            if (data.type === 'game_started' && data.data?.valid_actions) {
-                data.data?.valid_actions.forEach((action: any) => addAction(action));
-            }
-            
-            // Handle valid_actions messages
-            if (data.type === 'valid_actions' && data.data?.actions) {
-                data.data?.valid_actions.forEach((action: any) => addAction(action));
-            }
-        };
-
         ws.onclose = (event) => {
             connected = false;
+            gameConnection?.dispose();
+            gameConnection = null;
             if (event.code === 1008) {
-                // Policy violation - could be auth or deck validation
-                const reason = event.reason || 'Connection refused';
-                connectionError = reason || 'Connection refused. Please check your deck and try again.';
+                connectionError = event.reason || 'Connection refused. Please check your deck and try again.';
             }
         };
 
@@ -150,60 +146,49 @@
     }
 
     onMount(() => {
-        // Decks and rooms are already loaded server-side via +page.server.ts
         // Refresh rooms periodically when not connected
         const interval = setInterval(() => {
             if (!connected) {
                 fetchRooms();
             }
-        }, 5000); // Refresh every 5 seconds
+        }, 5000);
         return () => clearInterval(interval);
     });
 
     onDestroy(() => {
-        if (ws) {
-            ws.close();
-        }
+        gameConnection?.dispose();
+        ws?.close();
     });
-
-    function addAction(action: any) {
-        if (action.player_id === String(authStore.user?.id))
-            validActions.push(action);
-    }
 
     function sendMessage(event: SubmitEvent) {
         event.preventDefault();
-        if (ws && promptText.trim()) {
-            // Send as JSON message
+        if (gameConnection && promptText.trim()) {
             try {
                 const parsed = JSON.parse(promptText);
-                ws.send(JSON.stringify(parsed));
+                gameConnection.sendRawMessage(parsed);
             } catch {
-                // If not valid JSON, wrap it
-                ws.send(JSON.stringify({ type: 'raw', data: promptText }));
+                gameConnection.sendRawMessage({ type: 'raw', data: promptText });
             }
             promptText = '';
         }
     }
 
     function reconnect() {
-        if (ws) {
-            ws.close();
-        }
+        gameConnection?.dispose();
+        ws?.close();
+        gameConnection = null;
+        ws = null;
         connected = false;
         selectedDeckId = null;
         selectedRoomId = null;
         createNewRoom = false;
         messages = [];
         validActions = [];
-        // Reload page to get fresh deck and room data
         window.location.reload();
     }
 
     function handleSendAction(actionData: ActionData) {
-        if (ws && ws.readyState === WebSocket.OPEN && connected) {
-            ws.send(JSON.stringify({ type: 'action', data: actionData }));
-        }
+        gameConnection?.sendAction(actionData);
     }
 </script>
 
