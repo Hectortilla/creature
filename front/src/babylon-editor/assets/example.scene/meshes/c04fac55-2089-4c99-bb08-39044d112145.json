@@ -78,9 +78,10 @@
                         "values": {
                             "_speed": {
                                 "type": "number",
-                                "value": 0.04
+                                "value": 0.1
                             }
-                        }
+                        },
+                        "_id": "9eae48b0-70e9-4bfd-b962-fa4b2e6fb17f"
                     }
                 ]
             },
@@ -478,9 +479,10 @@
                 "values": {
                     "_speed": {
                         "type": "number",
-                        "value": 0.04
+                        "value": 0.1
                     }
-                }
+                },
+                "_id": "9eae48b0-70e9-4bfd-b962-fa4b2e6fb17f"
             }
         ]
     },

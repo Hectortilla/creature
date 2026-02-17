@@ -3,19 +3,27 @@
 	import { browser } from '$app/environment';
 	import type { Engine } from '@babylonjs/core/Engines/engine';
 	import type { Scene } from '@babylonjs/core/scene';
+	import { getScriptByClassForObject } from 'babylonjs-editor-tools';
+	import GameInitParamsComponent from '../../babylon-editor/src/scripts/gameInitParams';
 
 	interface Props {
 		scenePath?: string;
 		sceneFile?: string;
 		enablePhysics?: boolean;
 		gravity?: { x: number; y: number; z: number };
+		deckId?: number | null;
+		roomId?: string | null;
+		createRoom?: boolean;
 	}
 
 	let {
 		scenePath = '/scene/',
 		sceneFile = 'example.babylon',
 		enablePhysics = true,
-		gravity = { x: 0, y: -981, z: 0 }
+		gravity = { x: 0, y: -981, z: 0 },
+		deckId = null,
+		roomId = null,
+		createRoom = false
 	}: Props = $props();
 
 	let canvas: HTMLCanvasElement;
@@ -63,6 +71,11 @@
 
 			SceneLoaderFlags.ForceFullSceneLoadingForIncremental = true;
 			await loadScene(scenePath, sceneFile, scene, scriptsMap, { quality: 'high' });
+			
+			const scriptInstance = getScriptByClassForObject(scene, GameInitParamsComponent);
+			scriptInstance.deckId = deckId;
+			scriptInstance.roomId = roomId;
+			scriptInstance.createRoom = createRoom;
 
 			if (scene.activeCamera) {
 				scene.activeCamera.attachControl();

@@ -69,7 +69,17 @@
             "metadata": {
                 "type": "Ground",
                 "width": 102400,
-                "height": 102400
+                "height": 102400,
+                "minHeight": 0,
+                "maxHeight": 150,
+                "smoothFactor": 0,
+                "heightMapTexturePath": null,
+                "alphaFilter": 0,
+                "colorFilter": [
+                    1,
+                    1,
+                    1
+                ]
             },
             "instances": [],
             "animations": [],
@@ -464,7 +474,17 @@
     "metadata": {
         "type": "Ground",
         "width": 102400,
-        "height": 102400
+        "height": 102400,
+        "minHeight": 0,
+        "maxHeight": 150,
+        "smoothFactor": 0,
+        "heightMapTexturePath": null,
+        "alphaFilter": 0,
+        "colorFilter": [
+            1,
+            1,
+            1
+        ]
     },
     "basePoseMatrix": [
         1,

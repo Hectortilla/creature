@@ -1,8 +1,8 @@
 {
     "clearColor": [
+        1,
         0.2,
-        0.2,
-        0.3,
+        1,
         1
     ],
     "ambientColor": [
@@ -116,7 +116,31 @@
             "cameraId": "3ee0f345-7bea-4f59-a657-28c90a7d5e74"
         }
     ],
-    "metadata": {},
+    "metadata": {
+        "rendering": [
+            {
+                "cameraId": "3ee0f345-7bea-4f59-a657-28c90a7d5e74"
+            }
+        ],
+        "physicsGravity": [
+            0,
+            -981,
+            0
+        ],
+        "scripts": [
+            {
+                "enabled": true,
+                "key": "scripts/gameInitParams.ts",
+                "_id": "06ee12f9-ef83-49c8-8fd7-bad3649a26df",
+                "values": {
+                    "_speed": {
+                        "type": "number",
+                        "value": 0.04
+                    }
+                }
+            }
+        ]
+    },
     "editorCamera": {
         "tags": null,
         "ellipsoid": [
@@ -134,7 +158,7 @@
         "updateUpVectorFromRotation": false,
         "rotation": [
             0.1371668477935948,
-            -0.7570271652108816,
+            -0.7567244308358817,
             0
         ],
         "speed": 200,

@@ -29,6 +29,9 @@
 
     // Debug input
     let promptText = $state('');
+    
+    // Debug mode toggle - when false, redirects to /game instead of inline WS
+    let debugMode = $state(true);
 
     // Convert http(s):// to ws(s):// for WebSocket connection
     const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/$/, '');
@@ -98,6 +101,21 @@
         }
 
         connectionError = null;
+        
+        // If debug mode is off, redirect to /game with params
+        if (!debugMode) {
+            const params = new URLSearchParams();
+            params.set('deck_id', String(selectedDeckId));
+            if (createNewRoom) {
+                params.set('create_room', 'true');
+            } else if (selectedRoomId) {
+                params.set('room_id', selectedRoomId);
+            }
+            goto(`/game?${params.toString()}`);
+            return;
+        }
+
+        // Debug mode: inline WebSocket connection
         let wsPath = `${wsUrl}/game/ws?token=${encodeURIComponent(token)}&deck_id=${selectedDeckId}`;
         if (!createNewRoom && selectedRoomId) {
             wsPath += `&room_id=${encodeURIComponent(selectedRoomId)}`;
@@ -218,6 +236,11 @@
                 {/if}
             </div>
             <div class="header-right">
+                <label class="debug-toggle">
+                    <span class="toggle-label">Debug Mode</span>
+                    <input type="checkbox" bind:checked={debugMode} disabled={connected} />
+                    <span class="toggle-slider"></span>
+                </label>
                 <span class="status" class:connected>
                     {connected ? '● Connected' : '○ Disconnected'}
                 </span>
@@ -1004,5 +1027,60 @@
 
     .messages::-webkit-scrollbar-thumb:hover {
         background: #484f58;
+    }
+
+    /* Debug mode toggle */
+    .debug-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .debug-toggle input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-label {
+        font-size: 0.75rem;
+        color: #8b949e;
+    }
+
+    .toggle-slider {
+        position: relative;
+        width: 40px;
+        height: 20px;
+        background: #30363d;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+
+    .toggle-slider::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: #c9d1d9;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+    }
+
+    .debug-toggle input:checked + .toggle-slider {
+        background: #a371f7;
+    }
+
+    .debug-toggle input:checked + .toggle-slider::after {
+        transform: translateX(20px);
+    }
+
+    .debug-toggle input:disabled + .toggle-slider {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 </style>

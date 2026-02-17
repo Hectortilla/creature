@@ -1,5 +1,15 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import BabylonEditorScene from '$lib/components/BabylonEditorScene.svelte';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+
+	onMount(() => {
+		if (data.gameParams) {
+			console.log('Game params from URL:', data.gameParams);
+		}
+	});
 </script>
 
 <div class="game-page">
@@ -8,7 +18,13 @@
 		<p class="hint">Press <kbd>Ctrl</kbd> + <kbd>I</kbd> to toggle inspector</p>
 	</header>
 	<div class="scene-wrapper">
-		<BabylonEditorScene scenePath="/scene/" sceneFile="example.babylon" />
+		<BabylonEditorScene 
+			scenePath="/scene/" 
+			sceneFile="example.babylon"
+			deckId={data.gameParams?.deckId}
+			roomId={data.gameParams?.roomId}
+			createRoom={data.gameParams?.createRoom ?? false}
+		/>
 	</div>
 </div>
 

@@ -12,7 +12,8 @@ export default class SceneComponent implements IScript {
 
 	public constructor(public mesh: Mesh) {}
 
-	public onStart(): void {}
+	public onStart(): void {
+	}
 
 	public onUpdate(): void {
 		this.mesh.rotate(Vector3.UpReadOnly, this._speed * this.mesh.getScene().getAnimationRatio());
