@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { FONT_BASE_SIZE } from "$lib/constants";
 	import type { Snippet } from "svelte";
 
     interface Props {
@@ -6,6 +7,7 @@
         ariaLabel?: string;
         rotateIcon?: number;
         isDisabled?: boolean;
+        size?: number;
         children: Snippet;
         onClick?: () => void;
     }
@@ -15,6 +17,7 @@
         ariaLabel = 'Action',
         rotateIcon = 0,
         isDisabled,
+        size = 28,
         children,
         onClick,
     }: Props = $props();
@@ -30,8 +33,12 @@
     onclick={onClick}
     class:disabled={isDisabled}
     disabled={isDisabled}
+    style={`
+        --rotate-icon:${rotateIcon}deg;
+        --size:${size / FONT_BASE_SIZE}rem
+    `}
 >   
-    <span style={`--rotate-icon:${rotateIcon}deg`}>
+    <span>
         {@render children?.()}
     </span>
 </svelte:element>
@@ -42,14 +49,15 @@
 	@use "../../../lib/styles/abstracts/functions" as functions;
 
     a, button {
-        width: functions.rem(28);
-        height: functions.rem(28);
+        width: var(--size);
+        height: var(--size);
         border-radius: 100%;
         background-color: var(--color-icon-button-background);
         color: var(--color-icon-button-color);
         cursor: pointer;
 
         box-shadow: inset 0 functions.rem(-1) functions.rem(8) functions.rem(-3) var(--color-highlight);
+        backdrop-filter: blur(functions.rem(8));
 
         @include mixins.displayFlex(row, 0, center, center, nowrap);
         @include mixins.transition(.4s);

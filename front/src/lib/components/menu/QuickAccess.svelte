@@ -56,16 +56,12 @@
         const viewportPaddingLeft = parseFloat(viewportStyle.paddingLeft || '0');
         const viewportPaddingRight = parseFloat(viewportStyle.paddingRight || '0');
 
-        console.log(viewportPaddingRight);
-
         let target = -liLeft + viewportPaddingRight;
 
         const maxTranslate = viewportWidth - ulWidth - (viewportPaddingRight + viewportPaddingLeft);
         if (target < maxTranslate) target = maxTranslate;
 
         if (target > 0) target = 0;
-
-        console.log('target:', target);
 
         translateX = target;
     }

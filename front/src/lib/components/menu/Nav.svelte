@@ -27,6 +27,11 @@
 		<a class="iso-type" href="/" class:active={page.url.pathname === '/'}>
 			{@html isoType}
 		</a>
+		<div class="menu-button">
+			{#each {length: 3}}
+				<div></div>
+			{/each}
+		</div>
 		<ul class="nav-ul">
 			{#each NAV_LINKS as item, i}
 				<li 
@@ -101,6 +106,24 @@
 				}
 			}
 
+			.menu-button {
+				width: functions.rem(38);
+				height: functions.rem(17);
+				cursor: pointer;
+
+				display: none;
+
+				div {
+					width: 100%;
+					height: functions.rem(1);
+					background-color: var(--color-menu-button);
+				}
+
+				@media (max-width: 1200px) {
+					@include mixins.displayFlex(column, 0, space-between, flex-start, nowrap);
+				}
+			}
+
 			ul.nav-ul {
 				position: relative;
 				@include mixins.displayFlex(row, 40, flex-start, flex-start);
@@ -153,6 +176,10 @@
 							}
 						}
 					}
+				}
+
+				@media (max-width: 1200px) {
+					display: none;
 				}
 			}
 		}

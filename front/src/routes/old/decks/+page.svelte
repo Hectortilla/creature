@@ -337,10 +337,9 @@
 												key={index}
 												showCode={true}
 												showInfo={true}
-												allowLink={true}
-												containerPos={cardContainerPosition}
-												allowHoverEffect={true}
+												allow360Effect={true}
 											/>
+											{card.id}
 											<button
 												class="remove-card-btn"
 												onclick={() => handleRemoveCardFromDeck(deck.id, card.id)}
@@ -406,18 +405,16 @@
 
 			{#if filteredCards().length > 0}
 				<ul class="available-cards-grid">
-					{#each filteredCards() as card}
+					{#each filteredCards() as card, i}
 						{@const cardCount = selectedDeckId ? getCardCountInDeck(selectedDeckId, card.id) : 0}
 						<li>
 							<div class="card-wrapper">
 								<CreatureCard360
-									data={card}
-									key={card.id}
+									data={card as Creature}
+									key={i}
 									showCode={true}
 									showInfo={true}
-									allowLink={true}
-									containerPos={cardContainerPosition}
-									allowHoverEffect={true}
+									allow360Effect={true}
 								/>
 								<button
 									class="add-card-btn"
@@ -444,9 +441,9 @@
 </div>
 
 <style lang="scss">
-	@use "../../lib/styles/abstracts/mixins" as mixins;
-	@use "../../lib/styles/abstracts/functions" as functions;
-	@use "../../lib/styles/abstracts/variables" as variables;
+	@use "../../../lib/styles/abstracts/mixins" as mixins;
+	@use "../../../lib/styles/abstracts/functions" as functions;
+	@use "../../../lib/styles/abstracts/variables" as variables;
 
 	.decks-container {
 		@include mixins.margins;

@@ -31,7 +31,7 @@
   clip-path: var(--clip);
 
   background-image: 
-    url("/images/card-effects/cosmos-bottom.png"), 
+    url("/images/card-effects/cosmos-top.png"), 
     repeating-linear-gradient(
       82deg, 
       hsl(53, 65%, 60%) calc(var(--space)*1), 

@@ -1,9 +1,21 @@
 <script lang="ts">
     import type { PageProps } from "./$types";
     import { onMount } from "svelte";
-    import { fade } from "svelte/transition";
+    import { fade, fly, scale } from "svelte/transition";
+    import { goto } from "$app/navigation";
+    import type { DeckReadWithCards } from "$lib/api";
+    import { DECK_MAX_LENGTH } from "$lib/constants";
+    import {
+		getAllDecksDecksGet,
+		getAllCardsCardsGet,
+		createDeckDecksPost,
+		addCardToDeckDecksDeckIdCardsCardIdPost,
+		removeCardFromDeckDecksDeckIdCardsCardIdDelete,
+		deleteDeckDecksDeckIdDelete
+	} from '$lib/api';
 
     // Components
+    import ButtonIcon from "$lib/components/buttons/IconButton.svelte";
     import Card360 from "$lib/components/creature/Card360.svelte";
     import HorizontalScroll from "$lib/components/HorizontalScroll.svelte";
     import StylishedText from "$lib/components/StylishedText.svelte";
@@ -11,42 +23,94 @@
 
     // Icons
     import Arrow from "$lib/assets/icons/arrow.svg?raw";
+    import Cross from "$lib/assets/icons/cross.svg?raw";
+    import Grid from "$lib/assets/icons/grid.svg?raw";
+    import Scroll from "$lib/assets/icons/scroll.svg?raw";
 
-    let { data }: PageProps = $props();
+    interface PageProps {
+		data: {
+			deck?: DeckReadWithCards;
+		};
+	}
+
+	let { data }: PageProps = $props();
     $inspect(data);
 
-    let deck_title = $derived(Array.isArray(data?.deck) ? null : data?.deck?.name);
-    let cards = $derived(Array.isArray(data?.deck) ? null : data?.deck?.cards);
+    // Deck data
+    let deck_id = $derived(data?.deck?.id);
+    let deck_title = $derived(data?.deck?.name);
+    let cards = $state(data?.deck?.cards ?? []);
+
+    // Display info
     let cardsAreLoaded = $state(false);
     let displayView = $state<'scroll' | 'grid'>('scroll');
     let scrollVelocity = $state(0);
 
-    function onChangeDisplayView() {
-        const changeTo = displayView === 'grid' ? 'scroll' : 'grid';
-        displayView = changeTo;
+    function onChangeDisplayView(display: 'scroll' | 'grid') {
+        displayView = display;
     }
 
     onMount(() => {
         cardsAreLoaded = true;
     });
 
+    // Events
+    function ViewCardInfo(cardCode: number) {
+        goto(`/old/cards/${cardCode}`);
+    }
+
+
+    // API handles
+    async function handleRemoveCardFromDeck(deckId: number, cardId: number) {
+		try {
+			await removeCardFromDeckDecksDeckIdCardsCardIdDelete({
+				path: {
+					deck_id: deckId,
+					card_id: cardId
+				}
+			});
+
+        // Update cards
+        cards = cards.filter(card => card.id !== cardId);
+
+		} catch (err) {
+			console.error('Error eliminando carta del mazo:', err);
+			alert(`Hubo un error al eliminar la carta: ${(err as Error).message}`);
+		}
+	}
+
 </script>
 
 <div class="deck-container variables">
     {#if deck_title}
         <div class="info" class:is-loaded={cardsAreLoaded}>
-            <div class="icon-pos">
-                <IconButton
-                    rotateIcon={90}
-                    link="/my-collection/decks"
-                    ariaLabel="Back to Decks"
-                >
-                    {@html Arrow}
-                </IconButton>
+            <div class="row">
+                <div class="icon-pos">
+                    <IconButton
+                        rotateIcon={90}
+                        link="/my-collection/decks"
+                        ariaLabel="Back to Decks"
+                    >
+                        {@html Arrow}
+                    </IconButton>
+                </div>
+                <StylishedText text={deck_title} fontSize={46} />
+                <p>{cards?.length}/{DECK_MAX_LENGTH} Cards</p>
             </div>
-            <StylishedText text={deck_title} fontSize={46} />
-            <p>{cards?.length} Cards</p>
-            <button onclick={onChangeDisplayView}>Change display view</button>
+            <div class={`display-view ${displayView}`}>
+                <button
+                    onclick={() => onChangeDisplayView('scroll')}
+                    disabled={displayView === 'scroll'}
+                >
+                    {@html Scroll}
+                </button>
+                <button
+                    onclick={() => onChangeDisplayView('grid')}
+                    disabled={displayView === 'grid'}
+                >
+                    {@html Grid}
+                </button>
+            </div>
         </div>
     {/if}
     {#if displayView === 'scroll'}
@@ -59,10 +123,11 @@
                 smoothFactor={1}
                 bind:scrollVelocity
             >
-                {#each cards as card,i}
+                {#each cards as card, i (card.id + '-' + i)}
                     <div
                         class="card-item"
                         class:is-loaded={cardsAreLoaded}
+                        out:fade={{ duration: 250 }}
                         style={`
                             --index:${i + 1};
                             --index-reverse:${cards ? cards?.length - i : i};
@@ -75,7 +140,16 @@
                                 key={i}
                                 role="button"
                                 ariaLabel="test"
-                            />
+                                onClick={() => alert("Click must open quick card data. Long click open dedicated page.")}
+                                onLongClick={() => ViewCardInfo(card.code)}
+                            >
+                                <ButtonIcon
+                                    onClick={() => handleRemoveCardFromDeck(deck_id ?? 0, card.id )}
+                                    size={32}
+                                >
+                                    {@html Cross}
+                                </ButtonIcon>
+                            </Card360>
                         </div>
                     </div>
                 {/each}
@@ -125,17 +199,22 @@
         @include mixins.displayFlex(column, 0, flex-start, flex-start, nowrap);
 
         .info {
+            width: 100%;
             padding: var(--padding);
             opacity: 0;
 
             transform: translateY(calc(20%));
 
-            @include mixins.displayFlex(row, 20, flex-start, center, nowrap);
+            @include mixins.displayFlex(row, 20, space-between, center, nowrap);
             @include mixins.transition(.6s);
 
             &.is-loaded {
                 transform: translateY(0);
                 opacity: 1;
+            }
+
+            .row {
+                @include mixins.displayFlex(row, 20, flex-start, center, nowrap);
             }
 
             .icon-pos {
@@ -147,6 +226,7 @@
             p {
                 padding-top: functions.rem(6);
                 font-size: functions.rem(18);
+                opacity: .8;
             }
         }
 
@@ -176,13 +256,43 @@
             display: grid;
             width: 100%;
             grid-template-columns: repeat(8, 1fr);
-            gap: functions.rem(20);
+            gap: functions.rem(12);
             padding: var(--padding);
 
             .card-item {
                 width: 100%;
                 max-width: none;
                 height: auto;
+            }
+        }
+    }
+
+    .display-view {
+        $padding-container: functions.rem(6);
+        $button-size: functions.rem(34);
+
+        position: relative;
+        padding: $padding-container;
+        background-color: black;
+        border-radius: functions.rem(14);
+        overflow: hidden;
+
+        @include mixins.displayFlex(row, 0, flex-start, center, nowrap);
+
+        button {
+            width: $button-size;
+            height: $button-size;
+            padding: functions.rem(8);
+            color: var(--color-icon-button-color);
+            cursor: pointer;
+
+            @include mixins.transition(all, .4s);
+
+            &:disabled {
+                filter: saturate(.4);
+                opacity: .6;
+                cursor: default;
+                pointer-events: none;
             }
         }
     }

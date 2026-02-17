@@ -1,7 +1,8 @@
 <script lang="ts">
     import type { CardCreature } from '$lib/types';
-    import { blur } from "svelte/transition";
+    import { blur, scale } from "svelte/transition";
     import { formatHandle } from '$lib/utils/formatHandle';
+    import type { Snippet } from 'svelte';
 
     // Rarity Styles
     import "$lib/styles/components/rarity/base.css";
@@ -34,20 +35,24 @@
     import Evolution from '$lib/components/creature/Evolution.svelte';
     import Spinner from '$lib/components/creature/Spinner.svelte';
 
+
     // TO ADD IN DATABASE
     // 
     //  'normal' | 'rare secret' | 'rare holo cosmos' | 'rare ultra' | 'trainer gallery rare holo';
     //
-    const DATA_RARITY = "normal";
+    let DATA_RARITY = $state("rare ultra");
 
     interface PageProps {
         data: CardCreature;
         key: number;
 
         // HTML
-        role?: 'a' | 'button' | 'input' | 'div';
-        onClick?: () => void;
+        role?: 'a' | 'button' | 'div';
         ariaLabel?: string;
+
+        // Events
+        onClick?: () => void;
+        onLongClick?: () => void;
 
         // Show
         showInfo?: boolean;
@@ -57,6 +62,10 @@
 
         // Effects
         allow360Effect?: boolean;
+        perspective?: number,
+
+        // Child for buttons
+        children?: Snippet;
     }
 
     let {
@@ -64,12 +73,15 @@
         key,
         role = 'a',
         onClick,
+        onLongClick,
         ariaLabel,
         showInfo = true,
         showCode = true,
         showEvolutionCode = true,
         allow360Effect = true,
-        showLoader = false
+        perspective = 1000,
+        showLoader = false,
+        children,
     }: PageProps = $props();
 
     /* -----------------------------------------------------
@@ -99,13 +111,15 @@
     let fingerPrintsOpacity = $state(0.3);
 
     // Holo Foil
-    let hasRarity = $derived(DATA_RARITY !== 'normal')
+    let hasRarity = $derived(DATA_RARITY !== 'normal');
     let pointerX = $state(0);
     let pointerY = $state(0);
     let pointerFromCenter = $state(0);
     let backgroundX = $state(0);
     let backgroundY = $state(0);
     let cardOpacity = $state(0);
+
+    let showActions = $state(true);
 
 
     /* -----------------------------------------------------
@@ -117,17 +131,48 @@
             return { href: `/cards/${data.code}` };
         }
 
-        if (role === 'input') {
-            return { type: 'checkbox' };
-        }
-
         if (role === 'button') {
             return {
-                onclick: onClick, role: 'button',
+                onpointerdown: handlePointerDown,
+                onpointerup: handlePointerUp,
+                onpointerleave: handlePointerLeave,
+                role: 'button',
                 'aria-label': ariaLabel
             };
         }
     });
+
+    /* -----------------------------------------------------
+       CLICK EVENTS
+    ----------------------------------------------------- */
+
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+    const LONG_PRESS_DURATION = 500; // ms para considerar long press
+
+    function handlePointerDown() {
+        // Inicia el timer de long press
+        clickTimeout = setTimeout(() => {
+            if (onLongClick) onLongClick();
+            clickTimeout = null; // ya se ejecutó long click
+        }, LONG_PRESS_DURATION);
+    }
+
+    function handlePointerUp() {
+        if (clickTimeout) {
+            // Si todavía no se cumplió el tiempo, es click normal
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+            if (onClick) onClick();
+        }
+    }
+
+    function handlePointerLeave() {
+        // Cancelar si el usuario mueve fuera del área
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+        }
+    }
 
     /* -----------------------------------------------------
        MOUSE INTERACTION
@@ -268,118 +313,156 @@
     });
 </script>
 
-<svelte:element
-    this={role}
-    {...HTMLProps}
-    class={`card-container card theme-${data.first_element?.label ? formatHandle(data.first_element.label): 'default'}`}
-    onmousemovecapture={(e:MouseEvent) => handleMouseCapture(e)}
-    onmouseleave={handleMouseLeave}
-    data-theme={formatHandle(data.first_element?.label)}
-    data-has-rarity={hasRarity}
-    data-rarity={DATA_RARITY}
-    style={`--x: ${moveX}; --y: ${moveY};`}
->
-    <div class="card-wrapper">
-        {#if showCode || (showInfo && data.is_evolution !== null)}
-            <div class="info">
-                {#if showCode && data.code}
-                    <Code code={data.code} />
-                {/if}
-                {#if data.is_evolution !== null && data.is_evolution && showEvolutionCode}
-                    <Evolution evolutionCode={data.is_evolution.code}/>
-                {/if}
-            </div>
-        {/if}
-
-        {#if showInfo}
-            <div class="hover-info">
-                <div class="classification">
-                    {#if data.type?.icon}
-                        <Icon name={data.type.icon} size={0} isBackground={true} />
-                    {/if}
-                    {#if data.character?.icon} 
-                        <Icon name={data.character.icon} size={0} isBackground={true} />
-                    {/if}
-                </div>
-
-                <div class="elements">
-                    {#if data.first_element}
-                        <div class="element">
-                            <img
-                                src={data.first_element.icon}
-                                alt={data.first_element.label}
-                                style="--color-element:#{data.first_element.color}"
-                            />
-                        </div>
-                    {/if}
-
-                    {#if data.second_element}
-                        <div class="element">
-                            <img
-                                src={data.second_element.icon}
-                                alt={data.second_element.label}
-                                style="--color-element:#{data.second_element.color}"
-                            />
-                        </div>
-                    {/if}
-                </div>
-            </div>
-        {/if}
-
-        {#if isImageLoading && showLoader}
-            <div out:blur class="loader">
-                <Spinner />
-            </div>
-        {/if}
-
-        <img
-            class="cardboard"
-            src="/images/card-mask.svg"
-            alt=""
-        />
-
-        <img
-            class="art"
-            src={imgSrc}
-            alt={data.name}
-            width="300"
-            onload={handleImageLoad}
-            draggable="false"
-        />
-
+<div class="outer" style={`--perspective:${perspective}px;`}>
+    {#if children && showActions}
         <div
-            class="effects"
-            style={`
-                --pointOneYOpacity: ${pointOneYOpacity};
-                --pointOneY: ${pointOneY}%;
-                --pointTwoYOpacity: ${pointTwoYOpacity};
-                --pointTwoY: ${pointTwoY}%;
-                --pointOneXOpacity: ${pointOneXOpacity};
-                --pointOneX: ${pointOneX}%;
-                --pointTwoXOpacity: ${pointTwoXOpacity};
-                --pointTwoX: ${pointTwoX}%;
-                --fingerPrintsOpacity: ${fingerPrintsOpacity};
-                --pointer-x: ${pointerX}%;
-                --pointer-y: ${pointerY}%;
-                --pointer-from-center: ${Math.max(.5, pointerFromCenter)};
-                --background-x: ${backgroundX}%;
-                --background-y: ${backgroundY}%;
-                --card-opacity: ${Math.max(.5, cardOpacity)};
-            `}
+            transition:scale
+            role="dialog"
+            tabindex="0"
+            onfocus={() => showActions = true}
+            onmouseover={() => showActions = true}
+            class="actions-out-wrapper"
         >
-            <div class="lateral-lights"></div>
-            <div class="finger-prints" style={`background: url('/images/finger-prints/${(key % 4) + 1}.jpg');`}></div>
-            {#if hasRarity}
-                <div class="card__shine"></div>
-            {/if}
+            {@render children?.()}
         </div>
-    </div>
-</svelte:element>
+    {/if}
+    <svelte:element
+        this={role}
+        {...HTMLProps}
+        class={`card-container card theme-${data.first_element?.label ? formatHandle(data.first_element.label): 'default'}`}
+        onmousemovecapture={(e:MouseEvent) => handleMouseCapture(e)}
+        onmouseleave={handleMouseLeave}
+        data-theme={formatHandle(data.first_element?.label)}
+        data-has-rarity={hasRarity}
+        data-rarity={DATA_RARITY}
+        data-supertype="pokémon"
+        style={`--x: ${moveX}; --y: ${moveY};`}
+    >
+        <div class="card-wrapper">
+            {#if showCode || (showInfo && data.is_evolution !== null)}
+                <div class="info">
+                    {#if showCode && data.code}
+                        <Code code={data.code} />
+                    {/if}
+                    {#if data.is_evolution !== null && data.is_evolution && showEvolutionCode}
+                        <Evolution evolutionCode={data.is_evolution.code}/>
+                    {/if}
+                </div>
+            {/if}
+
+            {#if showInfo}
+                <div class="hover-info">
+                    <div class="classification">
+                        {#if data.type?.icon}
+                            <Icon name={data.type.icon} size={0} isBackground={true} />
+                        {/if}
+                        {#if data.character?.icon} 
+                            <Icon name={data.character.icon} size={0} isBackground={true} />
+                        {/if}
+                    </div>
+
+                    <div class="elements">
+                        {#if data.first_element}
+                            <div class="element">
+                                <img
+                                    src={data.first_element.icon}
+                                    alt={data.first_element.label}
+                                    style="--color-element:#{data.first_element.color}"
+                                />
+                            </div>
+                        {/if}
+
+                        {#if data.second_element}
+                            <div class="element">
+                                <img
+                                    src={data.second_element.icon}
+                                    alt={data.second_element.label}
+                                    style="--color-element:#{data.second_element.color}"
+                                />
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+            {/if}
+
+            {#if isImageLoading && showLoader}
+                <div out:blur class="loader">
+                    <Spinner />
+                </div>
+            {/if}
+
+            <img
+                class="cardboard"
+                src="/images/card-mask.svg"
+                alt=""
+            />
+
+            <img
+                class="art"
+                src={imgSrc}
+                alt={data.name}
+                width="300"
+                onload={handleImageLoad}
+                draggable="false"
+            />
+
+            <div
+                class="effects"
+                style={`
+                    --pointOneYOpacity: ${pointOneYOpacity};
+                    --pointOneY: ${pointOneY}%;
+                    --pointTwoYOpacity: ${pointTwoYOpacity};
+                    --pointTwoY: ${pointTwoY}%;
+                    --pointOneXOpacity: ${pointOneXOpacity};
+                    --pointOneX: ${pointOneX}%;
+                    --pointTwoXOpacity: ${pointTwoXOpacity};
+                    --pointTwoX: ${pointTwoX}%;
+                    --fingerPrintsOpacity: ${fingerPrintsOpacity};
+                    --pointer-x: ${pointerX}%;
+                    --pointer-y: ${pointerY}%;
+                    --pointer-from-center: ${Math.max(.5, pointerFromCenter)};
+                    --background-x: ${backgroundX}%;
+                    --background-y: ${backgroundY}%;
+                    --card-opacity: ${Math.max(.5, cardOpacity)};
+                `}
+            >
+                <div class="lateral-lights"></div>
+                <div class="finger-prints" style={`background: url('/images/finger-prints/${(key % 4) + 1}.jpg');`}></div>
+                {#if hasRarity}
+                    <div class="card__shine"></div>
+                {/if}
+            </div>
+        </div>
+    </svelte:element>
+</div>
 
 <style lang="scss">
     @use "../../styles/abstracts/variables" as variables;
     @use "../../styles/abstracts/mixins" as mixins;
     @use "../../styles/abstracts/functions" as functions;
+
+    .outer {
+        position: relative;
+        perspective: var(--perspective);
+    }
+
+    .actions-out-wrapper {
+        position: absolute;
+        width: auto;
+        height: auto;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%) translateY(50%);
+        z-index: 2;
+
+        @include mixins.transition(all, .4s);
+
+    }
+
+    a.card-container,
+    button.card-container {
+        cursor: pointer;
+    }
 
     .card-container {
         position: relative;

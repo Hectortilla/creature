@@ -1,5 +1,6 @@
 export const ELEMENTAL_ATTACK_MODIFIER = 20;
 export const FONT_BASE_SIZE = 16;
+export const DECK_MAX_LENGTH = 40;
 
 // Menus
 

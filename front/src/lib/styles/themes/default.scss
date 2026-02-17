@@ -22,6 +22,9 @@
     --color-nav-feature-divider: #{color(base, 200, 42%, 27%)};
     --color-nav-active-point-light: #{color(base, 100, 100%, 60%)};
 
+    //-- Menu Button
+    --color-menu-button: var(--color-highlight);
+
     //-- Submenu
     --color-submenu-color: var(--color-highlight);
 

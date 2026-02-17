@@ -84,7 +84,6 @@
             wrapperWidth = wrapper.getBoundingClientRect().width;
             barWidth = wrapperWidth ? (containerWidth / wrapperWidth) * 100 : 0;
             refBarIsLoaded = true;
-            console.log(containerWidth / wrapperWidth);
         }, 200)
 
         animate();
