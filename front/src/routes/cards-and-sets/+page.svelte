@@ -17,15 +17,15 @@
 </div>
 
 <style lang="scss">
-    @use "../../../../lib/styles/abstracts/variables" as variables;
-	@use "../../../../lib/styles/abstracts/mixins" as mixins;
-	@use "../../../../lib/styles/abstracts/functions" as functions;
+    @use "../../lib/styles/abstracts/variables" as variables;
+	@use "../../lib/styles/abstracts/mixins" as mixins;
+	@use "../../lib/styles/abstracts/functions" as functions;
 
     .cards-container {
         position: relative;
         width: 100%;
         //overflow: hidden;
-        padding-top: functions.rem(220);
+        padding-top: functions.rem(160);
 
         @include mixins.displayFlex(row, 0, center, center, nowrap);
     }

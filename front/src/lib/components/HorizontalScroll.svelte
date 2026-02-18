@@ -14,6 +14,7 @@
         showScrollReference?: boolean;
         height?: number | null;
         scrollVelocity?: number;
+        itemsLength?: number;
         children?: Snippet;
     }
 
@@ -24,6 +25,7 @@
         smoothFactor = 1,
         showScrollReference = true,
         height = null,
+        itemsLength = 0,
         children,
         scrollVelocity = $bindable(0)
     }: Props = $props();
@@ -41,13 +43,12 @@
     let barWidth = $state(0)
     let refBarIsLoaded = $state(false);
     let cardsAreLoaded = $state(false);
+    let resizeObserver: ResizeObserver;
 
     function handleWheel(e: WheelEvent) {
         e.preventDefault();
 
-        containerWidth = container.getBoundingClientRect().width;
-        wrapperWidth = wrapper.getBoundingClientRect().width;
-        barWidth = wrapperWidth ? (containerWidth / wrapperWidth) * 100 : 0;
+        build();
         const maxScroll = wrapperWidth - containerWidth;
 
         const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -77,19 +78,34 @@
         requestAnimationFrame(animate);
     }
 
+    function build() {
+        if (!container || !wrapper) return;
+
+        containerWidth = container.getBoundingClientRect().width;
+        wrapperWidth = wrapper.getBoundingClientRect().width;
+        barWidth = wrapperWidth ? (containerWidth / wrapperWidth) * 100 : 0;
+    }
+
+    $effect(() => {
+        itemsLength;
+        build();
+    });
 
     onMount(() => {
         setTimeout(() => {
-            containerWidth = container.getBoundingClientRect().width;
-            wrapperWidth = wrapper.getBoundingClientRect().width;
-            barWidth = wrapperWidth ? (containerWidth / wrapperWidth) * 100 : 0;
+            build();
             refBarIsLoaded = true;
         }, 200)
+
+        resizeObserver = new ResizeObserver(() => {
+            build();
+        });
 
         animate();
     });
 
     onDestroy(() => {
+        resizeObserver?.disconnect();
         containerWidth = 0;
         wrapperWidth = 0;
         barWidth = 0;

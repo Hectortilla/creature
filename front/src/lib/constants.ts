@@ -12,7 +12,7 @@ interface NavLink {
 
 export const NAV_LINKS:NavLink[] = [
     { href: '/my-collection', label: 'My collection' },
-    { href: '/cards', label: 'Cards & Set'},
+    { href: '/cards-and-sets', label: 'Cards & Sets'},
     { href: '#', label: 'Rewards' },
     { href: '#', label: 'How to play' },
     { 

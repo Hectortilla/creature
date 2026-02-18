@@ -4,6 +4,7 @@
     import { fade, fly, scale } from "svelte/transition";
     import { goto } from "$app/navigation";
     import type { DeckReadWithCards } from "$lib/api";
+    import type { Creature, Element, Type, Character } from '$lib/types';
     import { DECK_MAX_LENGTH } from "$lib/constants";
     import {
 		getAllDecksDecksGet,
@@ -11,7 +12,8 @@
 		createDeckDecksPost,
 		addCardToDeckDecksDeckIdCardsCardIdPost,
 		removeCardFromDeckDecksDeckIdCardsCardIdDelete,
-		deleteDeckDecksDeckIdDelete
+		deleteDeckDecksDeckIdDelete,
+        getDeckDecksDeckIdGet
 	} from '$lib/api';
 
     // Components
@@ -20,16 +22,22 @@
     import HorizontalScroll from "$lib/components/HorizontalScroll.svelte";
     import StylishedText from "$lib/components/StylishedText.svelte";
     import IconButton from "$lib/components/buttons/IconButton.svelte";
+    import GallerySearchAndFilter from "$lib/components/GallerySearchAndFilter.svelte";
 
     // Icons
     import Arrow from "$lib/assets/icons/arrow.svg?raw";
     import Cross from "$lib/assets/icons/cross.svg?raw";
     import Grid from "$lib/assets/icons/grid.svg?raw";
     import Scroll from "$lib/assets/icons/scroll.svg?raw";
+	
 
     interface PageProps {
 		data: {
 			deck?: DeckReadWithCards;
+            cards?: Creature[];
+            elements?: Element[];
+            types?: Type[];
+            characters?: Character[]
 		};
 	}
 
@@ -39,7 +47,8 @@
     // Deck data
     let deck_id = $derived(data?.deck?.id);
     let deck_title = $derived(data?.deck?.name);
-    let cards = $state(data?.deck?.cards ?? []);
+    let cards = $state([...(data?.deck?.cards ?? [])]);
+    let refreskey = $derived(cards.length)
 
     // Display info
     let cardsAreLoaded = $state(false);
@@ -53,6 +62,7 @@
     onMount(() => {
         cardsAreLoaded = true;
     });
+    
 
     // Events
     function ViewCardInfo(cardCode: number) {
@@ -61,21 +71,48 @@
 
 
     // API handles
-    async function handleRemoveCardFromDeck(deckId: number, cardId: number) {
+    async function handleRemoveCardFromDeck(cardId: number) {
+        if(!deck_id) return;
+
 		try {
 			await removeCardFromDeckDecksDeckIdCardsCardIdDelete({
 				path: {
-					deck_id: deckId,
+					deck_id: deck_id,
 					card_id: cardId
 				}
 			});
 
-        // Update cards
-        cards = cards.filter(card => card.id !== cardId);
+        // Refresh decks
+        const deckResponse = await getDeckDecksDeckIdGet({ path: { deck_id } });
+        if (deckResponse.data) {
+            cards = [...(deckResponse.data.cards ?? [])];
+        }
 
 		} catch (err) {
 			console.error('Error eliminando carta del mazo:', err);
 			alert(`Hubo un error al eliminar la carta: ${(err as Error).message}`);
+		}
+	}
+
+    async function handleAddCardToDeck(cardId: number) {
+        if(!deck_id) return;
+
+		try {
+			await addCardToDeckDecksDeckIdCardsCardIdPost({
+				path: {
+					deck_id: deck_id,
+					card_id: cardId
+				}
+			});
+
+			// Refresh deck
+            const deckResponse = await getDeckDecksDeckIdGet({ path: { deck_id } });
+            if (deckResponse.data) {
+                cards = [...(deckResponse.data.cards ?? [])];
+            }
+		} catch (err) {
+			console.error('Error añadiendo carta al mazo:', err);
+			alert(`Hubo un error al añadir la carta: ${(err as Error).message}`);
 		}
 	}
 
@@ -114,13 +151,14 @@
         </div>
     {/if}
     {#if displayView === 'scroll'}
-        <div style="width: 100%">
+        <div style="width: 100%; overflow:hidden;">
             <HorizontalScroll
                 gap={20}
-                margin={42}
+                margin={50}
                 top={0}
                 height={320}
                 smoothFactor={1}
+                itemsLength={refreskey}
                 bind:scrollVelocity
             >
                 {#each cards as card, i (card.id + '-' + i)}
@@ -144,7 +182,7 @@
                                 onLongClick={() => ViewCardInfo(card.code)}
                             >
                                 <ButtonIcon
-                                    onClick={() => handleRemoveCardFromDeck(deck_id ?? 0, card.id )}
+                                    onClick={() => handleRemoveCardFromDeck(card.id )}
                                     size={32}
                                 >
                                     {@html Cross}
@@ -172,6 +210,10 @@
             {/each}
         </div>
     {/if}
+    <GallerySearchAndFilter
+        cards={data.cards}
+        onClickOnCard={(cardId) => handleAddCardToDeck(cardId)}
+    />
 </div>
 
 <style lang="scss">
@@ -193,7 +235,6 @@
         width: 100%;
         min-height: 100dvh;
         height: auto;
-        overflow: hidden;
         padding-top: functions.rem(160);
 
         @include mixins.displayFlex(column, 0, flex-start, flex-start, nowrap);
