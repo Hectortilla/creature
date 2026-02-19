@@ -110,6 +110,7 @@
             "ssrRenderingPipeline": null,
             "motionBlurPostProcess": null,
             "defaultRenderingPipeline": null,
+            "taaRenderingPipeline": null,
             "iblShadowsRenderPipeline": null
         },
         {
@@ -130,12 +131,20 @@
         "scripts": [
             {
                 "enabled": true,
-                "key": "scripts/gameInitParams.ts",
-                "_id": "06ee12f9-ef83-49c8-8fd7-bad3649a26df",
+                "key": "scripts/GameNetworkManagerComponent.ts",
+                "_id": "d5c1ac6d-8c5b-42cc-8198-2aa6901bd282",
                 "values": {
-                    "_speed": {
+                    "deckId": {
                         "type": "number",
-                        "value": 0.04
+                        "value": 0
+                    },
+                    "roomId": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "createRoom": {
+                        "type": "boolean",
+                        "value": false
                     }
                 }
             }

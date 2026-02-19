@@ -4,7 +4,7 @@
     import { PUBLIC_API_URL } from '$env/static/public';
     import { authStore } from '$lib/stores/auth.svelte';
     import ActionCards from '$lib/components/ActionCards.svelte';
-    import { GameConnection, type ValidAction, type GameMessage, type ActionData } from '$lib/game';
+    import { GameConnection, type ValidAction, type GameMessage, type ActionData } from '../../babylon-editor/src/scripts/game';
     import type { PageData } from './$types';
     import type { DeckReadSummary, RoomSummary } from '$lib/types';
 

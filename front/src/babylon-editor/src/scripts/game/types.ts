@@ -2,10 +2,16 @@
  * Game networking types
  *
  * Types specific to the game networking module.
- * Reuses generated types from the API client where possible.
  */
 
-import type { ActionData } from '$lib/api/types.gen';
+/**
+ * Action data sent to the game server.
+ * Flexible interface allowing any action-specific fields.
+ */
+export interface ActionData {
+	action_type: string;
+	[key: string]: unknown;
+}
 
 /**
  * A valid action that a player can perform.
@@ -66,6 +72,3 @@ export interface GameConnectionOptions {
 	/** Event callbacks */
 	callbacks?: GameConnectionCallbacks;
 }
-
-// Re-export ActionData for convenience
-export type { ActionData };

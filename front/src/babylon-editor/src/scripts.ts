@@ -4,11 +4,11 @@
  */
 
 import { loadScene, scriptsDictionary, scriptAssetsCache, _applyScriptsForObject, _removeRegisteredScriptInstance, _preloadScriptsAssets } from "babylonjs-editor-tools";
-import * as scripts_gameInitParams from "./scripts/gameInitParams";
+import * as scripts_GameNetworkManagerComponent from "./scripts/GameNetworkManagerComponent";
 import * as scripts_box from "./scripts/box";
 
 export const scriptsMap = {
-    "scripts/gameInitParams.ts": scripts_gameInitParams,
+    "scripts/GameNetworkManagerComponent.ts": scripts_GameNetworkManagerComponent,
 	"scripts/box.ts": scripts_box
 };
 

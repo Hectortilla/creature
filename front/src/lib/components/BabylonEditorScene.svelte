@@ -4,7 +4,7 @@
 	import type { Engine } from '@babylonjs/core/Engines/engine';
 	import type { Scene } from '@babylonjs/core/scene';
 	import { getScriptByClassForObject } from 'babylonjs-editor-tools';
-	import GameInitParamsComponent from '../../babylon-editor/src/scripts/gameInitParams';
+	import GameNetworkManagerComponent from '../../babylon-editor/src/scripts/GameNetworkManagerComponent';
 
 	interface Props {
 		scenePath?: string;
@@ -72,7 +72,7 @@
 			SceneLoaderFlags.ForceFullSceneLoadingForIncremental = true;
 			await loadScene(scenePath, sceneFile, scene, scriptsMap, { quality: 'high' });
 			
-			const scriptInstance = getScriptByClassForObject(scene, GameInitParamsComponent);
+			const scriptInstance = getScriptByClassForObject(scene, GameNetworkManagerComponent);
 			scriptInstance.deckId = deckId;
 			scriptInstance.roomId = roomId;
 			scriptInstance.createRoom = createRoom;
