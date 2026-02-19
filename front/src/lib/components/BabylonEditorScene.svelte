@@ -11,6 +11,9 @@
 		sceneFile?: string;
 		enablePhysics?: boolean;
 		gravity?: { x: number; y: number; z: number };
+		wsUrl?: string;
+		token?: string;
+		playerId?: string;
 		deckId?: number | null;
 		roomId?: string | null;
 		createRoom?: boolean;
@@ -21,6 +24,9 @@
 		sceneFile = 'example.babylon',
 		enablePhysics = true,
 		gravity = { x: 0, y: -981, z: 0 },
+		wsUrl = '',
+		token = '',
+		playerId = '',
 		deckId = null,
 		roomId = null,
 		createRoom = false
@@ -73,8 +79,14 @@
 			await loadScene(scenePath, sceneFile, scene, scriptsMap, { quality: 'high' });
 			
 			const scriptInstance = getScriptByClassForObject(scene, GameNetworkManagerComponent);
-			scriptInstance.deckId = deckId;
-			scriptInstance.roomId = roomId;
+			if (!scriptInstance) {
+				throw new Error('GameNetworkManagerComponent must be attached to the root scene');
+			}
+			scriptInstance.wsUrl = wsUrl;
+			scriptInstance.token = token;
+			scriptInstance.playerId = playerId;
+			scriptInstance.deckId = deckId ?? 0;
+			scriptInstance.roomId = roomId ?? '';
 			scriptInstance.createRoom = createRoom;
 
 			if (scene.activeCamera) {

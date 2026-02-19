@@ -1,11 +1,31 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { PUBLIC_API_URL } from '$env/static/public';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import BabylonEditorScene from '$lib/components/BabylonEditorScene.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
+	// Convert http(s):// to ws(s):// for WebSocket connection
+	const wsUrl = PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/$/, '');
+
+	let token = $state('');
+	let playerId = $state('');
+	let ready = $state(false);
+
 	onMount(() => {
+		const storedToken = localStorage.getItem('auth_token');
+		if (!storedToken || !authStore.user) {
+			goto('/login');
+			return;
+		}
+
+		token = storedToken;
+		playerId = String(authStore.user.id);
+		ready = true;
+
 		if (data.gameParams) {
 			console.log('Game params from URL:', data.gameParams);
 		}
@@ -18,13 +38,24 @@
 		<p class="hint">Press <kbd>Ctrl</kbd> + <kbd>I</kbd> to toggle inspector</p>
 	</header>
 	<div class="scene-wrapper">
-		<BabylonEditorScene 
-			scenePath="/scene/" 
-			sceneFile="example.babylon"
-			deckId={data.gameParams?.deckId}
-			roomId={data.gameParams?.roomId}
-			createRoom={data.gameParams?.createRoom ?? false}
-		/>
+		{#if ready && data.gameParams}
+			<BabylonEditorScene 
+				scenePath="/scene/" 
+				sceneFile="example.babylon"
+				{wsUrl}
+				{token}
+				{playerId}
+				deckId={data.gameParams.deckId}
+				roomId={data.gameParams.roomId}
+				createRoom={data.gameParams.createRoom}
+			/>
+		{:else if !data.gameParams}
+			<div class="no-params">
+				<p>Missing game parameters. Please select a deck and room from the <a href="/debug">debug page</a>.</p>
+			</div>
+		{:else}
+			<div class="loading">Loading...</div>
+		{/if}
 	</div>
 </div>
 
@@ -76,5 +107,23 @@
 		overflow: hidden;
 		border: 1px solid var(--color-input-border, #30363d);
 		background: #0d1117;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.no-params,
+	.loading {
+		text-align: center;
+		color: var(--color-text, #c9d1d9);
+
+		a {
+			color: #58a6ff;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
 	}
 </style>

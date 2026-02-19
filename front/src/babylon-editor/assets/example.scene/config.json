@@ -145,6 +145,18 @@
                     "createRoom": {
                         "type": "boolean",
                         "value": false
+                    },
+                    "wsUrl": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "token": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "playerId": {
+                        "type": "string",
+                        "value": ""
                     }
                 }
             }

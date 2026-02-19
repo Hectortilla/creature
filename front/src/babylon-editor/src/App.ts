@@ -38,23 +38,6 @@ import { loadScene } from "babylonjs-editor-tools";
  */
 import { scriptsMap } from "./scripts";
 
-/**
- * Parameters for establishing a game connection.
- * Passed to App.init() and stored on scene.metadata for scripts to access.
- */
-export interface GameConnectionParams {
-	/** WebSocket URL for the game server */
-	wsUrl: string;
-	/** Authentication token */
-	token: string;
-	/** Current player's user ID */
-	playerId: string;
-	/** Deck ID to use for the game */
-	deckId: number;
-	/** Room ID to join (optional - if not provided, creates new room) */
-	roomId?: string;
-}
-
 export class App {
 	private _canvas: HTMLCanvasElement;
 	private _engine: Engine | null = null;
@@ -68,7 +51,7 @@ export class App {
 		this._canvas = canvasElement;
 	}
 
-	public async init(connectionParams?: GameConnectionParams): Promise<void> {
+	public async init(): Promise<void> {
 		this._engine = new Engine(this._canvas, true, {
 			stencil: true,
 			antialias: true,
@@ -81,12 +64,6 @@ export class App {
 		});
 
 		this._scene = new Scene(this._engine);
-
-		// Store connection params on scene metadata for scripts to access
-		if (connectionParams) {
-			this._scene.metadata = this._scene.metadata || {};
-			this._scene.metadata.gameConnection = connectionParams;
-		}
 
 		await this._handleLoad();
 
