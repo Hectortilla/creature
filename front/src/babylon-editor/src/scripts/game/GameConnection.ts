@@ -13,6 +13,15 @@ import type {
 	ActionData
 } from './types';
 
+/** Build the WebSocket URL for game connection */
+function buildWebSocketUrl(wsUrl: string, token: string, deckId: number, roomId?: string): string {
+	let url = `${wsUrl}/game/ws?token=${encodeURIComponent(token)}&deck_id=${deckId}`;
+	if (roomId) {
+		url += `&room_id=${encodeURIComponent(roomId)}`;
+	}
+	return url;
+}
+
 export class GameConnection {
 	private ws: WebSocket;
 	private playerId: string;
@@ -23,10 +32,11 @@ export class GameConnection {
 	private _connected = false;
 
 	constructor(options: GameConnectionOptions) {
-		this.ws = options.ws;
 		this.playerId = options.playerId;
 		this.callbacks = options.callbacks ?? {};
 
+		const wsUrl = buildWebSocketUrl(options.wsUrl, options.token, options.deckId, options.roomId);
+		this.ws = new WebSocket(wsUrl);
 		this.setupWebSocketHandlers();
 	}
 
@@ -167,12 +177,18 @@ export class GameConnection {
 		this._messages = [];
 	}
 
-	/** Dispose of the connection and clean up event listeners */
+	/** Close the connection */
+	close(): void {
+		this.ws.close();
+	}
+
+	/** Dispose of the connection and clean up */
 	dispose(): void {
 		this.ws.removeEventListener('open', this.handleOpen);
 		this.ws.removeEventListener('message', this.handleMessage);
 		this.ws.removeEventListener('close', this.handleClose);
 		this.ws.removeEventListener('error', this.handleError);
+		this.ws.close();
 
 		this._validActions = [];
 		this._messages = [];

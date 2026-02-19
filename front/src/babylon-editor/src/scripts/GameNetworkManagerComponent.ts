@@ -1,6 +1,6 @@
 import { Scene } from "@babylonjs/core/scene";
 import { visibleAsNumber, visibleAsString, visibleAsBoolean, IScript } from "babylonjs-editor-tools";
-import { GameConnection, type GameConnectionCallbacks } from "./game";
+import { GameConnection } from "./game";
 import type { GameConnectionParams } from "../App";
 
 export default class GameInitParamsComponent implements IScript {
@@ -15,7 +15,6 @@ export default class GameInitParamsComponent implements IScript {
 
     private _scene: Scene;
     private _gameConnection: GameConnection | null = null;
-    private _ws: WebSocket | null = null;
 
     public constructor(scene: Scene) {
         this._scene = scene;
@@ -37,17 +36,15 @@ export default class GameInitParamsComponent implements IScript {
     }
 
     private initializeConnection(params: GameConnectionParams): void {
-        // Build WebSocket URL
-        let wsPath = `${params.wsUrl}/game/ws?token=${encodeURIComponent(params.token)}&deck_id=${params.deckId}`;
-        if (params.roomId) {
-            wsPath += `&room_id=${encodeURIComponent(params.roomId)}`;
-        }
-
         console.log("Connecting to game server...");
-        this._ws = new WebSocket(wsPath);
 
-        this._ws.onopen = () => {
-            const callbacks: GameConnectionCallbacks = {
+        this._gameConnection = new GameConnection({
+            wsUrl: params.wsUrl,
+            token: params.token,
+            deckId: params.deckId,
+            roomId: params.roomId,
+            playerId: params.playerId,
+            callbacks: {
                 onMessage: (msg) => {
                     console.log("Game message:", msg.type, msg.data);
                 },
@@ -69,26 +66,8 @@ export default class GameInitParamsComponent implements IScript {
                 onGameOver: (winnerId) => {
                     console.log("Game over! Winner:", winnerId);
                 }
-            };
-
-            this._gameConnection = new GameConnection({
-                ws: this._ws!,
-                playerId: params.playerId,
-                callbacks
-            });
-
-            console.log("Game connection established");
-        };
-
-        this._ws.onerror = () => {
-            console.error("WebSocket connection error");
-        };
-
-        this._ws.onclose = (event) => {
-            console.log("WebSocket closed:", event.code, event.reason);
-            this._gameConnection?.dispose();
-            this._gameConnection = null;
-        };
+            }
+        });
     }
 
     /** Get the current game connection (if established) */
@@ -98,8 +77,6 @@ export default class GameInitParamsComponent implements IScript {
 
     public onStop(): void {
         this._gameConnection?.dispose();
-        this._ws?.close();
         this._gameConnection = null;
-        this._ws = null;
     }
 }

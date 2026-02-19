@@ -20,7 +20,6 @@
     let connectionError = $state<string | null>(null);
 
     // Game state (bridged from GameConnection)
-    let ws: WebSocket | null = $state(null);
     let gameConnection: GameConnection | null = $state(null);
     let connected = $state(false);
     let messages = $state<GameMessage[]>([]);
@@ -116,51 +115,30 @@
         }
 
         // Debug mode: inline WebSocket connection
-        let wsPath = `${wsUrl}/game/ws?token=${encodeURIComponent(token)}&deck_id=${selectedDeckId}`;
-        if (!createNewRoom && selectedRoomId) {
-            wsPath += `&room_id=${encodeURIComponent(selectedRoomId)}`;
-        }
-        
-        // Create WebSocket and hand off to GameConnection
-        ws = new WebSocket(wsPath);
-        
-        ws.onopen = () => {
-            // Initialize GameConnection once WebSocket is open
-            gameConnection = new GameConnection({
-                ws: ws!,
-                playerId: String(authStore.user!.id),
-                callbacks: {
-                    onMessage: (msg) => {
-                        messages = [...messages, msg];
-                    },
-                    onValidActionsChange: (actions) => {
-                        validActions = actions;
-                    },
-                    onConnectionChange: (isConnected) => {
-                        connected = isConnected;
-                    },
-                    onError: (error) => {
-                        connectionError = error;
+        gameConnection = new GameConnection({
+            wsUrl,
+            token,
+            deckId: selectedDeckId,
+            roomId: !createNewRoom ? selectedRoomId ?? undefined : undefined,
+            playerId: String(authStore.user!.id),
+            callbacks: {
+                onMessage: (msg) => {
+                    messages = [...messages, msg];
+                },
+                onValidActionsChange: (actions) => {
+                    validActions = actions;
+                },
+                onConnectionChange: (isConnected) => {
+                    connected = isConnected;
+                    if (isConnected) {
+                        connectionError = null;
                     }
+                },
+                onError: (error) => {
+                    connectionError = error;
                 }
-            });
-            connected = true;
-            connectionError = null;
-        };
-
-        ws.onclose = (event) => {
-            connected = false;
-            gameConnection?.dispose();
-            gameConnection = null;
-            if (event.code === 1008) {
-                connectionError = event.reason || 'Connection refused. Please check your deck and try again.';
             }
-        };
-
-        ws.onerror = () => {
-            connected = false;
-            connectionError = 'Connection error. Please try again.';
-        };
+        });
     }
 
     onMount(() => {
@@ -175,7 +153,6 @@
 
     onDestroy(() => {
         gameConnection?.dispose();
-        ws?.close();
     });
 
     function sendMessage(event: SubmitEvent) {
@@ -193,9 +170,7 @@
 
     function reconnect() {
         gameConnection?.dispose();
-        ws?.close();
         gameConnection = null;
-        ws = null;
         connected = false;
         selectedDeckId = null;
         selectedRoomId = null;

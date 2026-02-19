@@ -63,8 +63,17 @@ export interface GameConnectionCallbacks {
  * Options for creating a GameConnection instance.
  */
 export interface GameConnectionOptions {
-	/** WebSocket instance to use for communication */
-	ws: WebSocket;
+	/** WebSocket base URL (ws:// or wss://) */
+	wsUrl: string;
+
+	/** Authentication token */
+	token: string;
+
+	/** Deck ID to use for the game */
+	deckId: number;
+
+	/** Room ID to join (optional - creates new room if not provided) */
+	roomId?: string;
 
 	/** Current player's user ID for filtering valid actions */
 	playerId: string;
