@@ -10,7 +10,7 @@ import uuid
 from typing import Annotated, Any, Optional
 from datetime import datetime
 
-from pydantic import Field, SkipValidation, field_serializer
+from pydantic import Field, SkipValidation, field_serializer, computed_field
 
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, TurnPhase, GameStatus
@@ -55,6 +55,11 @@ class GameState(GameBaseModel):
     event_log: list[dict[str, Any]] = []
     pending_action: Optional[str] = None
     config: GameConfiguration = Field(default_factory=GameConfiguration)
+
+    @computed_field
+    @property
+    def total_cards(self) -> float:
+        return len(self.cards)
     
     @field_serializer('current_phase')
     def serialize_phase(self, value: TurnPhase) -> str:
