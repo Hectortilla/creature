@@ -15,8 +15,8 @@
 	],
 	"useOnlyMetallicFromMetallicReflectanceTexture": false,
 	"ambient": [
-		0.611764705882353,
-		0.24705882352941178,
+		0,
+		0,
 		0
 	],
 	"albedo": [
@@ -26,18 +26,18 @@
 	],
 	"baseWeight": 1,
 	"reflectivity": [
-		1,
-		1,
-		1
+		0,
+		0,
+		0
 	],
 	"reflection": [
-		1,
-		1,
-		1
+		0,
+		0,
+		0
 	],
 	"emissive": [
-		0.611764705882353,
-		0.24705882352941178,
+		0,
+		0,
 		0
 	],
 	"microSurface": 1,

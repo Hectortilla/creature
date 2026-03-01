@@ -80,13 +80,9 @@
                         "values": {
                             "_speed": {
                                 "type": "number",
-                                "value": 0.04
-                            },
-                            "_hoverSpeed": {
-                                "type": "number",
                                 "value": 1
                             },
-                            "_hoverHeight": {
+                            "_height": {
                                 "type": "number",
                                 "value": 0.25
                             }
@@ -179,8 +175,8 @@
             ],
             "useOnlyMetallicFromMetallicReflectanceTexture": false,
             "ambient": [
-                0.611764705882353,
-                0.24705882352941178,
+                0,
+                0,
                 0
             ],
             "albedo": [
@@ -190,18 +186,18 @@
             ],
             "baseWeight": 1,
             "reflectivity": [
-                1,
-                1,
-                1
+                0,
+                0,
+                0
             ],
             "reflection": [
-                1,
-                1,
-                1
+                0,
+                0,
+                0
             ],
             "emissive": [
-                0.611764705882353,
-                0.24705882352941178,
+                0,
+                0,
                 0
             ],
             "microSurface": 1,
@@ -438,13 +434,9 @@
                 "values": {
                     "_speed": {
                         "type": "number",
-                        "value": 0.04
-                    },
-                    "_hoverSpeed": {
-                        "type": "number",
                         "value": 1
                     },
-                    "_hoverHeight": {
+                    "_height": {
                         "type": "number",
                         "value": 0.25
                     }

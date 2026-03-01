@@ -2,6 +2,7 @@ import { Scene } from "@babylonjs/core/scene";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import type { IScript } from "babylonjs-editor-tools";
 import GameNetworkManagerComponent from "./GameNetworkManagerComponent";
+import { cloneMeshWithScripts } from "./cloneWithScripts";
 
 const BLUEPRINT_NAME = "UpsideDownCard_BP";
 const CARD_STACK_Y_OFFSET = 1.5;
@@ -35,7 +36,7 @@ export default class CardsInitializer implements IScript {
             throw new Error(`CardsInitializer: blueprint mesh "${BLUEPRINT_NAME}" not found`);
         }
         for (let i = 0; i < total_cards; i++) {
-            const clone = blueprint.clone(`deck_card_${total_cards}`);
+            const clone = cloneMeshWithScripts(blueprint, `deck_card_${i}`);
             if (!clone) continue;
             clone.position = blueprint.position.clone();
             clone.position.y += i * CARD_STACK_Y_OFFSET;

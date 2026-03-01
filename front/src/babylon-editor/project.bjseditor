@@ -2,7 +2,7 @@
     "plugins": [],
     "version": "5.3.1",
     "packageManager": "npm",
-    "lastOpenedScene": "/assets/Scenes/example.scene",
+    "lastOpenedScene": "/assets/Scenes/Battle.scene",
     "compressedTexturesEnabled": false,
     "compressedTexturesEnabledInPreview": false
 }
