@@ -5,10 +5,14 @@
 
 import { loadScene, scriptsDictionary, scriptAssetsCache, _applyScriptsForObject, _removeRegisteredScriptInstance, _preloadScriptsAssets } from "babylonjs-editor-tools";
 import * as scripts_GameNetworkManagerComponent from "./scripts/GameNetworkManagerComponent";
+import * as scripts_CardsInitializer from "./scripts/CardsInitializer";
+import * as scripts_HoverAnimation from "./scripts/HoverAnimation";
 import * as scripts_box from "./scripts/box";
 
 export const scriptsMap = {
     "scripts/GameNetworkManagerComponent.ts": scripts_GameNetworkManagerComponent,
+	"scripts/CardsInitializer.ts": scripts_CardsInitializer,
+	"scripts/HoverAnimation.ts": scripts_HoverAnimation,
 	"scripts/box.ts": scripts_box
 };
 

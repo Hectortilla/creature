@@ -245,7 +245,7 @@
 			<div class="scene-wrapper">
 				<BabylonEditorScene
 					scenePath="/scene/"
-					sceneFile="example.babylon"
+					sceneFile="Battle.babylon"
 					{wsUrl}
 					token={localStorage.getItem('auth_token') ?? ''}
 					playerId={String(authStore.user?.id ?? '')}

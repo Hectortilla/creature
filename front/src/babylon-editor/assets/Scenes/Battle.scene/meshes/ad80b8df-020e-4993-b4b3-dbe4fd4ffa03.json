@@ -1,14 +1,14 @@
 {
     "meshes": [
         {
-            "name": "ground",
-            "id": "0fe36208-15f6-4366-a95f-7a324d858364",
-            "uniqueId": 1716121479529,
-            "type": "GroundMesh",
+            "name": "UpsideDownCard_BP",
+            "id": "ad80b8df-020e-4993-b4b3-dbe4fd4ffa03",
+            "uniqueId": 1772381027321,
+            "type": "Mesh",
             "position": [
-                0,
-                0,
-                0
+                -299.3157152283588,
+                18.613556563086377,
+                -352.2281823400833
             ],
             "rotation": [
                 0,
@@ -61,24 +61,37 @@
             "isBlocker": false,
             "sideOrientation": 1,
             "isUnIndexed": false,
-            "geometryUniqueId": 1716121479530,
-            "geometryId": "fa4be5bf-7e53-4da5-8976-f2f037d975df",
+            "geometryUniqueId": 1772381027322,
+            "geometryId": "67e6224e-9e21-4d01-808f-add4693b36d9",
             "subMeshes": null,
-            "materialUniqueId": 1711813881026,
-            "materialId": "27c18987-1817-46cd-bdb0-2328f55c7f8b",
+            "materialUniqueId": 1772381247636,
+            "materialId": "b8e7bba9-89ff-4cda-b54b-7b207913d026",
             "metadata": {
-                "type": "Ground",
-                "width": 102400,
-                "height": 102400,
-                "minHeight": 0,
-                "maxHeight": 150,
-                "smoothFactor": 0,
-                "heightMapTexturePath": null,
-                "alphaFilter": 0,
-                "colorFilter": [
-                    1,
-                    1,
-                    1
+                "type": "Box",
+                "width": 100,
+                "depth": 150,
+                "height": 1,
+                "sideOrientation": 0,
+                "scripts": [
+                    {
+                        "enabled": true,
+                        "key": "scripts/HoverAnimation.ts",
+                        "_id": "cc21b9be-37aa-4ef2-8b3a-4ced03396a3b",
+                        "values": {
+                            "_speed": {
+                                "type": "number",
+                                "value": 0.04
+                            },
+                            "_hoverSpeed": {
+                                "type": "number",
+                                "value": 1
+                            },
+                            "_hoverHeight": {
+                                "type": "number",
+                                "value": 0.25
+                            }
+                        }
+                    }
                 ]
             },
             "instances": [],
@@ -95,54 +108,46 @@
             ],
             "renderOverlay": false,
             "applyFog": true,
-            "subdivisionsX": 1,
-            "subdivisionsY": 1,
-            "minX": -512,
-            "maxX": 512,
-            "minZ": -512,
-            "maxZ": 512,
-            "width": 1024,
-            "height": 1024,
-            "delayLoadingFile": "assets/example.scene/geometries/fa4be5bf-7e53-4da5-8976-f2f037d975df.babylonbinarymeshdata",
+            "delayLoadingFile": "assets/Scenes/Battle.scene/geometries/67e6224e-9e21-4d01-808f-add4693b36d9.babylonbinarymeshdata",
             "boundingBoxMaximum": [
-                51200,
-                0,
-                51200
+                50,
+                0.5,
+                75
             ],
             "boundingBoxMinimum": [
-                -51200,
-                0,
-                -51200
+                -50,
+                -0.5,
+                -75
             ],
             "_binaryInfo": {
                 "positionsAttrDesc": {
-                    "count": 12,
+                    "count": 72,
                     "stride": 3,
                     "offset": 0,
                     "dataType": 1
                 },
                 "normalsAttrDesc": {
-                    "count": 12,
+                    "count": 72,
                     "stride": 3,
-                    "offset": 48,
+                    "offset": 288,
                     "dataType": 1
                 },
                 "uvsAttrDesc": {
-                    "count": 8,
+                    "count": 48,
                     "stride": 2,
-                    "offset": 96,
+                    "offset": 576,
                     "dataType": 1
                 },
                 "indicesAttrDesc": {
-                    "count": 6,
+                    "count": 36,
                     "stride": 1,
-                    "offset": 128,
+                    "offset": 768,
                     "dataType": 0
                 },
                 "subMeshesAttrDesc": {
                     "count": 1,
                     "stride": 5,
-                    "offset": 152,
+                    "offset": 912,
                     "dataType": 0
                 }
             },
@@ -164,58 +169,8 @@
             "environmentIntensity": 1,
             "specularIntensity": 1,
             "disableBumpMap": false,
-            "albedoTexture": {
-                "tags": null,
-                "url": "assets/albedo.png",
-                "uOffset": 0,
-                "vOffset": 0,
-                "uScale": 500,
-                "vScale": 500,
-                "uAng": 0,
-                "vAng": 0,
-                "wAng": 0,
-                "uRotationCenter": 0.5,
-                "vRotationCenter": 0.5,
-                "wRotationCenter": 0.5,
-                "homogeneousRotationInUVTransform": false,
-                "isBlocking": true,
-                "name": "assets/albedo.png",
-                "metadata": {
-                    "baseSize": {
-                        "width": 512,
-                        "height": 512
-                    }
-                },
-                "hasAlpha": false,
-                "getAlphaFromRGB": false,
-                "level": 1,
-                "coordinatesIndex": 0,
-                "optimizeUVAllocation": true,
-                "coordinatesMode": 0,
-                "wrapU": 1,
-                "wrapV": 1,
-                "wrapR": 1,
-                "anisotropicFilteringLevel": 4,
-                "isCube": false,
-                "is3D": false,
-                "is2DArray": false,
-                "gammaSpace": true,
-                "invertZ": false,
-                "lodLevelInAlpha": false,
-                "lodGenerationOffset": 0,
-                "lodGenerationScale": 0,
-                "linearSpecularLOD": false,
-                "isRenderTarget": false,
-                "animations": [],
-                "invertY": true,
-                "samplingMode": 3,
-                "_useSRGBBuffer": false,
-                "noMipmap": false
-            },
             "ambientTextureStrength": 1,
             "ambientTextureImpactOnAnalyticalLights": 0,
-            "metallic": 0,
-            "roughness": 1,
             "metallicF0Factor": 1,
             "metallicReflectanceColor": [
                 1,
@@ -224,14 +179,14 @@
             ],
             "useOnlyMetallicFromMetallicReflectanceTexture": false,
             "ambient": [
-                0,
-                0,
+                0.611764705882353,
+                0.24705882352941178,
                 0
             ],
             "albedo": [
-                1,
-                1,
-                1
+                0.611764705882353,
+                0.24705882352941178,
+                0
             ],
             "baseWeight": 1,
             "reflectivity": [
@@ -245,8 +200,8 @@
                 1
             ],
             "emissive": [
-                0,
-                0,
+                0.611764705882353,
+                0.24705882352941178,
                 0
             ],
             "microSurface": 1,
@@ -283,15 +238,14 @@
             "useRadianceOcclusion": true,
             "unlit": false,
             "applyDecalMapAfterDetailMap": false,
-            "id": "27c18987-1817-46cd-bdb0-2328f55c7f8b",
-            "name": "ground",
+            "id": "b8e7bba9-89ff-4cda-b54b-7b207913d026",
+            "name": "UpsideDownCard",
             "checkReadyOnEveryCall": false,
             "checkReadyOnlyOnce": false,
             "state": "",
             "alpha": 1,
             "backFaceCulling": true,
             "cullBackFaces": true,
-            "sideOrientation": 1,
             "_alphaMode": [
                 2
             ],
@@ -308,7 +262,6 @@
             "pointsCloud": false,
             "fillMode": 0,
             "_isVertexOutputInvariant": false,
-            "transparencyMode": 0,
             "stencil": {
                 "tags": null,
                 "func": 519,
@@ -324,7 +277,7 @@
                 "mask": 255,
                 "enabled": false
             },
-            "uniqueId": 1711813881026,
+            "uniqueId": 1772381247636,
             "plugins": {
                 "PBRBRDFConfiguration": {
                     "tags": null,
@@ -437,7 +390,7 @@
                         1
                     ],
                     "useMaskFromThicknessTexture": false,
-                    "useGltfStyleTextures": false,
+                    "useGltfStyleTextures": true,
                     "applyAlbedoAfterSubSurface": false,
                     "legacyTranslucency": false,
                     "name": "PBRSubSurface",
@@ -472,18 +425,31 @@
         "vertexData": []
     },
     "metadata": {
-        "type": "Ground",
-        "width": 102400,
-        "height": 102400,
-        "minHeight": 0,
-        "maxHeight": 150,
-        "smoothFactor": 0,
-        "heightMapTexturePath": null,
-        "alphaFilter": 0,
-        "colorFilter": [
-            1,
-            1,
-            1
+        "type": "Box",
+        "width": 100,
+        "depth": 150,
+        "height": 1,
+        "sideOrientation": 0,
+        "scripts": [
+            {
+                "enabled": true,
+                "key": "scripts/HoverAnimation.ts",
+                "_id": "cc21b9be-37aa-4ef2-8b3a-4ced03396a3b",
+                "values": {
+                    "_speed": {
+                        "type": "number",
+                        "value": 0.04
+                    },
+                    "_hoverSpeed": {
+                        "type": "number",
+                        "value": 1
+                    },
+                    "_hoverHeight": {
+                        "type": "number",
+                        "value": 0.25
+                    }
+                }
+            }
         ]
     },
     "basePoseMatrix": [

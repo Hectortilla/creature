@@ -1,8 +1,8 @@
 {
     "clearColor": [
-        1,
         0.2,
-        1,
+        0.2,
+        0.3,
         1
     ],
     "ambientColor": [
@@ -12,76 +12,7 @@
     ],
     "environment": {
         "iblIntensity": 1,
-        "environmentIntensity": 1,
-        "environmentTexture": {
-            "tags": null,
-            "url": "assets/country.env",
-            "boundingBoxPosition": [
-                0,
-                0,
-                0
-            ],
-            "rotationY": 0,
-            "files": [],
-            "textureMatrix": [
-                1,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            "textureMatrixRefraction": [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            "name": "assets/country.env",
-            "hasAlpha": false,
-            "getAlphaFromRGB": false,
-            "level": 1,
-            "coordinatesIndex": 0,
-            "optimizeUVAllocation": true,
-            "coordinatesMode": 3,
-            "wrapU": 0,
-            "wrapV": 0,
-            "wrapR": 1,
-            "anisotropicFilteringLevel": 1,
-            "isCube": true,
-            "is3D": false,
-            "is2DArray": false,
-            "gammaSpace": false,
-            "invertZ": false,
-            "lodLevelInAlpha": false,
-            "lodGenerationOffset": 0,
-            "lodGenerationScale": 0.8,
-            "linearSpecularLOD": false,
-            "isRenderTarget": false,
-            "animations": []
-        }
+        "environmentIntensity": 1
     },
     "fog": {
         "fogEnabled": false,
@@ -114,15 +45,11 @@
             "iblShadowsRenderPipeline": null
         },
         {
-            "cameraId": "3ee0f345-7bea-4f59-a657-28c90a7d5e74"
+            "cameraId": "c0ddfe2d-f5b3-4103-9090-d6043b1bead2"
         }
     ],
     "metadata": {
-        "rendering": [
-            {
-                "cameraId": "3ee0f345-7bea-4f59-a657-28c90a7d5e74"
-            }
-        ],
+        "rendering": [],
         "physicsGravity": [
             0,
             -981,
@@ -132,20 +59,8 @@
             {
                 "enabled": true,
                 "key": "scripts/GameNetworkManagerComponent.ts",
-                "_id": "d5c1ac6d-8c5b-42cc-8198-2aa6901bd282",
+                "_id": "a9c638f0-1886-4088-ae77-262f9566ebd1",
                 "values": {
-                    "deckId": {
-                        "type": "number",
-                        "value": 0
-                    },
-                    "roomId": {
-                        "type": "string",
-                        "value": ""
-                    },
-                    "createRoom": {
-                        "type": "boolean",
-                        "value": false
-                    },
                     "wsUrl": {
                         "type": "string",
                         "value": ""
@@ -157,8 +72,25 @@
                     "playerId": {
                         "type": "string",
                         "value": ""
+                    },
+                    "deckId": {
+                        "type": "number",
+                        "value": 0
+                    },
+                    "roomId": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "createRoom": {
+                        "type": "boolean",
+                        "value": false
                     }
                 }
+            },
+            {
+                "enabled": true,
+                "key": "scripts/CardsInitializer.ts",
+                "_id": "74b20320-3bdf-4efe-8028-d6ed14ce8c86"
             }
         ]
     },
@@ -178,15 +110,15 @@
         "applyGravity": false,
         "updateUpVectorFromRotation": false,
         "rotation": [
-            0.1371668477935948,
-            -0.7567244308358817,
+            0.9146436562499997,
+            0.008599087992438097,
             0
         ],
-        "speed": 200,
+        "speed": 20,
         "position": [
-            461.58465792469366,
-            140.63771402557663,
-            -488.54810769867925
+            -97.33400183037882,
+            893.8727660334328,
+            -965.2445581470862
         ],
         "upVector": [
             0,

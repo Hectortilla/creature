@@ -5,58 +5,8 @@
 	"environmentIntensity": 1,
 	"specularIntensity": 1,
 	"disableBumpMap": false,
-	"albedoTexture": {
-		"tags": null,
-		"url": "assets/amiga.jpg",
-		"uOffset": 0,
-		"vOffset": 0,
-		"uScale": 1,
-		"vScale": 1,
-		"uAng": 0,
-		"vAng": 0,
-		"wAng": 0,
-		"uRotationCenter": 0.5,
-		"vRotationCenter": 0.5,
-		"wRotationCenter": 0.5,
-		"homogeneousRotationInUVTransform": false,
-		"isBlocking": true,
-		"name": "assets/amiga.jpg",
-		"metadata": {
-			"baseSize": {
-				"width": 128,
-				"height": 128
-			}
-		},
-		"hasAlpha": false,
-		"getAlphaFromRGB": false,
-		"level": 1,
-		"coordinatesIndex": 0,
-		"optimizeUVAllocation": true,
-		"coordinatesMode": 0,
-		"wrapU": 1,
-		"wrapV": 1,
-		"wrapR": 1,
-		"anisotropicFilteringLevel": 4,
-		"isCube": false,
-		"is3D": false,
-		"is2DArray": false,
-		"gammaSpace": true,
-		"invertZ": false,
-		"lodLevelInAlpha": false,
-		"lodGenerationOffset": 0,
-		"lodGenerationScale": 0,
-		"linearSpecularLOD": false,
-		"isRenderTarget": false,
-		"animations": [],
-		"invertY": true,
-		"samplingMode": 3,
-		"_useSRGBBuffer": false,
-		"noMipmap": false
-	},
 	"ambientTextureStrength": 1,
 	"ambientTextureImpactOnAnalyticalLights": 0,
-	"metallic": 0,
-	"roughness": 1,
 	"metallicF0Factor": 1,
 	"metallicReflectanceColor": [
 		1,
@@ -65,14 +15,14 @@
 	],
 	"useOnlyMetallicFromMetallicReflectanceTexture": false,
 	"ambient": [
-		0,
-		0,
+		0.611764705882353,
+		0.24705882352941178,
 		0
 	],
 	"albedo": [
-		1,
-		1,
-		1
+		0.611764705882353,
+		0.24705882352941178,
+		0
 	],
 	"baseWeight": 1,
 	"reflectivity": [
@@ -86,8 +36,8 @@
 		1
 	],
 	"emissive": [
-		0,
-		0,
+		0.611764705882353,
+		0.24705882352941178,
 		0
 	],
 	"microSurface": 1,
@@ -124,15 +74,14 @@
 	"useRadianceOcclusion": true,
 	"unlit": false,
 	"applyDecalMapAfterDetailMap": false,
-	"id": "9f2b8769-ac8e-4289-b8a4-171c5b7d3139",
-	"name": "box",
+	"id": "b8e7bba9-89ff-4cda-b54b-7b207913d026",
+	"name": "UpsideDownCard",
 	"checkReadyOnEveryCall": false,
 	"checkReadyOnlyOnce": false,
 	"state": "",
 	"alpha": 1,
 	"backFaceCulling": true,
 	"cullBackFaces": true,
-	"sideOrientation": 1,
 	"_alphaMode": [
 		2
 	],
@@ -149,7 +98,6 @@
 	"pointsCloud": false,
 	"fillMode": 0,
 	"_isVertexOutputInvariant": false,
-	"transparencyMode": 0,
 	"stencil": {
 		"tags": null,
 		"func": 519,
@@ -165,7 +113,7 @@
 		"mask": 255,
 		"enabled": false
 	},
-	"uniqueId": 1711813856778,
+	"uniqueId": 1772381247636,
 	"plugins": {
 		"PBRBRDFConfiguration": {
 			"tags": null,
@@ -278,7 +226,7 @@
 				1
 			],
 			"useMaskFromThicknessTexture": false,
-			"useGltfStyleTextures": false,
+			"useGltfStyleTextures": true,
 			"applyAlbedoAfterSubSurface": false,
 			"legacyTranslucency": false,
 			"name": "PBRSubSurface",

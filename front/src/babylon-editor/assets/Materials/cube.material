@@ -7,11 +7,11 @@
 	"disableBumpMap": false,
 	"albedoTexture": {
 		"tags": null,
-		"url": "assets/albedo.png",
+		"url": "assets/Materials/Textures/amiga.jpg",
 		"uOffset": 0,
 		"vOffset": 0,
-		"uScale": 500,
-		"vScale": 500,
+		"uScale": 1,
+		"vScale": 1,
 		"uAng": 0,
 		"vAng": 0,
 		"wAng": 0,
@@ -20,11 +20,11 @@
 		"wRotationCenter": 0.5,
 		"homogeneousRotationInUVTransform": false,
 		"isBlocking": true,
-		"name": "assets/albedo.png",
+		"name": "assets/Materials/Textures/amiga.jpg",
 		"metadata": {
 			"baseSize": {
-				"width": 512,
-				"height": 512
+				"width": 128,
+				"height": 128
 			}
 		},
 		"hasAlpha": false,
@@ -124,8 +124,8 @@
 	"useRadianceOcclusion": true,
 	"unlit": false,
 	"applyDecalMapAfterDetailMap": false,
-	"id": "27c18987-1817-46cd-bdb0-2328f55c7f8b",
-	"name": "ground",
+	"id": "9f2b8769-ac8e-4289-b8a4-171c5b7d3139",
+	"name": "box",
 	"checkReadyOnEveryCall": false,
 	"checkReadyOnlyOnce": false,
 	"state": "",
@@ -165,7 +165,7 @@
 		"mask": 255,
 		"enabled": false
 	},
-	"uniqueId": 1711813881026,
+	"uniqueId": 1711813856778,
 	"plugins": {
 		"PBRBRDFConfiguration": {
 			"tags": null,

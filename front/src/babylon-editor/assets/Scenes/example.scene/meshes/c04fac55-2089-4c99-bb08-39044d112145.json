@@ -99,7 +99,7 @@
             ],
             "renderOverlay": false,
             "applyFog": true,
-            "delayLoadingFile": "assets/example.scene/geometries/0ba89c0a-1fc1-414a-af14-ffbc7ee3200d.babylonbinarymeshdata",
+            "delayLoadingFile": "assets/Scenes/example.scene/geometries/0ba89c0a-1fc1-414a-af14-ffbc7ee3200d.babylonbinarymeshdata",
             "boundingBoxMaximum": [
                 50,
                 50,
@@ -162,7 +162,7 @@
             "disableBumpMap": false,
             "albedoTexture": {
                 "tags": null,
-                "url": "assets/amiga.jpg",
+                "url": "assets/Materials/Textures/amiga.jpg",
                 "uOffset": 0,
                 "vOffset": 0,
                 "uScale": 1,
@@ -175,7 +175,7 @@
                 "wRotationCenter": 0.5,
                 "homogeneousRotationInUVTransform": false,
                 "isBlocking": true,
-                "name": "assets/amiga.jpg",
+                "name": "assets/Materials/Textures/amiga.jpg",
                 "metadata": {
                     "baseSize": {
                         "width": 128,
