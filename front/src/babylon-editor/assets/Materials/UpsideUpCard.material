@@ -20,9 +20,9 @@
 		0
 	],
 	"albedo": [
-		0.611764705882353,
-		0.25013490748664086,
-		0
+		0,
+		0.2952018458651098,
+		0.611764705882353
 	],
 	"baseWeight": 1,
 	"reflectivity": [
@@ -74,7 +74,7 @@
 	"useRadianceOcclusion": true,
 	"unlit": false,
 	"applyDecalMapAfterDetailMap": false,
-	"id": "8125faf2-c426-4c55-b7a9-38d1daacd9e1",
+	"id": "b8e7bba9-89ff-4cda-b54b-7b207913d026",
 	"name": "UpsideUpCard",
 	"checkReadyOnEveryCall": false,
 	"checkReadyOnlyOnce": false,
@@ -113,7 +113,7 @@
 		"mask": 255,
 		"enabled": false
 	},
-	"uniqueId": 1772481978950,
+	"uniqueId": 1772381247636,
 	"plugins": {
 		"PBRBRDFConfiguration": {
 			"tags": null,

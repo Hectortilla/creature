@@ -93,8 +93,13 @@
             },
             {
                 "enabled": true,
-                "key": "scripts/CardsInitializer.ts",
-                "_id": "74b20320-3bdf-4efe-8028-d6ed14ce8c86"
+                "key": "scripts/DeckCardsPosManager.ts",
+                "_id": "04abe6d9-efcf-490c-a9c9-934d2684e974"
+            },
+            {
+                "enabled": true,
+                "key": "scripts/HandCardsPosManager.ts",
+                "_id": "68611b95-d6fb-41c7-a712-03bf40aea30d"
             }
         ]
     },
@@ -114,15 +119,15 @@
         "applyGravity": false,
         "updateUpVectorFromRotation": false,
         "rotation": [
-            0.540377755399703,
-            -0.07118116492336983,
+            0.6389478282461891,
+            0.008362763431609731,
             0
         ],
         "speed": 20,
         "position": [
-            -359.7799830888565,
-            111.44666990346694,
-            -573.975345315269
+            176.65213313724394,
+            418.5475239904996,
+            -702.4967935369282
         ],
         "upVector": [
             0,

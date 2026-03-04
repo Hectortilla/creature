@@ -8,13 +8,7 @@ const BLUEPRINT_NAME = "UpsideDownCard_BP";
 const CARD_STACK_Y_OFFSET = 1.5;
 const MAX_RANDOM_ROTATION = 0.08; // ~4.5 degrees in radians
 
-interface CardSnapshot {
-    instance_id: string;
-    owner_id: string;
-    zone: string;
-}
-
-export default class CardsInitializer implements IScript {
+export default class DeckInstanciator implements IScript {
     private _deckMeshes: Mesh[] = [];
 
     public constructor(private _scene: Scene) {}
@@ -22,7 +16,7 @@ export default class CardsInitializer implements IScript {
     public onStart(): void {
         const manager = GameNetworkManagerComponent.instance;
         if (!manager) {
-            console.warn("CardsInitializer: GameNetworkManagerComponent not available");
+            console.warn("DeckInstanciator: GameNetworkManagerComponent not available");
             return;
         }
         manager.on("gameStarted", this.handleGameStarted);
@@ -33,11 +27,12 @@ export default class CardsInitializer implements IScript {
         const total_cards = gameState.total_cards as number;
         const blueprint = this._scene.getMeshByName(BLUEPRINT_NAME) as Mesh;
         if (!blueprint) {
-            throw new Error(`CardsInitializer: blueprint mesh "${BLUEPRINT_NAME}" not found`);
+            throw new Error(`DeckInstanciator: blueprint mesh "${BLUEPRINT_NAME}" not found`);
         }
         for (let i = 0; i < total_cards; i++) {
             const clone = cloneMeshWithScripts(blueprint, `deck_card_${i}`);
             if (!clone) continue;
+            clone.setEnabled(true);
             clone.position = blueprint.position.clone();
             clone.position.y += i * CARD_STACK_Y_OFFSET;
             clone.rotation = blueprint.rotation.clone();
@@ -46,7 +41,7 @@ export default class CardsInitializer implements IScript {
         }
         // Keep blueprint hidden but available as a template for future cloning
         blueprint.setEnabled(false);
-        console.log(`CardsInitializer: spawned ${this._deckMeshes.length} deck cards`);
+        console.log(`DeckInstanciator: spawned ${this._deckMeshes.length} deck cards`);
     };
 
     public onStop(): void {

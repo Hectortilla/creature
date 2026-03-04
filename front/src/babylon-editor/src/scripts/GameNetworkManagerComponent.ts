@@ -15,6 +15,7 @@ export interface GameEventMap {
 }
 
 type GameEventCallback<K extends keyof GameEventMap> = (data: GameEventMap[K]) => void;
+type GameEventListenerCallback = (data: Record<string, unknown>) => void;
 
 export default class GameNetworkManagerComponent implements IScript {
     static instance: GameNetworkManagerComponent | null = null;
@@ -39,6 +40,7 @@ export default class GameNetworkManagerComponent implements IScript {
 
     private _gameConnection: GameConnection | null = null;
     private _listeners = new Map<keyof GameEventMap, Set<GameEventCallback<any>>>();
+    private _gameEventListeners = new Map<string, Set<GameEventListenerCallback>>();
 
     public constructor(_scene: Scene) {}
 
@@ -55,6 +57,12 @@ export default class GameNetworkManagerComponent implements IScript {
 
     private emit<K extends keyof GameEventMap>(event: K, data: GameEventMap[K]): void {
         const listeners = this._listeners.get(event);
+        if (!listeners) return;
+        for (const cb of listeners) cb(data);
+    }
+
+    private emitGameEvent(eventType: string, data: Record<string, unknown>): void {
+        const listeners = this._gameEventListeners.get(eventType);
         if (!listeners) return;
         for (const cb of listeners) cb(data);
     }
@@ -76,6 +84,12 @@ export default class GameNetworkManagerComponent implements IScript {
                 onError: (error) => this.emit("error", error),
                 onGameStarted: (data) => this.emit("gameStarted", data),
                 onGameOver: (winnerId) => this.emit("gameOver", winnerId),
+                onGameEvents: (events) => {
+                    for (const event of events) {
+                        const eventType = event.event_type as string;
+                        if (eventType) this.emitGameEvent(eventType, event);
+                    }
+                },
             }
         });
     }
@@ -91,6 +105,17 @@ export default class GameNetworkManagerComponent implements IScript {
         this._listeners.get(event)?.delete(callback);
     }
 
+    public onGameEvent(eventType: string, callback: GameEventListenerCallback): void {
+        if (!this._gameEventListeners.has(eventType)) {
+            this._gameEventListeners.set(eventType, new Set());
+        }
+        this._gameEventListeners.get(eventType)!.add(callback);
+    }
+
+    public offGameEvent(eventType: string, callback: GameEventListenerCallback): void {
+        this._gameEventListeners.get(eventType)?.delete(callback);
+    }
+
     public getConnection(): GameConnection | null {
         return this._gameConnection;
     }
@@ -99,6 +124,7 @@ export default class GameNetworkManagerComponent implements IScript {
         this._gameConnection?.dispose();
         this._gameConnection = null;
         this._listeners.clear();
+        this._gameEventListeners.clear();
         GameNetworkManagerComponent.instance = null;
     }
 }

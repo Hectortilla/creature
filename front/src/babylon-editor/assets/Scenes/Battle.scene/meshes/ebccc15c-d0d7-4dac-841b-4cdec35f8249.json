@@ -1,24 +1,24 @@
 {
     "meshes": [
         {
-            "name": "UpsideDownCard_BP",
-            "id": "ad80b8df-020e-4993-b4b3-dbe4fd4ffa03",
-            "uniqueId": 1772381027321,
+            "name": "UpsideUpCard_BP",
+            "id": "ebccc15c-d0d7-4dac-841b-4cdec35f8249",
+            "uniqueId": 1772481914955,
             "type": "Mesh",
             "position": [
-                -299.3157152283588,
-                0.49835499025071783,
-                -352.2281823400833
+                245.9882429633909,
+                114.26040305371333,
+                -451.99312322392694
             ],
             "rotation": [
-                0,
-                0,
+                1.5707963267948966,
+                -3.34429693699644e-14,
                 0
             ],
             "scaling": [
-                1,
-                1,
-                1
+                0.999999999999954,
+                1.0000000000000149,
+                1.0000000000000007
             ],
             "localMatrix": [
                 1,
@@ -64,8 +64,8 @@
             "geometryUniqueId": 1772381027322,
             "geometryId": "67e6224e-9e21-4d01-808f-add4693b36d9",
             "subMeshes": null,
-            "materialUniqueId": 1772481978950,
-            "materialId": "8125faf2-c426-4c55-b7a9-38d1daacd9e1",
+            "materialUniqueId": 1772481914954,
+            "materialId": "a3c3e766-c723-4a6e-820c-d7f803359833",
             "metadata": {
                 "type": "Box",
                 "width": 100,
@@ -180,9 +180,9 @@
                 0
             ],
             "albedo": [
-                0.611764705882353,
-                0.25013490748664086,
-                0
+                0,
+                0.2952018458651098,
+                0.611764705882353
             ],
             "baseWeight": 1,
             "reflectivity": [
@@ -234,8 +234,8 @@
             "useRadianceOcclusion": true,
             "unlit": false,
             "applyDecalMapAfterDetailMap": false,
-            "id": "8125faf2-c426-4c55-b7a9-38d1daacd9e1",
-            "name": "UpsideUpCard",
+            "id": "a3c3e766-c723-4a6e-820c-d7f803359833",
+            "name": "UpsideUpCard (Clone)",
             "checkReadyOnEveryCall": false,
             "checkReadyOnlyOnce": false,
             "state": "",
@@ -273,7 +273,7 @@
                 "mask": 255,
                 "enabled": false
             },
-            "uniqueId": 1772481978950,
+            "uniqueId": 1772481914954,
             "plugins": {
                 "PBRBRDFConfiguration": {
                     "tags": null,

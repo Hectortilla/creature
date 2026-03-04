@@ -57,6 +57,9 @@ export interface GameConnectionCallbacks {
 
 	/** Called when game ends */
 	onGameOver?: (winnerId: string | null) => void;
+
+	/** Called with individual game events extracted from action_result / game_started */
+	onGameEvents?: (events: Record<string, unknown>[]) => void;
 }
 
 /**

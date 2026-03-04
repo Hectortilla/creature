@@ -4,10 +4,11 @@
 	"assets/amiga.jpg": "1772376838414.361",
 	"assets/albedo.png": "1772376838414.073",
 	"assets/country.env": "1772376838430.805",
-	"assets/Materials/cube.material": "1772385226874.7024",
-	"assets/Materials/UpsideDownCard.material": "1772404884779.134",
-	"assets/Materials/floor.material": "1772385226874.7136",
+	"assets/Materials/cube.material": "1772497467424.4238",
+	"assets/Materials/UpsideDownCard.material": "1772499339371.5688",
+	"assets/Materials/floor.material": "1772497467424.3938",
 	"assets/Materials/Textures/amiga.jpg": "1772376838414.361",
 	"assets/Materials/Textures/albedo.png": "1772376838414.073",
-	"assets/UpsideDownCard.material": "1772381694867.8323"
+	"assets/UpsideDownCard.material": "1772381694867.8323",
+	"assets/Materials/UpsideUpCard.material": "1772499339371.4878"
 }

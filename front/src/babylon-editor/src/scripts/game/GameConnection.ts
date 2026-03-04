@@ -150,6 +150,11 @@ export class GameConnection {
 		if (message.type === 'action_result' && message.data?.game_over) {
 			this.callbacks.onGameOver?.(message.data.winner_id as string | null);
 		}
+
+		const events = message.data?.events as Record<string, unknown>[] | undefined;
+		if (events?.length) {
+			this.callbacks.onGameEvents?.(events);
+		}
 	}
 
 	/** Send a game action */
