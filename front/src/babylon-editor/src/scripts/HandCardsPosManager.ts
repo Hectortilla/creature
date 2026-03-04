@@ -17,6 +17,7 @@ const Z_ROTATION_LEFT = -20 * Math.PI / 180;
 const Z_ROTATION_RIGHT = 20 * Math.PI / 180;
 const Y_POSITION = 110;
 const Z_POSITION = -452;
+const ARC_HEIGHT = 80;
 const MAX_HAND_SIZE = 10;
 
 export default class HandCardsPosManager implements IScript {
@@ -32,6 +33,30 @@ export default class HandCardsPosManager implements IScript {
             return;
         }
         manager.onGameEvent("CardDrawnEvent", this.handleCardDrawn);
+        /*
+        this.handleCardDrawn({card_id: "1"})
+        this.handleCardDrawn({card_id: "2"})
+        this.handleCardDrawn({card_id: "3"})
+        this.handleCardDrawn({card_id: "4"})
+        this.handleCardDrawn({card_id: "5"})
+        this.handleCardDrawn({card_id: "6"})
+        this.handleCardDrawn({card_id: "7"})
+        this.handleCardDrawn({card_id: "8"})
+        this.handleCardDrawn({card_id: "9"})
+        this.handleCardDrawn({card_id: "10"})
+        this.handleCardDrawn({card_id: "11"})
+        this.handleCardDrawn({card_id: "12"})
+        this.handleCardDrawn({card_id: "13"})
+        this.handleCardDrawn({card_id: "14"})
+        this.handleCardDrawn({card_id: "15"})
+        this.handleCardDrawn({card_id: "16"})
+        this.handleCardDrawn({card_id: "17"})
+        this.handleCardDrawn({card_id: "18"})
+        this.handleCardDrawn({card_id: "19"})
+        this.handleCardDrawn({card_id: "20"})
+        this.handleCardDrawn({card_id: "21"})
+        this.handleCardDrawn({card_id: "22"})
+        */
     }
 
     private handleCardDrawn = (_data: Record<string, unknown>): void => {
@@ -66,8 +91,9 @@ export default class HandCardsPosManager implements IScript {
             const rotJitter = (Math.random() * 2 - 1) * MAX_RANDOM_ROTATION;
 
             const mesh = this._handMeshes[i];
+            const archOffset = 1 - (2 * t - 1) * (2 * t - 1);
             mesh.position.x = xPos;
-            mesh.position.y = Y_POSITION;
+            mesh.position.y = Y_POSITION + archOffset * ARC_HEIGHT;
             mesh.position.z = Z_POSITION;
             mesh.rotationQuaternion = null;
             mesh.rotation.copyFrom(this._baseRotation);
