@@ -4,9 +4,12 @@ import type { IScript } from "babylonjs-editor-tools";
 import GameNetworkManagerComponent from "./GameNetworkManagerComponent";
 import { cloneMeshWithScripts } from "./cloneWithScripts";
 
+// --- Blueprint ---
 const BLUEPRINT_NAME = "UpsideDownCard_BP";
+
+// --- Stack Layout ---
 const CARD_STACK_Y_OFFSET = 1.5;
-const MAX_RANDOM_ROTATION = 0.08; // ~4.5 degrees in radians
+const MAX_JITTER = 0.08; // ~4.5 degrees
 
 export default class DeckInstanciator implements IScript {
     private _deckMeshes: Mesh[] = [];
@@ -23,23 +26,25 @@ export default class DeckInstanciator implements IScript {
     }
 
     private handleGameStarted = (data: Record<string, unknown>): void => {
-        const gameState = data.game_state as Record<string, unknown>;
-        const total_cards = gameState.total_cards as number;
         const blueprint = this._scene.getMeshByName(BLUEPRINT_NAME) as Mesh;
         if (!blueprint) {
             throw new Error(`DeckInstanciator: blueprint mesh "${BLUEPRINT_NAME}" not found`);
         }
-        for (let i = 0; i < total_cards; i++) {
+
+        const totalCards = (data.game_state as Record<string, unknown>).total_cards as number;
+
+        for (let i = 0; i < totalCards; i++) {
             const clone = cloneMeshWithScripts(blueprint, `deck_card_${i}`);
             if (!clone) continue;
+
             clone.setEnabled(true);
             clone.position = blueprint.position.clone();
             clone.position.y += i * CARD_STACK_Y_OFFSET;
             clone.rotation = blueprint.rotation.clone();
-            clone.rotation.y += (Math.random() * 2 - 1) * MAX_RANDOM_ROTATION;
+            clone.rotation.y += (Math.random() * 2 - 1) * MAX_JITTER;
             this._deckMeshes.push(clone);
         }
-        // Keep blueprint hidden but available as a template for future cloning
+
         blueprint.setEnabled(false);
         console.log(`DeckInstanciator: spawned ${this._deckMeshes.length} deck cards`);
     };
