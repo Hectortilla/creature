@@ -3,26 +3,27 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import type { IScript } from "babylonjs-editor-tools";
 import GameNetworkManagerComponent from "./GameNetworkManagerComponent";
 import { cloneMeshWithScripts } from "./cloneWithScripts";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Space } from "@babylonjs/core/Maths/math.axis";
 
 const BLUEPRINT_NAME = "UpsideUpCard_BP";
+const MAX_HAND_SIZE = 10;
 
-const MAX_RANDOM_ROTATION = 0.08; // ~4.5 degrees in radians
 const HAND_LEFT = -153;
 const HAND_RIGHT = 246;
 const HAND_CENTER = (HAND_LEFT + HAND_RIGHT) / 2;
 const HAND_HALF_RANGE = (HAND_RIGHT - HAND_LEFT) / 2;
-const Z_ROTATION_LEFT = -20 * Math.PI / 180;
-const Z_ROTATION_RIGHT = 20 * Math.PI / 180;
 const Y_POSITION = 110;
 const Z_POSITION = -452;
 const ARC_HEIGHT = 80;
-const MAX_HAND_SIZE = 10;
+
+const BASE_ROTATION = Quaternion.FromEulerAngles(1.1538920574673148, Math.PI, -Math.PI);
+const Z_ROTATION_LEFT = -20 * Math.PI / 180;
+const Z_ROTATION_RIGHT = 20 * Math.PI / 180;
+const MAX_RANDOM_ROTATION = 0.08; // ~4.5 degrees in radians
 
 export default class HandCardsPosManager implements IScript {
     private _handMeshes: Mesh[] = [];
-    private _baseRotation: Vector3 = Vector3.Zero();
 
     public constructor(private _scene: Scene) {}
 
@@ -33,7 +34,7 @@ export default class HandCardsPosManager implements IScript {
             return;
         }
         manager.onGameEvent("CardDrawnEvent", this.handleCardDrawn);
-        /*
+        // /*
         this.handleCardDrawn({card_id: "1"})
         this.handleCardDrawn({card_id: "2"})
         this.handleCardDrawn({card_id: "3"})
@@ -56,7 +57,7 @@ export default class HandCardsPosManager implements IScript {
         this.handleCardDrawn({card_id: "20"})
         this.handleCardDrawn({card_id: "21"})
         this.handleCardDrawn({card_id: "22"})
-        */
+        // */
     }
 
     private handleCardDrawn = (_data: Record<string, unknown>): void => {
@@ -65,8 +66,6 @@ export default class HandCardsPosManager implements IScript {
             console.warn(`HandCardsPosManager: blueprint "${BLUEPRINT_NAME}" not found`);
             return;
         }
-
-        this._baseRotation = blueprint.rotation.clone();
 
         const clone = cloneMeshWithScripts(blueprint, `hand_card_${this._handMeshes.length}`);
         if (!clone) return;
@@ -95,11 +94,10 @@ export default class HandCardsPosManager implements IScript {
             mesh.position.x = xPos;
             mesh.position.y = Y_POSITION + archOffset * ARC_HEIGHT;
             mesh.position.z = Z_POSITION;
-            mesh.rotationQuaternion = null;
-            mesh.rotation.copyFrom(this._baseRotation);
+            mesh.rotationQuaternion = BASE_ROTATION.clone();
             mesh.rotate(Vector3.Up(), zRotation + rotJitter, Space.LOCAL);
             mesh.rotate(Vector3.Forward(), rotJitter, Space.LOCAL);
-            mesh.rotate(Vector3.Right(), rotJitter/4, Space.LOCAL);
+            mesh.rotate(Vector3.Right(), rotJitter / 4, Space.LOCAL);
         }
     }
 
