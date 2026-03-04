@@ -6,9 +6,11 @@ import { cloneMeshWithScripts } from "./cloneWithScripts";
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Space } from "@babylonjs/core/Maths/math.axis";
 
+// --- Blueprint ---
 const BLUEPRINT_NAME = "UpsideUpCard_BP";
-const MAX_HAND_SIZE = 10;
 
+// --- Hand Layout ---
+const MAX_HAND_SIZE = 10;
 const HAND_LEFT = -153;
 const HAND_RIGHT = 246;
 const HAND_CENTER = (HAND_LEFT + HAND_RIGHT) / 2;
@@ -17,10 +19,11 @@ const Y_POSITION = 110;
 const Z_POSITION = -452;
 const ARC_HEIGHT = 80;
 
+// --- Rotation ---
 const BASE_ROTATION = Quaternion.FromEulerAngles(1.1538920574673148, Math.PI, -Math.PI);
-const Z_ROTATION_LEFT = -20 * Math.PI / 180;
-const Z_ROTATION_RIGHT = 20 * Math.PI / 180;
-const MAX_RANDOM_ROTATION = 0.08; // ~4.5 degrees in radians
+const Z_ROTATION_LEFT = (-20 * Math.PI) / 180;
+const Z_ROTATION_RIGHT = (20 * Math.PI) / 180;
+const MAX_JITTER = 0.08; // ~4.5 degrees
 
 export default class HandCardsPosManager implements IScript {
     private _handMeshes: Mesh[] = [];
@@ -34,29 +37,9 @@ export default class HandCardsPosManager implements IScript {
             return;
         }
         manager.onGameEvent("CardDrawnEvent", this.handleCardDrawn);
+
         // /*
-        this.handleCardDrawn({card_id: "1"})
-        this.handleCardDrawn({card_id: "2"})
-        this.handleCardDrawn({card_id: "3"})
-        this.handleCardDrawn({card_id: "4"})
-        this.handleCardDrawn({card_id: "5"})
-        this.handleCardDrawn({card_id: "6"})
-        this.handleCardDrawn({card_id: "7"})
-        this.handleCardDrawn({card_id: "8"})
-        this.handleCardDrawn({card_id: "9"})
-        this.handleCardDrawn({card_id: "10"})
-        this.handleCardDrawn({card_id: "11"})
-        this.handleCardDrawn({card_id: "12"})
-        this.handleCardDrawn({card_id: "13"})
-        this.handleCardDrawn({card_id: "14"})
-        this.handleCardDrawn({card_id: "15"})
-        this.handleCardDrawn({card_id: "16"})
-        this.handleCardDrawn({card_id: "17"})
-        this.handleCardDrawn({card_id: "18"})
-        this.handleCardDrawn({card_id: "19"})
-        this.handleCardDrawn({card_id: "20"})
-        this.handleCardDrawn({card_id: "21"})
-        this.handleCardDrawn({card_id: "22"})
+        for (let i = 1; i <= 22; i++) this.handleCardDrawn({ card_id: String(i) });
         // */
     }
 
@@ -69,8 +52,8 @@ export default class HandCardsPosManager implements IScript {
 
         const clone = cloneMeshWithScripts(blueprint, `hand_card_${this._handMeshes.length}`);
         if (!clone) return;
-        clone.setEnabled(true);
 
+        clone.setEnabled(true);
         this._handMeshes.push(clone);
         this.repositionHand();
         blueprint.setEnabled(false);
@@ -84,21 +67,24 @@ export default class HandCardsPosManager implements IScript {
         const halfSpan = HAND_HALF_RANGE * spreadFactor;
 
         for (let i = 0; i < n; i++) {
-            const t = n === 1 ? 0.5 : i / (n - 1);
-            const xPos = HAND_CENTER - halfSpan + t * halfSpan * 2;
-            const zRotation = -1 * (Z_ROTATION_LEFT + t * (Z_ROTATION_RIGHT - Z_ROTATION_LEFT));
-            const rotJitter = (Math.random() * 2 - 1) * MAX_RANDOM_ROTATION;
-
-            const mesh = this._handMeshes[i];
-            const archOffset = 1 - (2 * t - 1) * (2 * t - 1);
-            mesh.position.x = xPos;
-            mesh.position.y = Y_POSITION + archOffset * ARC_HEIGHT;
-            mesh.position.z = Z_POSITION;
-            mesh.rotationQuaternion = BASE_ROTATION.clone();
-            mesh.rotate(Vector3.Up(), zRotation + rotJitter, Space.LOCAL);
-            mesh.rotate(Vector3.Forward(), rotJitter, Space.LOCAL);
-            mesh.rotate(Vector3.Right(), rotJitter / 4, Space.LOCAL);
+            this.positionCard(this._handMeshes[i], i, n, halfSpan);
         }
+    }
+
+    private positionCard(mesh: Mesh, index: number, total: number, halfSpan: number): void {
+        const t = total === 1 ? 0.5 : index / (total - 1);
+        const jitter = (Math.random() * 2 - 1) * MAX_JITTER;
+        const archOffset = 1 - (2 * t - 1) ** 2;
+
+        mesh.position.x = HAND_CENTER - halfSpan + t * halfSpan * 2;
+        mesh.position.y = Y_POSITION + archOffset * ARC_HEIGHT;
+        mesh.position.z = Z_POSITION;
+
+        const fanAngle = -(Z_ROTATION_LEFT + t * (Z_ROTATION_RIGHT - Z_ROTATION_LEFT));
+        mesh.rotationQuaternion = BASE_ROTATION.clone();
+        mesh.rotate(Vector3.Up(), fanAngle + jitter, Space.LOCAL);
+        mesh.rotate(Vector3.Forward(), jitter, Space.LOCAL);
+        mesh.rotate(Vector3.Right(), jitter / 4, Space.LOCAL);
     }
 
     public onStop(): void {
