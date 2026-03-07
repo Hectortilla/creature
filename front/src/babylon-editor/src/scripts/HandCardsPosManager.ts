@@ -39,7 +39,7 @@ export default class HandCardsPosManager implements IScript {
         manager.onGameEvent("CardDrawnEvent", this.handleCardDrawn);
 
         // /*
-        for (let i = 1; i <= 22; i++) this.handleCardDrawn({ card_id: String(i) });
+        for (let i = 1; i <= 22; i++) this.handleCardDrawn({ instance_id: String(i) });
         // */
     }
 

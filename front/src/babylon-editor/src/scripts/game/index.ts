@@ -6,6 +6,8 @@
  */
 
 export { GameConnection } from './GameConnection';
+export { CardDefinitionCache } from './CardDefinitionCache';
+export type { CardDefinition } from './CardDefinitionCache';
 export type {
 	ValidAction,
 	GameMessage,

@@ -117,9 +117,9 @@ Each backend event type modifies state and emits the corresponding typed change 
 | Backend Event | State Mutation | Change Event Emitted |
 |---|---|---|
 | `GameStartedEvent` | Initialize full `ClientGameState` from `game_state` payload | `gameStarted` |
-| `CardDrawnEvent` | Move card_id from DECK → HAND in player's zones, add card data to `cards` map | `cardAdded` + `cardMoved` |
-| `CardPlayedEvent` | Move card_id from HAND → SUPPORTING | `cardMoved` |
-| `CardPromotedEvent` | Move card_id from SUPPORTING → ATTACKING | `cardMoved` |
+| `CardDrawnEvent` | Move instance_id from DECK → HAND in player's zones, add card data to `cards` map | `cardAdded` + `cardMoved` |
+| `CardPlayedEvent` | Move instance_id from HAND → SUPPORTING | `cardMoved` |
+| `CardPromotedEvent` | Move instance_id from SUPPORTING → ATTACKING | `cardMoved` |
 | `CardSwappedEvent` | Swap positions of supporting_card_id and attacking_card_id | `cardMoved` (×2) |
 | `DamageDealtEvent` | Update target card's `currentHealth` | `cardHealthChanged` |
 | `CardDestroyedEvent` | Move card to GRAVEYARD, mark not alive | `cardDestroyed` + `cardMoved` |
@@ -132,7 +132,7 @@ Each backend event type modifies state and emits the corresponding typed change 
 1. **State updates are synchronous and immediate.** No async, no waiting for animations.
 2. **The store does NOT know about meshes, animations, or BabylonJS.** Pure data only.
 3. **The store emits events AFTER mutating state**, so listeners always see the new state.
-4. **Card data population:** When `CardDrawnEvent` arrives and the event includes card data, the store adds it to `state.cards`. If no card data is in the event, the store creates a minimal entry with just the `instanceId` and marks it as needing data.
+4. **Card data population:** When `CardDrawnEvent` arrives and the event includes card data, the store adds it to `state.cards`. If no card data is in the event, the store creates a minimal entry with just the `instanceId` and uses `CardDefinitionCache` to fetch the definition by `card_id` (database ID).
 
 ### Important: Handling Opponent vs Self
 

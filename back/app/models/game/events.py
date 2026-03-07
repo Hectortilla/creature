@@ -47,13 +47,14 @@ class GameEvent(GameBaseModel, ABC):
 class CardDrawnEvent(GameEvent):
     """Event fired when a card is drawn from deck to hand."""
     player_id: str = ""
-    card_id: str = ""
+    instance_id: str = ""
+    card_id: int = 0
     cards_remaining: int = 0
 
 
 class CardMovedEvent(GameEvent):
     """Event fired when a card moves between zones."""
-    card_id: str = ""
+    instance_id: str = ""
     owner_id: str = ""
     from_zone: Optional[Zone] = None
     to_zone: Optional[Zone] = None
@@ -70,14 +71,16 @@ class CardMovedEvent(GameEvent):
 class CardPlayedEvent(GameEvent):
     """Event fired when a card is played from hand to supporting zone."""
     player_id: str = ""
-    card_id: str = ""
+    instance_id: str = ""
+    card_id: int = 0
     card_name: str = ""
 
 
 class CardPromotedEvent(GameEvent):
     """Event fired when a card is promoted from supporting to attacking zone."""
     player_id: str = ""
-    card_id: str = ""
+    instance_id: str = ""
+    card_id: int = 0
     card_name: str = ""
 
 
@@ -96,6 +99,7 @@ class CardAssociatedEvent(GameEvent):
     """Event fired when a card is associated with another card."""
     player_id: str = ""
     association_card_id: str = ""
+    card_id: int = 0
     target_card_id: str = ""
     source_zone: Optional[Zone] = None
     
@@ -109,6 +113,7 @@ class CardEvolvedEvent(GameEvent):
     player_id: str = ""
     base_card_id: str = ""
     evolution_card_id: str = ""
+    card_id: int = 0
     base_card_name: str = ""
     evolution_card_name: str = ""
 
@@ -144,7 +149,7 @@ class DamageDealtEvent(GameEvent):
 
 class CardDestroyedEvent(GameEvent):
     """Event fired when a card is destroyed (health <= 0)."""
-    card_id: str = ""
+    instance_id: str = ""
     owner_id: str = ""
     card_name: str = ""
     destroyed_by: Optional[str] = None

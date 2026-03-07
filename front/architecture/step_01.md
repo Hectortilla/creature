@@ -186,24 +186,28 @@ type GameEventType =
   | "EffectAppliedEvent";
 
 // Typed event payloads for the most critical events
+// Events use instance_id (UUID) + card_id (database ID) to identify cards
 interface CardDrawnEventData {
   event_type: "CardDrawnEvent";
   player_id: string;
-  card_id: string;
+  instance_id: string;
+  card_id: number;
   cards_remaining: number;
 }
 
 interface CardPlayedEventData {
   event_type: "CardPlayedEvent";
   player_id: string;
-  card_id: string;
+  instance_id: string;
+  card_id: number;
   card_name: string;
 }
 
 interface CardPromotedEventData {
   event_type: "CardPromotedEvent";
   player_id: string;
-  card_id: string;
+  instance_id: string;
+  card_id: number;
   card_name: string;
 }
 
@@ -237,10 +241,10 @@ interface DamageDealtEventData {
 
 interface CardDestroyedEventData {
   event_type: "CardDestroyedEvent";
-  card_id: string;
+  instance_id: string;
   owner_id: string;
   card_name: string;
-  destroyed_by: string;
+  destroyed_by: string | null;
 }
 
 interface PhaseChangedEventData {

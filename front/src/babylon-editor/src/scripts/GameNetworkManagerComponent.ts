@@ -1,7 +1,7 @@
 import { Scene } from "@babylonjs/core/scene";
 import { visibleAsNumber, visibleAsString, visibleAsBoolean } from "babylonjs-editor-tools";
 import type { IScript } from "babylonjs-editor-tools";
-import { GameConnection } from "./game";
+import { GameConnection, CardDefinitionCache } from "./game";
 import type { GameMessage, ValidAction } from "./game";
 
 export interface GameEventMap {
@@ -39,6 +39,7 @@ export default class GameNetworkManagerComponent implements IScript {
     public createRoom: boolean = false;
 
     private _gameConnection: GameConnection | null = null;
+    private _cardCache: CardDefinitionCache | null = null;
     private _listeners = new Map<keyof GameEventMap, Set<GameEventCallback<any>>>();
     private _gameEventListeners = new Map<string, Set<GameEventListenerCallback>>();
 
@@ -51,6 +52,9 @@ export default class GameNetworkManagerComponent implements IScript {
             console.log("Missing connection params - skipping connection setup");
             return;
         }
+
+        this._cardCache = CardDefinitionCache.getOrCreate();
+        this._cardCache.initialize(this.wsUrl, this.token);
 
         this.initializeConnection();
     }
@@ -86,6 +90,7 @@ export default class GameNetworkManagerComponent implements IScript {
                 onGameOver: (winnerId) => this.emit("gameOver", winnerId),
                 onGameEvents: (events) => {
                     for (const event of events) {
+                        this.registerCardFromEvent(event);
                         const eventType = event.event_type as string;
                         if (eventType) this.emitGameEvent(eventType, event);
                     }
@@ -116,13 +121,27 @@ export default class GameNetworkManagerComponent implements IScript {
         this._gameEventListeners.get(eventType)?.delete(callback);
     }
 
+    private registerCardFromEvent(event: Record<string, unknown>): void {
+        const instanceId = event.instance_id as string | undefined;
+        const cardId = event.card_id as number | undefined;
+        if (instanceId && cardId && cardId > 0) {
+            this._cardCache?.registerInstance(instanceId, cardId);
+        }
+    }
+
     public getConnection(): GameConnection | null {
         return this._gameConnection;
+    }
+
+    public getCardCache(): CardDefinitionCache | null {
+        return this._cardCache;
     }
 
     public onStop(): void {
         this._gameConnection?.dispose();
         this._gameConnection = null;
+        this._cardCache?.dispose();
+        this._cardCache = null;
         this._listeners.clear();
         this._gameEventListeners.clear();
         GameNetworkManagerComponent.instance = null;

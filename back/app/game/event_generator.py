@@ -96,13 +96,14 @@ class ActionToEventGenerator:
         deck = player.zones[Zone.DECK]
         
         for i in range(min(action.count, len(deck.card_ids))):
-            card_id = deck.card_ids[i]
-            card = state.get_card(card_id)
+            instance_id = deck.card_ids[i]
+            card = state.get_card(instance_id)
             
             events.append(CardDrawnEvent(
                 game_id=state.game_id,
                 player_id=action.player_id,
-                card_id=card_id,
+                instance_id=instance_id,
+                card_id=card.card_id if card else 0,
                 cards_remaining=len(deck.card_ids) - i - 1,
             ))
         
@@ -111,13 +112,14 @@ class ActionToEventGenerator:
     def _create_play_card_events(self, state: "GameState", action: PlayCardAction) -> list[GameEvent]:
         """Create play card events."""
         events = []
-        card = state.get_card(action.card_id)
+        card = state.get_card(action.instance_id)
         
         if card:
             events.append(CardPlayedEvent(
                 game_id=state.game_id,
                 player_id=action.player_id,
-                card_id=action.card_id,
+                instance_id=action.instance_id,
+                card_id=card.card_id,
                 card_name=card.name,
             ))
         
@@ -127,13 +129,14 @@ class ActionToEventGenerator:
         """Create multi play card events."""
         events = []
         
-        for card_id in action.card_ids:
-            card = state.get_card(card_id)
+        for instance_id in action.instance_ids:
+            card = state.get_card(instance_id)
             if card:
                 events.append(CardPlayedEvent(
                     game_id=state.game_id,
                     player_id=action.player_id,
-                    card_id=card_id,
+                    instance_id=instance_id,
+                    card_id=card.card_id,
                     card_name=card.name,
                 ))
         
@@ -142,13 +145,14 @@ class ActionToEventGenerator:
     def _create_promote_events(self, state: "GameState", action: PromoteAction) -> list[GameEvent]:
         """Create promote events."""
         events = []
-        card = state.get_card(action.card_id)
+        card = state.get_card(action.instance_id)
         
         if card:
             events.append(CardPromotedEvent(
                 game_id=state.game_id,
                 player_id=action.player_id,
-                card_id=action.card_id,
+                instance_id=action.instance_id,
+                card_id=card.card_id,
                 card_name=card.name,
             ))
         
@@ -192,6 +196,7 @@ class ActionToEventGenerator:
                 player_id=action.player_id,
                 association_card_id=action.association_card_id,
                 target_card_id=action.target_card_id,
+                card_id=assoc_card.card_id,
                 source_zone=assoc_card.zone,
             ))
         
@@ -209,6 +214,7 @@ class ActionToEventGenerator:
                 player_id=action.player_id,
                 base_card_id=action.target_card_id,
                 evolution_card_id=action.evolution_card_id,
+                card_id=evo_card.card_id,
                 base_card_name=base_card.name,
                 evolution_card_name=evo_card.name,
             ))
@@ -316,7 +322,7 @@ class ActionToEventGenerator:
             if target.current_health - damage_calc.final_damage <= 0:
                 events.append(CardDestroyedEvent(
                     game_id=state.game_id,
-                    card_id=action.target_card_id,
+                    instance_id=action.target_card_id,
                     owner_id=target.owner_id,
                     card_name=target.name,
                     destroyed_by=action.attacker_id,
@@ -340,7 +346,7 @@ class ActionToEventGenerator:
             if attacker.current_health - damage_calc.reflected_damage <= 0:
                 events.append(CardDestroyedEvent(
                     game_id=state.game_id,
-                    card_id=action.attacker_id,
+                    instance_id=action.attacker_id,
                     owner_id=attacker.owner_id,
                     card_name=attacker.name,
                     destroyed_by=action.target_card_id,
@@ -374,10 +380,13 @@ class ActionToEventGenerator:
                 draw_count = state.config.initial_draw if player.turn_count == 0 else state.config.normal_draw
                 deck = player.zones[Zone.DECK]
                 for i in range(min(draw_count, len(deck.card_ids))):
+                    instance_id = deck.card_ids[i]
+                    card = state.get_card(instance_id)
                     events.append(CardDrawnEvent(
                         game_id=state.game_id,
                         player_id=action.player_id,
-                        card_id=deck.card_ids[i],
+                        instance_id=instance_id,
+                        card_id=card.card_id if card else 0,
                         cards_remaining=len(deck.card_ids) - i - 1,
                     ))
         else:
@@ -411,10 +420,13 @@ class ActionToEventGenerator:
             draw_count = state.config.initial_draw if next_player.turn_count == 0 else state.config.normal_draw
             deck = next_player.zones[Zone.DECK]
             for i in range(min(draw_count, len(deck.card_ids))):
+                instance_id = deck.card_ids[i]
+                card = state.get_card(instance_id)
                 events.append(CardDrawnEvent(
                     game_id=state.game_id,
                     player_id=next_player_id,
-                    card_id=deck.card_ids[i],
+                    instance_id=instance_id,
+                    card_id=card.card_id if card else 0,
                     cards_remaining=len(deck.card_ids) - i - 1,
                 ))
             
@@ -431,13 +443,14 @@ class ActionToEventGenerator:
     def _create_force_defend_events(self, state: "GameState", action: ForceDefendAction) -> list[GameEvent]:
         """Create force defend events."""
         events = []
-        card = state.get_card(action.card_id)
+        card = state.get_card(action.instance_id)
         
         if card:
             events.append(CardPromotedEvent(
                 game_id=state.game_id,
                 player_id=action.player_id,
-                card_id=action.card_id,
+                instance_id=action.instance_id,
+                card_id=card.card_id,
                 card_name=card.name,
             ))
         

@@ -67,7 +67,7 @@ Strongly-typed TypeScript interfaces mirroring the backend domain model. Replace
 
 ### 2. Game State Store (`scripts/state/GameStateStore.ts`)
 
-Singleton plain-TS class. The single authoritative client-side model. All other systems read from it.
+Singleton plain-TS class. The single authoritative client-side model. All other systems read from it. Card definition lookups are handled by `CardDefinitionCache`, which fetches definitions by database ID.
 
 **Responsibilities:**
 - Processes backend events immediately to update state (before any animation).
@@ -179,12 +179,12 @@ BabylonJS `AdvancedDynamicTexture` or HTML overlay for UI elements:
 ```
 1. InteractionManager: player clicks a glowing hand card
 2. ActionBuilder: finds PlayCardAction in valid_actions for this card
-3. GameConnection.sendAction({ action_type: "play_card", card_id: "abc" })
+3. GameConnection.sendAction({ action_type: "play_card", instance_id: "abc" })
 4. Backend processes → returns action_result with events + new valid_actions
 5. GameNetworkManager receives message, forwards to GameStateStore
 6. GameStateStore: processes CardPlayedEvent
    → updates card.zone from HAND to SUPPORTING
-   → updates myPlayer.zones.HAND (remove id) and myPlayer.zones.SUPPORTING (add id)
+   → updates myPlayer.zones.HAND (remove instance_id) and myPlayer.zones.SUPPORTING (add instance_id)
    → emits onCardMoved("abc", HAND, SUPPORTING)
 7. BoardController: receives onCardMoved
    → tells HandZoneRenderer.removeCard("abc")
@@ -203,6 +203,7 @@ BabylonJS `AdvancedDynamicTexture` or HTML overlay for UI elements:
 scripts/
 ├── game/
 │   ├── GameConnection.ts          # Keep as-is
+│   ├── CardDefinitionCache.ts     # Fetches card definitions by database ID
 │   ├── types.ts                   # Expand with typed game models
 │   ├── index.ts                   # Re-exports
 │   └── models.ts                  # NEW: ClientCard, ClientPlayerState, enums, etc.
@@ -253,7 +254,7 @@ scripts/
 
 | Current File | Action |
 |---|---|
-| `GameNetworkManagerComponent.ts` | **Modify** — keep as scene-script entry point for networking, but strip state processing. Forward raw events to `GameStateStore`. |
+| `GameNetworkManagerComponent.ts` | **Modify** — keep as scene-script entry point for networking, auto-register instance→card mappings from incoming events, forward raw events to `GameStateStore`. |
 | `GameConnection.ts` | **Keep as-is** — well designed, framework-agnostic. |
 | `HandCardsPosManager.ts` | **Delete after refactoring** — extract fan-layout math into `HandZoneRenderer`. Remove event subscription and mesh tracking (now in `CardEntityManager` + `BoardController`). |
 | `DeckCardsPosManager.ts` | **Delete after refactoring** — extract stack layout into `DeckZoneRenderer`. |
@@ -274,11 +275,9 @@ scripts/
 
 ## Backend Prerequisite
 
-The backend currently excludes the `cards` dict from `GameState` serialization, and events like `CardDrawnEvent` only carry `card_id` (instance ID) + `cards_remaining`. The frontend needs card stats (health, attacks, elements, name) to render meaningfully.
+Events use `instance_id: str` (UUID) and `card_id: int` (database ID) to identify cards. Per-player event filtering is implemented in `serialize_events_for_player()` so each client receives only events it is allowed to see.
 
-**Recommended approach:** Extend card-revealing events (`CardDrawnEvent`, `CardPlayedEvent`, `game_started`) to include full card data for newly-visible cards. The client builds its card map incrementally from events. This is event-sourcing-friendly and avoids leaking opponent hand data.
-
-**Alternative:** Add a `visible_cards` field to the serialized game state containing card data for cards the player is allowed to see.
+The frontend uses `CardDefinitionCache` (not a Svelte store) to fetch card definitions by database ID. `GameNetworkManagerComponent` auto-registers instance→card mappings from incoming events, so the client builds its card map incrementally as events arrive.
 
 ---
 

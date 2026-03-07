@@ -72,7 +72,7 @@ class DrawAction(Action):
 
 class PlayCardAction(Action):
     """Action to play a card from hand to supporting zone."""
-    card_id: str = ""
+    instance_id: str = ""
     
     @property
     def valid_phases(self) -> list[TurnPhase] | None:
@@ -84,23 +84,23 @@ class PlayCardAction(Action):
     
     def get_description(self, state: "GameState" = None) -> str:
         if state:
-            card = state.get_card(self.card_id)
-            card_name = card.name if card else self.card_id
+            card = state.get_card(self.instance_id)
+            card_name = card.name if card else self.instance_id
         else:
-            card_name = self.card_id
+            card_name = self.instance_id
         return f"Play {card_name} to supporting zone"
     
     def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
         d = super().to_dict(state)
         if state:
-            card = state.get_card(self.card_id)
+            card = state.get_card(self.instance_id)
             d["card_name"] = card.name if card else None
         return d
 
 
 class PromoteAction(Action):
     """Action to promote a card from supporting zone to attacking zone."""
-    card_id: str = ""
+    instance_id: str = ""
     
     @property
     def valid_phases(self) -> list[TurnPhase] | None:
@@ -112,16 +112,16 @@ class PromoteAction(Action):
     
     def get_description(self, state: "GameState" = None) -> str:
         if state:
-            card = state.get_card(self.card_id)
-            card_name = card.name if card else self.card_id
+            card = state.get_card(self.instance_id)
+            card_name = card.name if card else self.instance_id
         else:
-            card_name = self.card_id
+            card_name = self.instance_id
         return f"Promote {card_name} to attacking zone"
     
     def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
         d = super().to_dict(state)
         if state:
-            card = state.get_card(self.card_id)
+            card = state.get_card(self.instance_id)
             d["card_name"] = card.name if card else None
         return d
 
@@ -299,7 +299,7 @@ class PassPhaseAction(Action):
 
 class ForceDefendAction(Action):
     """Action taken when a player must move a supporting creature to defend."""
-    card_id: str = ""
+    instance_id: str = ""
     
     @property
     def valid_phases(self) -> list[TurnPhase] | None:
@@ -311,16 +311,16 @@ class ForceDefendAction(Action):
     
     def get_description(self, state: "GameState" = None) -> str:
         if state:
-            card = state.get_card(self.card_id)
-            card_name = card.name if card else self.card_id
+            card = state.get_card(self.instance_id)
+            card_name = card.name if card else self.instance_id
         else:
-            card_name = self.card_id
+            card_name = self.instance_id
         return f"Move {card_name} to defend"
     
     def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
         d = super().to_dict(state)
         if state:
-            card = state.get_card(self.card_id)
+            card = state.get_card(self.instance_id)
             d["card_name"] = card.name if card else None
         return d
 
@@ -342,7 +342,7 @@ class ConcedeAction(Action):
 
 class MultiPlayCardAction(Action):
     """Action to play multiple cards from hand to supporting zone at once."""
-    card_ids: list[str] = []
+    instance_ids: list[str] = []
     
     @property
     def valid_phases(self) -> list[TurnPhase] | None:
@@ -355,21 +355,21 @@ class MultiPlayCardAction(Action):
     def get_description(self, state: "GameState" = None) -> str:
         if state:
             card_names = []
-            for card_id in self.card_ids:
-                card = state.get_card(card_id)
-                card_names.append(card.name if card else card_id)
+            for inst_id in self.instance_ids:
+                card = state.get_card(inst_id)
+                card_names.append(card.name if card else inst_id)
             return f"Play {', '.join(card_names)} to supporting zone"
         else:
-            return f"Play {len(self.card_ids)} cards to supporting zone"
+            return f"Play {len(self.instance_ids)} cards to supporting zone"
     
     def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
         d = super().to_dict(state)
         if state:
             cards_info = []
-            for card_id in self.card_ids:
-                card = state.get_card(card_id)
+            for inst_id in self.instance_ids:
+                card = state.get_card(inst_id)
                 cards_info.append({
-                    "card_id": card_id,
+                    "instance_id": inst_id,
                     "card_name": card.name if card else None,
                 })
             d["cards"] = cards_info

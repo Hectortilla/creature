@@ -142,16 +142,16 @@ def apply_events(state: "GameState", players: dict[str, "PlayerState"], events: 
 def _apply_card_drawn(state: "GameState", players: dict[str, "PlayerState"], event: CardDrawnEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card drawn event - move card from deck to hand."""
     player = players[event.player_id]
-    card = state.cards.get(event.card_id)
+    card = state.cards.get(event.instance_id)
     
     if card:
         # Remove from deck
-        if event.card_id in player.zones[Zone.DECK.name].card_ids:
-            player.zones[Zone.DECK.name].card_ids.remove(event.card_id)
+        if event.instance_id in player.zones[Zone.DECK.name].card_ids:
+            player.zones[Zone.DECK.name].card_ids.remove(event.instance_id)
         
         # Add to hand
-        if event.card_id not in player.zones[Zone.HAND.name].card_ids:
-            player.zones[Zone.HAND.name].card_ids.append(event.card_id)
+        if event.instance_id not in player.zones[Zone.HAND.name].card_ids:
+            player.zones[Zone.HAND.name].card_ids.append(event.instance_id)
         
         # Update card zone
         card.zone = Zone.HAND
@@ -162,16 +162,16 @@ def _apply_card_drawn(state: "GameState", players: dict[str, "PlayerState"], eve
 def _apply_card_moved(state: "GameState", players: dict[str, "PlayerState"], event: CardMovedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply generic card movement event."""
     player = players[event.owner_id]
-    card = state.cards.get(event.card_id)
+    card = state.cards.get(event.instance_id)
     
     if card and event.from_zone and event.to_zone:
         # Remove from source zone
-        if event.card_id in player.zones[event.from_zone].card_ids:
-            player.zones[event.from_zone].card_ids.remove(event.card_id)
+        if event.instance_id in player.zones[event.from_zone].card_ids:
+            player.zones[event.from_zone].card_ids.remove(event.instance_id)
         
         # Add to target zone
-        if event.card_id not in player.zones[event.to_zone].card_ids:
-            player.zones[event.to_zone].card_ids.append(event.card_id)
+        if event.instance_id not in player.zones[event.to_zone].card_ids:
+            player.zones[event.to_zone].card_ids.append(event.instance_id)
         
         # Update card state
         card.zone = event.to_zone
@@ -183,16 +183,16 @@ def _apply_card_moved(state: "GameState", players: dict[str, "PlayerState"], eve
 def _apply_card_played(state: "GameState", players: dict[str, "PlayerState"], event: CardPlayedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card played event - move from hand to supporting zone."""
     player = players[event.player_id]
-    card = state.cards.get(event.card_id)
+    card = state.cards.get(event.instance_id)
     
     if card:
         # Remove from hand
-        if event.card_id in player.zones[Zone.HAND.name].card_ids:
-            player.zones[Zone.HAND.name].card_ids.remove(event.card_id)
+        if event.instance_id in player.zones[Zone.HAND.name].card_ids:
+            player.zones[Zone.HAND.name].card_ids.remove(event.instance_id)
         
         # Add to supporting zone
-        if event.card_id not in player.zones[Zone.SUPPORTING.name].card_ids:
-            player.zones[Zone.SUPPORTING.name].card_ids.append(event.card_id)
+        if event.instance_id not in player.zones[Zone.SUPPORTING.name].card_ids:
+            player.zones[Zone.SUPPORTING.name].card_ids.append(event.instance_id)
         
         # Update card state
         card.zone = Zone.SUPPORTING
@@ -207,16 +207,16 @@ def _apply_card_played(state: "GameState", players: dict[str, "PlayerState"], ev
 def _apply_card_promoted(state: "GameState", players: dict[str, "PlayerState"], event: CardPromotedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card promoted event - move from supporting to attacking zone."""
     player = players[event.player_id]
-    card = state.cards.get(event.card_id)
+    card = state.cards.get(event.instance_id)
     
     if card:
         # Remove from supporting
-        if event.card_id in player.zones[Zone.SUPPORTING.name].card_ids:
-            player.zones[Zone.SUPPORTING.name].card_ids.remove(event.card_id)
+        if event.instance_id in player.zones[Zone.SUPPORTING.name].card_ids:
+            player.zones[Zone.SUPPORTING.name].card_ids.remove(event.instance_id)
         
         # Add to attacking
-        if event.card_id not in player.zones[Zone.ATTACKING.name].card_ids:
-            player.zones[Zone.ATTACKING.name].card_ids.append(event.card_id)
+        if event.instance_id not in player.zones[Zone.ATTACKING.name].card_ids:
+            player.zones[Zone.ATTACKING.name].card_ids.append(event.instance_id)
         
         # Update card state
         card.zone = Zone.ATTACKING
@@ -352,19 +352,19 @@ def _apply_damage_dealt(state: "GameState", players: dict[str, "PlayerState"], e
 def _apply_card_destroyed(state: "GameState", players: dict[str, "PlayerState"], event: CardDestroyedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card destroyed event - move to graveyard."""
     player = players[event.owner_id]
-    card = state.cards.get(event.card_id)
+    card = state.cards.get(event.instance_id)
     
     if card:
         current_zone = card.zone
         
         # Remove from current zone
         if current_zone in (Zone.SUPPORTING, Zone.ATTACKING):
-            if event.card_id in player.zones[current_zone].card_ids:
-                player.zones[current_zone].card_ids.remove(event.card_id)
+            if event.instance_id in player.zones[current_zone].card_ids:
+                player.zones[current_zone].card_ids.remove(event.instance_id)
         
         # Add to graveyard
-        if event.card_id not in player.zones[Zone.GRAVEYARD.name].card_ids:
-            player.zones[Zone.GRAVEYARD.name].card_ids.append(event.card_id)
+        if event.instance_id not in player.zones[Zone.GRAVEYARD.name].card_ids:
+            player.zones[Zone.GRAVEYARD.name].card_ids.append(event.instance_id)
         
         card.zone = Zone.GRAVEYARD
         

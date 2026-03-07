@@ -326,7 +326,7 @@ class GameEngine:
                     if card:
                         valid_actions.append(ForceDefendAction(
                             player_id=state.active_player_id,
-                            card_id=card_id,
+                            instance_id=card_id,
                         ))
             return [action.to_dict(state) for action in valid_actions]
         
@@ -338,7 +338,7 @@ class GameEngine:
                 if card and not player.zones[Zone.SUPPORTING.name].is_full:
                     valid_actions.append(PlayCardAction(
                         player_id=state.active_player_id,
-                        card_id=card_id,
+                        instance_id=card_id,
                     ))
         
         elif phase == TurnPhase.PROMOTION:
@@ -347,7 +347,7 @@ class GameEngine:
                 if card and card.can_promote and not player.zones[Zone.ATTACKING.name].is_full:
                     valid_actions.append(PromoteAction(
                         player_id=state.active_player_id,
-                        card_id=card_id,
+                        instance_id=card_id,
                     ))
         
         elif phase == TurnPhase.SWAP:

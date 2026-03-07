@@ -11,7 +11,7 @@ from uuid import uuid4
 from app.websocket.models import GameRoom
 from app.websocket.connection import ConnectionManager
 from app.game.engine import get_engine
-from app.websocket.serialization import serialize_events
+from app.websocket.serialization import serialize_events, serialize_events_for_player
 from app.models.schemas.websocket.server import (
     ErrorMessage,
     ErrorData,
@@ -153,21 +153,24 @@ class RoomManager:
             room.state = result.state
             room.state.room.players = result.final_players
         
-        response_data = GameStartedData(
-            success=True,
-            game_state=result.state.model_dump(mode='json'),
-            events=serialize_events(result.events),
-            valid_actions=result.valid_actions,
-        )
-        await self.connection_manager.send_to_room(
-            room.room_id,
-            GameStartedMessage(data=response_data)
-        )
+        game_state_dict = result.state.model_dump(mode='json')
+
+        for pid in room.get_player_ids():
+            player_data = GameStartedData(
+                success=True,
+                game_state=game_state_dict,
+                events=serialize_events_for_player(result.events, pid),
+                valid_actions=result.valid_actions,
+            )
+            await self.connection_manager.send_to_player(
+                pid,
+                GameStartedMessage(data=player_data),
+            )
         
         return {
-            "success": response_data.success,
-            "game_state": response_data.game_state,
-            "events": response_data.events,
+            "success": True,
+            "game_state": game_state_dict,
+            "events": serialize_events(result.events),
         }
     
     async def process_action(self, player_id: str, room_id: str, action_data: dict) -> dict:
@@ -187,27 +190,30 @@ class RoomManager:
         if result.success and result.state:
             room.state = result.state
         
-        response_data = ActionResultData(
-            success=result.success,
-            error=result.error,
-            events=serialize_events(result.events),
-            game_over=result.game_over,
-            winner_id=result.winner_id,
-            game_state=result.state.model_dump(mode='json') if result.state else None,
-            valid_actions=result.valid_actions,
-        )
-        await self.connection_manager.send_to_room(
-            room.room_id,
-            ActionResultMessage(data=response_data)
-        )
+        game_state_dict = result.state.model_dump(mode='json') if result.state else None
+
+        for pid in room.get_player_ids():
+            player_data = ActionResultData(
+                success=result.success,
+                error=result.error,
+                events=serialize_events_for_player(result.events, pid),
+                game_over=result.game_over,
+                winner_id=result.winner_id,
+                game_state=game_state_dict,
+                valid_actions=result.valid_actions,
+            )
+            await self.connection_manager.send_to_player(
+                pid,
+                ActionResultMessage(data=player_data),
+            )
         
         return {
-            "success": response_data.success,
-            "error": response_data.error,
-            "events": response_data.events,
-            "game_over": response_data.game_over,
-            "winner_id": response_data.winner_id,
-            "game_state": response_data.game_state,
+            "success": result.success,
+            "error": result.error,
+            "events": serialize_events(result.events),
+            "game_over": result.game_over,
+            "winner_id": result.winner_id,
+            "game_state": game_state_dict,
         }
     
     def get_valid_actions(self, player_id: str, room_id: str) -> list[dict]:

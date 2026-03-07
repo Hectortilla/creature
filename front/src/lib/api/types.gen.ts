@@ -76,17 +76,17 @@ export type ActionData = {
    */
   action_type: string;
   /**
-   * Card Id
+   * Instance Id
    *
    * Card instance ID (used by: play_card, promote, force_defend)
    */
-  card_id?: string | null;
+  instance_id?: string | null;
   /**
-   * Card Ids
+   * Instance Ids
    *
    * List of card instance IDs (used by: multi_play_card)
    */
-  card_ids?: Array<string>;
+  instance_ids?: Array<string>;
   /**
    * Count
    *

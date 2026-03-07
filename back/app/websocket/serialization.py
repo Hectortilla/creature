@@ -14,6 +14,24 @@ def serialize_events(events) -> list[dict[str, Any]]:
     return [event.model_dump(mode='json') for event in events]
 
 
+_HIDDEN_DRAW_FIELDS = {"instance_id": "", "card_id": 0}
+
+
+def serialize_events_for_player(events, player_id: str) -> list[dict[str, Any]]:
+    """Serialize events with per-player visibility filtering.
+
+    Hides card identity in opponent's CardDrawnEvents so the receiving
+    player cannot see what the other player drew.
+    """
+    result = []
+    for event in events:
+        data = event.model_dump(mode='json')
+        if data.get("event_type") == "CardDrawnEvent" and data.get("player_id") != player_id:
+            data.update(_HIDDEN_DRAW_FIELDS)
+        result.append(data)
+    return result
+
+
 def serialize_deck_for_game(deck_cards: list) -> list[dict[str, Any]]:
     """
     Serialize deck cards to the format expected by the game engine.

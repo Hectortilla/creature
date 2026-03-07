@@ -236,7 +236,7 @@ class OnPlayEffect(Effect):
             return False
         # Check if the triggering event is for this card
         if isinstance(context.trigger_event, CardPlayedEvent):
-            return context.trigger_event.card_id == context.source_card.instance_id
+            return context.trigger_event.instance_id == context.source_card.instance_id
         return False
     
     def execute(self, context: EffectContext) -> EffectResult:
@@ -272,7 +272,7 @@ class OnDestroyEffect(Effect):
     
     def should_trigger(self, context: EffectContext) -> bool:
         if isinstance(context.trigger_event, CardDestroyedEvent):
-            return context.trigger_event.card_id == context.source_card.instance_id
+            return context.trigger_event.instance_id == context.source_card.instance_id
         return False
     
     def execute(self, context: EffectContext) -> EffectResult:

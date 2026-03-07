@@ -160,7 +160,7 @@ class RuleValidator:
         
         # Check card is in hand
         hand = player.zones[Zone.HAND]
-        if action.card_id not in hand.card_ids:
+        if action.instance_id not in hand.card_ids:
             return ValidationResult(
                 valid=False,
                 error="Card is not in your hand",
@@ -186,15 +186,15 @@ class RuleValidator:
         
         # Check we have enough slots
         available_slots = supporting.available_slots()
-        if len(action.card_ids) > available_slots:
+        if len(action.instance_ids) > available_slots:
             return ValidationResult(
                 valid=False,
-                error=f"Not enough slots in supporting zone (have {available_slots}, need {len(action.card_ids)})",
+                error=f"Not enough slots in supporting zone (have {available_slots}, need {len(action.instance_ids)})",
                 error_code="NOT_ENOUGH_SLOTS"
             )
         
         # Check all cards are in hand
-        for card_id in action.card_ids:
+        for card_id in action.instance_ids:
             if card_id not in hand.card_ids:
                 return ValidationResult(
                     valid=False,
@@ -203,7 +203,7 @@ class RuleValidator:
                 )
         
         # Check for duplicates
-        if len(action.card_ids) != len(set(action.card_ids)):
+        if len(action.instance_ids) != len(set(action.instance_ids)):
             return ValidationResult(
                 valid=False,
                 error="Duplicate cards in play action",
@@ -218,7 +218,7 @@ class RuleValidator:
         
         # Check card is in supporting zone
         supporting = player.zones[Zone.SUPPORTING]
-        if action.card_id not in supporting.card_ids:
+        if action.instance_id not in supporting.card_ids:
             return ValidationResult(
                 valid=False,
                 error="Card is not in supporting zone",
@@ -235,7 +235,7 @@ class RuleValidator:
             )
         
         # Check card has spent at least 1 full turn in supporting zone
-        card = state.get_card(action.card_id)
+        card = state.get_card(action.instance_id)
         if not card or not card.can_promote:
             return ValidationResult(
                 valid=False,
@@ -522,7 +522,7 @@ class RuleValidator:
         
         # Check card is in supporting zone
         supporting = player.zones[Zone.SUPPORTING]
-        if action.card_id not in supporting.card_ids:
+        if action.instance_id not in supporting.card_ids:
             return ValidationResult(
                 valid=False,
                 error="Card must be in supporting zone",
