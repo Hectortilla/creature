@@ -1,7 +1,9 @@
+COMPLETED ✅
+
 # Step 6: Animation Pipeline
 
 > **Depends on:** Step 4 (Card Entity System), Step 5 (Zone Renderers)  
-> **Produces:** `scripts/animation/AnimationPipeline.ts`, `scripts/animation/GameAnimation.ts`, and concrete animation classes  
+> **Produces:** `scripts/animation/AnimationPipeline.ts`, `scripts/animation/GameAnimation.ts`, and concrete animation classes (including `ParallelAnimation` for concurrent effects)  
 > **See also:** [Architecture Overview](./overview.md) — "Layer Descriptions → 5. Animation Pipeline"
 
 ## Goal
@@ -168,6 +170,28 @@ class DestroyAnimation implements GameAnimation {
 
 Scale down + fade opacity + move toward graveyard.
 
+#### `ParallelAnimation.ts`
+
+Runs multiple animations concurrently. Useful for swaps (two cards crossing paths simultaneously) and compound effects.
+
+```typescript
+class ParallelAnimation implements GameAnimation {
+  constructor(
+    animations: GameAnimation[],
+    name?: string  // default derived from child names
+  );
+
+  // duration = max of child durations
+  get duration(): number;
+
+  // Runs all children via Promise.all
+  execute(scene: Scene): Promise<void>;
+
+  // Cancels all children
+  cancel(): void;
+}
+```
+
 #### `DelayAnimation.ts`
 
 A no-op pause. Useful for pacing between events.
@@ -187,7 +211,7 @@ The `BoardController` (Step 7) will map backend events to animation sequences. H
 | `CardDrawnEvent` | `CardMoveAnimation(deck → hand)` + `CardFlipAnimation(faceUp)` |
 | `CardPlayedEvent` | `CardMoveAnimation(hand → supporting slot)` |
 | `CardPromotedEvent` | `CardMoveAnimation(supporting → attacking slot)` |
-| `CardSwappedEvent` | `CardMoveAnimation(A → B)` + `CardMoveAnimation(B → A)` (could run simultaneously or use parallel wrapper) |
+| `CardSwappedEvent` | `ParallelAnimation([CardMoveAnimation(A → B), CardMoveAnimation(B → A)])` |
 | `AttackDeclaredEvent` | `AttackAnimation(attacker, target)` |
 | `DamageDealtEvent` | `DamageAnimation(target, damage, remainingHealth)` |
 | `CardDestroyedEvent` | `DestroyAnimation(entity, graveyardPos)` |
@@ -207,7 +231,7 @@ This is wired up in the `BoardController` (Step 7), not inside the pipeline itse
 - Each animation must resolve its promise when complete, enabling sequential execution.
 - Animations should gracefully handle disposed entities (if a card was destroyed mid-animation).
 - `cancel()` should snap the entity to the animation's end state, not revert to start.
-- Use BabylonJS `Animation` system or `scene.onBeforeRenderObservable` for frame-by-frame updates.
+- Use BabylonJS `Animation` system or `scene.onBeforeRenderObservable` for frame-by-frame updates. The `animateTransform` helper in `zones/ZoneRenderer.ts` already implements the `beginDirectAnimation` + `onAnimationEndObservable` pattern — extract it into a shared `animation/utils.ts` if animation classes need the same boilerplate.
 - Do NOT import or depend on `GameStateStore` — animations are purely visual.
 
 ## Agent Prompt
@@ -222,7 +246,8 @@ Create the animation pipeline system for the card game:
 5. front/src/babylon-editor/src/scripts/animation/AttackAnimation.ts
 6. front/src/babylon-editor/src/scripts/animation/DamageAnimation.ts
 7. front/src/babylon-editor/src/scripts/animation/DestroyAnimation.ts
-8. front/src/babylon-editor/src/scripts/animation/DelayAnimation.ts
+8. front/src/babylon-editor/src/scripts/animation/ParallelAnimation.ts
+9. front/src/babylon-editor/src/scripts/animation/DelayAnimation.ts
 
 Read these files for context:
 - front/architecture/step_06.md (this step's spec)
@@ -238,4 +263,6 @@ Key rules:
 6. cancel() snaps to end state, doesn't revert.
 7. onQueueStarted/onQueueDrained callbacks for interaction gating.
 8. No state store dependency — animations are purely visual.
+9. ParallelAnimation runs child animations concurrently via Promise.all (used for CardSwappedEvent).
+10. Consider extracting the animateTransform helper from zones/ZoneRenderer.ts into a shared animation/utils.ts to avoid duplicating the beginDirectAnimation boilerplate.
 ```

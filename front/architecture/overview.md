@@ -232,7 +232,9 @@ scripts/
 │   ├── CardFlipAnimation.ts       # NEW
 │   ├── AttackAnimation.ts         # NEW
 │   ├── DamageAnimation.ts         # NEW
-│   └── DestroyAnimation.ts        # NEW
+│   ├── DestroyAnimation.ts        # NEW
+│   ├── DelayAnimation.ts          # NEW
+│   └── ParallelAnimation.ts       # NEW: Runs multiple animations concurrently
 │
 ├── interaction/
 │   └── InteractionManager.ts      # NEW: Ray picking, selection, highlights
