@@ -3,6 +3,7 @@ import { visibleAsNumber, visibleAsString, visibleAsBoolean } from "babylonjs-ed
 import type { IScript } from "babylonjs-editor-tools";
 import { GameConnection, CardDefinitionCache } from "./game";
 import type { GameMessage, ValidAction } from "./game";
+import { GameStateStore } from "./state/GameStateStore";
 
 export interface GameEventMap {
     message: GameMessage;
@@ -40,6 +41,7 @@ export default class GameNetworkManagerComponent implements IScript {
 
     private _gameConnection: GameConnection | null = null;
     private _cardCache: CardDefinitionCache | null = null;
+    private _stateStore: GameStateStore | null = null;
     private _listeners = new Map<keyof GameEventMap, Set<GameEventCallback<any>>>();
     private _gameEventListeners = new Map<string, Set<GameEventListenerCallback>>();
 
@@ -55,6 +57,7 @@ export default class GameNetworkManagerComponent implements IScript {
 
         this._cardCache = CardDefinitionCache.getOrCreate();
         this._cardCache.initialize(this.wsUrl, this.token);
+        this._stateStore = GameStateStore.getOrCreate(this.playerId);
 
         this.initializeConnection();
     }
@@ -82,18 +85,28 @@ export default class GameNetworkManagerComponent implements IScript {
             playerId: this.playerId,
             callbacks: {
                 onMessage: (msg) => this.emit("message", msg),
-                onValidActionsChange: (actions) => this.emit("validActionsChange", actions),
-                onGameStateChange: (state) => this.emit("gameStateChange", state),
                 onConnectionChange: (connected) => this.emit("connectionChange", connected),
                 onError: (error) => this.emit("error", error),
-                onGameStarted: (data) => this.emit("gameStarted", data),
                 onGameOver: (winnerId) => this.emit("gameOver", winnerId),
+                onGameStarted: (data) => {
+                    this._stateStore?.processGameStarted(data);
+                    this.emit("gameStarted", data);
+                },
                 onGameEvents: (events) => {
+                    this._stateStore?.processGameEvents(events);
                     for (const event of events) {
                         this.registerCardFromEvent(event);
                         const eventType = event.event_type as string;
                         if (eventType) this.emitGameEvent(eventType, event);
                     }
+                },
+                onGameStateChange: (state) => {
+                    if (state) this._stateStore?.processGameState(state);
+                    this.emit("gameStateChange", state);
+                },
+                onValidActionsChange: (actions) => {
+                    this._stateStore?.updateValidActions(actions);
+                    this.emit("validActionsChange", actions);
                 },
             }
         });
@@ -137,11 +150,17 @@ export default class GameNetworkManagerComponent implements IScript {
         return this._cardCache;
     }
 
+    public getStateStore(): GameStateStore | null {
+        return this._stateStore;
+    }
+
     public onStop(): void {
         this._gameConnection?.dispose();
         this._gameConnection = null;
         this._cardCache?.dispose();
         this._cardCache = null;
+        this._stateStore?.dispose();
+        this._stateStore = null;
         this._listeners.clear();
         this._gameEventListeners.clear();
         GameNetworkManagerComponent.instance = null;

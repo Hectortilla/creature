@@ -1,3 +1,5 @@
+COMPLETED ✅
+
 # Step 3: Refactor GameNetworkManagerComponent
 
 > **Depends on:** Step 2 (Game State Store)  
@@ -44,14 +46,15 @@ BoardController (later) subscribes to GameStateStore, not to GameNetworkManager
        this._stateStore?.processGameStarted(data);
        this.emit("gameStarted", data);  // backward compat
      },
-     onGameEvents: (events) => {
-       this._stateStore?.processGameEvents(events);
-       // Still emit individual game events for backward compat
-       for (const event of events) {
-         const eventType = event.event_type as string;
-         if (eventType) this.emitGameEvent(eventType, event);
-       }
-     },
+    onGameEvents: (events) => {
+      this._stateStore?.processGameEvents(events);
+      // Still emit individual game events + register cards for backward compat
+      for (const event of events) {
+        this.registerCardFromEvent(event);
+        const eventType = event.event_type as string;
+        if (eventType) this.emitGameEvent(eventType, event);
+      }
+    },
      onGameStateChange: (state) => {
        if (state) this._stateStore?.processGameState(state);
        this.emit("gameStateChange", state);
@@ -99,14 +102,16 @@ Read these files for context:
 - front/architecture/step_03.md (this step's spec)
 - front/src/babylon-editor/src/scripts/GameNetworkManagerComponent.ts (current file)
 - front/src/babylon-editor/src/scripts/state/GameStateStore.ts (the store from Step 2)
+- front/src/babylon-editor/src/scripts/game/types.ts (ValidAction, GameConnectionCallbacks)
 
 Changes:
 1. Import GameStateStore from "./state/GameStateStore".
 2. Add a private _stateStore field.
 3. In onStart(), after setting the singleton, create the store: this._stateStore = GameStateStore.getOrCreate(this.playerId).
 4. In initializeConnection(), update the callbacks to forward events to the store BEFORE emitting to legacy listeners.
-5. Add a public getStateStore() getter.
-6. In onStop(), dispose and null out the store.
-7. Keep ALL existing APIs (on/off/onGameEvent/offGameEvent/emit/emitGameEvent) for backward compatibility.
-8. Do NOT modify GameConnection.ts or any other file.
+5. Keep registerCardFromEvent() in the onGameEvents loop — the store handles registration internally for CardDrawn/CardEvolved, but keeping it here is a safety net for any event carrying instance_id/card_id during the transition.
+6. Add a public getStateStore() getter.
+7. In onStop(), dispose and null out the store.
+8. Keep ALL existing APIs (on/off/onGameEvent/offGameEvent/emit/emitGameEvent) for backward compatibility.
+9. Do NOT modify GameConnection.ts or any other file.
 ```
