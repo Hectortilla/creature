@@ -9,7 +9,7 @@ from __future__ import annotations
 import random
 from typing import Any, Optional
 
-from pydantic import Field, field_serializer, model_validator
+from pydantic import Field, model_validator
 
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone
@@ -40,12 +40,7 @@ class PlayerState(GameBaseModel):
     element_pool: ElementPool = Field(default_factory=ElementPool)
     zones: dict[str, ZoneState] = Field(default_factory=dict)  # Zone name -> ZoneState
     has_passed_phase: bool = False
-    deck: Optional[list[dict]] = None  # Serialized deck data
-    
-    @field_serializer('deck')
-    def serialize_deck(self, value: Optional[list[dict]]) -> None:
-        """Exclude deck from serialization to prevent frontend access."""
-        return None
+    deck: Optional[list[dict]] = Field(default=None, exclude=True)
 
     @model_validator(mode='after')
     def initialize_zones(self) -> "PlayerState":

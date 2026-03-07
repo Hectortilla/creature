@@ -1,3 +1,5 @@
+COMPLETED ✅
+
 # Step 1: Expose Game Domain Types in OpenAPI & Auto-Generate Frontend Models
 
 > **Depends on:** Nothing (first step)  

@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional, Any
 
-from pydantic import field_serializer, computed_field, model_validator
+from pydantic import computed_field, model_validator
 
 from app.models.core.card import CardIdentityFields, CardCombatFields
 from app.models.game.base import GameBaseModel
@@ -63,14 +63,6 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     associations: list[str] = []  # instance_ids
     has_attacked_this_turn: bool = False
     swapped_this_turn: bool = False
-    
-    @field_serializer('zone')
-    def serialize_zone(self, value: Zone) -> str:
-        return value.name
-    
-    @field_serializer('status')
-    def serialize_status(self, value: CardStatus) -> str:
-        return value.name
     
     # Computed fields - included in model_dump() automatically
     @computed_field

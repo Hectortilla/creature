@@ -42,17 +42,15 @@ class GameState(GameBaseModel):
     Complete state of a game.
     """
     game_id: str
-    room:  Annotated["GameRoom", SkipValidation] = Field(
-        exclude=True
-    )
-    cards: dict[str, GameCard] = {}
+    room: Annotated["GameRoom", SkipValidation] = Field(exclude=True)
+    cards: dict[str, GameCard] = Field(default_factory=dict, exclude=True)
     active_player_id: Optional[str] = None
     turn_number: int = 0
     current_phase: TurnPhase = TurnPhase.DRAW
     status: GameStatus = GameStatus.WAITING
     winner_id: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    event_log: list[dict[str, Any]] = []
+    event_log: list[dict[str, Any]] = Field(default_factory=list, exclude=True)
     pending_action: Optional[str] = None
     config: GameConfiguration = Field(default_factory=GameConfiguration)
 
@@ -61,26 +59,9 @@ class GameState(GameBaseModel):
     def total_cards(self) -> float:
         return len(self.cards)
     
-    @field_serializer('current_phase')
-    def serialize_phase(self, value: TurnPhase) -> str:
-        return value.name
-    
-    @field_serializer('status')
-    def serialize_status(self, value: GameStatus) -> str:
-        return value.name
-    
     @field_serializer('created_at')
     def serialize_created_at(self, value: datetime) -> str:
         return value.isoformat()
-    
-    @field_serializer('cards')
-    def serialize_cards(self, value: dict[str, GameCard]) -> None:
-        """Exclude cards from serialization to prevent frontend access."""
-        return None
-
-    @field_serializer('event_log')
-    def serialize_event_log(self, value: list[dict[str, Any]]) -> str:
-        return None
     
     @classmethod
     def create(cls, room: "GameRoom",

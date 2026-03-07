@@ -9,31 +9,25 @@ All events use Pydantic BaseModel for validation and serialization.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Annotated, Literal, Optional, Union
 from datetime import datetime
-from abc import ABC
 
-from pydantic import Field, field_serializer, computed_field
+from pydantic import Field, field_serializer
 
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, TurnPhase, DamageType
 
 
-class GameEvent(GameBaseModel, ABC):
+class GameEvent(GameBaseModel):
     """
     Base class for all game events.
     
     Uses Pydantic's model_dump() for serialization.
-    event_type is a computed field so it's included automatically.
+    Subclasses define event_type as a Literal field for discriminated union support.
     """
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     game_id: Optional[str] = None
-    
-    @computed_field
-    @property
-    def event_type(self) -> str:
-        """Return the type name of this event."""
-        return self.__class__.__name__
+    event_type: str
     
     @field_serializer('timestamp')
     def serialize_timestamp(self, value: datetime) -> str:
@@ -46,6 +40,7 @@ class GameEvent(GameBaseModel, ABC):
 
 class CardDrawnEvent(GameEvent):
     """Event fired when a card is drawn from deck to hand."""
+    event_type: Literal["CardDrawnEvent"] = "CardDrawnEvent"
     player_id: str = ""
     instance_id: str = ""
     card_id: int = 0
@@ -54,22 +49,16 @@ class CardDrawnEvent(GameEvent):
 
 class CardMovedEvent(GameEvent):
     """Event fired when a card moves between zones."""
+    event_type: Literal["CardMovedEvent"] = "CardMovedEvent"
     instance_id: str = ""
     owner_id: str = ""
     from_zone: Optional[Zone] = None
     to_zone: Optional[Zone] = None
-    
-    @field_serializer('from_zone')
-    def serialize_from_zone(self, value: Optional[Zone]) -> Optional[str]:
-        return value.name if value else None
-    
-    @field_serializer('to_zone')
-    def serialize_to_zone(self, value: Optional[Zone]) -> Optional[str]:
-        return value.name if value else None
 
 
 class CardPlayedEvent(GameEvent):
     """Event fired when a card is played from hand to supporting zone."""
+    event_type: Literal["CardPlayedEvent"] = "CardPlayedEvent"
     player_id: str = ""
     instance_id: str = ""
     card_id: int = 0
@@ -78,6 +67,7 @@ class CardPlayedEvent(GameEvent):
 
 class CardPromotedEvent(GameEvent):
     """Event fired when a card is promoted from supporting to attacking zone."""
+    event_type: Literal["CardPromotedEvent"] = "CardPromotedEvent"
     player_id: str = ""
     instance_id: str = ""
     card_id: int = 0
@@ -86,6 +76,7 @@ class CardPromotedEvent(GameEvent):
 
 class CardSwappedEvent(GameEvent):
     """Event fired when two cards are swapped between zones."""
+    event_type: Literal["CardSwappedEvent"] = "CardSwappedEvent"
     player_id: str = ""
     supporting_card_id: str = ""
     attacking_card_id: str = ""
@@ -97,19 +88,17 @@ class CardSwappedEvent(GameEvent):
 
 class CardAssociatedEvent(GameEvent):
     """Event fired when a card is associated with another card."""
+    event_type: Literal["CardAssociatedEvent"] = "CardAssociatedEvent"
     player_id: str = ""
     association_card_id: str = ""
     card_id: int = 0
     target_card_id: str = ""
     source_zone: Optional[Zone] = None
-    
-    @field_serializer('source_zone')
-    def serialize_source_zone(self, value: Optional[Zone]) -> Optional[str]:
-        return value.name if value else None
 
 
 class CardEvolvedEvent(GameEvent):
     """Event fired when a card evolves."""
+    event_type: Literal["CardEvolvedEvent"] = "CardEvolvedEvent"
     player_id: str = ""
     base_card_id: str = ""
     evolution_card_id: str = ""
@@ -124,6 +113,7 @@ class CardEvolvedEvent(GameEvent):
 
 class AttackDeclaredEvent(GameEvent):
     """Event fired when an attack is declared."""
+    event_type: Literal["AttackDeclaredEvent"] = "AttackDeclaredEvent"
     attacker_owner_id: str = ""
     attacker_id: str = ""
     target_id: str = ""
@@ -133,6 +123,7 @@ class AttackDeclaredEvent(GameEvent):
 
 class DamageDealtEvent(GameEvent):
     """Event fired when damage is dealt to a card."""
+    event_type: Literal["DamageDealtEvent"] = "DamageDealtEvent"
     source_id: str = ""
     target_id: str = ""
     damage_type: Optional[DamageType] = None
@@ -141,14 +132,11 @@ class DamageDealtEvent(GameEvent):
     defense_reduction: int = 0
     final_damage: int = 0
     remaining_health: int = 0
-    
-    @field_serializer('damage_type')
-    def serialize_damage_type(self, value: Optional[DamageType]) -> Optional[str]:
-        return value.name if value else None
 
 
 class CardDestroyedEvent(GameEvent):
     """Event fired when a card is destroyed (health <= 0)."""
+    event_type: Literal["CardDestroyedEvent"] = "CardDestroyedEvent"
     instance_id: str = ""
     owner_id: str = ""
     card_name: str = ""
@@ -161,6 +149,7 @@ class CardDestroyedEvent(GameEvent):
 
 class ElementsConsumedEvent(GameEvent):
     """Event fired when elements are consumed for an attack."""
+    event_type: Literal["ElementsConsumedEvent"] = "ElementsConsumedEvent"
     player_id: str = ""
     elements: dict[int, int] = {}
     for_attack_id: int = 0
@@ -168,6 +157,7 @@ class ElementsConsumedEvent(GameEvent):
 
 class ElementsRestoredEvent(GameEvent):
     """Event fired when elements are restored at turn start."""
+    event_type: Literal["ElementsRestoredEvent"] = "ElementsRestoredEvent"
     player_id: str = ""
     elements: dict[int, int] = {}
 
@@ -178,6 +168,7 @@ class ElementsRestoredEvent(GameEvent):
 
 class TurnStartedEvent(GameEvent):
     """Event fired at the start of a player's turn."""
+    event_type: Literal["TurnStartedEvent"] = "TurnStartedEvent"
     player_id: str = ""
     turn_number: int = 0
     is_first_turn: bool = False
@@ -185,23 +176,17 @@ class TurnStartedEvent(GameEvent):
 
 class TurnEndedEvent(GameEvent):
     """Event fired at the end of a player's turn."""
+    event_type: Literal["TurnEndedEvent"] = "TurnEndedEvent"
     player_id: str = ""
     turn_number: int = 0
 
 
 class PhaseChangedEvent(GameEvent):
     """Event fired when the turn phase changes."""
+    event_type: Literal["PhaseChangedEvent"] = "PhaseChangedEvent"
     player_id: str = ""
     from_phase: Optional[TurnPhase] = None
     to_phase: Optional[TurnPhase] = None
-    
-    @field_serializer('from_phase')
-    def serialize_from_phase(self, value: Optional[TurnPhase]) -> Optional[str]:
-        return value.name if value else None
-    
-    @field_serializer('to_phase')
-    def serialize_to_phase(self, value: Optional[TurnPhase]) -> Optional[str]:
-        return value.name if value else None
 
 
 # ============================================================================
@@ -210,12 +195,14 @@ class PhaseChangedEvent(GameEvent):
 
 class GameStartedEvent(GameEvent):
     """Event fired when a game starts."""
+    event_type: Literal["GameStartedEvent"] = "GameStartedEvent"
     player_ids: list[str] = []
     first_player_id: str = ""
 
 
 class GameEndedEvent(GameEvent):
     """Event fired when the game ends."""
+    event_type: Literal["GameEndedEvent"] = "GameEndedEvent"
     winner_id: str = ""
     loser_id: str = ""
     reason: str = ""
@@ -226,6 +213,7 @@ class NoDefenderEvent(GameEvent):
     Event fired when a player has no defending creatures and is attacked.
     Triggers the forced defend mechanic.
     """
+    event_type: Literal["NoDefenderEvent"] = "NoDefenderEvent"
     defender_id: str = ""
     attacker_id: str = ""
     must_defend: bool = False
@@ -238,6 +226,7 @@ class NoDefenderEvent(GameEvent):
 
 class EffectTriggeredEvent(GameEvent):
     """Event fired when an effect is triggered."""
+    event_type: Literal["EffectTriggeredEvent"] = "EffectTriggeredEvent"
     source_card_id: str = ""
     effect_id: str = ""
     effect_name: str = ""
@@ -246,33 +235,45 @@ class EffectTriggeredEvent(GameEvent):
 
 class EffectAppliedEvent(GameEvent):
     """Event fired when an effect's result is applied."""
+    event_type: Literal["EffectAppliedEvent"] = "EffectAppliedEvent"
     effect_id: str = ""
     affected_card_ids: list[str] = []
     description: str = ""
 
 
+# Single registry — union and dict are both derived from this list
+_ALL_EVENT_CLASSES: list[type[GameEvent]] = [
+    CardDrawnEvent,
+    CardMovedEvent,
+    CardPlayedEvent,
+    CardPromotedEvent,
+    CardSwappedEvent,
+    CardAssociatedEvent,
+    CardEvolvedEvent,
+    AttackDeclaredEvent,
+    DamageDealtEvent,
+    CardDestroyedEvent,
+    ElementsConsumedEvent,
+    ElementsRestoredEvent,
+    TurnStartedEvent,
+    TurnEndedEvent,
+    PhaseChangedEvent,
+    GameStartedEvent,
+    GameEndedEvent,
+    NoDefenderEvent,
+    EffectTriggeredEvent,
+    EffectAppliedEvent,
+]
+
+# Discriminated union for OpenAPI schema generation
+GameEventUnion = Annotated[
+    Union[tuple(_ALL_EVENT_CLASSES)],
+    Field(discriminator="event_type"),
+]
+
 # Event type registry for deserialization
-EVENT_TYPES = {
-    "CardDrawnEvent": CardDrawnEvent,
-    "CardMovedEvent": CardMovedEvent,
-    "CardPlayedEvent": CardPlayedEvent,
-    "CardPromotedEvent": CardPromotedEvent,
-    "CardSwappedEvent": CardSwappedEvent,
-    "CardAssociatedEvent": CardAssociatedEvent,
-    "CardEvolvedEvent": CardEvolvedEvent,
-    "AttackDeclaredEvent": AttackDeclaredEvent,
-    "DamageDealtEvent": DamageDealtEvent,
-    "CardDestroyedEvent": CardDestroyedEvent,
-    "ElementsConsumedEvent": ElementsConsumedEvent,
-    "ElementsRestoredEvent": ElementsRestoredEvent,
-    "TurnStartedEvent": TurnStartedEvent,
-    "TurnEndedEvent": TurnEndedEvent,
-    "PhaseChangedEvent": PhaseChangedEvent,
-    "GameStartedEvent": GameStartedEvent,
-    "GameEndedEvent": GameEndedEvent,
-    "NoDefenderEvent": NoDefenderEvent,
-    "EffectTriggeredEvent": EffectTriggeredEvent,
-    "EffectAppliedEvent": EffectAppliedEvent,
+EVENT_TYPES: dict[str, type[GameEvent]] = {
+    cls.__name__: cls for cls in _ALL_EVENT_CLASSES
 }
 
 
@@ -306,7 +307,8 @@ __all__ = [
     # Effects
     "EffectTriggeredEvent",
     "EffectAppliedEvent",
+    # Union
+    "GameEventUnion",
     # Registry
     "EVENT_TYPES",
 ]
-

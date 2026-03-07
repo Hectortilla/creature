@@ -1,21 +1,8 @@
 /**
- * Game networking module
- *
- * Provides WebSocket-based game communication that can be used
- * from both Svelte components and Babylon scene scripts.
+ * Client-only types that supplement the auto-generated backend types.
+ * All backend domain types come from `$lib/api/types.gen.ts` via `npm run generate`.
  */
 
-export { GameConnection } from './GameConnection';
-export { CardDefinitionCache } from './CardDefinitionCache';
-export type { CardDefinition } from './CardDefinitionCache';
-export type {
-	ValidAction,
-	GameMessage,
-	GameConnectionCallbacks,
-	GameConnectionOptions,
-	ActionData
-} from './types';
-export { CardVisualState } from './models';
 export type {
 	Zone,
 	TurnPhase,
@@ -49,4 +36,13 @@ export type {
 	NoDefenderEvent,
 	EffectTriggeredEvent,
 	EffectAppliedEvent,
-} from './models';
+} from '$lib/api/types.gen';
+
+export enum CardVisualState {
+	IDLE = 'IDLE',
+	HOVERED = 'HOVERED',
+	SELECTED = 'SELECTED',
+	DRAGGING = 'DRAGGING',
+	ANIMATING = 'ANIMATING',
+	DISABLED = 'DISABLED',
+}

@@ -4,10 +4,10 @@ Game Enumerations
 Defines all enums used in the game system.
 """
 
-from enum import Enum, auto
+from enum import Enum
 
 
-class Zone(Enum):
+class Zone(str, Enum):
     """
     Zones in the game. Each player has their own instance of each zone.
     
@@ -17,14 +17,14 @@ class Zone(Enum):
     - ATTACKING: Max 2 cards, can attack and contribute elements/skills
     - GRAVEYARD: Destroyed cards go here, no effect
     """
-    DECK = auto()
-    HAND = auto()
-    SUPPORTING = auto()
-    ATTACKING = auto()
-    GRAVEYARD = auto()
+    DECK = "DECK"
+    HAND = "HAND"
+    SUPPORTING = "SUPPORTING"
+    ATTACKING = "ATTACKING"
+    GRAVEYARD = "GRAVEYARD"
 
 
-class TurnPhase(Enum):
+class TurnPhase(str, Enum):
     """
     Turn phases in order of execution.
     
@@ -37,13 +37,13 @@ class TurnPhase(Enum):
     6. EVOLUTION - Evolve eligible creatures
     7. ATTACK - Perform attacks with attacking creatures
     """
-    DRAW = auto()
-    PLACEMENT = auto()
-    PROMOTION = auto()
-    SWAP = auto()
-    ASSOCIATION = auto()
-    EVOLUTION = auto()
-    ATTACK = auto()
+    DRAW = "DRAW"
+    PLACEMENT = "PLACEMENT"
+    PROMOTION = "PROMOTION"
+    SWAP = "SWAP"
+    ASSOCIATION = "ASSOCIATION"
+    EVOLUTION = "EVOLUTION"
+    ATTACK = "ATTACK"
     
     @classmethod
     def get_order(cls) -> list["TurnPhase"]:
@@ -67,18 +67,18 @@ class TurnPhase(Enum):
         return None
 
 
-class DamageType(Enum):
+class DamageType(str, Enum):
     """
     Types of damage in the game.
     
     - PHYSICAL: Reduced by physical defense
     - MAGICAL: Reduced by magical defense
     """
-    PHYSICAL = auto()
-    MAGICAL = auto()
+    PHYSICAL = "PHYSICAL"
+    MAGICAL = "MAGICAL"
 
 
-class GameStatus(Enum):
+class GameStatus(str, Enum):
     """
     Overall game status.
     
@@ -88,14 +88,14 @@ class GameStatus(Enum):
     - PAUSED: Game is paused (e.g., waiting for forced defend)
     - FINISHED: Game has ended
     """
-    WAITING = auto()
-    STARTING = auto()
-    IN_PROGRESS = auto()
-    PAUSED = auto()
-    FINISHED = auto()
+    WAITING = "WAITING"
+    STARTING = "STARTING"
+    IN_PROGRESS = "IN_PROGRESS"
+    PAUSED = "PAUSED"
+    FINISHED = "FINISHED"
 
 
-class CardStatus(Enum):
+class CardStatus(str, Enum):
     """
     Status flags for cards in active zones.
     
@@ -104,13 +104,13 @@ class CardStatus(Enum):
     - EXHAUSTED: Card has attacked this turn
     - ASSOCIATED: Card is being used as an association
     """
-    READY = auto()
-    SWAPPED = auto()
-    EXHAUSTED = auto()
-    ASSOCIATED = auto()
+    READY = "READY"
+    SWAPPED = "SWAPPED"
+    EXHAUSTED = "EXHAUSTED"
+    ASSOCIATED = "ASSOCIATED"
 
 
-class EffectTiming(Enum):
+class EffectTiming(str, Enum):
     """
     When effects trigger.
     
@@ -125,16 +125,16 @@ class EffectTiming(Enum):
     - ON_PROMOTE: Triggers when this card moves to attacking zone
     - PASSIVE: Always active while card is in active zone
     """
-    IMMEDIATE = auto()
-    START_OF_TURN = auto()
-    END_OF_TURN = auto()
-    ON_ATTACK = auto()
-    ON_DEFEND = auto()
-    ON_DAMAGE = auto()
-    ON_DESTROY = auto()
-    ON_PLAY = auto()
-    ON_PROMOTE = auto()
-    PASSIVE = auto()
+    IMMEDIATE = "IMMEDIATE"
+    START_OF_TURN = "START_OF_TURN"
+    END_OF_TURN = "END_OF_TURN"
+    ON_ATTACK = "ON_ATTACK"
+    ON_DEFEND = "ON_DEFEND"
+    ON_DAMAGE = "ON_DAMAGE"
+    ON_DESTROY = "ON_DESTROY"
+    ON_PLAY = "ON_PLAY"
+    ON_PROMOTE = "ON_PROMOTE"
+    PASSIVE = "PASSIVE"
 
 
 __all__ = [
