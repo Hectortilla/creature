@@ -1,3 +1,5 @@
+COMPLETED ✅
+
 # Step 4: Card Entity System
 
 > **Depends on:** Step 1 (Game Models)  
@@ -16,7 +18,7 @@ This solves the core problem: currently cards are just `Mesh[]` arrays with no w
 
 ```typescript
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { CardVisualState, type ClientCard } from "../game/models";
+import { CardVisualState, type ClientCard, type Zone } from "../game/models";
 
 class CardEntity {
   readonly instanceId: string;
@@ -105,6 +107,7 @@ class CardEntityManager {
    - `HOVERED` — slight glow or outline
    - `SELECTED` — stronger glow, raised position
    - `DISABLED` — reduced opacity
+   - `DRAGGING` — slightly transparent, follows pointer offset
    - `ANIMATING` — no interaction effects applied
 
 5. **Entities for opponent cards** — opponent's deck and hand cards are created with `faceUp: false`. Field cards for both players are `faceUp: true`. The mesh material/texture determines the visual.
@@ -138,10 +141,11 @@ Read these files for context:
 
 Implement as specified in the step doc. Key rules:
 1. CardEntity binds a Mesh to a ClientCard with a CardVisualState.
-2. CardEntityManager is a singleton with bidirectional lookups (instanceId↔entity, mesh↔entity).
-3. Use cloneMeshWithScripts for creating card meshes from blueprints.
-4. applyVisualState() should use BabylonJS features like renderOutline, outlineColor, 
-   outlineWidth for HOVERED/SELECTED states, and visibility for DISABLED.
-5. Entities are passive — they don't subscribe to events or trigger animations.
-6. Export both classes.
+2. Import Zone alongside ClientCard and CardVisualState from "../game/models" in CardEntity.ts.
+3. CardEntityManager is a singleton with bidirectional lookups (instanceId↔entity, mesh↔entity).
+4. Use cloneMeshWithScripts for creating card meshes from blueprints.
+5. applyVisualState() should use BabylonJS features like renderOutline, outlineColor, 
+   outlineWidth for HOVERED/SELECTED states, visibility for DISABLED, and reduced opacity for DRAGGING.
+6. Entities are passive — they don't subscribe to events or trigger animations.
+7. Export both classes.
 ```
