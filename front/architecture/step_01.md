@@ -1,291 +1,252 @@
-# Step 1: Game Models & Types
+# Step 1: Expose Game Domain Types in OpenAPI & Auto-Generate Frontend Models
 
 > **Depends on:** Nothing (first step)  
-> **Produces:** `scripts/game/models.ts`  
+> **Produces:** Strongly-typed game models in `front/src/lib/api/types.gen.ts` (auto-generated) + `scripts/game/models.ts` (client-only additions)  
 > **See also:** [Architecture Overview](./overview.md) — "Layer Descriptions → 1. Game Models"
 
 ## Goal
 
-Create strongly-typed TypeScript interfaces and enums that mirror the backend domain model. This replaces all `Record<string, unknown>` usage with concrete types and becomes the shared vocabulary for every other layer in the architecture.
+Replace all `dict[str, Any]` / `Record<string, unknown>` usage with concrete types by **exposing the backend's existing Pydantic game models through the OpenAPI spec** and auto-generating TypeScript types via `npm run generate`. No model duplication — reuse the existing classes directly.
+
+## Root Cause
+
+Two things prevent using the existing game models in the WebSocket schemas today:
+
+1. **Enums use `auto()` (integer values)** — Pydantic generates JSON Schema with integer enum values (1, 2, 3...), but `field_serializer` decorators convert them to `.name` strings ("DECK", "HAND"...) at runtime. The OpenAPI spec doesn't match what the frontend receives.
+
+2. **WebSocket schemas use `dict[str, Any]`** — `server.py` erases all type information for game payloads.
 
 ## What to Implement
 
-### File: `front/src/babylon-editor/src/scripts/game/models.ts`
+### Part A: Backend — Make existing models OpenAPI-compatible
 
-Define the following types, matching the backend's Python enums and Pydantic models:
+#### 1. Convert enums to `(str, Enum)` with string values
 
-### Enums
+In `back/app/models/game/enums.py`, change all enums from `auto()` to string values matching their names:
 
-```typescript
-enum Zone {
-  DECK = "DECK",
-  HAND = "HAND",
-  SUPPORTING = "SUPPORTING",
-  ATTACKING = "ATTACKING",
-  GRAVEYARD = "GRAVEYARD",
-}
+```python
+# Before
+class Zone(Enum):
+    DECK = auto()       # value = 1
+    HAND = auto()       # value = 2
+    ...
 
-enum TurnPhase {
-  DRAW = "DRAW",
-  PLACEMENT = "PLACEMENT",
-  PROMOTION = "PROMOTION",
-  SWAP = "SWAP",
-  ASSOCIATION = "ASSOCIATION",
-  EVOLUTION = "EVOLUTION",
-  ATTACK = "ATTACK",
-}
-
-enum GameStatus {
-  WAITING = "WAITING",
-  STARTING = "STARTING",
-  IN_PROGRESS = "IN_PROGRESS",
-  PAUSED = "PAUSED",
-  FINISHED = "FINISHED",
-}
-
-enum CardStatus {
-  READY = "READY",
-  SWAPPED = "SWAPPED",
-  EXHAUSTED = "EXHAUSTED",
-  ASSOCIATED = "ASSOCIATED",
-}
-
-enum DamageType {
-  PHYSICAL = "PHYSICAL",
-  MAGICAL = "MAGICAL",
-}
+# After
+class Zone(str, Enum):
+    DECK = "DECK"
+    HAND = "HAND"
+    SUPPORTING = "SUPPORTING"
+    ATTACKING = "ATTACKING"
+    GRAVEYARD = "GRAVEYARD"
 ```
 
-Use string enums (not numeric) because the backend serializes enums as their `.name` string.
+Apply the same pattern to `TurnPhase`, `GameStatus`, `CardStatus`, `DamageType`, and `EffectTiming`.
 
-### Card-related interfaces
+With `(str, Enum)` and matching name/value, Pydantic v2's `model_dump(mode='json')` serializes as the string value — identical to what the current `field_serializer` decorators produce. The JSON Schema also shows the correct string values.
 
-```typescript
-interface ElementContribution {
-  element_id: number;
-  amount: number;
-}
+#### 2. Remove redundant `field_serializer` decorators
 
-interface ElementPool {
-  elements: Record<number, number>;      // element_id → available amount
-  max_elements: Record<number, number>;  // element_id → max amount
-}
+Every `field_serializer` that just does `return value.name` is now unnecessary. Remove them from:
 
-interface AttackCost {
-  element_id: number;
-  amount: number;
-}
+- `GameCard.serialize_zone`, `GameCard.serialize_status`
+- `GameState.serialize_phase`, `GameState.serialize_status`
+- `ZoneState.serialize_zone`
+- `AttackDefinition.serialize_type`
+- `CardMovedEvent.serialize_from_zone`, `serialize_to_zone`
+- `CardAssociatedEvent.serialize_source_zone`
+- `DamageDealtEvent.serialize_damage_type`
+- `PhaseChangedEvent.serialize_from_phase`, `serialize_to_phase`
+- `GameRoom` (in `websocket/models.py`) if it has any enum serializers
 
-interface AttackDefinition {
-  attack_id: number;
-  name: string;
-  damage: number;
-  type: DamageType;
-  element_id: number;
-  necessary_force: AttackCost[];
-  effect: string | null;
-  dice_rolls: number | null;
-}
+Keep non-enum serializers (`serialize_created_at`, `serialize_cards`, `serialize_event_log`, `serialize_deck`).
 
-interface ClientCard {
-  instanceId: string;
-  cardId: number;
-  ownerId: string;
-  name: string;
-  health: number;           // max health
-  currentHealth: number;
-  physicalDefence: number;
-  magicDefence: number;
-  elementIds: number[];
-  elementContribution: ElementContribution[];
-  attacks: AttackDefinition[];
-  skillIds: number[];
-  associationIds: number[];
-  zone: Zone;
-  status: CardStatus;
-  turnsInZone: number;
-  associations: string[];   // instance IDs of associated cards
-  isEvolution: boolean;
-  evolvesFromId: number | null;
-  hasAttackedThisTurn: boolean;
-  swappedThisTurn: boolean;
+#### 3. Replace excluded-field serializers with `Field(exclude=True)`
 
-  // Computed (derive on client from the above)
-  isAlive: boolean;
-  canAttack: boolean;
-  canPromote: boolean;
-  canEvolve: boolean;
-}
+Some `field_serializer` decorators exist only to return `None` (hiding data from the frontend). Replace them with `Field(exclude=True)` so the field is excluded from both serialization **and** the JSON Schema:
+
+```python
+# GameState — before:
+cards: dict[str, GameCard] = {}
+event_log: list[dict[str, Any]] = []
+
+@field_serializer('cards')
+def serialize_cards(self, value) -> None:
+    return None
+
+@field_serializer('event_log')
+def serialize_event_log(self, value) -> None:
+    return None
+
+# GameState — after:
+cards: dict[str, GameCard] = Field(default_factory=dict, exclude=True)
+event_log: list[dict[str, Any]] = Field(default_factory=list, exclude=True)
+# Remove both field_serializer methods
+
+# PlayerState — same pattern for deck:
+deck: Optional[list[dict]] = Field(default=None, exclude=True)
+# Remove serialize_deck method
 ```
 
-### Player & Game State interfaces
+#### 4. Create a discriminated union type for events
 
-```typescript
-interface ZoneState {
-  zone: Zone;
-  ownerId: string;
-  cardIds: string[];        // instance IDs, ordered
-  maxCapacity: number | null;
-}
+The only genuinely new type needed — a union of all event classes for use in the schemas:
 
-interface ClientPlayerState {
-  playerId: string;
-  name: string;
-  turnCount: number;
-  elementPool: ElementPool;
-  zones: Record<Zone, ZoneState>;
-}
+**Add to `back/app/models/game/events.py`:**
 
-interface GameConfig {
-  deckSize: number;
-  initialDraw: number;
-  normalDraw: number;
-  supportingZoneSize: number;
-  attackingZoneSize: number;
-}
+```python
+from typing import Annotated, Union
+from pydantic import Field
 
-interface ClientGameState {
-  gameId: string;
-  status: GameStatus;
-  activePlayerId: string | null;
-  currentPhase: TurnPhase;
-  turnNumber: number;
-  pendingAction: string | null;
-  winnerId: string | null;
-  config: GameConfig;
-  myPlayer: ClientPlayerState;
-  opponent: ClientPlayerState;
-  cards: Map<string, ClientCard>;
-}
+GameEventUnion = Annotated[
+    Union[
+        CardDrawnEvent,
+        CardMovedEvent,
+        CardPlayedEvent,
+        CardPromotedEvent,
+        CardSwappedEvent,
+        CardAssociatedEvent,
+        CardEvolvedEvent,
+        AttackDeclaredEvent,
+        DamageDealtEvent,
+        CardDestroyedEvent,
+        ElementsConsumedEvent,
+        ElementsRestoredEvent,
+        TurnStartedEvent,
+        TurnEndedEvent,
+        PhaseChangedEvent,
+        GameStartedEvent,
+        GameEndedEvent,
+        NoDefenderEvent,
+        EffectTriggeredEvent,
+        EffectAppliedEvent,
+    ],
+    Field(discriminator="event_type"),
+]
 ```
 
-### Event type discriminators
+> **Note:** For `Field(discriminator="event_type")` to work, each event's `event_type` computed field must return a `Literal` rather than a dynamic `self.__class__.__name__`. This means changing the base class `event_type` from a `computed_field` to a `ClassVar` or `Literal`-typed field on each subclass. Example:
+>
+> ```python
+> class CardDrawnEvent(GameEvent):
+>     event_type: Literal["CardDrawnEvent"] = "CardDrawnEvent"
+>     ...
+> ```
+>
+> Evaluate whether the discriminated union approach or a simpler `list[GameEvent]` (without discriminator) works better with the OpenAPI generator. If the discriminator adds too much complexity, a non-discriminated `list[GameEvent]` with all fields optional on the base class is an acceptable alternative — the frontend already switches on `event_type` at runtime.
 
-```typescript
-// All possible backend event type strings
-type GameEventType =
-  | "CardDrawnEvent"
-  | "CardMovedEvent"
-  | "CardPlayedEvent"
-  | "CardPromotedEvent"
-  | "CardSwappedEvent"
-  | "CardAssociatedEvent"
-  | "CardEvolvedEvent"
-  | "AttackDeclaredEvent"
-  | "DamageDealtEvent"
-  | "CardDestroyedEvent"
-  | "ElementsConsumedEvent"
-  | "ElementsRestoredEvent"
-  | "TurnStartedEvent"
-  | "TurnEndedEvent"
-  | "PhaseChangedEvent"
-  | "GameStartedEvent"
-  | "GameEndedEvent"
-  | "NoDefenderEvent"
-  | "EffectTriggeredEvent"
-  | "EffectAppliedEvent";
+#### 5. Extend `ActionData` for the valid action response
 
-// Typed event payloads for the most critical events
-// Events use instance_id (UUID) + card_id (database ID) to identify cards
-interface CardDrawnEventData {
-  event_type: "CardDrawnEvent";
-  player_id: string;
-  instance_id: string;
-  card_id: number;
-  cards_remaining: number;
-}
+`Action.to_dict()` produces a dict that contains all the same fields the client sends (`ActionData`) plus enrichment fields (`player_id`, `action`, `description`, display names). Rather than re-declaring every field, extend the existing `ActionData`:
 
-interface CardPlayedEventData {
-  event_type: "CardPlayedEvent";
-  player_id: string;
-  instance_id: string;
-  card_id: number;
-  card_name: string;
-}
+**File: `back/app/models/schemas/websocket/game_schemas.py`**
 
-interface CardPromotedEventData {
-  event_type: "CardPromotedEvent";
-  player_id: string;
-  instance_id: string;
-  card_id: number;
-  card_name: string;
-}
+```python
+from typing import Optional
+from app.models.schemas.websocket.client import ActionData
 
-interface CardSwappedEventData {
-  event_type: "CardSwappedEvent";
-  player_id: string;
-  supporting_card_id: string;
-  attacking_card_id: string;
-}
 
-interface AttackDeclaredEventData {
-  event_type: "AttackDeclaredEvent";
-  attacker_owner_id: string;
-  attacker_id: string;
-  target_id: string;
-  attack_id: number;
-  attack_name: string;
-}
-
-interface DamageDealtEventData {
-  event_type: "DamageDealtEvent";
-  source_id: string;
-  target_id: string;
-  damage_type: string;
-  base_damage: number;
-  element_bonus: number;
-  defense_reduction: number;
-  final_damage: number;
-  remaining_health: number;
-}
-
-interface CardDestroyedEventData {
-  event_type: "CardDestroyedEvent";
-  instance_id: string;
-  owner_id: string;
-  card_name: string;
-  destroyed_by: string | null;
-}
-
-interface PhaseChangedEventData {
-  event_type: "PhaseChangedEvent";
-  player_id: string;
-  from_phase: string;
-  to_phase: string;
-}
-
-interface TurnStartedEventData {
-  event_type: "TurnStartedEvent";
-  player_id: string;
-  turn_number: number;
-  is_first_turn: boolean;
-}
-
-interface GameEndedEventData {
-  event_type: "GameEndedEvent";
-  winner_id: string;
-  loser_id: string;
-  reason: string;
-}
-
-// Union of all typed event payloads
-type GameEventData =
-  | CardDrawnEventData
-  | CardPlayedEventData
-  | CardPromotedEventData
-  | CardSwappedEventData
-  | AttackDeclaredEventData
-  | DamageDealtEventData
-  | CardDestroyedEventData
-  | PhaseChangedEventData
-  | TurnStartedEventData
-  | GameEndedEventData;
+class ValidActionSchema(ActionData):
+    """Action.to_dict() output = ActionData fields + server enrichments."""
+    player_id: str
+    action: str
+    description: str
+    # Display names resolved by to_dict() overrides on each Action subclass
+    card_name: Optional[str] = None
+    attack_name: Optional[str] = None
+    target_name: Optional[str] = None
+    attacker_name: Optional[str] = None
+    supporting_card_name: Optional[str] = None
+    attacking_card_name: Optional[str] = None
+    association_card_name: Optional[str] = None
+    target_card_name: Optional[str] = None
+    evolution_card_name: Optional[str] = None
+    cards: Optional[list[dict]] = None
 ```
 
-### Visual state enum (for the entity system later)
+All action parameter fields (`instance_id`, `attacker_id`, `attack_id`, `swaps`, etc.) are inherited from `ActionData` — zero duplication.
+
+#### 6. Update server WebSocket schemas
+
+Replace `dict[str, Any]` with the actual model types in `back/app/models/schemas/websocket/server.py`:
+
+```python
+from app.models.game.state import GameState
+from app.models.game.events import GameEventUnion  # or GameEvent if no discriminator
+from app.models.schemas.websocket.game_schemas import ValidActionSchema
+
+
+class GameStartedData(BaseModel):
+    success: bool
+    game_state: GameState
+    events: list[GameEventUnion]
+    valid_actions: list[ValidActionSchema] = Field(default_factory=list)
+
+
+class GameStateData(BaseModel):
+    state: Optional[GameState] = None
+
+
+class ActionResultData(BaseModel):
+    success: bool
+    error: Optional[str] = None
+    events: list[GameEventUnion]
+    game_over: bool
+    winner_id: Optional[str] = None
+    game_state: Optional[GameState] = None
+    valid_actions: list[ValidActionSchema] = Field(default_factory=list)
+
+
+class ValidActionsData(BaseModel):
+    actions: list[ValidActionSchema]
+```
+
+`GameState`, `GameCard`, `PlayerState`, `ZoneState`, `ElementPool`, `AttackDefinition`, `ElementContribution` — all used directly, zero duplication.
+
+#### 7. Re-generate frontend types
+
+```bash
+cd front && npm run generate
+```
+
+The generated `types.gen.ts` now contains `GameState`, `GameCard`, `Zone`, `TurnPhase`, all event types, `ValidActionSchema`, etc. — all derived from the existing backend models.
+
+### Part B: Frontend — Client-only type additions
+
+After auto-generation, only a small `models.ts` is needed for types that don't exist on the backend.
+
+**File: `front/src/babylon-editor/src/scripts/game/models.ts`**
 
 ```typescript
-enum CardVisualState {
+/**
+ * Client-only types that supplement the auto-generated backend types.
+ * All backend domain types come from `$lib/api/types.gen.ts` via `npm run generate`.
+ */
+
+// Re-export generated types for convenience within the BabylonJS scripts
+export type {
+  Zone,
+  TurnPhase,
+  GameStatus,
+  CardStatus,
+  DamageType,
+  GameCard,
+  PlayerState,
+  GameState,
+  GameConfiguration,
+  ZoneState,
+  ElementContribution,
+  ElementPool,
+  AttackDefinition,
+  ValidActionSchema,
+  // Events (names may vary based on what openapi-ts generates)
+  CardDrawnEvent,
+  CardPlayedEvent,
+  CardPromotedEvent,
+  // ... etc
+} from "$lib/api/types.gen";
+
+/** Visual state for card entities in the 3D scene (purely frontend). */
+export enum CardVisualState {
   IDLE = "IDLE",
   HOVERED = "HOVERED",
   SELECTED = "SELECTED",
@@ -295,36 +256,49 @@ enum CardVisualState {
 }
 ```
 
-### Utility: parse backend snake_case to camelCase
+Update `front/src/babylon-editor/src/scripts/game/index.ts` to re-export from `models.ts`.
 
-Add a helper function `parseCardFromServer(raw: Record<string, unknown>): ClientCard` that maps the backend's snake_case field names to the camelCase TypeScript interfaces. This will be used by `GameStateStore` when processing events that include card data.
+## Summary of Changes
+
+| File | Change | Duplication? |
+|------|--------|-------------|
+| `enums.py` | `auto()` → `"STRING"` values, add `str` mixin | No — modifying in place |
+| `card.py`, `state.py`, `zone.py`, `attack.py`, `events.py` | Remove redundant enum `field_serializer` decorators | No — deleting code |
+| `state.py`, `player.py` | `field_serializer` returning `None` → `Field(exclude=True)` | No — simplifying |
+| `events.py` | Add `GameEventUnion` discriminated union type | No — new type composing existing classes |
+| `game_schemas.py` | `ValidActionSchema(ActionData)` — extends existing class | No — only adds `to_dict()` enrichment fields |
+| `server.py` | Replace `dict[str, Any]` with actual model types | No — removing indirection |
+| `models.ts` | Re-exports + `CardVisualState` | No — frontend-only enum |
 
 ## Constraints
 
-- Use string enums (not numeric `auto()`) so they match the backend's serialized `.name` values.
-- All interfaces should be exported.
-- Re-export everything from `scripts/game/index.ts`.
-- Do NOT modify existing files in this step, only add `models.ts` and update `index.ts` exports.
+- Backend runtime behavior is unchanged — `model_dump(mode='json')` produces the same JSON as before.
+- Verify existing tests pass after the enum conversion (any code comparing `Zone.DECK.value` to `1` will break and must be updated).
+- The `TurnPhase.get_order()` and `next_phase()` methods continue to work — `(str, Enum)` preserves declaration order.
+- After the backend changes, run `npm run generate` and verify the new types appear in `types.gen.ts`.
 
 ## Backend Reference
 
-The source-of-truth definitions live in:
-- `back/app/models/game/enums.py` — all enums
-- `back/app/models/game/card.py` — `GameCard` model
-- `back/app/models/game/state.py` — `GameState`, `GameConfiguration`
-- `back/app/models/game/player.py` — `PlayerState`
-- `back/app/models/game/zone.py` — `ZoneState`
-- `back/app/models/game/events.py` — all event classes
-- `back/app/models/game/element.py` — `ElementContribution`, `ElementPool`
-- `back/app/models/game/attack.py` — `AttackDefinition`
+Files modified (not duplicated):
+- `back/app/models/game/enums.py` — convert to `(str, Enum)`
+- `back/app/models/game/card.py` — remove enum serializers
+- `back/app/models/game/state.py` — remove enum serializers, `Field(exclude=True)`
+- `back/app/models/game/player.py` — `Field(exclude=True)` for deck
+- `back/app/models/game/zone.py` — remove enum serializer
+- `back/app/models/game/attack.py` — remove enum serializer
+- `back/app/models/game/events.py` — remove enum serializers, add `GameEventUnion`
+- `back/app/models/schemas/websocket/server.py` — replace `dict[str, Any]`
+
+Files created (minimal):
+- `back/app/models/schemas/websocket/game_schemas.py` — `ValidActionSchema(ActionData)` only
 
 ## Agent Prompt
 
 ```
-Create the file `front/src/babylon-editor/src/scripts/game/models.ts` with strongly-typed TypeScript
-enums and interfaces that mirror the backend game domain model.
+Implement Step 1 of the frontend architecture: expose backend game domain types through the OpenAPI spec
+so they are auto-generated in the frontend. Reuse existing models — do NOT duplicate field definitions.
 
-Read the following backend files to understand the exact field names, types, and serialization:
+Read the following backend files first:
 - back/app/models/game/enums.py
 - back/app/models/game/card.py
 - back/app/models/game/state.py
@@ -333,11 +307,26 @@ Read the following backend files to understand the exact field names, types, and
 - back/app/models/game/events.py
 - back/app/models/game/element.py
 - back/app/models/game/attack.py
+- back/app/game/actions.py
+- back/app/models/schemas/websocket/server.py
 
-Implement the types described in front/architecture/step_01.md. Key rules:
-1. Use string enums (e.g., DECK = "DECK") because the backend serializes enum values as their .name string.
-2. Use camelCase for TS interface fields but keep backend field names in event data interfaces (since those arrive as JSON from the server).
-3. Add a parseCardFromServer(raw) utility that converts snake_case server card data to the camelCase ClientCard interface.
-4. Export everything. Update front/src/babylon-editor/src/scripts/game/index.ts to re-export from models.ts.
-5. Do NOT modify any other existing files.
+Steps:
+1. Convert all enums in enums.py from `auto()` to `(str, Enum)` with string values matching
+   their names (e.g., `DECK = "DECK"`). This makes JSON Schema match serialized output.
+2. Remove all `field_serializer` decorators across game models that just do `return value.name`
+   for enum fields — they are now redundant.
+3. In state.py and player.py, replace `field_serializer` returning None with `Field(exclude=True)`
+   for cards, event_log, and deck.
+4. In events.py, add a `GameEventUnion` discriminated union type. Each event subclass needs
+   `event_type` as a Literal field (not computed_field) for the discriminator to work.
+5. Create `back/app/models/schemas/websocket/game_schemas.py` with `ValidActionSchema` that
+   EXTENDS `ActionData` from client.py — only add the to_dict() enrichment fields (player_id,
+   action, description, display name fields). Do NOT re-declare action parameter fields.
+6. Update server.py to replace all `dict[str, Any]` with the actual model types (GameState,
+   GameEventUnion, ValidActionSchema).
+7. Run `cd front && npm run generate` to regenerate types.gen.ts.
+8. Create `front/src/babylon-editor/src/scripts/game/models.ts` with re-exports of generated
+   types + CardVisualState enum (frontend-only).
+9. Update front/src/babylon-editor/src/scripts/game/index.ts to re-export from models.ts.
+10. Run existing backend tests to verify the enum conversion doesn't break anything.
 ```
