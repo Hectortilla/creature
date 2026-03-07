@@ -1,3 +1,5 @@
+COMPLETED ✅
+
 # Step 5: Zone Renderers
 
 > **Depends on:** Step 4 (Card Entity System)  
@@ -165,14 +167,14 @@ class GraveyardZoneRenderer implements ZoneRenderer {
 
 The BabylonJS scene (e.g., `Battle.scene`) must contain empty `TransformNode` markers for each zone:
 
-**Local player (10 anchors):**
+**Local player (5 anchors):**
 - `My_Deck_Anchor`
 - `My_Hand_Anchor`
 - `My_Supporting_Anchor`
 - `My_Attacking_Anchor`
 - `My_Graveyard_Anchor`
 
-**Opponent (10 anchors):**
+**Opponent (5 anchors):**
 - `Opp_Deck_Anchor`
 - `Opp_Hand_Anchor`
 - `Opp_Supporting_Anchor`

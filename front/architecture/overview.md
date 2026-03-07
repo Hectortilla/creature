@@ -102,13 +102,15 @@ interface ZoneRenderer {
   addCard(entity: CardEntity, animate: boolean): Promise<void>;
   removeCard(instanceId: string): void;
   repositionAll(animate: boolean): Promise<void>;
-  getEntryPosition(): Vector3;
-  getExitPosition(): Vector3;
+  getEntryPosition(index?: number): Vector3;
+  getExitPosition(index?: number): Vector3;
+  getEntities(): CardEntity[];
+  get count(): number;
   dispose(): void;
 }
 ```
 
-The scene contains **empty marker nodes** (e.g., `MyHand_Anchor`, `OpponentAttacking_Anchor`) that zone renderers use for world-space positioning.
+The scene contains **empty marker nodes** (e.g., `My_Hand_Anchor`, `Opp_Attacking_Anchor`) that zone renderers use for world-space positioning.
 
 ### 5. Animation Pipeline (`scripts/animation/`)
 
