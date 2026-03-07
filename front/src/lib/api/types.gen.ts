@@ -390,6 +390,52 @@ export type AttackDeclaredEvent = {
 };
 
 /**
+ * AttackDefinition
+ *
+ * Represents an attack that a creature can perform.
+ *
+ * Inherits shared fields from AttackCoreFields:
+ * - name, description, damage, effect, dice_rolls
+ *
+ * Adds game-specific fields: attack_id, type (enum), element_id, necessary_force (typed)
+ */
+export type AttackDefinition = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Damage
+   */
+  damage: number;
+  /**
+   * Effect
+   */
+  effect?: string | null;
+  /**
+   * Dice Rolls
+   */
+  dice_rolls?: number | null;
+  /**
+   * Attack Id
+   */
+  attack_id: number;
+  type: DamageType;
+  /**
+   * Element Id
+   */
+  element_id: number;
+  /**
+   * Necessary Force
+   */
+  necessary_force?: Array<ElementContribution>;
+};
+
+/**
  * AttackReadWithElement
  */
 export type AttackReadWithElement = {
@@ -1357,6 +1403,23 @@ export type EffectTriggeredEvent = {
 };
 
 /**
+ * ElementContribution
+ *
+ * Represents element contribution from a card.
+ * Used for element costs, contributions, and any element+amount pair.
+ */
+export type ElementContribution = {
+  /**
+   * Element Id
+   */
+  element_id: number;
+  /**
+   * Amount
+   */
+  amount: number;
+};
+
+/**
  * ElementCreate
  */
 export type ElementCreate = {
@@ -1380,6 +1443,26 @@ export type ElementCreate = {
    * Weaknesses
    */
   weaknesses?: Array<number> | null;
+};
+
+/**
+ * ElementPool
+ *
+ * Tracks available elements for a player.
+ */
+export type ElementPool = {
+  /**
+   * Elements
+   */
+  elements?: {
+    [key: string]: number;
+  };
+  /**
+   * Max Elements
+   */
+  max_elements?: {
+    [key: string]: number;
+  };
 };
 
 /**
@@ -2517,6 +2600,33 @@ export type ValidationError = {
 export type Zone = "DECK" | "HAND" | "SUPPORTING" | "ATTACKING" | "GRAVEYARD";
 
 /**
+ * ZoneState
+ *
+ * Represents the state of a single zone for a player.
+ */
+export type ZoneState = {
+  zone: Zone;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Card Ids
+   */
+  card_ids?: Array<string>;
+  /**
+   * Max Capacity
+   */
+  max_capacity?: number | null;
+  /**
+   * Is Full
+   *
+   * Check if the zone is at capacity.
+   */
+  readonly is_full: boolean;
+};
+
+/**
  * ActionResultData
  *
  * Data for action_result message.
@@ -2855,6 +2965,27 @@ export type PingDataWritable = {
  */
 export type PongDataWritable = {
   [key: string]: unknown;
+};
+
+/**
+ * ZoneState
+ *
+ * Represents the state of a single zone for a player.
+ */
+export type ZoneStateWritable = {
+  zone: Zone;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Card Ids
+   */
+  card_ids?: Array<string>;
+  /**
+   * Max Capacity
+   */
+  max_capacity?: number | null;
 };
 
 export type LoginForAccessTokenAuthTokenPostData = {
@@ -4441,6 +4572,81 @@ export type WsPongTypeGameWebsocketMessagesPongGetResponses = {
 
 export type WsPongTypeGameWebsocketMessagesPongGetResponse =
   WsPongTypeGameWebsocketMessagesPongGetResponses[keyof WsPongTypeGameWebsocketMessagesPongGetResponses];
+
+export type DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/element-contribution";
+  };
+
+export type DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: ElementContribution;
+  };
+
+export type DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponse =
+  DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses[keyof DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses];
+
+export type DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/element-pool";
+  };
+
+export type DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: ElementPool;
+  };
+
+export type DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponse =
+  DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses[keyof DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses];
+
+export type DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/attack-definition";
+  };
+
+export type DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: AttackDefinition;
+  };
+
+export type DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponse =
+  DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses[keyof DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses];
+
+export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/domain/zone-state";
+};
+
+export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: ZoneState;
+  };
+
+export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponse =
+  DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses[keyof DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses];
 
 export type RootGetData = {
   body?: never;

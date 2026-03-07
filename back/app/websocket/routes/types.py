@@ -32,6 +32,9 @@ from app.models.schemas.websocket.server import (
     ErrorMessage,
     PongMessage,
 )
+from app.models.game.element import ElementContribution, ElementPool
+from app.models.game.attack import AttackDefinition
+from app.models.game.zone import ZoneState
 
 router = APIRouter(prefix="/websocket-messages", tags=["WebSocket Messages"])
 
@@ -162,3 +165,31 @@ async def _ws_error_type() -> ErrorMessage:
 async def _ws_pong_type() -> PongMessage:
     """WebSocket message type: pong (dummy endpoint for type generation)."""
     return PongMessage()
+
+
+# ============================================================================
+# Game Domain Types (for frontend code generation)
+# ============================================================================
+
+@router.get("/domain/element-contribution", response_model=ElementContribution, include_in_schema=True)
+async def _domain_element_contribution_type() -> ElementContribution:
+    """Game domain type: ElementContribution (for type generation)."""
+    ...
+
+
+@router.get("/domain/element-pool", response_model=ElementPool, include_in_schema=True)
+async def _domain_element_pool_type() -> ElementPool:
+    """Game domain type: ElementPool (for type generation)."""
+    ...
+
+
+@router.get("/domain/attack-definition", response_model=AttackDefinition, include_in_schema=True)
+async def _domain_attack_definition_type() -> AttackDefinition:
+    """Game domain type: AttackDefinition (for type generation)."""
+    ...
+
+
+@router.get("/domain/zone-state", response_model=ZoneState, include_in_schema=True)
+async def _domain_zone_state_type() -> ZoneState:
+    """Game domain type: ZoneState (for type generation)."""
+    ...

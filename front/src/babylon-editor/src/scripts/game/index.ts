@@ -49,4 +49,11 @@ export type {
 	NoDefenderEvent,
 	EffectTriggeredEvent,
 	EffectAppliedEvent,
+	ElementContribution,
+	ElementPool,
+	AttackDefinition,
+	ZoneState,
+	ClientCard,
+	ClientPlayerState,
+	ClientGameState,
 } from './models';

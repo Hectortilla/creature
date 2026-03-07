@@ -59,6 +59,14 @@ import type {
   DeleteTypesItemIdDeleteData,
   DeleteTypesItemIdDeleteErrors,
   DeleteTypesItemIdDeleteResponses,
+  DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetData,
+  DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses,
+  DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetData,
+  DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses,
+  DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetData,
+  DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses,
+  DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetData,
+  DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses,
   GetAllAbilitiesGetData,
   GetAllAbilitiesGetResponses,
   GetAllAssociationsGetData,
@@ -1472,6 +1480,83 @@ export const wsPongTypeGameWebsocketMessagesPongGet = <
     unknown,
     ThrowOnError
   >({ url: "/game/websocket-messages/pong", ...options });
+
+/**
+ *  Domain Element Contribution Type
+ *
+ * Game domain type: ElementContribution (for type generation).
+ */
+export const domainElementContributionTypeGameWebsocketMessagesDomainElementContributionGet =
+  <ThrowOnError extends boolean = false>(
+    options?: Options<
+      DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetData,
+      ThrowOnError
+    >,
+  ) =>
+    (options?.client ?? client).get<
+      DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses,
+      unknown,
+      ThrowOnError
+    >({
+      url: "/game/websocket-messages/domain/element-contribution",
+      ...options,
+    });
+
+/**
+ *  Domain Element Pool Type
+ *
+ * Game domain type: ElementPool (for type generation).
+ */
+export const domainElementPoolTypeGameWebsocketMessagesDomainElementPoolGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<
+    DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetData,
+    ThrowOnError
+  >,
+) =>
+  (options?.client ?? client).get<
+    DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/game/websocket-messages/domain/element-pool", ...options });
+
+/**
+ *  Domain Attack Definition Type
+ *
+ * Game domain type: AttackDefinition (for type generation).
+ */
+export const domainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGet =
+  <ThrowOnError extends boolean = false>(
+    options?: Options<
+      DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetData,
+      ThrowOnError
+    >,
+  ) =>
+    (options?.client ?? client).get<
+      DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses,
+      unknown,
+      ThrowOnError
+    >({ url: "/game/websocket-messages/domain/attack-definition", ...options });
+
+/**
+ *  Domain Zone State Type
+ *
+ * Game domain type: ZoneState (for type generation).
+ */
+export const domainZoneStateTypeGameWebsocketMessagesDomainZoneStateGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<
+    DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetData,
+    ThrowOnError
+  >,
+) =>
+  (options?.client ?? client).get<
+    DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/game/websocket-messages/domain/zone-state", ...options });
 
 /**
  * Root
