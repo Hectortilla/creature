@@ -75,6 +75,10 @@ export class ActionBuilder {
 		return [...ids];
 	}
 
+	isTwoStepAction(action: ValidAction): boolean {
+		return action.action in TWO_STEP_ACTIONS;
+	}
+
 	/**
 	 * Given one representative action from a two-step flow (e.g. one of the
 	 * attack actions returned by getActionsForCard), return all card IDs that
