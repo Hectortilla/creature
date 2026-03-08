@@ -126,8 +126,8 @@ export default class BoardController implements IScript {
 
 	private _anchor(name: string): TransformNode {
 		const node = this._scene.getTransformNodeByName(name);
-		if (!node) console.warn(`BoardController: anchor "${name}" not found in scene`);
-		return node!;
+		if (!node) throw new Error(`BoardController: missing required anchor node "${name}" in scene`);
+		return node;
 	}
 
 	// ====================================================================

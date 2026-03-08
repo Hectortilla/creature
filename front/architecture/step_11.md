@@ -12,28 +12,24 @@ This is the final step that makes the full architecture operational.
 
 ## What to Do
 
-### 1. Update `scripts.ts` — Register All New Scene Scripts
+### ~~1. Update `scripts.ts` — Remove Old Scripts~~ DONE
 
-The following scripts need to be imported and added to `scriptsMap`:
+~~`BoardController`, `InteractionManager`, and `HudController` are already registered from earlier steps. The only change needed is removing the old position managers.~~
+
+~~Remove these imports and `scriptsMap` entries:~~
+- ~~`scripts/DeckCardsPosManager.ts`~~
+- ~~`scripts/HandCardsPosManager.ts`~~
+
+~~After cleanup, `scriptsMap` should contain:~~
 
 ```typescript
-import scripts_BoardController from "./scripts/BoardController";
-import scripts_InteractionManager from "./scripts/interaction/InteractionManager";
-import scripts_HudController from "./scripts/hud/HudController";
-
 export const scriptsMap = {
-  // Existing
   "scripts/GameNetworkManagerComponent.ts": scripts_GameNetworkManagerComponent,
   "scripts/HoverAnimation.ts": scripts_HoverAnimation,
-
-  // New
+  "scripts/box.ts": scripts_box,
   "scripts/BoardController.ts": scripts_BoardController,
   "scripts/interaction/InteractionManager.ts": scripts_InteractionManager,
   "scripts/hud/HudController.ts": scripts_HudController,
-
-  // Remove these (old)
-  // "scripts/DeckCardsPosManager.ts": scripts_DeckCardsPosManager,
-  // "scripts/HandCardsPosManager.ts": scripts_HandCardsPosManager,
 };
 ```
 
@@ -57,15 +53,13 @@ Add empty nodes in the BabylonJS Editor with these exact names and appropriate p
 | `Opp_Attacking_Anchor` | Center, middle row (opponent side) | Opponent's attacking zone |
 | `Opp_Graveyard_Anchor` | Left side, far from camera | Opponent's graveyard |
 
-**Option B: Code fallback**  
-`BoardController` creates `TransformNode` objects programmatically with default positions if scene nodes aren't found:
+~~**No code fallback** — if any anchor node is missing from the scene, `BoardController` should throw an error at startup:~~ DONE
 
 ```typescript
-private getOrCreateAnchor(name: string, fallbackPosition: Vector3): TransformNode {
-  let node = this._scene.getTransformNodeByName(name);
+private requireAnchor(name: string): TransformNode {
+  const node = this._scene.getTransformNodeByName(name);
   if (!node) {
-    node = new TransformNode(name, this._scene);
-    node.position = fallbackPosition;
+    throw new Error(`Missing required anchor node "${name}" in scene`);
   }
   return node;
 }
@@ -78,28 +72,29 @@ In the `Battle.scene`:
 1. **`GameNetworkManagerComponent`** — already attached (keep as-is).
 2. **`BoardController`** — attach to the root node or a `GameManager` empty node.
 3. **`InteractionManager`** — attach to the same node as `BoardController`.
-4. **`HudController`** — attach to the same node as `BoardController`.
+4. **`HudController`** — attach to the same node as `BoardController`. Must share the node with `InteractionManager` because `HudController` uses `_findInteractionManager()` to read `hoveredEntity` for the card detail panel.
 
 Script execution order matters: `GameNetworkManagerComponent` must start first (it creates the store), then `BoardController`, then `InteractionManager` and `HudController`.
 
-### 4. Remove Old Scripts
+### ~~4. Remove Old Scripts~~ DONE
 
-Delete the following files (their functionality is now in the new architecture):
+~~Delete the following files (their functionality is now in the new architecture):~~
 
-- `scripts/DeckCardsPosManager.ts`
-- `scripts/HandCardsPosManager.ts`
+- ~~`scripts/DeckCardsPosManager.ts`~~
+- ~~`scripts/HandCardsPosManager.ts`~~
 
-Also remove their entries from `scriptsMap` in `scripts.ts`.
+~~Also remove their entries from `scriptsMap` in `scripts.ts`.~~
 
-### 5. Clean Up GameNetworkManagerComponent
+### ~~5. Clean Up GameNetworkManagerComponent~~ DONE
 
-Now that all consumers use `GameStateStore` instead of the old event APIs:
+~~Now that all consumers use `GameStateStore` instead of the old event APIs:~~
 
-1. **Remove `onGameEvent` / `offGameEvent`** methods and `_gameEventListeners` map.
-2. **Remove legacy `emit` calls** for `gameStarted`, `validActionsChange`, `gameStateChange` — the store handles these now.
-3. **Keep:** `on("connectionChange")` and `on("error")` — these are transport-level events that the store doesn't handle.
-4. **Keep:** `getConnection()` — still needed by `ActionBuilder`.
-5. **Keep:** `getStateStore()` — the primary way other scripts access the store.
+1. ~~**Remove `onGameEvent` / `offGameEvent`** methods and `_gameEventListeners` map.~~
+2. ~~**Remove legacy `emit` calls** for `gameStarted`, `validActionsChange`, `gameStateChange` — the store handles these now.~~
+3. ~~**Keep:** `on("connectionChange")` and `on("error")` — these are transport-level events that the store doesn't handle.~~
+4. ~~**Keep:** `getConnection()` — still needed by `ActionBuilder`.~~
+5. ~~**Keep:** `getStateStore()` — the primary way other scripts access the store.~~
+6. ~~**Keep:** `getCardCache()` — still needed for card definition lookups by `CardEntityManager` and `BoardController`.~~
 
 ### 6. Verify Blueprint Meshes
 
@@ -110,14 +105,9 @@ Ensure the scene contains the two blueprint meshes:
 
 These are already in the scene from the old implementation. Verify they're still present and disabled.
 
-### 7. Install BabylonJS GUI Dependency
+### ~~7. Verify BabylonJS GUI Dependency~~ DONE
 
-If not already installed, add `@babylonjs/gui` to the project:
-
-```bash
-cd front/src/babylon-editor
-npm install @babylonjs/gui
-```
+~~`@babylonjs/gui` is already installed (`8.41.0` in `package.json`). Verify it's present — no action needed unless it was removed.~~
 
 ### 8. Smoke Test Checklist
 
@@ -141,12 +131,12 @@ After integration, verify:
 
 Recommended implementation order within this step:
 
-1. Update `scripts.ts` with new imports.
-2. Add anchor nodes to the scene (or verify code fallbacks work).
-3. Attach new scripts to scene nodes.
+1. Remove old script entries from `scripts.ts` and verify new ones are present.
+2. Add all 10 anchor nodes to the scene (required — no fallbacks).
+3. Verify scripts are attached to scene nodes in the correct order.
 4. Run the game and verify the full flow works end-to-end.
 5. Once verified, delete old scripts (`DeckCardsPosManager`, `HandCardsPosManager`).
-6. Clean up `GameNetworkManagerComponent` legacy event APIs.
+6. Clean up `GameNetworkManagerComponent` legacy event APIs (keep `getCardCache()`).
 7. Final smoke test.
 
 ## Agent Prompt
@@ -164,14 +154,14 @@ Read these files for context:
 - front/src/babylon-editor/src/scripts/hud/HudController.ts (from Step 10)
 
 Tasks:
-1. Update scripts.ts: add imports and registrations for BoardController, InteractionManager, HudController.
-   Remove DeckCardsPosManager and HandCardsPosManager registrations.
-2. In BoardController.onStart, add fallback code to create TransformNode anchors with default positions
-   if they don't exist in the scene (getOrCreateAnchor helper).
+1. Update scripts.ts: remove DeckCardsPosManager and HandCardsPosManager imports and scriptsMap entries.
+   BoardController, InteractionManager, and HudController are already registered — verify they're present.
+2. In BoardController.onStart, add a requireAnchor helper that throws if a scene anchor node is missing.
+   All 10 anchor nodes must be present in the scene — no code fallbacks.
 3. Delete scripts/DeckCardsPosManager.ts and scripts/HandCardsPosManager.ts.
 4. Clean up GameNetworkManagerComponent: remove onGameEvent/offGameEvent and _gameEventListeners
    since all consumers now use GameStateStore. Keep on/off for connectionChange and error events.
-   Keep getConnection() and getStateStore().
-5. Verify that @babylonjs/gui is in package.json dependencies. If not, note that it needs to be installed.
+   Keep getConnection(), getStateStore(), and getCardCache().
+5. Verify that @babylonjs/gui is in package.json dependencies (already installed at 8.41.0).
 6. Do NOT modify GameConnection.ts or cloneWithScripts.ts.
 ```

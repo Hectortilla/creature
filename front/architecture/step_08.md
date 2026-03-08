@@ -42,6 +42,11 @@ class ActionBuilder {
   // Get all cards that are valid targets for a given action
   getValidTargetIds(action: ValidAction): string[];
 
+  // ---- Action flow ----
+
+  // Does this action require a second selection (e.g., attack → target, swap → partner)?
+  isTwoStepAction(action: ValidAction): boolean;
+
   // ---- Action categories ----
 
   // Does the player have a pass action available?

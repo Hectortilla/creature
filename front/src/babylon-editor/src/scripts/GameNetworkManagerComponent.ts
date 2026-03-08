@@ -2,21 +2,17 @@ import { Scene } from "@babylonjs/core/scene";
 import { visibleAsNumber, visibleAsString, visibleAsBoolean } from "babylonjs-editor-tools";
 import type { IScript } from "babylonjs-editor-tools";
 import { GameConnection, CardDefinitionCache } from "./game";
-import type { GameMessage, ValidAction } from "./game";
+import type { GameMessage } from "./game";
 import { GameStateStore } from "./state/GameStateStore";
 
 export interface GameEventMap {
     message: GameMessage;
-    gameStarted: Record<string, unknown>;
     gameOver: string | null;
-    gameStateChange: Record<string, unknown> | null;
-    validActionsChange: ValidAction[];
     connectionChange: boolean;
     error: string;
 }
 
 type GameEventCallback<K extends keyof GameEventMap> = (data: GameEventMap[K]) => void;
-type GameEventListenerCallback = (data: Record<string, unknown>) => void;
 
 export default class GameNetworkManagerComponent implements IScript {
     static instance: GameNetworkManagerComponent | null = null;
@@ -43,7 +39,6 @@ export default class GameNetworkManagerComponent implements IScript {
     private _cardCache: CardDefinitionCache | null = null;
     private _stateStore: GameStateStore | null = null;
     private _listeners = new Map<keyof GameEventMap, Set<GameEventCallback<any>>>();
-    private _gameEventListeners = new Map<string, Set<GameEventListenerCallback>>();
 
     public constructor(_scene: Scene) {}
 
@@ -68,12 +63,6 @@ export default class GameNetworkManagerComponent implements IScript {
         for (const cb of listeners) cb(data);
     }
 
-    private emitGameEvent(eventType: string, data: Record<string, unknown>): void {
-        const listeners = this._gameEventListeners.get(eventType);
-        if (!listeners) return;
-        for (const cb of listeners) cb(data);
-    }
-
     private initializeConnection(): void {
         console.log("Connecting to game server...");
 
@@ -90,23 +79,16 @@ export default class GameNetworkManagerComponent implements IScript {
                 onGameOver: (winnerId) => this.emit("gameOver", winnerId),
                 onGameStarted: (data) => {
                     this._stateStore?.processGameStarted(data);
-                    this.emit("gameStarted", data);
                 },
                 onGameEvents: (events) => {
                     this._stateStore?.processGameEvents(events);
-                    for (const event of events) {
-                        this.registerCardFromEvent(event);
-                        const eventType = event.event_type as string;
-                        if (eventType) this.emitGameEvent(eventType, event);
-                    }
+                    for (const event of events) this.registerCardFromEvent(event);
                 },
                 onGameStateChange: (state) => {
                     if (state) this._stateStore?.processGameState(state);
-                    this.emit("gameStateChange", state);
                 },
                 onValidActionsChange: (actions) => {
                     this._stateStore?.updateValidActions(actions);
-                    this.emit("validActionsChange", actions);
                 },
             }
         });
@@ -121,17 +103,6 @@ export default class GameNetworkManagerComponent implements IScript {
 
     public off<K extends keyof GameEventMap>(event: K, callback: GameEventCallback<K>): void {
         this._listeners.get(event)?.delete(callback);
-    }
-
-    public onGameEvent(eventType: string, callback: GameEventListenerCallback): void {
-        if (!this._gameEventListeners.has(eventType)) {
-            this._gameEventListeners.set(eventType, new Set());
-        }
-        this._gameEventListeners.get(eventType)!.add(callback);
-    }
-
-    public offGameEvent(eventType: string, callback: GameEventListenerCallback): void {
-        this._gameEventListeners.get(eventType)?.delete(callback);
     }
 
     private registerCardFromEvent(event: Record<string, unknown>): void {
@@ -162,7 +133,6 @@ export default class GameNetworkManagerComponent implements IScript {
         this._stateStore?.dispose();
         this._stateStore = null;
         this._listeners.clear();
-        this._gameEventListeners.clear();
         GameNetworkManagerComponent.instance = null;
     }
 }
