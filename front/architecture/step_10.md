@@ -1,6 +1,8 @@
+COMPLETED ✅
+
 # Step 10: HUD Layer
 
-> **Depends on:** Step 2 (GameStateStore), Step 4 (CardEntityManager)  
+> **Depends on:** Step 2 (GameStateStore), Step 4 (CardEntityManager), Step 8 (ActionBuilder)  
 > **Produces:** `scripts/hud/HudController.ts` and sub-components  
 > **See also:** [Architecture Overview](./overview.md) — "Layer Descriptions → 9. HUD Layer"
 
@@ -8,7 +10,7 @@
 
 Create the 2D UI overlay that shows game information: current phase, turn indicator, element pool, action buttons (Pass/Concede), card detail panel on hover, and health bars floating above field cards.
 
-The HUD reads from `GameStateStore` and renders using either BabylonJS GUI (`AdvancedDynamicTexture`) or HTML overlays. BabylonJS GUI is recommended for in-game elements (health bars, card tooltips) since they can be anchored to 3D positions. HTML overlays work well for fixed UI (phase bar, buttons).
+The HUD reads from `GameStateStore` and renders using BabylonJS GUI (`AdvancedDynamicTexture`). This keeps all rendering inside the BabylonJS canvas, supports anchoring UI to 3D positions (health bars above cards), and avoids DOM/canvas synchronisation issues.
 
 ## What to Implement
 
@@ -23,6 +25,7 @@ class HudController implements IScript {
   private _scene: Scene;
   private _guiTexture: AdvancedDynamicTexture;
   private _stateStore: GameStateStore;
+  private _actionBuilder: ActionBuilder;
 
   // Sub-components
   private _phaseIndicator: PhaseIndicator;
@@ -34,6 +37,9 @@ class HudController implements IScript {
 
   constructor(scene: Scene);
 
+  // onStart: get dependencies via GameNetworkManagerComponent.instance
+  // (getStateStore, getConnection), CardEntityManager.instance,
+  // InteractionManager (for hoveredEntity), then create ActionBuilder.
   public onStart(): void;
   public onUpdate(): void;
   public onStop(): void;
@@ -79,10 +85,12 @@ Shows the local player's available elements for attacks.
 
 Shows detailed card info when hovering over a card.
 
-- Listens for hover events from `InteractionManager` (or polls `CardEntityManager` for hovered entity).
+- Reads `InteractionManager.hoveredEntity` (public getter) each frame to determine which card is under the pointer.
 - Displays: card name, health (current/max), attack/defense stats, element types, attacks list, status.
 - Position: side panel (right side) or floating tooltip near the card.
 - Hides when no card is hovered.
+
+> **Note:** Step 9's `InteractionManager` needs a public `get hoveredEntity(): CardEntity | null` getter added. `HudController.onStart` should grab the `InteractionManager` instance and pass it to `CardDetailPanel`.
 
 #### `scripts/hud/HealthBar.ts` / `HealthBarManager`
 
@@ -170,7 +178,10 @@ Read these files for context:
 - front/src/babylon-editor/src/scripts/state/GameStateStore.ts (state store)
 - front/src/babylon-editor/src/scripts/state/ActionBuilder.ts (for action buttons)
 - front/src/babylon-editor/src/scripts/entities/CardEntity.ts
-- front/src/babylon-editor/src/scripts/game/models.ts (TurnPhase, Zone enums)
+- front/src/babylon-editor/src/scripts/entities/CardEntityManager.ts (for health bar lifecycle)
+- front/src/babylon-editor/src/scripts/interaction/InteractionManager.ts (hoveredEntity for CardDetailPanel)
+- front/src/babylon-editor/src/scripts/game/models.ts (TurnPhase, Zone types)
+- front/src/babylon-editor/src/scripts/GameNetworkManagerComponent.ts (dependency access pattern)
 
 Key rules:
 1. Use BabylonJS GUI (AdvancedDynamicTexture, TextBlock, Rectangle, Button, etc.).

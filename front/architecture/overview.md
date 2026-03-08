@@ -163,7 +163,7 @@ Scene script handling all player input on the 3D board.
 
 ### 9. HUD Layer (`scripts/hud/`)
 
-BabylonJS `AdvancedDynamicTexture` or HTML overlay for UI elements:
+BabylonJS `AdvancedDynamicTexture` fullscreen GUI for UI elements:
 
 - Phase indicator (current phase, active during your turn).
 - Pass / Concede buttons.
@@ -245,6 +245,7 @@ scripts/
 │   ├── TurnBanner.ts              # NEW
 │   ├── ElementPoolDisplay.ts      # NEW
 │   ├── CardDetailPanel.ts         # NEW
+│   ├── ActionButtonPanel.ts       # NEW
 │   └── HealthBar.ts               # NEW
 │
 ├── BoardController.ts             # NEW: Main orchestrator scene script

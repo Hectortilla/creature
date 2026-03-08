@@ -11,6 +11,7 @@ import * as scripts_HoverAnimation from "./scripts/HoverAnimation";
 import * as scripts_box from "./scripts/box";
 import * as scripts_BoardController from "./scripts/BoardController";
 import * as scripts_InteractionManager from "./scripts/interaction/InteractionManager";
+import * as scripts_HudController from "./scripts/hud/HudController";
 
 export const scriptsMap = {
     "scripts/GameNetworkManagerComponent.ts": scripts_GameNetworkManagerComponent,
@@ -19,7 +20,8 @@ export const scriptsMap = {
 	"scripts/HoverAnimation.ts": scripts_HoverAnimation,
 	"scripts/box.ts": scripts_box,
 	"scripts/BoardController.ts": scripts_BoardController,
-	"scripts/interaction/InteractionManager.ts": scripts_InteractionManager
+	"scripts/interaction/InteractionManager.ts": scripts_InteractionManager,
+	"scripts/hud/HudController.ts": scripts_HudController
 };
 
 export { loadScene, scriptsDictionary, scriptAssetsCache, _applyScriptsForObject, _removeRegisteredScriptInstance, _preloadScriptsAssets };

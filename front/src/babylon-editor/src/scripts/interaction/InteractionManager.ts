@@ -83,6 +83,10 @@ export default class InteractionManager implements IScript {
 	// Public API
 	// ====================================================================
 
+	public get hoveredEntity(): CardEntity | null {
+		return this._hoveredEntity;
+	}
+
 	public setEnabled(enabled: boolean): void {
 		this._enabled = enabled;
 		if (!enabled) {
