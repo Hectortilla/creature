@@ -5,6 +5,7 @@
 	import type { Scene } from '@babylonjs/core/scene';
 	import { getScriptByClassForObject } from 'babylonjs-editor-tools';
 	import GameNetworkManagerComponent from '../../babylon-editor/src/scripts/game/GameNetworkManagerComponent';
+	import { DevToolPanel } from '../../babylon-editor/src/scripts/devtools/DevToolPanel';
 
 	interface Props {
 		scenePath?: string;
@@ -37,6 +38,7 @@
 	let scene: Scene | null = $state(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	let devToolPanel: DevToolPanel | null = null;
 
 	async function initScene() {
 		if (!canvas) return;
@@ -114,6 +116,11 @@
 				scene?.debugLayer.show();
 			}
 		}
+
+		if (event.ctrlKey && event.key.toLowerCase() === 'd') {
+			if (!devToolPanel && scene) devToolPanel = new DevToolPanel(scene);
+			devToolPanel?.toggle();
+		}
 	}
 
 	onMount(() => {
@@ -126,6 +133,8 @@
 		if (!browser) return;
 		window.removeEventListener('resize', handleResize);
 		window.removeEventListener('keydown', handleKeydown);
+		devToolPanel?.dispose();
+		devToolPanel = null;
 		scene?.dispose();
 		engine?.dispose();
 	});

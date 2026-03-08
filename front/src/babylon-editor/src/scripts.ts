@@ -4,20 +4,20 @@
  */
 
 import { loadScene, scriptsDictionary, scriptAssetsCache, _applyScriptsForObject, _removeRegisteredScriptInstance, _preloadScriptsAssets } from "babylonjs-editor-tools";
-import * as scripts_BoardController from "./scripts/BoardController";
 import * as scripts_game_GameNetworkManagerComponent from "./scripts/game/GameNetworkManagerComponent";
+import * as scripts_BoardController from "./scripts/BoardController";
+import * as scripts_interaction_InteractionManager from "./scripts/interaction/InteractionManager";
+import * as scripts_hud_HudController from "./scripts/hud/HudController";
 import * as scripts_effects_HoverAnimation from "./scripts/effects/HoverAnimation";
 import * as scripts_effects_RotateAnimation from "./scripts/effects/RotateAnimation";
-import * as scripts_hud_HudController from "./scripts/hud/HudController";
-import * as scripts_interaction_InteractionManager from "./scripts/interaction/InteractionManager";
 
 export const scriptsMap = {
-    "scripts/BoardController.ts": scripts_BoardController,
-	"scripts/game/GameNetworkManagerComponent.ts": scripts_game_GameNetworkManagerComponent,
-	"scripts/effects/HoverAnimation.ts": scripts_effects_HoverAnimation,
-	"scripts/effects/RotateAnimation.ts": scripts_effects_RotateAnimation,
+    "scripts/game/GameNetworkManagerComponent.ts": scripts_game_GameNetworkManagerComponent,
+	"scripts/BoardController.ts": scripts_BoardController,
+	"scripts/interaction/InteractionManager.ts": scripts_interaction_InteractionManager,
 	"scripts/hud/HudController.ts": scripts_hud_HudController,
-	"scripts/interaction/InteractionManager.ts": scripts_interaction_InteractionManager
+	"scripts/effects/HoverAnimation.ts": scripts_effects_HoverAnimation,
+	"scripts/effects/RotateAnimation.ts": scripts_effects_RotateAnimation
 };
 
 export { loadScene, scriptsDictionary, scriptAssetsCache, _applyScriptsForObject, _removeRegisteredScriptInstance, _preloadScriptsAssets };
