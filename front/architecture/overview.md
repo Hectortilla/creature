@@ -148,7 +148,7 @@ Single orchestrator scene script. Bridges game state to the 3D world.
 Translates the backend's `valid_actions` list into card-level affordances.
 
 - `getActionsForCard(instanceId)` — what can the player do with this card?
-- `getInteractableCards()` — which cards should glow/highlight this phase?
+- `getInteractableCardIds()` — which cards should glow/highlight this phase?
 - `execute(action)` — sends the action through `GameConnection`.
 
 ### 8. Interaction Manager (`scripts/interaction/InteractionManager.ts`)

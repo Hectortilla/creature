@@ -1,3 +1,5 @@
+COMPLETED ✅
+
 # Step 8: Action Builder
 
 > **Depends on:** Step 2 (GameStateStore)  
@@ -70,24 +72,27 @@ The backend's `valid_actions` contains entries like:
 
 ```json
 [
-  { "action": "play_card", "player_id": "abc", "card_id": "inst_123", "description": "Play Fireling to supporting zone" },
-  { "action": "play_card", "player_id": "abc", "card_id": "inst_456", "description": "Play Aqua to supporting zone" },
-  { "action": "promote", "player_id": "abc", "card_id": "inst_789", "description": "Promote Stoneguard" },
-  { "action": "attack", "player_id": "abc", "attacker_id": "inst_789", "attack_id": 3, "target_card_id": "inst_999" },
-  { "action": "pass_phase", "player_id": "abc", "description": "Pass to next phase" },
+  { "action": "play_card", "player_id": "abc", "instance_id": "inst_123", "card_name": "Fireling", "description": "Play Fireling to supporting zone" },
+  { "action": "play_card", "player_id": "abc", "instance_id": "inst_456", "card_name": "Aqua", "description": "Play Aqua to supporting zone" },
+  { "action": "promote", "player_id": "abc", "instance_id": "inst_789", "card_name": "Stoneguard", "description": "Promote Stoneguard" },
+  { "action": "swap", "player_id": "abc", "supporting_card_id": "inst_456", "attacking_card_id": "inst_789", "description": "Swap Aqua and Stoneguard" },
+  { "action": "attack", "player_id": "abc", "attacker_id": "inst_789", "attack_id": 3, "target_card_id": "inst_999", "description": "Stoneguard attacks Flamewing" },
+  { "action": "pass", "player_id": "abc", "description": "Pass to next phase" },
   { "action": "concede", "player_id": "abc", "description": "Concede the game" }
 ]
 ```
 
 **`getActionsForCard(instanceId)`** filters `valid_actions` where ANY of these fields matches:
-- `card_id === instanceId`
-- `attacker_id === instanceId`
-- `supporting_card_id === instanceId`
-- `attacking_card_id === instanceId`
-- `association_card_id === instanceId`
-- `evolution_card_id === instanceId`
+- `instance_id === instanceId` (play_card, promote, force_defend)
+- `attacker_id === instanceId` (attack)
+- `supporting_card_id === instanceId` (swap)
+- `attacking_card_id === instanceId` (swap)
+- `association_card_id === instanceId` (associate)
+- `evolution_card_id === instanceId` (evolve)
 
 **`getInteractableCardIds()`** collects all unique card instance IDs from the above fields across all valid actions (excluding pass/concede).
+
+> **Note on multi-actions:** The backend also produces `multi_play_card` (with `instance_ids: string[]`) and `multi_swap` (with `swaps: [string, string][]`). These use array fields instead of single card-referencing fields. `getActionsForCard` should also check membership in these arrays. `getInteractableCardIds` should flatten them into the interactable set.
 
 **`getValidTargetIds(action)`** extracts target-related fields:
 - For `attack`: returns valid `target_card_id` values
@@ -127,7 +132,7 @@ execute(action: ValidAction): void {
 }
 ```
 
-Where `extractActionParams` strips `action`, `player_id`, and `description` from the object, keeping only the action-specific parameters.
+Where `extractActionParams` strips metadata fields (`action`, `player_id`, `description`) and backend display-name fields (`card_name`, `attacker_name`, `attack_name`, `target_name`, `supporting_card_name`, `attacking_card_name`, `association_card_name`, `evolution_card_name`) from the object, keeping only the action-specific parameters needed by the server.
 
 ## Constraints
 
