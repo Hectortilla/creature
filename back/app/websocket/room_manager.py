@@ -153,12 +153,10 @@ class RoomManager:
             room.state = result.state
             room.state.room.players = result.final_players
         
-        game_state_dict = result.state.model_dump(mode='json')
-
         for pid in room.get_player_ids():
             player_data = GameStartedData(
                 success=True,
-                game_state=game_state_dict,
+                game_state=result.state,
                 events=serialize_events_for_player(result.events, pid),
                 valid_actions=result.valid_actions,
             )
@@ -169,7 +167,7 @@ class RoomManager:
         
         return {
             "success": True,
-            "game_state": game_state_dict,
+            "game_state": result.state.model_dump(mode='json') if result.state else None,
             "events": serialize_events(result.events),
         }
     
@@ -190,8 +188,6 @@ class RoomManager:
         if result.success and result.state:
             room.state = result.state
         
-        game_state_dict = result.state.model_dump(mode='json') if result.state else None
-
         for pid in room.get_player_ids():
             player_data = ActionResultData(
                 success=result.success,
@@ -199,7 +195,7 @@ class RoomManager:
                 events=serialize_events_for_player(result.events, pid),
                 game_over=result.game_over,
                 winner_id=result.winner_id,
-                game_state=game_state_dict,
+                game_state=result.state,
                 valid_actions=result.valid_actions,
             )
             await self.connection_manager.send_to_player(
@@ -213,7 +209,7 @@ class RoomManager:
             "events": serialize_events(result.events),
             "game_over": result.game_over,
             "winner_id": result.winner_id,
-            "game_state": game_state_dict,
+            "game_state": result.state.model_dump(mode='json') if result.state else None,
         }
     
     def get_valid_actions(self, player_id: str, room_id: str) -> list[dict]:

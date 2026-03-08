@@ -50,6 +50,7 @@ class Action(GameBaseModel, ABC):
         """
         d = self.model_dump(mode='json')
         d["action"] = self.action_type
+        d["action_type"] = self.action_type
         d["description"] = self.get_description(state)
         return d
 
