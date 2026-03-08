@@ -8,6 +8,7 @@ import { Button } from '@babylonjs/gui/2D/controls/button';
 import { CardEntityManager } from '../entities/CardEntityManager';
 import { DeckZoneRenderer } from '../zones/DeckZoneRenderer';
 import type { CardEntity } from '../entities/CardEntity';
+import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { createDummyCard, resetDummyCardIndex } from './dummyCards';
 
 const DEV_OWNER_ID = 'dev-tool';
@@ -26,11 +27,22 @@ export class DevToolPanel {
 	private _root: Rectangle | null = null;
 	private _visible = false;
 
+	private _cardManager: CardEntityManager;
+	private _deckAnchor: TransformNode;
 	private _devEntities: CardEntity[] = [];
-	private _deckRenderer: DeckZoneRenderer | null = null;
+	private _deckRenderer: DeckZoneRenderer;
 
 	constructor(scene: Scene) {
 		this._scene = scene;
+
+		this._cardManager = CardEntityManager.getOrCreate(scene);
+		this._cardManager.initBlueprints('UpsideUpCard_BP', 'UpsideDownCard_BP');
+
+		const anchor = scene.getTransformNodeByName('My_Deck_Anchor');
+		if (!anchor) throw new Error('DevToolPanel: My_Deck_Anchor not found in scene');
+		this._deckAnchor = anchor;
+
+		this._deckRenderer = new DeckZoneRenderer(DEV_OWNER_ID, this._deckAnchor);
 	}
 
 	toggle(): void {
@@ -130,20 +142,7 @@ export class DevToolPanel {
 	}
 
 	private _addCardToDeck(): void {
-		const cardManager = CardEntityManager.getOrCreate(this._scene);
-		cardManager.initBlueprints('UpsideUpCard_BP', 'UpsideDownCard_BP');
-
-		if (!this._deckRenderer) {
-			const anchor = this._scene.getTransformNodeByName('My_Deck_Anchor');
-			if (!anchor) {
-				console.warn('DevToolPanel: My_Deck_Anchor not found in scene');
-				return;
-			}
-			this._deckRenderer = new DeckZoneRenderer(DEV_OWNER_ID, anchor);
-		}
-
-		const card = createDummyCard();
-		const entity = cardManager.createEntity(card, false);
+		const entity = this._cardManager.createEntity(createDummyCard(), false);
 		this._devEntities.push(entity);
 		this._deckRenderer.addCard(entity, false);
 	}
