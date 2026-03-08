@@ -1,9 +1,10 @@
 import { Scene } from "@babylonjs/core/scene";
 import { visibleAsNumber, visibleAsString, visibleAsBoolean } from "babylonjs-editor-tools";
 import type { IScript } from "babylonjs-editor-tools";
-import { GameConnection, CardDefinitionCache } from "./game";
-import type { GameMessage } from "./game";
-import { GameStateStore } from "./state/GameStateStore";
+import { GameConnection } from "./GameConnection";
+import { CardDefinitionCache } from "./CardDefinitionCache";
+import type { GameMessage } from "./types";
+import { GameStateStore } from "../state/GameStateStore";
 
 export interface GameEventMap {
     message: GameMessage;

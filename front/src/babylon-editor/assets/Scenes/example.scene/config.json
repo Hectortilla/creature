@@ -127,7 +127,7 @@
         "scripts": [
             {
                 "enabled": true,
-                "key": "scripts/GameNetworkManagerComponent.ts",
+                "key": "scripts/game/GameNetworkManagerComponent.ts",
                 "_id": "d5c1ac6d-8c5b-42cc-8198-2aa6901bd282",
                 "values": {
                     "deckId": {

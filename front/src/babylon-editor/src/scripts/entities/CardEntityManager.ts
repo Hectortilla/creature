@@ -2,7 +2,7 @@ import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
 import { CardEntity } from './CardEntity';
 import type { ClientCard, Zone } from '../game/models';
-import { cloneMeshWithScripts } from '../cloneWithScripts';
+import { cloneMeshWithScripts } from '../utils';
 
 export class CardEntityManager {
 	static instance: CardEntityManager | null = null;

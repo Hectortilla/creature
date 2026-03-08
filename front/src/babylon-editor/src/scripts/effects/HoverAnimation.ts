@@ -3,7 +3,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 
 import { IScript, visibleAsNumber } from "babylonjs-editor-tools";
 
-export default class SceneComponent implements IScript {
+export default class HoverAnimation implements IScript {
 	@visibleAsNumber("Hover Speed", {
 		min: 0,
 		max: 5,

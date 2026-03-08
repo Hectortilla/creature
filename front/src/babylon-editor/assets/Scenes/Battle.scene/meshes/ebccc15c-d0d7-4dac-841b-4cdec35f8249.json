@@ -75,7 +75,7 @@
                 "scripts": [
                     {
                         "enabled": true,
-                        "key": "scripts/HoverAnimation.ts",
+                        "key": "scripts/effects/HoverAnimation.ts",
                         "_id": "cc21b9be-37aa-4ef2-8b3a-4ced03396a3b",
                         "values": {
                             "_speed": {
@@ -429,7 +429,7 @@
         "scripts": [
             {
                 "enabled": true,
-                "key": "scripts/HoverAnimation.ts",
+                "key": "scripts/effects/HoverAnimation.ts",
                 "_id": "cc21b9be-37aa-4ef2-8b3a-4ced03396a3b",
                 "values": {
                     "_speed": {

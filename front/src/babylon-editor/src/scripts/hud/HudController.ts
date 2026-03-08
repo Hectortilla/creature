@@ -2,7 +2,7 @@ import type { Scene } from '@babylonjs/core/scene';
 import type { IScript } from 'babylonjs-editor-tools';
 import { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 
-import GameNetworkManagerComponent from '../GameNetworkManagerComponent';
+import GameNetworkManagerComponent from '../game/GameNetworkManagerComponent';
 import { CardEntityManager } from '../entities/CardEntityManager';
 import InteractionManager from '../interaction/InteractionManager';
 import { ActionBuilder } from '../state/ActionBuilder';

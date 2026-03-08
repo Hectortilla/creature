@@ -3,7 +3,7 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { Scene } from '@babylonjs/core/scene';
 import type { IScript } from 'babylonjs-editor-tools';
 
-import GameNetworkManagerComponent from './GameNetworkManagerComponent';
+import GameNetworkManagerComponent from './game/GameNetworkManagerComponent';
 import { CardEntityManager } from './entities/CardEntityManager';
 import type { Zone, ClientCard, ClientGameState } from './game/models';
 import {

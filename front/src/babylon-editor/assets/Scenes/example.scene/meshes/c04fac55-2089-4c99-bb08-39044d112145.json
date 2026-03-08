@@ -74,7 +74,7 @@
                 "scripts": [
                     {
                         "enabled": true,
-                        "key": "scripts/box.ts",
+                        "key": "scripts/effects/RotateAnimation.ts",
                         "values": {
                             "_speed": {
                                 "type": "number",
@@ -475,7 +475,7 @@
         "scripts": [
             {
                 "enabled": true,
-                "key": "scripts/box.ts",
+                "key": "scripts/effects/RotateAnimation.ts",
                 "values": {
                     "_speed": {
                         "type": "number",

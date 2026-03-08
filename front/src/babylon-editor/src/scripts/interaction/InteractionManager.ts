@@ -4,7 +4,7 @@ import type { IScript } from 'babylonjs-editor-tools';
 import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
 import { PointerEventTypes } from '@babylonjs/core/Events/pointerEvents';
 
-import GameNetworkManagerComponent from '../GameNetworkManagerComponent';
+import GameNetworkManagerComponent from '../game/GameNetworkManagerComponent';
 import { CardEntityManager } from '../entities/CardEntityManager';
 import type { CardEntity } from '../entities/CardEntity';
 import { CardVisualState } from '../game/models';
