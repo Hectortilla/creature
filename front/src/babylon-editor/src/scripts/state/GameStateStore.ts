@@ -114,6 +114,12 @@ export interface EffectAppliedData {
 	description: string;
 }
 
+export interface CardsSwappedData {
+	ownerId: string;
+	supportingId: string;
+	attackingId: string;
+}
+
 // ============================================================================
 // Typed change event map
 // ============================================================================
@@ -137,6 +143,7 @@ export interface StateChangeEvents {
 	noDefender: NoDefenderData;
 	effectTriggered: EffectTriggeredData;
 	effectApplied: EffectAppliedData;
+	cardsSwapped: CardsSwappedData;
 	turnEnded: { playerId: string; turnNumber: number };
 }
 
@@ -535,6 +542,12 @@ export class GameStateStore {
 
 		this._moveCardBetweenZones(playerId, supportingId, ZONE_SUPPORTING, ZONE_ATTACKING);
 		this._moveCardBetweenZones(playerId, attackingId, ZONE_ATTACKING, ZONE_SUPPORTING);
+
+		this._emit('cardsSwapped', {
+			ownerId: playerId,
+			supportingId,
+			attackingId,
+		});
 
 		this._emit('cardMoved', {
 			instanceId: supportingId,
