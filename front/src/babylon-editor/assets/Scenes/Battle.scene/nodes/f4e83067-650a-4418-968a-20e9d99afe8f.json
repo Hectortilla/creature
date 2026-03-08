@@ -1,0 +1,50 @@
+{
+    "tags": null,
+    "position": [
+        -298.74083142271627,
+        0,
+        1046.0360251677675
+    ],
+    "rotation": [
+        0,
+        3.141592653589793,
+        0
+    ],
+    "scaling": [
+        1,
+        1,
+        1
+    ],
+    "billboardMode": 0,
+    "scalingDeterminant": 1,
+    "infiniteDistance": false,
+    "ignoreNonUniformScaling": false,
+    "reIntegrateRotationIntoRotationQuaternion": false,
+    "name": "Opp_Graveyard_Anchor",
+    "id": "f4e83067-650a-4418-968a-20e9d99afe8f",
+    "state": "",
+    "metadata": {},
+    "type": "TransformNode",
+    "uniqueId": 1772986018740,
+    "localMatrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+    ],
+    "isEnabled": true,
+    "animations": [],
+    "ranges": []
+}

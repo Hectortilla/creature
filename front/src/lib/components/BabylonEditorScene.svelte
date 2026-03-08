@@ -4,7 +4,7 @@
 	import type { Engine } from '@babylonjs/core/Engines/engine';
 	import type { Scene } from '@babylonjs/core/scene';
 	import { getScriptByClassForObject } from 'babylonjs-editor-tools';
-	import GameNetworkManagerComponent from '../../babylon-editor/src/scripts/GameNetworkManagerComponent';
+	import GameNetworkManagerComponent from '../../babylon-editor/src/scripts/game/GameNetworkManagerComponent';
 
 	interface Props {
 		scenePath?: string;

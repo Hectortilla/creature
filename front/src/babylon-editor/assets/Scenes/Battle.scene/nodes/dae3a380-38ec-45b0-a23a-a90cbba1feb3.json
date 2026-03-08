@@ -1,0 +1,50 @@
+{
+    "tags": null,
+    "position": [
+        0,
+        153.98135653808896,
+        -490.68971350161485
+    ],
+    "rotation": [
+        -0.6493762884585618,
+        3.141592653589793,
+        0
+    ],
+    "scaling": [
+        1,
+        0.9999999999999978,
+        0.9999999999999978
+    ],
+    "billboardMode": 0,
+    "scalingDeterminant": 1,
+    "infiniteDistance": false,
+    "ignoreNonUniformScaling": false,
+    "reIntegrateRotationIntoRotationQuaternion": false,
+    "name": "Opp_Hand_Anchor",
+    "id": "dae3a380-38ec-45b0-a23a-a90cbba1feb3",
+    "state": "",
+    "metadata": {},
+    "type": "TransformNode",
+    "uniqueId": 1772985969082,
+    "localMatrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+    ],
+    "isEnabled": true,
+    "animations": [],
+    "ranges": []
+}

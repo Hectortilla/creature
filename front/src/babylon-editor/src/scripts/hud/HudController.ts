@@ -13,6 +13,7 @@ import { ElementPoolDisplay } from './ElementPoolDisplay';
 import { CardDetailPanel } from './CardDetailPanel';
 import { HealthBarManager } from './HealthBar';
 import { ActionButtonPanel } from './ActionButtonPanel';
+import { getScriptByClassForObject } from 'babylonjs-editor-tools';
 
 export default class HudController implements IScript {
 	private _scene: Scene;
@@ -42,7 +43,7 @@ export default class HudController implements IScript {
 		const cardManager = CardEntityManager.instance;
 		if (!cardManager) throw new Error('HudController: CardEntityManager not initialized');
 
-		const interactionManager = this._findInteractionManager();
+		const interactionManager = getScriptByClassForObject(this._scene, InteractionManager);
 
 		const actionBuilder = new ActionBuilder(store, connection);
 
@@ -71,24 +72,5 @@ export default class HudController implements IScript {
 		this._healthBars?.dispose();
 		this._actionButtons?.dispose();
 		this._guiTexture?.dispose();
-	}
-
-	/**
-	 * Walk sibling scripts on the same node to find InteractionManager.
-	 * Falls back to scanning all scene nodes if not co-located.
-	 */
-	private _findInteractionManager(): InteractionManager | null {
-		for (const mesh of this._scene.meshes) {
-			const metadata = mesh.metadata;
-			if (!metadata?.script) continue;
-			if (metadata.script instanceof InteractionManager) return metadata.script;
-		}
-		for (const node of this._scene.transformNodes) {
-			const metadata = node.metadata;
-			if (!metadata?.script) continue;
-			if (metadata.script instanceof InteractionManager) return metadata.script;
-		}
-		console.warn('HudController: InteractionManager not found — CardDetailPanel will be disabled');
-		return null;
 	}
 }

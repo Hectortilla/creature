@@ -93,13 +93,18 @@
             },
             {
                 "enabled": true,
-                "key": "scripts/DeckCardsPosManager.ts",
-                "_id": "04abe6d9-efcf-490c-a9c9-934d2684e974"
+                "key": "scripts/BoardController.ts",
+                "_id": "9d86de5e-6862-428e-9afa-e20d8baa590c"
             },
             {
                 "enabled": true,
-                "key": "scripts/HandCardsPosManager.ts",
-                "_id": "68611b95-d6fb-41c7-a712-03bf40aea30d"
+                "key": "scripts/interaction/InteractionManager.ts",
+                "_id": "902e5f14-a4c1-451a-b531-76a65d5e7997"
+            },
+            {
+                "enabled": true,
+                "key": "scripts/hud/HudController.ts",
+                "_id": "f131c371-7edd-415e-b4c9-faad2dc4f8f3"
             }
         ]
     },
@@ -119,15 +124,15 @@
         "applyGravity": false,
         "updateUpVectorFromRotation": false,
         "rotation": [
-            0.9778535680304306,
-            0.2970190601616519,
+            1.3485987343750003,
+            0.002294921875000008,
             0
         ],
         "speed": 20,
         "position": [
-            -390.55301458123006,
-            991.7225890920043,
-            -982.1531583725007
+            70.89262439332464,
+            2158.143784466087,
+            -190.82584487663303
         ],
         "upVector": [
             0,

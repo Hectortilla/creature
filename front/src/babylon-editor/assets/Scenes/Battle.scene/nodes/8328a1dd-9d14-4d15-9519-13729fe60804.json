@@ -1,0 +1,50 @@
+{
+    "tags": null,
+    "position": [
+        -3.253491114734816e-14,
+        0,
+        333.77667198621464
+    ],
+    "rotation": [
+        0,
+        3.141592653589793,
+        0
+    ],
+    "scaling": [
+        1,
+        1,
+        1.0000000000000075
+    ],
+    "billboardMode": 0,
+    "scalingDeterminant": 1,
+    "infiniteDistance": false,
+    "ignoreNonUniformScaling": false,
+    "reIntegrateRotationIntoRotationQuaternion": false,
+    "name": "Opp_Attacking_Anchor",
+    "id": "8328a1dd-9d14-4d15-9519-13729fe60804",
+    "state": "",
+    "metadata": {},
+    "type": "TransformNode",
+    "uniqueId": 1772985979307,
+    "localMatrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+    ],
+    "isEnabled": true,
+    "animations": [],
+    "ranges": []
+}
