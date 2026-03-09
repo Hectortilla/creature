@@ -54,8 +54,12 @@ export class DevToolPanel {
 		await this._deckRenderer.addCard(entity, true);
 	}
 
-	private async _fillDeck(): Promise<void> {
-		for (let i = 0; i < DECK_SIZE; i++) await this._addCardToDeck();
+	private _fillDeck(): void {
+		for (let i = 0; i < DECK_SIZE; i++) {
+			setTimeout(() => {
+				this._addCardToDeck();
+			}, i * 100);
+		}
 	}
 
 	private _clearDevCards(): void {

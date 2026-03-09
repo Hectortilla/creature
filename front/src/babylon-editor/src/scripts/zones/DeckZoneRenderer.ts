@@ -21,10 +21,11 @@ export class DeckZoneRenderer implements ZoneRenderer {
 	async addCard(entity: CardEntity, animate: boolean): Promise<void> {
 		this._entities.push(entity);
 		const pos = this._stackPosition(this._entities.length - 1);
+		const from = this._fromPositionToAdd(this._entities.length - 1);
 		const rot = this._jitteredRotation();
 
 		if (animate) {
-			await animateTransform(entity.mesh, pos, rot);
+			await animateTransform(entity.mesh, pos, rot, undefined, undefined, from, undefined, Vector3.Zero());
 		} else {
 			entity.mesh.position.copyFrom(pos);
 			entity.mesh.rotationQuaternion = rot;
@@ -70,6 +71,11 @@ export class DeckZoneRenderer implements ZoneRenderer {
 	private _stackPosition(index: number): Vector3 {
 		const base = this._anchor.getAbsolutePosition();
 		return new Vector3(base.x, base.y + index * CARD_STACK_Y_OFFSET, base.z);
+	}
+
+	private _fromPositionToAdd(index: number): Vector3 {
+		const base = this._anchor.getAbsolutePosition();
+		return new Vector3(base.x, base.y + index * CARD_STACK_Y_OFFSET + 1000, base.z);
 	}
 
 	private _jitteredRotation(): Quaternion {
