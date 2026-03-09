@@ -339,10 +339,6 @@
                         {/each}
                     </div>
                 {/if}
-                <div class="btn-wrapper">
-                    <Button type="primary" text="Editar carta" link={`/cards/${card.code}/edit`} isDisabled={false} />
-                    <Button type="secondary" text="Borrar carta" onClick={handleDeleteCard} isDisabled={false} />
-                </div>
             </div>
         </div>
         
@@ -351,15 +347,14 @@
     <p>Card not found</p>
 {/if}
 
-
 <style lang="scss">
-    @use "$lib/styles/abstracts/variables" as variables;
-    @use "$lib/styles/abstracts/mixins" as mixins;
-	@use "$lib/styles/abstracts/functions" as functions;
+    @use "../../../../lib/styles/abstracts/variables" as variables;
+    @use "../../../../lib/styles/abstracts/mixins" as mixins;
+	@use "../../../../lib/styles/abstracts/functions" as functions;
 
     .cards-multiple-container {
         width: 100%;
-        padding-top: functions.rem(60);
+        padding-top: functions.rem(200);
 
         @include mixins.displayFlex(column, 40, center, center, nowrap);
         @include mixins.margins;
@@ -377,7 +372,7 @@
 
     .card-page-container {
         width: 100%;
-        padding-top: functions.rem(60);
+        padding-top: functions.rem(200);
 
         @include mixins.displayFlex(row, 40, center, flex-start, nowrap);
         @include mixins.margins;
