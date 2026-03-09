@@ -5,7 +5,8 @@ import type { Zone } from '../game/models';
 import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
 
 const CARD_STACK_Y_OFFSET = 1.5;
-const MAX_JITTER = 0.08;
+const MAX_POSITION_JITTER = 2;
+const MAX_ROTATION_JITTER = 0.08;
 
 export class DeckZoneRenderer implements ZoneRenderer {
 	readonly zone: Zone = 'DECK';
@@ -70,7 +71,9 @@ export class DeckZoneRenderer implements ZoneRenderer {
 
 	private _stackPosition(index: number): Vector3 {
 		const base = this._anchor.getAbsolutePosition();
-		return new Vector3(base.x, base.y + index * CARD_STACK_Y_OFFSET, base.z);
+		const jitterX = (Math.random() * 2 - 1) * MAX_POSITION_JITTER;
+		const jitterZ = (Math.random() * 2 - 1) * MAX_POSITION_JITTER;
+		return new Vector3(base.x + jitterX, base.y + index * CARD_STACK_Y_OFFSET, base.z + jitterZ);
 	}
 
 	private _fromPositionToAdd(index: number): Vector3 {
@@ -87,7 +90,7 @@ export class DeckZoneRenderer implements ZoneRenderer {
 				this._anchor.rotation.z,
 			);
 		return base.multiply(
-			Quaternion.RotationAxis(Vector3.Up(), (Math.random() * 2 - 1) * MAX_JITTER),
+			Quaternion.RotationAxis(Vector3.Up(), (Math.random() * 2 - 1) * MAX_ROTATION_JITTER),
 		);
 	}
 }
