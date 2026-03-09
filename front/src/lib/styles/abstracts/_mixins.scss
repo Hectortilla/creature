@@ -42,6 +42,21 @@
     }
 }
 
+@mixin isCardLoaded($index: 1){
+    & {
+        opacity: 0;
+        transform: translateY(20%) rotate3d(1, 1, 0, 45deg);
+
+        @include transition(.6s, all, calc(.08s * $index));
+
+        &.is-loaded {
+            transform: translateY(0) rotate3d(0, 0, 0, 0);
+            opacity: 1;
+        }
+    }
+    
+}
+
 /// Margins
 @mixin margins() {
     & {

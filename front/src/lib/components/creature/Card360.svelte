@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { CardCreature } from '$lib/types';
-    import { blur, scale } from "svelte/transition";
+    import { blur } from "svelte/transition";
+    import { goto } from "$app/navigation";
     import { formatHandle } from '$lib/utils/formatHandle';
     import type { Snippet } from 'svelte';
 
@@ -50,10 +51,6 @@
         role?: 'a' | 'button' | 'div';
         ariaLabel?: string;
 
-        // Events
-        onClick?: () => void;
-        onLongClick?: () => void;
-
         // Show
         showInfo?: boolean;
         showCode?: boolean;
@@ -66,14 +63,13 @@
 
         // Child for buttons
         children?: Snippet;
+        actionsPosition?: "corner" | "bottom" | "center";
     }
 
     let {
         data,
         key,
         role = 'a',
-        onClick,
-        onLongClick,
         ariaLabel,
         showInfo = true,
         showCode = true,
@@ -82,6 +78,7 @@
         perspective = 1000,
         showLoader = false,
         children,
+        actionsPosition = 'bottom',
     }: PageProps = $props();
 
     /* -----------------------------------------------------
@@ -118,8 +115,6 @@
     let backgroundX = $state(0);
     let backgroundY = $state(0);
     let cardOpacity = $state(0);
-
-    let showActions = $state(true);
 
 
     /* -----------------------------------------------------
@@ -172,6 +167,16 @@
             clearTimeout(clickTimeout);
             clickTimeout = null;
         }
+    }
+
+    function onClick() {
+        console.log("Short click");
+        alert("There are two internal clicks in Card360: Short -> Opens in pop-in with highlighted information; Long -> Link to the dedicated page.")
+    }
+
+    function onLongClick() {
+        console.log("Long click");
+        goto(`/old/cards/${data.code}`);
     }
 
     /* -----------------------------------------------------
@@ -314,14 +319,9 @@
 </script>
 
 <div class="outer" style={`--perspective:${perspective}px;`}>
-    {#if children && showActions}
+    {#if children}
         <div
-            transition:scale
-            role="dialog"
-            tabindex="0"
-            onfocus={() => showActions = true}
-            onmouseover={() => showActions = true}
-            class="actions-out-wrapper"
+            class={`actions-out-wrapper ${actionsPosition}`}
         >
             {@render children?.()}
         </div>
@@ -450,13 +450,44 @@
         position: absolute;
         width: auto;
         height: auto;
-        left: 50%;
-        bottom: 0;
-        transform: translateX(-50%) translateY(50%);
-        z-index: 2;
+        transform-origin: center;
+        z-index: 9;
 
-        @include mixins.transition(all, .4s);
+        will-change: transform;
 
+        @include mixins.transition(all, .3s);
+
+        &.corner {
+            right: functions.rem(6);
+            top: functions.rem(6);
+            transform: translateY(30%) scale(0) rotate(20deg);
+        }
+
+        &.bottom {
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%) translateY(80%) scale(0) rotate(20deg);
+        }
+
+        &.center {
+            left: 50%;
+            top: 50%;
+            transform: translateX(-50%) translateY(-20%) scale(0) rotate(20deg);
+        }
+    }
+
+    .outer:hover .actions-out-wrapper {
+        &.corner {
+            transform: translateY(0) scale(1) rotate(0);
+        }
+        
+        &.bottom {
+            transform: translateX(-50%) translateY(50%) scale(1) rotate(0);
+        }
+
+        &.center {
+            transform: translateX(-50%) translateY(-50%) scale(1) rotate(0);
+        }
     }
 
     a.card-container,
@@ -474,6 +505,7 @@
         mask-repeat: no-repeat;
         transform-style: preserve-3d;
         transform: rotate3d(var(--y), var(--x), 0, 12deg);
+        cursor: pointer;
 
         @include mixins.displayFlex(column, 0, flex-start, flex-start, nowrap);
         @include mixins.transition();

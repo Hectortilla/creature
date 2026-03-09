@@ -8,6 +8,7 @@
         rotateIcon?: number;
         isDisabled?: boolean;
         size?: number;
+        theme?: 'light' | 'dark';
         children: Snippet;
         onClick?: () => void;
     }
@@ -18,6 +19,7 @@
         rotateIcon = 0,
         isDisabled,
         size = 28,
+        theme = 'light',
         children,
         onClick,
     }: Props = $props();
@@ -32,6 +34,7 @@
     href={link}
     onclick={onClick}
     class:disabled={isDisabled}
+    class={`${theme}`}
     disabled={isDisabled}
     style={`
         --rotate-icon:${rotateIcon}deg;
@@ -52,17 +55,13 @@
         width: var(--size);
         height: var(--size);
         border-radius: 100%;
-        background-color: var(--color-icon-button-background);
-        color: var(--color-icon-button-color);
         cursor: pointer;
-
-        box-shadow: inset 0 functions.rem(-1) functions.rem(8) functions.rem(-3) var(--color-highlight);
-        backdrop-filter: blur(functions.rem(8));
 
         @include mixins.displayFlex(row, 0, center, center, nowrap);
         @include mixins.transition(.4s);
 
         span {
+            flex-shrink: 0;
             width: 50%;
             height: 50%;
             display: block;
@@ -70,15 +69,34 @@
             transform: rotate(var(--rotate-icon));
         }
 
-        &:not(.disabled):hover {
-            box-shadow: inset 0 functions.rem(-1) functions.rem(8) functions.rem(-1) var(--color-highlight);
-        }
-
         &.disabled,
         :disabled {
             opacity: .4;
             pointer-events: none;
             box-shadow: none;
+        }
+
+        &.light {
+            background-color: var(--color-icon-button-light-background);
+            color: var(--color-icon-button-color);
+
+            box-shadow: inset 0 functions.rem(-1) functions.rem(8) functions.rem(-3) var(--color-highlight);
+            backdrop-filter: blur(functions.rem(8));
+
+            &:not(.disabled):hover {
+                box-shadow: inset 0 functions.rem(-1) functions.rem(8) functions.rem(-1) var(--color-highlight);
+            }
+        }
+
+        &.dark {
+            background-color: var(--color-icon-button-dark-background);
+            color: var(--color-icon-button-color);
+
+            backdrop-filter: blur(functions.rem(8));
+
+            &:not(.disabled):hover {
+                background: var(--color-icon-button-dark-background-hover);
+            }
         }
     }
 </style>

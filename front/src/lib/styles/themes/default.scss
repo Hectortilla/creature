@@ -4,7 +4,8 @@
 
 .theme-default {
     //-- Base colors
-    --color-background: radial-gradient(circle, #{color(base, 200, 24%, 14%)} 0%, #{color(base, 200, 14%, 4%)} 100%);
+    --color-background: #{color(base, 200, 24%, 14%)};
+    --color-background-gradient: radial-gradient(circle, #{color(base, 200, 24%, 14%)} 0%, #{color(base, 200, 14%, 4%)} 100%);
     --color-text: #{color(base, 100, 30%, 90%)};
     --color-highlight: #{color(base, 100, 73%, 78%)};
 
@@ -35,7 +36,7 @@
     //-- Input colors
     --color-input-border: #{color(base, 100, 80%, 30%)};
     --color-input-text: #{color(base, 100, 30%, 90%)};
-    --color-input-button-background: #{color(base, 100, 80%, 10%)};
+    --color-input-button-background: #{color(base, 100, 60%, 10%)};
     --color-input-label: #{color(base, 100, 20%, 70%, .8)};
     --color-input-button-light-top: #{color(base, 100, 80%, 80%)};
     --color-input-button-light-bottom: #{color(base, 200, 40%, 20%, .8)};
@@ -52,7 +53,9 @@
     --color-button-primary-text: #{color(base, 100, 80%, 10%)};
     --color-button-secondary-background: #{color(base, 100, 80%, 10%)};
 
-    --color-icon-button-background: #{color(base, 100, 73%, 78%, .3)};
+    --color-icon-button-light-background: #{color(base, 100, 73%, 78%, .3)};
+    --color-icon-button-dark-background: #{color(base, 200, 20%, 20%, .8)};
+    --color-icon-button-dark-background-hover: #{color(base, 200, 20%, 20%, 1)};
     --color-icon-button-color: var(--color-highlight);
 
     //-- Pop in

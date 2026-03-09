@@ -161,6 +161,7 @@
     .horizontal-scroll {
         position: relative;
         width: 100%;
+        overflow: hidden;
 
         @include mixins.displayFlex(row, 0, flex-start, center, nowrap);
 
