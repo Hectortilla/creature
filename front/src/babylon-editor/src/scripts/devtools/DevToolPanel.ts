@@ -48,14 +48,14 @@ export class DevToolPanel {
 
 	// ── Actions ──────────────────────────────────────────────────────
 
-	private _addCardToDeck(): void {
+	private async _addCardToDeck(): Promise<void> {
 		const entity = this._cardManager.createEntity(createDummyCard(), false);
 		this._devEntities.push(entity);
-		this._deckRenderer.addCard(entity, false);
+		await this._deckRenderer.addCard(entity, true);
 	}
 
-	private _fillDeck(): void {
-		for (let i = 0; i < DECK_SIZE; i++) this._addCardToDeck();
+	private async _fillDeck(): Promise<void> {
+		for (let i = 0; i < DECK_SIZE; i++) await this._addCardToDeck();
 	}
 
 	private _clearDevCards(): void {
