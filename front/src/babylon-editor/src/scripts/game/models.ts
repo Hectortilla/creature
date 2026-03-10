@@ -86,6 +86,23 @@ export interface ClientCard {
 	elementContribution?: ElementContribution[];
 }
 
+/** Creates a minimal ClientCard for a face-down placeholder (e.g. deck stack). */
+export function createFaceDownCard(instanceId: string, ownerId: string, zone: Zone = 'DECK'): ClientCard {
+	return {
+		instanceId,
+		cardId: 0,
+		ownerId,
+		name: '',
+		zone,
+		currentHealth: 0,
+		maxHealth: 0,
+		physicalDefence: 0,
+		magicDefence: 0,
+		isAlive: true,
+		faceUp: false,
+	};
+}
+
 /** Client-side player state, built from events. */
 export interface ClientPlayerState {
 	playerId: string;

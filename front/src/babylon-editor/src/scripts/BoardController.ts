@@ -6,6 +6,7 @@ import type { IScript } from 'babylonjs-editor-tools';
 import GameNetworkManagerComponent from './game/GameNetworkManagerComponent';
 import { CardEntityManager } from './entities/CardEntityManager';
 import type { Zone, ClientCard, ClientGameState } from './game/models';
+import { createFaceDownCard } from './game/models';
 import {
 	GameStateStore,
 	type CardMovedData,
@@ -312,11 +313,24 @@ export default class BoardController implements IScript {
 
 	private _buildBoard(state: ClientGameState): void {
 		const myId = this._stateStore.myPlayerId;
-		for (const card of Object.values(state.cards)) {
-			const isMine = card.ownerId === myId;
-			const faceUp = isMine && card.zone !== ZONE_DECK;
-			const entity = this._cardManager.createEntity(card, faceUp);
-			this._rendererFor(card.ownerId, card.zone)?.addCard(entity, false);
+		const oppId = this._stateStore.getOpponentId() ?? '';
+		const deckSize = state.config?.deck_size ?? 0;
+		const DELAY_MS = 100;
+
+		for (const ownerId of [myId, oppId]) {
+			const prefix = ownerId === myId ? 'my' : 'opp';
+			const renderer = this._rendererFor(ownerId, ZONE_DECK);
+			if (!renderer) continue;
+
+			for (let i = 0; i < deckSize; i++) {
+				setTimeout(() => {
+					const entity = this._cardManager.createEntity(
+						createFaceDownCard(`${prefix}_deck_${i}`, ownerId),
+						false,
+					);
+					renderer.addCard(entity, true);
+				}, i * DELAY_MS);
+			}
 		}
 	}
 
