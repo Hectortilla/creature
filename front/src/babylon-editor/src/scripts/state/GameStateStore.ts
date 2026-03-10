@@ -300,6 +300,9 @@ export class GameStateStore {
 		data: StateChangeEvents[K],
 	): void {
 		const listeners = this._listeners.get(event);
+		console.log('emit', event, data, listeners);
+
+		
 		if (!listeners) return;
 		for (const cb of listeners) cb(data);
 	}
