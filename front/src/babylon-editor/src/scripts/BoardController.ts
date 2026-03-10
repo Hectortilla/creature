@@ -311,27 +311,39 @@ export default class BoardController implements IScript {
 	// Board building
 	// ====================================================================
 
-	private _buildBoard(state: ClientGameState): void {
+	private async _buildBoard(state: ClientGameState): Promise<void> {
 		const myId = this._stateStore.myPlayerId;
 		const oppId = this._stateStore.getOpponentId() ?? '';
 		const deckSize = state.config?.deck_size ?? 0;
 		const DELAY_MS = 100;
-
+	
+		const allPromises: Promise<void>[] = [];
+	
 		for (const ownerId of [myId, oppId]) {
 			const prefix = ownerId === myId ? 'my' : 'opp';
 			const renderer = this._rendererFor(ownerId, ZONE_DECK);
 			if (!renderer) continue;
-
+	
 			for (let i = 0; i < deckSize; i++) {
-				setTimeout(() => {
-					const entity = this._cardManager.createEntity(
-						createFaceDownCard(`${prefix}_deck_${i}`, ownerId),
-						false,
-					);
-					renderer.addCard(entity, true);
-				}, i * DELAY_MS);
+				const entity = this._cardManager.createEntity(
+					createFaceDownCard(`${prefix}_deck_${i}`, ownerId),
+					false,
+				);
+	
+				// schedule each addCard with a delay
+				const p = new Promise<void>(resolve => {
+					setTimeout(async () => {
+						await renderer.addCard(entity, true);
+						resolve();
+					}, i * DELAY_MS);
+				});
+	
+				allPromises.push(p);
 			}
 		}
+	
+		// wait for all addCard calls to finish
+		await Promise.all(allPromises);
 	}
 
 	private _tearDownBoard(): void {
