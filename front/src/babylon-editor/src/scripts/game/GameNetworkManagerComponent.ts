@@ -80,6 +80,10 @@ export default class GameNetworkManagerComponent implements IScript {
                 onGameOver: (winnerId) => this.emit("gameOver", winnerId),
                 onGameStarted: (data) => {
                     this._stateStore?.processGameStarted(data);
+                    const events = data.events as Record<string, unknown>[] | undefined;
+                    if (events) {
+                        for (const event of events) this.registerCardFromEvent(event);
+                    }
                 },
                 onGameEvents: (events) => {
                     this._stateStore?.processGameEvents(events);
