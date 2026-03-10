@@ -145,7 +145,6 @@ export class GameConnection {
 	private processGameEvents(message: GameMessage): void {
 		if (message.type === 'game_started') {
 			this.callbacks.onGameStarted?.(message.data);
-			return;
 		}
 
 		if (message.type === 'action_result' && message.data?.game_over) {

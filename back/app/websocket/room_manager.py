@@ -124,7 +124,7 @@ class RoomManager:
         )
         
         if not room.get_player_ids():
-            del self.rooms[room_id]
+            self.rooms.pop(room_id, None)
     
     def get_room(self, room_id: str) -> Optional[GameRoom]:
         """Get a room by ID."""
