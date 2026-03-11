@@ -27,7 +27,6 @@ export class GameConnection {
 	private playerId: string;
 	private callbacks: GameConnectionCallbacks;
 	private _validActions: ValidAction[] = [];
-	private _messages: GameMessage[] = [];
 	private _gameState: Record<string, unknown> | null = null;
 	private _connected = false;
 
@@ -43,11 +42,6 @@ export class GameConnection {
 	/** Current valid actions for this player */
 	get validActions(): ValidAction[] {
 		return this._validActions;
-	}
-
-	/** All received messages */
-	get messages(): GameMessage[] {
-		return this._messages;
 	}
 
 	/** Current game state */
@@ -78,7 +72,6 @@ export class GameConnection {
 
 	private handleMessage = (event: MessageEvent): void => {
 		const message: GameMessage = JSON.parse(event.data);
-		this._messages = [...this._messages, message];
 		this.callbacks.onMessage?.(message);
 
 		// Skip failed action results for valid action updates
@@ -111,18 +104,16 @@ export class GameConnection {
 	private processValidActions(message: GameMessage): void {
 		let newActions: ValidAction[] = [];
 
-		// Extract valid actions from different message types
-		if (message.type === 'action_result' && message.data?.valid_actions) {
-			newActions = message.data.valid_actions as ValidAction[];
-		} else if (message.type === 'game_started' && message.data?.valid_actions) {
+		if (message.type === 'game_started') {
+			return; // processGameStarted handles valid actions with full context
+		} else if (message.type === 'action_result' && message.data?.valid_actions) {
 			newActions = message.data.valid_actions as ValidAction[];
 		} else if (message.type === 'valid_actions' && message.data?.actions) {
 			newActions = message.data.actions as ValidAction[];
 		} else {
-			return; // No valid actions in this message
+			return;
 		}
 
-		// Filter to only this player's actions and update
 		this._validActions = newActions.filter(
 			(action) => action.player_id === this.playerId
 		);
@@ -130,11 +121,13 @@ export class GameConnection {
 	}
 
 	private processGameState(message: GameMessage): void {
+		if (message.type === 'game_started' && message.data?.game_state) {
+			this._gameState = message.data.game_state as Record<string, unknown>;
+			return; // processGameStarted handles full state initialization
+		}
+
 		if (message.type === 'game_state' && message.data?.state) {
 			this._gameState = message.data.state as Record<string, unknown>;
-			this.callbacks.onGameStateChange?.(this._gameState);
-		} else if (message.type === 'game_started' && message.data?.game_state) {
-			this._gameState = message.data.game_state as Record<string, unknown>;
 			this.callbacks.onGameStateChange?.(this._gameState);
 		} else if (message.type === 'action_result' && message.data?.game_state) {
 			this._gameState = message.data.game_state as Record<string, unknown>;
@@ -145,6 +138,7 @@ export class GameConnection {
 	private processGameEvents(message: GameMessage): void {
 		if (message.type === 'game_started') {
 			this.callbacks.onGameStarted?.(message.data);
+			return; // processGameStarted handles events internally
 		}
 
 		if (message.type === 'action_result' && message.data?.game_over) {
@@ -177,11 +171,6 @@ export class GameConnection {
 		this.ws.send(JSON.stringify(message));
 	}
 
-	/** Clear all messages */
-	clearMessages(): void {
-		this._messages = [];
-	}
-
 	/** Close the connection */
 	close(): void {
 		this.ws.close();
@@ -196,7 +185,6 @@ export class GameConnection {
 		this.ws.close();
 
 		this._validActions = [];
-		this._messages = [];
 		this._gameState = null;
 		this._connected = false;
 	}
