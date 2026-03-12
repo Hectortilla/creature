@@ -115,33 +115,21 @@ export default class BoardController implements IScript {
 
 		this._registerCardsFromEvents(message.data);
 
-		switch (message.type) {
-			case 'game_started':
-				this._stateStore.processGameStarted(message.data);
-				break;
-			case 'action_result': {
-				const d = message.data;
-				if (d.events)
-					this._stateStore.processGameEvents(d.events as Record<string, unknown>[]);
-				if (d.game_state)
-					this._stateStore.processGameState(d.game_state as Record<string, unknown>);
-				if (d.valid_actions)
-					this._stateStore.updateValidActions(
-						(d.valid_actions as ValidAction[]).filter(a => a.player_id === this._stateStore.myPlayerId),
-					);
-				break;
-			}
-			case 'valid_actions':
-				if (message.data.actions)
-					this._stateStore.updateValidActions(
-						(message.data.actions as ValidAction[]).filter(a => a.player_id === this._stateStore.myPlayerId),
-					);
-				break;
-			case 'game_state':
-				if (message.data.state)
-					this._stateStore.processGameState(message.data.state as Record<string, unknown>);
-				break;
+		const d = message.data;
+
+		if (message.type === 'game_started') {
+			this._stateStore.processGameStarted(d);
+			return;
 		}
+
+		if (d.events)
+			this._stateStore.processGameEvents(d.events as Record<string, unknown>[]);
+		if (d.game_state)
+			this._stateStore.processGameState(d.game_state as Record<string, unknown>);
+		if (d.valid_actions)
+			this._stateStore.updateValidActions(
+				(d.valid_actions as ValidAction[]).filter(a => a.player_id === this._stateStore.myPlayerId),
+			);
 	};
 
 	private _registerCardsFromEvents(data: Record<string, unknown>): void {
