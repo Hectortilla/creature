@@ -113,18 +113,16 @@ export default class BoardController implements IScript {
 	private _handleRawMessage = (message: GameMessage): void => {
 		if (message.type === 'action_result' && message.data?.success === false) return;
 
+		this._registerCardsFromEvents(message.data);
+
 		switch (message.type) {
 			case 'game_started':
 				this._stateStore.processGameStarted(message.data);
-				this._registerCardsFromEvents(message.data.events as Record<string, unknown>[] | undefined);
 				break;
 			case 'action_result': {
 				const d = message.data;
-				if (d.events) {
-					const events = d.events as Record<string, unknown>[];
-					this._stateStore.processGameEvents(events);
-					this._registerCardsFromEvents(events);
-				}
+				if (d.events)
+					this._stateStore.processGameEvents(d.events as Record<string, unknown>[]);
 				if (d.game_state)
 					this._stateStore.processGameState(d.game_state as Record<string, unknown>);
 				if (d.valid_actions)
@@ -146,7 +144,8 @@ export default class BoardController implements IScript {
 		}
 	};
 
-	private _registerCardsFromEvents(events: Record<string, unknown>[] | undefined): void {
+	private _registerCardsFromEvents(data: Record<string, unknown>): void {
+		const events = data.events as Record<string, unknown>[] | undefined;
 		if (!events) return;
 		for (const event of events) {
 			const instanceId = event.instance_id as string | undefined;
