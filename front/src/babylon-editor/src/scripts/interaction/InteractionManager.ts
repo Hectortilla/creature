@@ -4,7 +4,7 @@ import type { IScript } from 'babylonjs-editor-tools';
 import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
 import { PointerEventTypes } from '@babylonjs/core/Events/pointerEvents';
 
-import GameNetworkManagerComponent from '../game/GameNetworkManagerComponent';
+import GameConnection from '../game/GameConnection';
 import { CardEntityManager } from '../entities/CardEntityManager';
 import type { CardEntity } from '../entities/CardEntity';
 import { CardVisualState } from '../game/models';
@@ -38,20 +38,17 @@ export default class InteractionManager implements IScript {
 	// ====================================================================
 
 	public onStart(): void {
-		const networkManager = GameNetworkManagerComponent.instance;
-		if (!networkManager) throw new Error('InteractionManager: GameNetworkManagerComponent not initialized');
+		const conn = GameConnection.instance;
+		if (!conn) throw new Error('InteractionManager: GameConnection not initialized');
 
-		const store = networkManager.getStateStore();
+		const store = conn.getStateStore();
 		if (!store) throw new Error('InteractionManager: GameStateStore not initialized');
-
-		const connection = networkManager.getConnection();
-		if (!connection) throw new Error('InteractionManager: GameConnection not initialized');
 
 		const cardManager = CardEntityManager.instance;
 		if (!cardManager) throw new Error('InteractionManager: CardEntityManager not initialized');
 		this._cardManager = cardManager;
 
-		this._actionBuilder = new ActionBuilder(store, connection);
+		this._actionBuilder = new ActionBuilder(store, conn);
 
 		this._pointerObserver = this._scene.onPointerObservable.add(this._handlePointer);
 		store.on('validActionsChanged', this._onValidActionsChanged);

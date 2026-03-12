@@ -6,11 +6,10 @@
 	import LobbySelector from '$lib/components/lobby/LobbySelector.svelte';
 	import DebugGamePanel from '$lib/components/lobby/DebugGamePanel.svelte';
 	import BabylonEditorScene from '$lib/components/BabylonEditorScene.svelte';
-	import {
-		GameConnection,
-		type ValidAction,
-		type GameMessage,
-		type ActionData
+	import type {
+		ValidAction,
+		GameMessage,
+		ActionData
 	} from '../../babylon-editor/src/scripts/game';
 	import type { PageData } from './$types';
 	import type { DeckReadSummary, RoomSummary } from '$lib/types';
@@ -30,8 +29,7 @@
 	type GameMode = 'debug' | 'babylon';
 	let gameMode = $state<GameMode>('babylon');
 
-	// Game state (bridged from GameConnection)
-	let gameConnection: GameConnection | null = $state(null);
+	let debugWs: WebSocket | null = $state(null);
 	let connected = $state(false);
 	let messages = $state<GameMessage[]>([]);
 	let validActions = $state<ValidAction[]>([]);
@@ -109,36 +107,31 @@
 			return;
 		}
 
-		// Debug mode: create inline WebSocket connection
-		gameConnection = new GameConnection({
-			wsUrl,
-			token,
-			deckId: selectedDeckId,
-			roomId: !createNewRoom ? (selectedRoomId ?? undefined) : undefined,
-			playerId: String(authStore.user!.id),
-			callbacks: {
-				onMessage: (msg) => {
-					messages = [...messages, msg];
-				},
-				onValidActionsChange: (actions) => {
-					validActions = actions;
-				},
-				onConnectionChange: (isConnected) => {
-					connected = isConnected;
-					if (isConnected) {
-						connectionError = null;
-					}
-				},
-				onError: (error) => {
-					connectionError = error;
-				}
+		// Debug mode: lightweight inline WebSocket
+		let url = `${wsUrl}/game/ws?token=${encodeURIComponent(token)}&deck_id=${selectedDeckId}`;
+		const roomParam = !createNewRoom ? selectedRoomId : null;
+		if (roomParam) url += `&room_id=${encodeURIComponent(roomParam)}`;
+
+		const ws = new WebSocket(url);
+		debugWs = ws;
+		const playerId = String(authStore.user!.id);
+
+		ws.addEventListener('open', () => { connected = true; connectionError = null; });
+		ws.addEventListener('close', () => { connected = false; });
+		ws.addEventListener('error', () => { connectionError = 'Connection error'; });
+		ws.addEventListener('message', (e) => {
+			const msg: GameMessage = JSON.parse(e.data);
+			messages = [...messages, msg];
+			const actions = msg.data?.valid_actions ?? msg.data?.actions;
+			if (Array.isArray(actions)) {
+				validActions = (actions as ValidAction[]).filter(a => a.player_id === playerId);
 			}
 		});
 	}
 
 	function handleReconnect() {
-		gameConnection?.dispose();
-		gameConnection = null;
+		debugWs?.close();
+		debugWs = null;
 		connected = false;
 		selectedDeckId = null;
 		selectedRoomId = null;
@@ -148,16 +141,15 @@
 	}
 
 	function handleSendAction(actionData: ActionData) {
-		gameConnection?.sendAction(actionData);
+		debugWs?.send(JSON.stringify({ type: 'action', data: actionData }));
 	}
 
 	function handleSendRawMessage(text: string) {
-		if (!gameConnection) return;
+		if (!debugWs) return;
 		try {
-			const parsed = JSON.parse(text);
-			gameConnection.sendRawMessage(parsed);
+			debugWs.send(text);
 		} catch {
-			gameConnection.sendRawMessage({ type: 'raw', data: text });
+			debugWs.send(JSON.stringify({ type: 'raw', data: text }));
 		}
 	}
 
@@ -171,7 +163,7 @@
 	});
 
 	onDestroy(() => {
-		gameConnection?.dispose();
+		debugWs?.close();
 	});
 </script>
 

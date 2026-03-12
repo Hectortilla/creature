@@ -3,8 +3,10 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { Scene } from '@babylonjs/core/scene';
 import type { IScript } from 'babylonjs-editor-tools';
 
-import GameNetworkManagerComponent from './game/GameNetworkManagerComponent';
+import GameConnection from './game/GameConnection';
+import { CardDefinitionCache } from './game/CardDefinitionCache';
 import { CardEntityManager } from './entities/CardEntityManager';
+import type { GameMessage, ValidAction } from './game/types';
 import type { Zone, ClientCard, ClientGameState } from './game/models';
 import { createFaceDownCard } from './game/models';
 import {
@@ -40,7 +42,9 @@ const ZONE_ATTACKING = 'ATTACKING' as Zone;
 const ZONE_GRAVEYARD = 'GRAVEYARD' as Zone;
 
 export default class BoardController implements IScript {
+	private _connection!: GameConnection;
 	private _stateStore!: GameStateStore;
+	private _cardCache!: CardDefinitionCache;
 	private _cardManager!: CardEntityManager;
 	private _animationPipeline!: AnimationPipeline;
 	private _zones = new Map<string, ZoneRenderer>();
@@ -66,13 +70,15 @@ export default class BoardController implements IScript {
 	// ====================================================================
 
 	public onStart(): void {
-		const networkManager = GameNetworkManagerComponent.instance;
-		if (!networkManager) throw new Error('BoardController: GameNetworkManagerComponent not initialized');
+		const conn = GameConnection.instance;
+		if (!conn) throw new Error('BoardController: GameConnection not initialized');
+		this._connection = conn;
 
-		const store = networkManager.getStateStore();
+		const store = conn.getStateStore();
 		if (!store) throw new Error('BoardController: GameStateStore not initialized');
 		this._stateStore = store;
 
+		this._cardCache = conn.getCardCache()!;
 		this._cardManager = CardEntityManager.getOrCreate(this._scene);
 		this._animationPipeline = new AnimationPipeline(this._scene);
 
@@ -80,8 +86,10 @@ export default class BoardController implements IScript {
 		this._initZoneRenderers();
 		this._subscribe();
 
+		this._connection.onMessage = this._handleRawMessage;
+
 		this._animationPipeline.onQueueStarted = () => {
-			// InteractionManager (Step 9) checks animationPipeline.isPlaying
+			// InteractionManager checks animationPipeline.isPlaying
 		};
 		this._animationPipeline.onQueueDrained = () => {
 			// InteractionManager re-enables interaction
@@ -92,12 +100,61 @@ export default class BoardController implements IScript {
 
 	public onStop(): void {
 		this._unsubscribe();
+		if (this._connection) this._connection.onMessage = null;
 		this._animationPipeline.dispose();
 		for (const renderer of this._zones.values()) renderer.dispose();
 		this._zones.clear();
-		// Intentionally NOT calling _cardManager.dispose() — the manager singleton
-		// may outlive this script (e.g. scene hot-reload). Individual entity cleanup
-		// happens in _handleStateReplaced when needed.
+	}
+
+	// ====================================================================
+	// Raw WebSocket message routing
+	// ====================================================================
+
+	private _handleRawMessage = (message: GameMessage): void => {
+		if (message.type === 'action_result' && message.data?.success === false) return;
+
+		switch (message.type) {
+			case 'game_started':
+				this._stateStore.processGameStarted(message.data);
+				this._registerCardsFromEvents(message.data.events as Record<string, unknown>[] | undefined);
+				break;
+			case 'action_result': {
+				const d = message.data;
+				if (d.events) {
+					const events = d.events as Record<string, unknown>[];
+					this._stateStore.processGameEvents(events);
+					this._registerCardsFromEvents(events);
+				}
+				if (d.game_state)
+					this._stateStore.processGameState(d.game_state as Record<string, unknown>);
+				if (d.valid_actions)
+					this._stateStore.updateValidActions(
+						(d.valid_actions as ValidAction[]).filter(a => a.player_id === this._stateStore.myPlayerId),
+					);
+				break;
+			}
+			case 'valid_actions':
+				if (message.data.actions)
+					this._stateStore.updateValidActions(
+						(message.data.actions as ValidAction[]).filter(a => a.player_id === this._stateStore.myPlayerId),
+					);
+				break;
+			case 'game_state':
+				if (message.data.state)
+					this._stateStore.processGameState(message.data.state as Record<string, unknown>);
+				break;
+		}
+	};
+
+	private _registerCardsFromEvents(events: Record<string, unknown>[] | undefined): void {
+		if (!events) return;
+		for (const event of events) {
+			const instanceId = event.instance_id as string | undefined;
+			const cardId = event.card_id as number | undefined;
+			if (instanceId && cardId && cardId > 0) {
+				this._cardCache?.registerInstance(instanceId, cardId);
+			}
+		}
 	}
 
 	// ====================================================================

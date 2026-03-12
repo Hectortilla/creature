@@ -8,7 +8,7 @@
  * Pure TypeScript — no BabylonJS imports, no scene dependencies.
  */
 
-import type { GameConnection } from '../game/GameConnection';
+import type GameConnection from '../game/GameConnection';
 import type { ValidAction, ActionData } from '../game/types';
 import type { GameStateStore } from './GameStateStore';
 

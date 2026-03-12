@@ -62,7 +62,7 @@
         "scripts": [
             {
                 "enabled": true,
-                "key": "scripts/game/GameNetworkManagerComponent.ts",
+                "key": "scripts/game/GameConnection.ts",
                 "_id": "a9c638f0-1886-4088-ae77-262f9566ebd1",
                 "values": {
                     "wsUrl": {

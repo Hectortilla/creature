@@ -2,7 +2,7 @@ import type { Scene } from '@babylonjs/core/scene';
 import type { IScript } from 'babylonjs-editor-tools';
 import { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 
-import GameNetworkManagerComponent from '../game/GameNetworkManagerComponent';
+import GameConnection from '../game/GameConnection';
 import { CardEntityManager } from '../entities/CardEntityManager';
 import InteractionManager from '../interaction/InteractionManager';
 import { ActionBuilder } from '../state/ActionBuilder';
@@ -31,21 +31,18 @@ export default class HudController implements IScript {
 	}
 
 	public onStart(): void {
-		const networkManager = GameNetworkManagerComponent.instance;
-		if (!networkManager) throw new Error('HudController: GameNetworkManagerComponent not initialized');
+		const conn = GameConnection.instance;
+		if (!conn) throw new Error('HudController: GameConnection not initialized');
 
-		const store = networkManager.getStateStore();
+		const store = conn.getStateStore();
 		if (!store) throw new Error('HudController: GameStateStore not initialized');
-
-		const connection = networkManager.getConnection();
-		if (!connection) throw new Error('HudController: GameConnection not initialized');
 
 		const cardManager = CardEntityManager.instance;
 		if (!cardManager) throw new Error('HudController: CardEntityManager not initialized');
 
 		const interactionManager = getScriptByClassForObject(this._scene, InteractionManager);
 
-		const actionBuilder = new ActionBuilder(store, connection);
+		const actionBuilder = new ActionBuilder(store, conn);
 
 		this._guiTexture = AdvancedDynamicTexture.CreateFullscreenUI('GameHUD', true, this._scene);
 

@@ -233,7 +233,7 @@ export class GameStateStore {
 		return this._getOpponentId();
 	}
 
-	// ── Event Processing (called by GameNetworkManagerComponent) ──────
+	// ── Event Processing (called by BoardController) ───────────────────
 
 	processGameStarted(data: Record<string, unknown>): void {
 		const rawState = data.game_state as Record<string, unknown> | undefined;

@@ -4,7 +4,7 @@
 	import type { Engine } from '@babylonjs/core/Engines/engine';
 	import type { Scene } from '@babylonjs/core/scene';
 	import { getScriptByClassForObject } from 'babylonjs-editor-tools';
-	import GameNetworkManagerComponent from '../../babylon-editor/src/scripts/game/GameNetworkManagerComponent';
+	import GameConnection from '../../babylon-editor/src/scripts/game/GameConnection';
 	import { DevToolPanel } from '../../babylon-editor/src/scripts/devtools/DevToolPanel';
 
 	interface Props {
@@ -80,9 +80,9 @@
 			SceneLoaderFlags.ForceFullSceneLoadingForIncremental = true;
 			await loadScene(scenePath, sceneFile, scene, scriptsMap, { quality: 'high' });
 			
-			const scriptInstance = getScriptByClassForObject(scene, GameNetworkManagerComponent);
+			const scriptInstance = getScriptByClassForObject(scene, GameConnection);
 			if (!scriptInstance) {
-				throw new Error('GameNetworkManagerComponent must be attached to the root scene');
+				throw new Error('GameConnection must be attached to the root scene');
 			}
 			scriptInstance.wsUrl = wsUrl;
 			scriptInstance.token = token;
