@@ -109,7 +109,7 @@ export class HandZoneRenderer implements ZoneRenderer {
 				base.z,
 			);
 
-			const fanAngle = -(Z_ROT_LEFT + t * (Z_ROT_RIGHT - Z_ROT_LEFT));
+			const fanAngle = Z_ROT_LEFT + t * (Z_ROT_RIGHT - Z_ROT_LEFT);
 			const rotation = baseRot
 				.clone()
 				.multiply(Quaternion.RotationAxis(Vector3.Up(), fanAngle + jitter))
