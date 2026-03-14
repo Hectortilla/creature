@@ -69,7 +69,6 @@ export default class AnimationManager implements IScript {
 	// ====================================================================
 
 	public onStart(): void {
-		alert(1)
 		const board = BoardController.instance;
 		if (!board) throw new Error('AnimationManager: BoardController not initialized');
 		this._board = board;
