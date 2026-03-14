@@ -156,7 +156,7 @@ class RoomManager:
         for pid in room.get_player_ids():
             player_data = GameStartedData(
                 success=True,
-                game_state=result.state,
+                game_state=result.state.serialize_for_player(pid),
                 events=serialize_events_for_player(result.events, pid),
                 valid_actions=result.valid_actions,
             )
@@ -195,7 +195,7 @@ class RoomManager:
                 events=serialize_events_for_player(result.events, pid),
                 game_over=result.game_over,
                 winner_id=result.winner_id,
-                game_state=result.state,
+                game_state=result.state.serialize_for_player(pid) if result.state else None,
                 valid_actions=result.valid_actions,
             )
             await self.connection_manager.send_to_player(

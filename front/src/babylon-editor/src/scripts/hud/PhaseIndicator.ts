@@ -3,7 +3,8 @@ import { TextBlock } from '@babylonjs/gui/2D/controls/textBlock';
 import { StackPanel } from '@babylonjs/gui/2D/controls/stackPanel';
 import type { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 import type { TurnPhase } from '../game/models';
-import type { GameStateStore, PhaseChangedData, TurnChangedData } from '../state/GameStateStore';
+import type BoardController from '../BoardController';
+import type { PhaseChangedData, TurnChangedData, GameStartedEventData } from '../state/events';
 
 const PHASES: TurnPhase[] = [
 	'DRAW' as TurnPhase,
@@ -37,11 +38,11 @@ export class PhaseIndicator {
 	private _phaseBoxes: Rectangle[] = [];
 	private _phaseLabels: TextBlock[] = [];
 	private _turnLabel: TextBlock;
-	private _stateStore: GameStateStore;
+	private _board: BoardController;
 	private _currentIndex = 0;
 
-	constructor(gui: AdvancedDynamicTexture, stateStore: GameStateStore) {
-		this._stateStore = stateStore;
+	constructor(gui: AdvancedDynamicTexture, board: BoardController) {
+		this._board = board;
 
 		this._root = new Rectangle('phaseIndicator_root');
 		this._root.width = '620px';
@@ -61,7 +62,7 @@ export class PhaseIndicator {
 		row.isPointerBlocker = false;
 		this._root.addControl(row);
 
-		this._turnLabel = new TextBlock('phaseIndicator_turn', 'Your Turn');
+		this._turnLabel = new TextBlock('phaseIndicator_turn', '');
 		this._turnLabel.width = '90px';
 		this._turnLabel.fontSize = 11;
 		this._turnLabel.color = ACTIVE_COLOR;
@@ -91,20 +92,22 @@ export class PhaseIndicator {
 			this._phaseLabels.push(label);
 		}
 
-		stateStore.on('phaseChanged', this._onPhaseChanged);
-		stateStore.on('turnChanged', this._onTurnChanged);
-
-		const initial = stateStore.currentPhase;
-		if (initial) this._applyPhase(initial);
-		this._applyTurnLabel(stateStore.isMyTurn);
+		board.on('phaseChanged', this._onPhaseChanged);
+		board.on('turnChanged', this._onTurnChanged);
+		board.on('gameStarted', this._onGameStarted);
 	}
+
+	private _onGameStarted = (data: GameStartedEventData): void => {
+		this._applyPhase(data.currentPhase);
+		this._applyTurnLabel(data.isMyTurn);
+	};
 
 	private _onPhaseChanged = (data: PhaseChangedData): void => {
 		this._applyPhase(data.toPhase);
 	};
 
 	private _onTurnChanged = (data: TurnChangedData): void => {
-		this._applyTurnLabel(data.playerId === this._stateStore.myPlayerId);
+		this._applyTurnLabel(data.isMyTurn);
 		this._currentIndex = 0;
 		this._refreshBoxes();
 	};
@@ -139,8 +142,9 @@ export class PhaseIndicator {
 	}
 
 	dispose(): void {
-		this._stateStore.off('phaseChanged', this._onPhaseChanged);
-		this._stateStore.off('turnChanged', this._onTurnChanged);
+		this._board.off('phaseChanged', this._onPhaseChanged);
+		this._board.off('turnChanged', this._onTurnChanged);
+		this._board.off('gameStarted', this._onGameStarted);
 		this._root.dispose();
 	}
 }

@@ -4,12 +4,12 @@ import type { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTe
 import type { Zone } from '../game/models';
 import type { CardEntity } from '../entities/CardEntity';
 import type { CardEntityManager } from '../entities/CardEntityManager';
+import type BoardController from '../BoardController';
 import type {
-	GameStateStore,
 	CardHealthChangedData,
 	CardMovedData,
 	CardDestroyedData,
-} from '../state/GameStateStore';
+} from '../state/events';
 
 const BAR_WIDTH = 60;
 const BAR_HEIGHT = 10;
@@ -82,18 +82,18 @@ class HealthBar {
 
 export class HealthBarManager {
 	private _gui: AdvancedDynamicTexture;
-	private _stateStore: GameStateStore;
+	private _board: BoardController;
 	private _cardManager: CardEntityManager;
 	private _bars = new Map<string, HealthBar>();
 
-	constructor(gui: AdvancedDynamicTexture, stateStore: GameStateStore, cardManager: CardEntityManager) {
+	constructor(gui: AdvancedDynamicTexture, board: BoardController, cardManager: CardEntityManager) {
 		this._gui = gui;
-		this._stateStore = stateStore;
+		this._board = board;
 		this._cardManager = cardManager;
 
-		stateStore.on('cardMoved', this._onCardMoved);
-		stateStore.on('cardHealthChanged', this._onHealthChanged);
-		stateStore.on('cardDestroyed', this._onCardDestroyed);
+		board.on('cardMoved', this._onCardMoved);
+		board.on('cardHealthChanged', this._onHealthChanged);
+		board.on('cardDestroyed', this._onCardDestroyed);
 	}
 
 	private _isFieldZone(zone: Zone): boolean {
@@ -132,9 +132,9 @@ export class HealthBarManager {
 	}
 
 	dispose(): void {
-		this._stateStore.off('cardMoved', this._onCardMoved);
-		this._stateStore.off('cardHealthChanged', this._onHealthChanged);
-		this._stateStore.off('cardDestroyed', this._onCardDestroyed);
+		this._board.off('cardMoved', this._onCardMoved);
+		this._board.off('cardHealthChanged', this._onHealthChanged);
+		this._board.off('cardDestroyed', this._onCardDestroyed);
 		for (const bar of this._bars.values()) bar.dispose();
 		this._bars.clear();
 	}

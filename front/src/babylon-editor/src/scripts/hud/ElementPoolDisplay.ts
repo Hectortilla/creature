@@ -2,7 +2,8 @@ import { Rectangle } from '@babylonjs/gui/2D/controls/rectangle';
 import { TextBlock } from '@babylonjs/gui/2D/controls/textBlock';
 import { StackPanel } from '@babylonjs/gui/2D/controls/stackPanel';
 import type { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
-import type { GameStateStore, ElementsChangedData } from '../state/GameStateStore';
+import type BoardController from '../BoardController';
+import type { ElementsChangedData, GameStartedEventData } from '../state/events';
 
 const BG_COLOR = 'rgba(15, 10, 40, 0.7)';
 const LABEL_COLOR = '#D4AF37';
@@ -14,10 +15,10 @@ export class ElementPoolDisplay {
 	private _stack: StackPanel;
 	private _title: TextBlock;
 	private _elementRows = new Map<string, TextBlock>();
-	private _stateStore: GameStateStore;
+	private _board: BoardController;
 
-	constructor(gui: AdvancedDynamicTexture, stateStore: GameStateStore) {
-		this._stateStore = stateStore;
+	constructor(gui: AdvancedDynamicTexture, board: BoardController) {
+		this._board = board;
 
 		this._root = new Rectangle('elementPool_root');
 		this._root.width = '150px';
@@ -46,31 +47,25 @@ export class ElementPoolDisplay {
 		this._title.isPointerBlocker = false;
 		this._stack.addControl(this._title);
 
-		stateStore.on('elementsConsumed', this._onElementsChanged);
-		stateStore.on('elementsRestored', this._onElementsChanged);
-		stateStore.on('gameStarted', () => this._rebuild());
-
-		this._rebuild();
+		board.on('elementsConsumed', this._onElementsChanged);
+		board.on('elementsRestored', this._onElementsChanged);
+		board.on('gameStarted', this._onGameStarted);
 	}
 
-	private _onElementsChanged = (_data: ElementsChangedData): void => {
-		this._rebuild();
+	private _onGameStarted = (data: GameStartedEventData): void => {
+		this._rebuild(data.myElementPool.elements, data.myElementPool.maxElements);
 	};
 
-	private _rebuild(): void {
+	private _onElementsChanged = (data: ElementsChangedData): void => {
+		this._rebuild(data.currentPool, data.maxPool);
+	};
+
+	private _rebuild(elements: Record<string, number>, maxElements: Record<string, number>): void {
 		for (const tb of this._elementRows.values()) tb.dispose();
 		this._elementRows.clear();
 
-		const myId = this._stateStore.myPlayerId;
-		const player = this._stateStore.state?.players[myId];
-		if (!player) return;
-
-		const pool = player.elementPool;
-		const elements = pool.elements ?? {};
-		const maxElements = pool.max_elements ?? {};
-
 		for (const [elemId, current] of Object.entries(elements)) {
-			const max = (maxElements as Record<string, number>)[elemId] ?? current;
+			const max = maxElements[elemId] ?? current;
 			const row = new TextBlock(`elemRow_${elemId}`, `  Elem ${elemId}: ${current} / ${max}`);
 			row.height = '20px';
 			row.fontSize = 11;
@@ -83,8 +78,9 @@ export class ElementPoolDisplay {
 	}
 
 	dispose(): void {
-		this._stateStore.off('elementsConsumed', this._onElementsChanged);
-		this._stateStore.off('elementsRestored', this._onElementsChanged);
+		this._board.off('elementsConsumed', this._onElementsChanged);
+		this._board.off('elementsRestored', this._onElementsChanged);
+		this._board.off('gameStarted', this._onGameStarted);
 		this._root.dispose();
 	}
 }

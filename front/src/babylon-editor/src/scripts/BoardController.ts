@@ -1,67 +1,36 @@
-import { Vector3 } from '@babylonjs/core/Maths/math.vector';
-import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
+/**
+ * BoardController — event bus and raw-message router.
+ *
+ * Receives raw WebSocket messages from GameConnection, applies state to
+ * GameStateStore, then parses events into typed signals that AnimationManager,
+ * HUD components, and InteractionManager subscribe to.
+ *
+ * Contains NO visual / animation logic — that lives in AnimationManager.
+ */
+
 import type { Scene } from '@babylonjs/core/scene';
 import type { IScript } from 'babylonjs-editor-tools';
 
 import GameConnection from './game/GameConnection';
 import { CardDefinitionCache } from './game/CardDefinitionCache';
-import { CardEntityManager } from './entities/CardEntityManager';
+import { GameStateStore } from './state/GameStateStore';
 import type { GameMessage, ValidAction } from './game/types';
-import type { Zone, ClientCard, ClientGameState } from './game/models';
-import { createFaceDownCard } from './game/models';
-import {
-	GameStateStore,
-	type CardMovedData,
-	type CardHealthChangedData,
-	type CardDestroyedData,
-	type PhaseChangedData,
-	type TurnChangedData,
-	type GameOverData,
-	type AttackDeclaredData,
-	type CardsSwappedData,
-} from './state/GameStateStore';
-import type { ZoneRenderer } from './zones/ZoneRenderer';
-import { DeckZoneRenderer } from './zones/DeckZoneRenderer';
-import { HandZoneRenderer } from './zones/HandZoneRenderer';
-import { FieldZoneRenderer } from './zones/FieldZoneRenderer';
-import { GraveyardZoneRenderer } from './zones/GraveyardZoneRenderer';
-import { AnimationPipeline } from './animation/AnimationPipeline';
-import type { GameAnimation } from './animation/GameAnimation';
-import { CardMoveAnimation } from './animation/CardMoveAnimation';
-import { CardFlipAnimation } from './animation/CardFlipAnimation';
-import { AttackAnimation } from './animation/AttackAnimation';
-import { DamageAnimation } from './animation/DamageAnimation';
-import { DestroyAnimation } from './animation/DestroyAnimation';
-import { DelayAnimation } from './animation/DelayAnimation';
-import { ParallelAnimation } from './animation/ParallelAnimation';
+import type { Zone, TurnPhase, ClientCard, ClientGameState, ClientPlayerState } from './game/models';
 
-const ZONE_DECK = 'DECK' as Zone;
-const ZONE_HAND = 'HAND' as Zone;
-const ZONE_SUPPORTING = 'SUPPORTING' as Zone;
-const ZONE_ATTACKING = 'ATTACKING' as Zone;
-const ZONE_GRAVEYARD = 'GRAVEYARD' as Zone;
+import type {
+	StateChangeEvents,
+	StateChangeCallback,
+	GameStartedEventData,
+} from './state/events';
 
 export default class BoardController implements IScript {
+	static instance: BoardController | null = null;
+
 	private _connection!: GameConnection;
 	private _stateStore!: GameStateStore;
 	private _cardCache!: CardDefinitionCache;
-	private _cardManager!: CardEntityManager;
-	private _animationPipeline!: AnimationPipeline;
-	private _zones = new Map<string, ZoneRenderer>();
 
-	/**
-	 * Guards against premature event handling during processGameStarted.
-	 * The store processes initial events (emitting cardAdded/cardMoved) BEFORE
-	 * emitting gameStarted. Without this flag, those events would create entities
-	 * and enqueue animations before the board is built.
-	 */
-	private _boardReady = false;
-
-	/** Instance IDs whose cardMoved events should be skipped (handled by cardsSwapped). */
-	private _swapInProgress = new Set<string>();
-
-	/** Instance IDs whose cardMoved events should be skipped (handled by cardDestroyed). */
-	private _destroyInProgress = new Set<string>();
+	private _listeners = new Map<keyof StateChangeEvents, Set<StateChangeCallback<any>>>();
 
 	public constructor(private _scene: Scene) {}
 
@@ -79,31 +48,47 @@ export default class BoardController implements IScript {
 		this._stateStore = store;
 
 		this._cardCache = conn.getCardCache()!;
-		this._cardManager = CardEntityManager.getOrCreate(this._scene);
-		this._animationPipeline = new AnimationPipeline(this._scene);
 
-		this._cardManager.initBlueprints('UpsideUpCard_BP', 'UpsideDownCard_BP');
-		this._initZoneRenderers();
-		this._subscribe();
-
+		BoardController.instance = this;
 		this._connection.onMessage = this._handleRawMessage;
-
-		this._animationPipeline.onQueueStarted = () => {
-			// InteractionManager checks animationPipeline.isPlaying
-		};
-		this._animationPipeline.onQueueDrained = () => {
-			// InteractionManager re-enables interaction
-		};
 	}
 
 	public onUpdate(): void {}
 
 	public onStop(): void {
-		this._unsubscribe();
 		if (this._connection) this._connection.onMessage = null;
-		this._animationPipeline.dispose();
-		for (const renderer of this._zones.values()) renderer.dispose();
-		this._zones.clear();
+		this._listeners.clear();
+		BoardController.instance = null;
+	}
+
+	// ====================================================================
+	// Event bus
+	// ====================================================================
+
+	on<K extends keyof StateChangeEvents>(
+		event: K,
+		cb: StateChangeCallback<StateChangeEvents[K]>,
+	): void {
+		if (!this._listeners.has(event)) this._listeners.set(event, new Set());
+		this._listeners.get(event)!.add(cb);
+	}
+
+	off<K extends keyof StateChangeEvents>(
+		event: K,
+		cb: StateChangeCallback<StateChangeEvents[K]>,
+	): void {
+		this._listeners.get(event)?.delete(cb);
+	}
+
+	private _emit<K extends keyof StateChangeEvents>(
+		event: K,
+		data: StateChangeEvents[K],
+	): void {
+		console.log('BoardController: event', event, data);
+
+		const set = this._listeners.get(event);
+		if (!set) return;
+		for (const cb of set) cb(data);
 	}
 
 	// ====================================================================
@@ -111,25 +96,34 @@ export default class BoardController implements IScript {
 	// ====================================================================
 
 	private _handleRawMessage = (message: GameMessage): void => {
-		if (message.type === 'action_result' && message.data?.success === false) return;
-
-		this._registerCardsFromEvents(message.data);
-
-		const d = message.data;
-
-		if (message.type === 'game_started') {
-			this._stateStore.processGameStarted(d);
+		if (message.data?.success === false) {
+			console.error('BoardController: game action failed', message);
 			return;
 		}
 
-		if (d.events)
-			this._stateStore.processGameEvents(d.events as Record<string, unknown>[]);
+		this._registerCardsFromEvents(message.data);
+		const d = message.data;
+
+		// 1. Apply authoritative state
 		if (d.game_state)
-			this._stateStore.processGameState(d.game_state as Record<string, unknown>);
-		if (d.valid_actions)
-			this._stateStore.updateValidActions(
-				(d.valid_actions as ValidAction[]).filter(a => a.player_id === this._stateStore.myPlayerId),
+			this._stateStore.applyServerState(d.game_state as Record<string, unknown>);
+
+		// 2. Game started (must fire before granular events so subscribers can initialize)
+		if (message.type === 'game_started')
+			this._emit('gameStarted', this._buildGameStartedPayload());
+
+		// 3. Emit typed events for animations + HUD
+		if (d.events)
+			this.emitGameEvents(d.events as Record<string, unknown>[]);
+
+		// 4. Valid actions
+		if (d.valid_actions) {
+			const mine = (d.valid_actions as ValidAction[]).filter(
+				(a) => a.player_id === this._stateStore.myPlayerId,
 			);
+			this._stateStore.updateValidActions(mine);
+			this._emit('validActionsChanged', { actions: mine, isMyTurn: this._stateStore.isMyTurn });
+		}
 	};
 
 	private _registerCardsFromEvents(data: Record<string, unknown>): void {
@@ -145,302 +139,310 @@ export default class BoardController implements IScript {
 	}
 
 	// ====================================================================
-	// Zone renderer initialization
+	// Game event emission
 	// ====================================================================
 
-	private _initZoneRenderers(): void {
-		const myId = this._stateStore.myPlayerId;
-		const oppId = this._stateStore.getOpponentId() ?? '';
-
-		this._registerZone('my', ZONE_DECK, new DeckZoneRenderer(myId, this._anchor('My_Deck_Anchor')));
-		this._registerZone('my', ZONE_HAND, new HandZoneRenderer(myId, this._anchor('My_Hand_Anchor'), true));
-		this._registerZone('my', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, myId, this._anchor('My_Supporting_Anchor'), 3, true));
-		this._registerZone('my', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, myId, this._anchor('My_Attacking_Anchor'), 2, true));
-		this._registerZone('my', ZONE_GRAVEYARD, new GraveyardZoneRenderer(myId, this._anchor('My_Graveyard_Anchor')));
-
-		this._registerZone('opp', ZONE_DECK, new DeckZoneRenderer(oppId, this._anchor('Opp_Deck_Anchor')));
-		this._registerZone('opp', ZONE_HAND, new HandZoneRenderer(oppId, this._anchor('Opp_Hand_Anchor'), false));
-		this._registerZone('opp', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, oppId, this._anchor('Opp_Supporting_Anchor'), 3, false));
-		this._registerZone('opp', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, oppId, this._anchor('Opp_Attacking_Anchor'), 2, false));
-		this._registerZone('opp', ZONE_GRAVEYARD, new GraveyardZoneRenderer(oppId, this._anchor('Opp_Graveyard_Anchor')));
+	emitGameEvents(events: Record<string, unknown>[]): void {
+		for (const raw of events) {
+			this._dispatchEvent(raw);
+		}
 	}
 
-	private _registerZone(perspective: 'my' | 'opp', zone: Zone, renderer: ZoneRenderer): void {
-		this._zones.set(this._zoneKey(perspective, zone), renderer);
-	}
+	private _dispatchEvent(raw: Record<string, unknown>): void {
+		const eventType = raw.event_type as string | undefined;
+		if (!eventType) return;
 
-	private _anchor(name: string): TransformNode {
-		const node = this._scene.getTransformNodeByName(name);
-		if (!node) throw new Error(`BoardController: missing required anchor node "${name}" in scene`);
-		return node;
-	}
-
-	// ====================================================================
-	// State store subscriptions
-	// ====================================================================
-
-	private _subscribe(): void {
-		this._stateStore.on('gameStarted', this._onGameStarted);
-		this._stateStore.on('stateReplaced', this._onStateReplaced);
-		this._stateStore.on('cardAdded', this._onCardAdded);
-		this._stateStore.on('cardsSwapped', this._onCardsSwapped);
-		this._stateStore.on('cardMoved', this._onCardMoved);
-		this._stateStore.on('attackDeclared', this._onAttackDeclared);
-		this._stateStore.on('cardHealthChanged', this._onCardHealthChanged);
-		this._stateStore.on('cardDestroyed', this._onCardDestroyed);
-		this._stateStore.on('phaseChanged', this._onPhaseChanged);
-		this._stateStore.on('turnChanged', this._onTurnChanged);
-		this._stateStore.on('gameOver', this._onGameOver);
-	}
-
-	private _unsubscribe(): void {
-		this._stateStore.off('gameStarted', this._onGameStarted);
-		this._stateStore.off('stateReplaced', this._onStateReplaced);
-		this._stateStore.off('cardAdded', this._onCardAdded);
-		this._stateStore.off('cardsSwapped', this._onCardsSwapped);
-		this._stateStore.off('cardMoved', this._onCardMoved);
-		this._stateStore.off('attackDeclared', this._onAttackDeclared);
-		this._stateStore.off('cardHealthChanged', this._onCardHealthChanged);
-		this._stateStore.off('cardDestroyed', this._onCardDestroyed);
-		this._stateStore.off('phaseChanged', this._onPhaseChanged);
-		this._stateStore.off('turnChanged', this._onTurnChanged);
-		this._stateStore.off('gameOver', this._onGameOver);
+		switch (eventType) {
+			case 'CardDrawnEvent':       return this._handleCardDrawn(raw);
+			case 'CardMovedEvent':       return this._handleCardMoved(raw);
+			case 'CardPlayedEvent':      return this._handleCardPlayed(raw);
+			case 'CardPromotedEvent':    return this._handleCardPromoted(raw);
+			case 'CardSwappedEvent':     return this._handleCardSwapped(raw);
+			case 'CardAssociatedEvent':  return this._handleCardAssociated(raw);
+			case 'CardEvolvedEvent':     return this._handleCardEvolved(raw);
+			case 'AttackDeclaredEvent':  return this._handleAttackDeclared(raw);
+			case 'DamageDealtEvent':     return this._handleDamageDealt(raw);
+			case 'CardDestroyedEvent':   return this._handleCardDestroyed(raw);
+			case 'ElementsConsumedEvent': return this._handleElementsConsumed(raw);
+			case 'ElementsRestoredEvent': return this._handleElementsRestored(raw);
+			case 'TurnStartedEvent':     return this._handleTurnStarted(raw);
+			case 'TurnEndedEvent':       return this._handleTurnEnded(raw);
+			case 'PhaseChangedEvent':    return this._handlePhaseChanged(raw);
+			case 'GameStartedEvent':     break; // handled at message level
+			case 'GameEndedEvent':       return this._handleGameEnded(raw);
+			case 'NoDefenderEvent':      return this._handleNoDefender(raw);
+			case 'EffectTriggeredEvent': return this._handleEffectTriggered(raw);
+			case 'EffectAppliedEvent':   return this._handleEffectApplied(raw);
+			default:
+				console.warn(`BoardController: unhandled event type "${eventType}"`);
+		}
 	}
 
 	// ====================================================================
-	// Event handlers (arrow functions to preserve `this`)
+	// Pure-emit event handlers (no state mutation)
 	// ====================================================================
 
-	private _onGameStarted = (state: ClientGameState): void => {
-		this._buildBoard(state);
-		this._boardReady = true;
-	};
+	private _handleCardDrawn(raw: Record<string, unknown>): void {
+		const playerId = raw.player_id as string;
+		const instanceId = raw.instance_id as string;
+		const cardId = (raw.card_id as number) ?? 0;
+		const card = this._stateStore.getCard(instanceId);
 
-	private _onStateReplaced = (state: ClientGameState): void => {
-		this._animationPipeline.skipAll();
-		this._tearDownBoard();
-		this._buildBoard(state);
-		this._boardReady = true;
-	};
-
-	private _onCardAdded = (card: ClientCard): void => {
-		if (!this._boardReady) return;
-		this._cardManager.createEntity(card, card.faceUp);
-	};
-
-	private _onCardMoved = (data: CardMovedData): void => {
-		if (!this._boardReady) return;
-
-		if (this._swapInProgress.delete(data.instanceId)) return;
-		if (this._destroyInProgress.delete(data.instanceId)) return;
-
-		const entity = this._cardManager.getByInstanceId(data.instanceId);
-		if (!entity) return;
-
-		const sourceRenderer = this._rendererFor(data.ownerId, data.fromZone);
-		const destRenderer = this._rendererFor(data.ownerId, data.toZone);
-		if (!destRenderer) return;
-
-		const wasInRenderer = this._rendererContains(sourceRenderer, data.instanceId);
-		if (wasInRenderer) sourceRenderer!.removeCard(data.instanceId);
-
-		const from = wasInRenderer
-			? entity.mesh.position.clone()
-			: (sourceRenderer?.getExitPosition() ?? entity.mesh.position.clone());
-		const to = destRenderer.getEntryPosition();
-
-		const batch: GameAnimation[] = [new CardMoveAnimation(entity, from, to)];
-
-		if (data.fromZone === ZONE_DECK && data.toZone === ZONE_HAND && this._isMine(data.ownerId)) {
-			batch.push(new CardFlipAnimation(entity, true));
+		if (card) {
+			this._emit('cardAdded', card);
+		} else if (instanceId && cardId > 0) {
+			const stub: ClientCard = {
+				instanceId, cardId, ownerId: playerId,
+				name: '', zone: 'HAND' as Zone,
+				currentHealth: 0, maxHealth: 0,
+				physicalDefence: 0, magicDefence: 0,
+				isAlive: true, faceUp: playerId === this._stateStore.myPlayerId,
+			};
+			this._emit('cardAdded', stub);
 		}
 
-		batch.push(this._callback(() => {
-			destRenderer.addCard(entity, false);
-			if (wasInRenderer) sourceRenderer!.repositionAll(true);
-		}));
-
-		this._animationPipeline.enqueueBatch(batch);
-	};
-
-	private _onCardsSwapped = (data: CardsSwappedData): void => {
-		if (!this._boardReady) return;
-
-		this._swapInProgress.add(data.supportingId);
-		this._swapInProgress.add(data.attackingId);
-
-		const supEntity = this._cardManager.getByInstanceId(data.supportingId);
-		const atkEntity = this._cardManager.getByInstanceId(data.attackingId);
-		if (!supEntity || !atkEntity) return;
-
-		const supRenderer = this._rendererFor(data.ownerId, ZONE_SUPPORTING);
-		const atkRenderer = this._rendererFor(data.ownerId, ZONE_ATTACKING);
-		if (!supRenderer || !atkRenderer) return;
-
-		supRenderer.removeCard(data.supportingId);
-		atkRenderer.removeCard(data.attackingId);
-
-		const parallel = new ParallelAnimation([
-			new CardMoveAnimation(supEntity, supEntity.mesh.position.clone(), atkRenderer.getEntryPosition()),
-			new CardMoveAnimation(atkEntity, atkEntity.mesh.position.clone(), supRenderer.getEntryPosition()),
-		]);
-
-		this._animationPipeline.enqueue(parallel);
-		this._animationPipeline.enqueue(this._callback(() => {
-			atkRenderer.addCard(supEntity, false);
-			supRenderer.addCard(atkEntity, false);
-		}));
-	};
-
-	private _onAttackDeclared = (data: AttackDeclaredData): void => {
-		if (!this._boardReady) return;
-
-		const attacker = this._cardManager.getByInstanceId(data.attackerId);
-		if (!attacker) return;
-
-		const target = this._cardManager.getByInstanceId(data.targetId);
-		const targetOrPos = target ?? this._opponentFieldCenter();
-
-		this._animationPipeline.enqueue(new AttackAnimation(attacker, targetOrPos));
-	};
-
-	private _onCardHealthChanged = (data: CardHealthChangedData): void => {
-		if (!this._boardReady) return;
-
-		const entity = this._cardManager.getByInstanceId(data.instanceId);
-		if (!entity) return;
-
-		const damage = data.oldHealth - data.newHealth;
-		this._animationPipeline.enqueue(new DamageAnimation(entity, damage, data.newHealth));
-	};
-
-	private _onCardDestroyed = (data: CardDestroyedData): void => {
-		if (!this._boardReady) return;
-
-		this._destroyInProgress.add(data.instanceId);
-
-		const entity = this._cardManager.getByInstanceId(data.instanceId);
-		if (!entity) return;
-
-		const currentRenderer = this._findRendererContaining(data.instanceId);
-		currentRenderer?.removeCard(data.instanceId);
-
-		const graveyardRenderer = this._rendererFor(data.ownerId, ZONE_GRAVEYARD);
-		const graveyardPos = graveyardRenderer?.getEntryPosition() ?? Vector3.Zero();
-
-		this._animationPipeline.enqueue(new DestroyAnimation(entity, graveyardPos));
-		this._animationPipeline.enqueue(this._callback(() => {
-			entity.mesh.visibility = 1;
-			entity.mesh.scaling.setAll(1);
-			graveyardRenderer?.addCard(entity, false);
-			currentRenderer?.repositionAll(true);
-		}));
-	};
-
-	private _onPhaseChanged = (_data: PhaseChangedData): void => {
-		if (!this._boardReady) return;
-		this._animationPipeline.enqueue(new DelayAnimation(200));
-	};
-
-	private _onTurnChanged = (_data: TurnChangedData): void => {
-		if (!this._boardReady) return;
-		this._animationPipeline.enqueue(new DelayAnimation(800));
-	};
-
-	private _onGameOver = (_data: GameOverData): void => {
-		this._animationPipeline.skipAll();
-	};
-
-	// ====================================================================
-	// Board building
-	// ====================================================================
-
-	private async _buildBoard(state: ClientGameState): Promise<void> {
-		const myId = this._stateStore.myPlayerId;
-		const oppId = this._stateStore.getOpponentId() ?? '';
-		const deckSize = state.config?.deck_size ?? 0;
-		const DELAY_MS = 100;
-	
-		const allPromises: Promise<void>[] = [];
-	
-		for (const ownerId of [myId, oppId]) {
-			const prefix = ownerId === myId ? 'my' : 'opp';
-			const renderer = this._rendererFor(ownerId, ZONE_DECK);
-			if (!renderer) continue;
-	
-			for (let i = 0; i < deckSize; i++) {
-				const entity = this._cardManager.createEntity(
-					createFaceDownCard(`${prefix}_deck_${i}`, ownerId),
-					false,
-				);
-	
-				// schedule each addCard with a delay
-				const p = new Promise<void>(resolve => {
-					setTimeout(async () => {
-						await renderer.addCard(entity, true);
-						resolve();
-					}, i * DELAY_MS);
-				});
-	
-				allPromises.push(p);
-			}
-		}
-	
-		// wait for all addCard calls to finish
-		await Promise.all(allPromises);
+		this._emit('cardMoved', {
+			instanceId: instanceId || `opponent-draw-${Date.now()}`,
+			ownerId: playerId,
+			fromZone: 'DECK' as Zone,
+			toZone: 'HAND' as Zone,
+		});
 	}
 
-	private _tearDownBoard(): void {
-		for (const entity of this._cardManager.getAllEntities()) {
-			this._cardManager.destroyEntity(entity.instanceId);
+	private _handleCardMoved(raw: Record<string, unknown>): void {
+		const fromZone = raw.from_zone as Zone;
+		const toZone = raw.to_zone as Zone;
+		if (!fromZone || !toZone) return;
+
+		this._emit('cardMoved', {
+			instanceId: raw.instance_id as string,
+			ownerId: raw.owner_id as string,
+			fromZone,
+			toZone,
+		});
+	}
+
+	private _handleCardPlayed(raw: Record<string, unknown>): void {
+		this._emit('cardMoved', {
+			instanceId: raw.instance_id as string,
+			ownerId: raw.player_id as string,
+			fromZone: 'HAND' as Zone,
+			toZone: 'SUPPORTING' as Zone,
+		});
+	}
+
+	private _handleCardPromoted(raw: Record<string, unknown>): void {
+		this._emit('cardMoved', {
+			instanceId: raw.instance_id as string,
+			ownerId: raw.player_id as string,
+			fromZone: 'SUPPORTING' as Zone,
+			toZone: 'ATTACKING' as Zone,
+		});
+	}
+
+	private _handleCardSwapped(raw: Record<string, unknown>): void {
+		const playerId = raw.player_id as string;
+		const supportingId = raw.supporting_card_id as string;
+		const attackingId = raw.attacking_card_id as string;
+
+		this._emit('cardsSwapped', { ownerId: playerId, supportingId, attackingId });
+
+		this._emit('cardMoved', {
+			instanceId: supportingId, ownerId: playerId,
+			fromZone: 'SUPPORTING' as Zone, toZone: 'ATTACKING' as Zone,
+		});
+		this._emit('cardMoved', {
+			instanceId: attackingId, ownerId: playerId,
+			fromZone: 'ATTACKING' as Zone, toZone: 'SUPPORTING' as Zone,
+		});
+	}
+
+	private _handleCardAssociated(raw: Record<string, unknown>): void {
+		const sourceZone = (raw.source_zone as Zone) ?? null;
+
+		if (sourceZone) {
+			this._emit('cardMoved', {
+				instanceId: raw.association_card_id as string,
+				ownerId: raw.player_id as string,
+				fromZone: sourceZone,
+				toZone: 'SUPPORTING' as Zone,
+			});
 		}
-		for (const renderer of this._zones.values()) renderer.dispose();
-		this._zones.clear();
-		this._swapInProgress.clear();
-		this._destroyInProgress.clear();
-		this._initZoneRenderers();
+
+		this._emit('cardAssociated', {
+			playerId: raw.player_id as string,
+			associationCardId: raw.association_card_id as string,
+			targetCardId: raw.target_card_id as string,
+			cardId: (raw.card_id as number) ?? 0,
+			sourceZone: sourceZone as string | null,
+		});
+	}
+
+	private _handleCardEvolved(raw: Record<string, unknown>): void {
+		this._emit('cardEvolved', {
+			playerId: raw.player_id as string,
+			baseCardId: raw.base_card_id as string,
+			evolutionCardId: raw.evolution_card_id as string,
+			cardId: (raw.card_id as number) ?? 0,
+			baseCardName: (raw.base_card_name as string) ?? '',
+			evolutionCardName: (raw.evolution_card_name as string) ?? '',
+		});
+	}
+
+	private _handleAttackDeclared(raw: Record<string, unknown>): void {
+		this._emit('attackDeclared', {
+			attackerOwnerId: raw.attacker_owner_id as string,
+			attackerId: raw.attacker_id as string,
+			targetId: raw.target_id as string,
+			attackId: (raw.attack_id as number) ?? 0,
+			attackName: (raw.attack_name as string) ?? '',
+		});
+	}
+
+	private _handleDamageDealt(raw: Record<string, unknown>): void {
+		const finalDamage = (raw.final_damage as number) ?? 0;
+		const remainingHealth = (raw.remaining_health as number) ?? 0;
+
+		this._emit('cardHealthChanged', {
+			instanceId: raw.target_id as string,
+			oldHealth: remainingHealth + finalDamage,
+			newHealth: remainingHealth,
+			maxHealth: (raw.max_health as number) ?? remainingHealth + finalDamage,
+		});
+	}
+
+	private _handleCardDestroyed(raw: Record<string, unknown>): void {
+		const instanceId = raw.instance_id as string;
+		const ownerId = raw.owner_id as string;
+		const card = this._stateStore.getCard(instanceId);
+		const fromZone = card?.zone ?? ('ATTACKING' as Zone);
+
+		this._emit('cardDestroyed', {
+			instanceId,
+			ownerId,
+			cardName: (raw.card_name as string) ?? '',
+		});
+
+		this._emit('cardMoved', {
+			instanceId,
+			ownerId,
+			fromZone,
+			toZone: 'GRAVEYARD' as Zone,
+		});
+	}
+
+	private _handleElementsConsumed(raw: Record<string, unknown>): void {
+		const playerId = raw.player_id as string;
+		const pool = this._getPlayerPool(playerId);
+		this._emit('elementsConsumed', {
+			playerId,
+			elements: (raw.elements as Record<string, number>) ?? {},
+			currentPool: pool.elements,
+			maxPool: pool.maxElements,
+		});
+	}
+
+	private _handleElementsRestored(raw: Record<string, unknown>): void {
+		const playerId = raw.player_id as string;
+		const pool = this._getPlayerPool(playerId);
+		this._emit('elementsRestored', {
+			playerId,
+			elements: (raw.elements as Record<string, number>) ?? {},
+			currentPool: pool.elements,
+			maxPool: pool.maxElements,
+		});
+	}
+
+	private _handleTurnStarted(raw: Record<string, unknown>): void {
+		const playerId = raw.player_id as string;
+		this._emit('turnChanged', {
+			playerId,
+			turnNumber: (raw.turn_number as number) ?? 0,
+			isFirstTurn: (raw.is_first_turn as boolean) ?? false,
+			isMyTurn: playerId === this._stateStore.myPlayerId,
+		});
+	}
+
+	private _handleTurnEnded(raw: Record<string, unknown>): void {
+		this._emit('turnEnded', {
+			playerId: raw.player_id as string,
+			turnNumber: (raw.turn_number as number) ?? 0,
+		});
+	}
+
+	private _handlePhaseChanged(raw: Record<string, unknown>): void {
+		const toPhase = raw.to_phase as TurnPhase;
+		if (!toPhase) return;
+		this._emit('phaseChanged', {
+			fromPhase: raw.from_phase as TurnPhase,
+			toPhase,
+			playerId: raw.player_id as string,
+		});
+	}
+
+	private _handleGameEnded(raw: Record<string, unknown>): void {
+		this._emit('gameOver', {
+			winnerId: (raw.winner_id as string) ?? '',
+			loserId: (raw.loser_id as string) ?? '',
+			reason: (raw.reason as string) ?? '',
+		});
+	}
+
+	private _handleNoDefender(raw: Record<string, unknown>): void {
+		this._emit('noDefender', {
+			defenderId: (raw.defender_id as string) ?? '',
+			attackerId: (raw.attacker_id as string) ?? '',
+			mustDefend: (raw.must_defend as boolean) ?? false,
+			gameLost: (raw.game_lost as boolean) ?? false,
+		});
+	}
+
+	private _handleEffectTriggered(raw: Record<string, unknown>): void {
+		this._emit('effectTriggered', {
+			sourceCardId: (raw.source_card_id as string) ?? '',
+			effectId: (raw.effect_id as string) ?? '',
+			effectName: (raw.effect_name as string) ?? '',
+			triggerReason: (raw.trigger_reason as string) ?? '',
+		});
+	}
+
+	private _handleEffectApplied(raw: Record<string, unknown>): void {
+		this._emit('effectApplied', {
+			effectId: (raw.effect_id as string) ?? '',
+			affectedCardIds: (raw.affected_card_ids as string[]) ?? [],
+			description: (raw.description as string) ?? '',
+		});
 	}
 
 	// ====================================================================
 	// Helpers
 	// ====================================================================
 
-	private _zoneKey(perspective: 'my' | 'opp', zone: Zone): string {
-		return `${perspective}_${zone}`;
-	}
+	private _buildGameStartedPayload(): GameStartedEventData {
+		const state = this._stateStore.state!;
+		const myId = this._stateStore.myPlayerId;
+		const oppId = this._stateStore.getOpponentId() ?? '';
+		const myPlayer = state.players[myId];
 
-	private _rendererFor(ownerId: string, zone: Zone): ZoneRenderer | undefined {
-		const p = this._isMine(ownerId) ? 'my' : 'opp';
-		return this._zones.get(this._zoneKey(p, zone));
-	}
-
-	private _findRendererContaining(instanceId: string): ZoneRenderer | undefined {
-		for (const renderer of this._zones.values()) {
-			if (renderer.getEntities().some((e) => e.instanceId === instanceId)) return renderer;
-		}
-		return undefined;
-	}
-
-	private _rendererContains(renderer: ZoneRenderer | undefined, instanceId: string): boolean {
-		return renderer?.getEntities().some((e) => e.instanceId === instanceId) ?? false;
-	}
-
-	private _isMine(ownerId: string): boolean {
-		return ownerId === this._stateStore.myPlayerId;
-	}
-
-	private _opponentFieldCenter(): Vector3 {
-		const renderer = this._zones.get(this._zoneKey('opp', ZONE_ATTACKING));
-		return renderer?.getEntryPosition() ?? Vector3.Zero();
-	}
-
-	/** Inline GameAnimation that executes a synchronous callback. */
-	private _callback(fn: () => void): GameAnimation {
 		return {
-			name: 'Callback',
-			duration: 0,
-			execute: () => { fn(); return Promise.resolve(); },
-			cancel: () => { fn(); },
+			state,
+			myPlayerId: myId,
+			opponentId: oppId,
+			isMyTurn: state.activePlayerId === myId,
+			currentPhase: state.currentPhase,
+			deckSize: state.config?.deck_size ?? 0,
+			myElementPool: {
+				elements: myPlayer?.elementPool?.elements ?? {},
+				maxElements: myPlayer?.elementPool?.max_elements ?? {},
+			},
+		};
+	}
+
+	private _getPlayerPool(playerId: string): { elements: Record<string, number>; maxElements: Record<string, number> } {
+		const player = this._stateStore.state?.players[playerId];
+		return {
+			elements: (player?.elementPool?.elements ?? {}) as Record<string, number>,
+			maxElements: (player?.elementPool?.max_elements ?? {}) as Record<string, number>,
 		};
 	}
 }

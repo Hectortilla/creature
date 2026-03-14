@@ -51,7 +51,7 @@ class PlayerLeftData(BaseModel):
 class GameStartedData(BaseModel):
     """Data for game_started message."""
     success: bool
-    game_state: GameState
+    game_state: dict[str, Any]
     events: list[GameEventUnion]
     valid_actions: list[ValidActionSchema] = Field(default_factory=list)
 
@@ -68,7 +68,7 @@ class ActionResultData(BaseModel):
     events: list[GameEventUnion]
     game_over: bool
     winner_id: Optional[str] = None
-    game_state: Optional[GameState] = None
+    game_state: Optional[dict[str, Any]] = None
     valid_actions: list[ValidActionSchema] = Field(default_factory=list)
 
 

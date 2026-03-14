@@ -152,6 +152,31 @@ class GameState(GameBaseModel):
                         return p.player_id
         return None
 
+    _VISIBLE_OPPONENT_ZONES = {Zone.SUPPORTING, Zone.ATTACKING, Zone.GRAVEYARD}
+
+    def serialize_for_player(self, player_id: str) -> dict[str, Any]:
+        """Full game-state dict with per-player card visibility.
+
+        Own cards in every zone are included.  Opponent cards are included
+        only when in a public zone (SUPPORTING, ATTACKING, GRAVEYARD).
+        Opponent DECK/HAND card IDs remain in zone ``card_ids`` lists so the
+        frontend knows the count, but have no entry in ``cards``.
+        """
+        payload = self.model_dump(mode='json')
+
+        payload["players"] = {
+            pid: ps.model_dump(mode='json')
+            for pid, ps in self.room.players.items()
+        }
+
+        payload["cards"] = {
+            cid: card.model_dump(mode='json')
+            for cid, card in self.cards.items()
+            if card.owner_id == player_id or card.zone in self._VISIBLE_OPPONENT_ZONES
+        }
+
+        return payload
+
     def _setup_deck(self, player: PlayerState) -> None:
         """Setup a player's deck from card data."""
         for card in player.deck:

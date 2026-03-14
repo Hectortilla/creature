@@ -98,6 +98,11 @@
             },
             {
                 "enabled": true,
+                "key": "scripts/animation/AnimationManager.ts",
+                "_id": "b1f4a5c3-7e2d-4890-a1d6-3c8f9e0b2d4a"
+            },
+            {
+                "enabled": true,
                 "key": "scripts/interaction/InteractionManager.ts",
                 "_id": "902e5f14-a4c1-451a-b531-76a65d5e7997"
             },

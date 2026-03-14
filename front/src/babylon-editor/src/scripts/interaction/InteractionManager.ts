@@ -5,17 +5,20 @@ import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
 import { PointerEventTypes } from '@babylonjs/core/Events/pointerEvents';
 
 import GameConnection from '../game/GameConnection';
+import BoardController from '../BoardController';
 import { CardEntityManager } from '../entities/CardEntityManager';
 import type { CardEntity } from '../entities/CardEntity';
 import { CardVisualState } from '../game/models';
 import type { ValidAction } from '../game/types';
 import { ActionBuilder } from '../state/ActionBuilder';
+import type { ValidActionsChangedData } from '../state/events';
 
 const INTERACTABLE_OUTLINE_WIDTH = 0.01;
 const INTERACTABLE_OUTLINE_COLOR = { r: 0.5, g: 0.7, b: 0.3 };
 
 export default class InteractionManager implements IScript {
 	private _scene: Scene;
+	private _board!: BoardController;
 	private _cardManager!: CardEntityManager;
 	private _actionBuilder!: ActionBuilder;
 
@@ -38,20 +41,19 @@ export default class InteractionManager implements IScript {
 	// ====================================================================
 
 	public onStart(): void {
+		const board = BoardController.instance;
+		if (!board) throw new Error('InteractionManager: BoardController not initialized');
+		this._board = board;
+
 		const conn = GameConnection.instance;
 		if (!conn) throw new Error('InteractionManager: GameConnection not initialized');
 
-		const store = conn.getStateStore();
-		if (!store) throw new Error('InteractionManager: GameStateStore not initialized');
+		this._cardManager = CardEntityManager.getOrCreate(this._scene);
 
-		const cardManager = CardEntityManager.instance;
-		if (!cardManager) throw new Error('InteractionManager: CardEntityManager not initialized');
-		this._cardManager = cardManager;
-
-		this._actionBuilder = new ActionBuilder(store, conn);
+		this._actionBuilder = new ActionBuilder(conn);
 
 		this._pointerObserver = this._scene.onPointerObservable.add(this._handlePointer);
-		store.on('validActionsChanged', this._onValidActionsChanged);
+		board.on('validActionsChanged', this._onValidActionsChanged);
 	}
 
 	public onUpdate(): void {
@@ -99,7 +101,6 @@ export default class InteractionManager implements IScript {
 	private _updateHover(entity: CardEntity | null): void {
 		if (entity === this._hoveredEntity) return;
 
-		// Reset previous hover (but don't touch selected or target entities)
 		if (this._hoveredEntity && this._hoveredEntity !== this._selectedEntity
 			&& !this._targetIds.has(this._hoveredEntity.instanceId)) {
 			this._hoveredEntity.setVisualState(CardVisualState.IDLE);
@@ -184,7 +185,6 @@ export default class InteractionManager implements IScript {
 			return;
 		}
 
-		// Single or multiple instant actions — execute immediately (picker deferred to HUD step)
 		if (instant.length > 0) {
 			this._actionBuilder.execute(instant[0]);
 		}
@@ -218,7 +218,8 @@ export default class InteractionManager implements IScript {
 	// Highlights
 	// ====================================================================
 
-	private _onValidActionsChanged = (): void => {
+	private _onValidActionsChanged = (data: ValidActionsChangedData): void => {
+		this._actionBuilder.setValidActions(data.actions);
 		this._interactableIds = new Set(this._actionBuilder.getInteractableCardIds());
 		this._applyInteractableHighlights();
 	};

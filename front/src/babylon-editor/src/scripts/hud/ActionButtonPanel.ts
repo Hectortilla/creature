@@ -4,8 +4,8 @@ import { StackPanel } from '@babylonjs/gui/2D/controls/stackPanel';
 import { Button } from '@babylonjs/gui/2D/controls/button';
 import type { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 import type { ActionBuilder } from '../state/ActionBuilder';
-import type { GameStateStore } from '../state/GameStateStore';
-import type { ValidAction } from '../game/types';
+import type BoardController from '../BoardController';
+import type { ValidActionsChangedData } from '../state/events';
 
 const BG_COLOR = 'rgba(15, 10, 40, 0.7)';
 const BTN_COLOR = 'rgba(60, 60, 100, 0.9)';
@@ -20,12 +20,13 @@ export class ActionButtonPanel {
 	private _root: Rectangle;
 	private _passBtn: Button;
 	private _concedeBtn: Button;
-	private _stateStore: GameStateStore;
+	private _board: BoardController;
 	private _actionBuilder: ActionBuilder;
+	private _isMyTurn = false;
 	private _confirmingConcede = false;
 
-	constructor(gui: AdvancedDynamicTexture, stateStore: GameStateStore, actionBuilder: ActionBuilder) {
-		this._stateStore = stateStore;
+	constructor(gui: AdvancedDynamicTexture, board: BoardController, actionBuilder: ActionBuilder) {
+		this._board = board;
 		this._actionBuilder = actionBuilder;
 
 		this._root = new Rectangle('actionBtnPanel_root');
@@ -50,9 +51,9 @@ export class ActionButtonPanel {
 		this._passBtn = this._createButton(stack, 'btn_pass', 'Pass Phase', BTN_COLOR, () => this._onPass());
 		this._concedeBtn = this._createButton(stack, 'btn_concede', 'Concede', CONCEDE_COLOR, () => this._onConcede());
 
-		stateStore.on('validActionsChanged', this._onActionsChanged);
-		stateStore.on('phaseChanged', () => this._refresh());
-		stateStore.on('turnChanged', () => { this._confirmingConcede = false; this._refresh(); });
+		board.on('validActionsChanged', this._onActionsChanged);
+		board.on('phaseChanged', () => this._refresh());
+		board.on('turnChanged', () => { this._confirmingConcede = false; this._refresh(); });
 
 		this._refresh();
 	}
@@ -88,12 +89,14 @@ export class ActionButtonPanel {
 		return btn;
 	}
 
-	private _onActionsChanged = (): void => {
+	private _onActionsChanged = (data: ValidActionsChangedData): void => {
+		this._actionBuilder.setValidActions(data.actions);
+		this._isMyTurn = data.isMyTurn;
 		this._refresh();
 	};
 
 	private _refresh(): void {
-		const canPass = this._actionBuilder.canPass() && this._stateStore.isMyTurn;
+		const canPass = this._actionBuilder.canPass() && this._isMyTurn;
 		this._setButtonEnabled(this._passBtn, canPass, BTN_COLOR);
 
 		const canConcede = this._actionBuilder.canConcede();
@@ -130,7 +133,7 @@ export class ActionButtonPanel {
 	}
 
 	dispose(): void {
-		this._stateStore.off('validActionsChanged', this._onActionsChanged);
+		this._board.off('validActionsChanged', this._onActionsChanged);
 		this._root.dispose();
 	}
 }

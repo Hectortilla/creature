@@ -1,7 +1,8 @@
 import { Rectangle } from '@babylonjs/gui/2D/controls/rectangle';
 import { TextBlock } from '@babylonjs/gui/2D/controls/textBlock';
 import type { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
-import type { GameStateStore, TurnChangedData } from '../state/GameStateStore';
+import type BoardController from '../BoardController';
+import type { TurnChangedData } from '../state/events';
 
 const FADE_IN_MS = 200;
 const HOLD_MS = 1000;
@@ -14,12 +15,12 @@ const BACKDROP_COLOR = 'rgba(0, 0, 0, 0.5)';
 export class TurnBanner {
 	private _backdrop: Rectangle;
 	private _text: TextBlock;
-	private _stateStore: GameStateStore;
+	private _board: BoardController;
 	private _animTimer: ReturnType<typeof setTimeout> | null = null;
 	private _animFrame: ReturnType<typeof requestAnimationFrame> | null = null;
 
-	constructor(gui: AdvancedDynamicTexture, stateStore: GameStateStore) {
-		this._stateStore = stateStore;
+	constructor(gui: AdvancedDynamicTexture, board: BoardController) {
+		this._board = board;
 
 		this._backdrop = new Rectangle('turnBanner_backdrop');
 		this._backdrop.width = '500px';
@@ -40,12 +41,14 @@ export class TurnBanner {
 		this._text.isPointerBlocker = false;
 		this._backdrop.addControl(this._text);
 
-		stateStore.on('turnChanged', this._onTurnChanged);
+		board.on('turnChanged', this._onTurnChanged);
 	}
 
 	private _onTurnChanged = (data: TurnChangedData): void => {
-		const isMyTurn = data.playerId === this._stateStore.myPlayerId;
-		this._show(isMyTurn ? 'YOUR TURN' : "OPPONENT'S TURN", isMyTurn ? MY_TURN_COLOR : OPP_TURN_COLOR);
+		this._show(
+			data.isMyTurn ? 'YOUR TURN' : "OPPONENT'S TURN",
+			data.isMyTurn ? MY_TURN_COLOR : OPP_TURN_COLOR,
+		);
 	};
 
 	private _show(message: string, accentColor: string): void {
@@ -96,7 +99,7 @@ export class TurnBanner {
 
 	dispose(): void {
 		this._cancelAnimation();
-		this._stateStore.off('turnChanged', this._onTurnChanged);
+		this._board.off('turnChanged', this._onTurnChanged);
 		this._backdrop.dispose();
 	}
 }
