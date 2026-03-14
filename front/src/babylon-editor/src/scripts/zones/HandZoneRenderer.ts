@@ -4,12 +4,11 @@ import type { CardEntity } from '../entities/CardEntity';
 import type { Zone } from '../game/models';
 import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
 
-// Fan layout constants (extracted from HandCardsPosManager)
-const MAX_HAND_SIZE = 10;
-const HALF_SPREAD = 199.5; // (HAND_RIGHT - HAND_LEFT) / 2
+// Fan layout constants
+const MAX_TOTAL_WIDTH = 399; // maximum horizontal span for the hand
+const PREFERRED_CARD_SPACING = 100; // ideal gap between cards
 const ARC_HEIGHT = 80;
-const Z_ROT_LEFT = (-20 * Math.PI) / 180;
-const Z_ROT_RIGHT = (20 * Math.PI) / 180;
+const MAX_FAN_ANGLE = (20 * Math.PI) / 180; // max rotation at the edges
 const MAX_JITTER = 0.08;
 
 // Opponent compact layout
@@ -94,8 +93,13 @@ export class HandZoneRenderer implements ZoneRenderer {
 	private _fanLayout(n: number): CardTransform[] {
 		const base = this._anchor.getAbsolutePosition();
 		const baseRot = this._anchorRotation();
-		const spreadFactor = Math.min(n - 1, MAX_HAND_SIZE - 1) / (MAX_HAND_SIZE - 1);
-		const halfSpan = HALF_SPREAD * spreadFactor;
+
+		const desiredWidth = (n - 1) * PREFERRED_CARD_SPACING;
+		const actualWidth = Math.min(desiredWidth, MAX_TOTAL_WIDTH);
+		const halfSpan = actualWidth / 2;
+		// Scale arc and rotation proportionally to how spread out the cards are
+		const spreadRatio = n <= 1 ? 0 : actualWidth / MAX_TOTAL_WIDTH;
+
 		const result: CardTransform[] = [];
 
 		for (let i = 0; i < n; i++) {
@@ -104,12 +108,12 @@ export class HandZoneRenderer implements ZoneRenderer {
 			const archOffset = 1 - (2 * t - 1) ** 2;
 
 			const position = new Vector3(
-				base.x - halfSpan + t * halfSpan * 2,
-				base.y + archOffset * ARC_HEIGHT,
+				base.x - halfSpan + t * actualWidth,
+				base.y + archOffset * ARC_HEIGHT * spreadRatio,
 				base.z,
 			);
 
-			const fanAngle = Z_ROT_LEFT + t * (Z_ROT_RIGHT - Z_ROT_LEFT);
+			const fanAngle = (-MAX_FAN_ANGLE + t * 2 * MAX_FAN_ANGLE) * spreadRatio;
 			const rotation = baseRot
 				.clone()
 				.multiply(Quaternion.RotationAxis(Vector3.Up(), fanAngle + jitter))
