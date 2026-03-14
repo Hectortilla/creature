@@ -22,13 +22,11 @@ interface CardTransform {
 
 export class HandZoneRenderer implements ZoneRenderer {
 	readonly zone: Zone = 'HAND';
-	readonly ownerId: string;
 	private _anchor: TransformNode;
 	private _isLocalPlayer: boolean;
 	private _entities: CardEntity[] = [];
 
-	constructor(ownerId: string, anchorNode: TransformNode, isLocalPlayer: boolean) {
-		this.ownerId = ownerId;
+	constructor(anchorNode: TransformNode, isLocalPlayer: boolean) {
 		this._anchor = anchorNode;
 		this._isLocalPlayer = isLocalPlayer;
 	}

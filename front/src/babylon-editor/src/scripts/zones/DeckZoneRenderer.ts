@@ -10,12 +10,10 @@ const MAX_ROTATION_JITTER = 0.08;
 
 export class DeckZoneRenderer implements ZoneRenderer {
 	readonly zone: Zone = 'DECK';
-	readonly ownerId: string;
 	private _anchor: TransformNode;
 	private _entities: CardEntity[] = [];
 
-	constructor(ownerId: string, anchorNode: TransformNode) {
-		this.ownerId = ownerId;
+	constructor(anchorNode: TransformNode) {
 		this._anchor = anchorNode;
 	}
 

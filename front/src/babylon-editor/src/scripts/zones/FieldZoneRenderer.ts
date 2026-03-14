@@ -8,7 +8,6 @@ const DEFAULT_SLOT_SPACING = 100;
 
 export class FieldZoneRenderer implements ZoneRenderer {
 	readonly zone: Zone;
-	readonly ownerId: string;
 	private _anchor: TransformNode;
 	private _maxSlots: number;
 	private _slotSpacing: number;
@@ -16,14 +15,11 @@ export class FieldZoneRenderer implements ZoneRenderer {
 
 	constructor(
 		zone: Zone,
-		ownerId: string,
 		anchorNode: TransformNode,
 		maxSlots: number,
-		_isLocalPlayer: boolean,
 		slotSpacing: number = DEFAULT_SLOT_SPACING,
 	) {
 		this.zone = zone;
-		this.ownerId = ownerId;
 		this._anchor = anchorNode;
 		this._maxSlots = maxSlots;
 		this._slotSpacing = slotSpacing;

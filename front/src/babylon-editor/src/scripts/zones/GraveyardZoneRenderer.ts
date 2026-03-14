@@ -10,12 +10,10 @@ const PILE_Z_OFFSET = 3;
 
 export class GraveyardZoneRenderer implements ZoneRenderer {
 	readonly zone: Zone = 'GRAVEYARD';
-	readonly ownerId: string;
 	private _anchor: TransformNode;
 	private _entities: CardEntity[] = [];
 
-	constructor(ownerId: string, anchorNode: TransformNode) {
-		this.ownerId = ownerId;
+	constructor(anchorNode: TransformNode) {
 		this._anchor = anchorNode;
 	}
 

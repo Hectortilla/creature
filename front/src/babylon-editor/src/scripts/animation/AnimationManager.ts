@@ -50,6 +50,8 @@ const ZONE_ATTACKING = 'ATTACKING' as Zone;
 const ZONE_GRAVEYARD = 'GRAVEYARD' as Zone;
 
 export default class AnimationManager implements IScript {
+	static instance: AnimationManager | null = null;
+
 	private _board!: BoardController;
 	private _cardManager!: CardEntityManager;
 	private _animationPipeline!: AnimationPipeline;
@@ -76,7 +78,9 @@ export default class AnimationManager implements IScript {
 		this._cardManager = CardEntityManager.getOrCreate(this._scene);
 		this._cardManager.initBlueprints('UpsideUpCard_BP', 'UpsideDownCard_BP');
 		this._animationPipeline = new AnimationPipeline(this._scene);
+		this._initZoneRenderers();
 		this._subscribe();
+		AnimationManager.instance = this;
 	}
 
 	public onUpdate(): void {}
@@ -86,6 +90,7 @@ export default class AnimationManager implements IScript {
 		this._animationPipeline.dispose();
 		for (const renderer of this._zones.values()) renderer.dispose();
 		this._zones.clear();
+		AnimationManager.instance = null;
 	}
 
 	// ====================================================================
@@ -127,7 +132,6 @@ export default class AnimationManager implements IScript {
 	private _onGameStarted = (data: GameStartedEventData): void => {
 		this._myPlayerId = data.myPlayerId;
 		this._opponentId = data.opponentId;
-		this._initZoneRenderers();
 		this._buildBoard(data);
 		this._boardReady = true;
 	};
@@ -274,24 +278,25 @@ export default class AnimationManager implements IScript {
 		for (const renderer of this._zones.values()) renderer.dispose();
 		this._zones.clear();
 
-		const myId = this._myPlayerId;
-		const oppId = this._opponentId;
+		this._registerZone('my', ZONE_DECK, new DeckZoneRenderer(this._anchor('My_Deck_Anchor')));
+		this._registerZone('my', ZONE_HAND, new HandZoneRenderer(this._anchor('My_Hand_Anchor'), true));
+		this._registerZone('my', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, this._anchor('My_Supporting_Anchor'), 3));
+		this._registerZone('my', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, this._anchor('My_Attacking_Anchor'), 2));
+		this._registerZone('my', ZONE_GRAVEYARD, new GraveyardZoneRenderer(this._anchor('My_Graveyard_Anchor')));
 
-		this._registerZone('my', ZONE_DECK, new DeckZoneRenderer(myId, this._anchor('My_Deck_Anchor')));
-		this._registerZone('my', ZONE_HAND, new HandZoneRenderer(myId, this._anchor('My_Hand_Anchor'), true));
-		this._registerZone('my', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, myId, this._anchor('My_Supporting_Anchor'), 3, true));
-		this._registerZone('my', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, myId, this._anchor('My_Attacking_Anchor'), 2, true));
-		this._registerZone('my', ZONE_GRAVEYARD, new GraveyardZoneRenderer(myId, this._anchor('My_Graveyard_Anchor')));
-
-		this._registerZone('opp', ZONE_DECK, new DeckZoneRenderer(oppId, this._anchor('Opp_Deck_Anchor')));
-		this._registerZone('opp', ZONE_HAND, new HandZoneRenderer(oppId, this._anchor('Opp_Hand_Anchor'), false));
-		this._registerZone('opp', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, oppId, this._anchor('Opp_Supporting_Anchor'), 3, false));
-		this._registerZone('opp', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, oppId, this._anchor('Opp_Attacking_Anchor'), 2, false));
-		this._registerZone('opp', ZONE_GRAVEYARD, new GraveyardZoneRenderer(oppId, this._anchor('Opp_Graveyard_Anchor')));
+		this._registerZone('opp', ZONE_DECK, new DeckZoneRenderer(this._anchor('Opp_Deck_Anchor')));
+		this._registerZone('opp', ZONE_HAND, new HandZoneRenderer(this._anchor('Opp_Hand_Anchor'), false));
+		this._registerZone('opp', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, this._anchor('Opp_Supporting_Anchor'), 3));
+		this._registerZone('opp', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, this._anchor('Opp_Attacking_Anchor'), 2));
+		this._registerZone('opp', ZONE_GRAVEYARD, new GraveyardZoneRenderer(this._anchor('Opp_Graveyard_Anchor')));
 	}
 
 	private _registerZone(perspective: 'my' | 'opp', zone: Zone, renderer: ZoneRenderer): void {
 		this._zones.set(this._zoneKey(perspective, zone), renderer);
+	}
+
+	getMyRenderer(zone: Zone): ZoneRenderer | undefined {
+		return this._zones.get(this._zoneKey('my', zone));
 	}
 
 	private _anchor(name: string): TransformNode {

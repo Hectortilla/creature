@@ -6,7 +6,6 @@ export { animateTransform } from '../animation/utils';
 
 export interface ZoneRenderer {
 	readonly zone: Zone;
-	readonly ownerId: string;
 
 	addCard(entity: CardEntity, animate: boolean): Promise<void>;
 	removeCard(instanceId: string): void;

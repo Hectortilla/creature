@@ -1,5 +1,4 @@
 import type { Scene } from '@babylonjs/core/scene';
-import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 import { Rectangle } from '@babylonjs/gui/2D/controls/rectangle';
 import { StackPanel } from '@babylonjs/gui/2D/controls/stackPanel';
@@ -7,12 +6,22 @@ import { TextBlock } from '@babylonjs/gui/2D/controls/textBlock';
 import { Button } from '@babylonjs/gui/2D/controls/button';
 
 import { CardEntityManager } from '../entities/CardEntityManager';
-import { DeckZoneRenderer } from '../zones/DeckZoneRenderer';
 import type { CardEntity } from '../entities/CardEntity';
+import AnimationManager from '../animation/AnimationManager';
+import type { Zone } from '../game/models';
 import { createDummyCard, resetDummyCardIndex } from './dummyCards';
 
-const DEV_OWNER = 'dev-tool';
 const DECK_SIZE = 22;
+const FILL_DELAY_MS = 100;
+const FACE_DOWN_ZONES: ReadonlySet<Zone> = new Set<Zone>(['DECK']);
+
+const ZONE_BUTTONS: { zone: Zone; label: string }[] = [
+	{ zone: 'DECK', label: 'Add to Deck' },
+	{ zone: 'HAND', label: 'Add to Hand' },
+	{ zone: 'SUPPORTING', label: 'Add to Supporting' },
+	{ zone: 'ATTACKING', label: 'Add to Attacking' },
+	{ zone: 'GRAVEYARD', label: 'Add to Graveyard' },
+];
 
 const COLORS = {
 	bg: 'rgba(15, 10, 40, 0.85)',
@@ -27,8 +36,6 @@ const COLORS = {
 export class DevToolPanel {
 	private _scene: Scene;
 	private _cardManager: CardEntityManager;
-	private _deckAnchor: TransformNode;
-	private _deckRenderer: DeckZoneRenderer;
 	private _devEntities: CardEntity[] = [];
 
 	private _guiTexture: AdvancedDynamicTexture | null = null;
@@ -39,36 +46,35 @@ export class DevToolPanel {
 		this._scene = scene;
 		this._cardManager = CardEntityManager.getOrCreate(scene);
 		this._cardManager.initBlueprints('UpsideUpCard_BP', 'UpsideDownCard_BP');
-
-		const anchor = scene.getTransformNodeByName('My_Deck_Anchor');
-		if (!anchor) throw new Error('DevToolPanel: My_Deck_Anchor not found in scene');
-		this._deckAnchor = anchor;
-		this._deckRenderer = new DeckZoneRenderer(DEV_OWNER, this._deckAnchor);
 	}
 
 	// ── Actions ──────────────────────────────────────────────────────
 
-	private async _addCardToDeck(): Promise<void> {
-		const entity = this._cardManager.createEntity(createDummyCard(), false);
+	private async _addCard(zone: Zone): Promise<void> {
+		const renderer = AnimationManager.instance?.getMyRenderer(zone);
+		if (!renderer) {
+			console.warn(`DevToolPanel: no renderer for zone ${zone} (is a game running?)`);
+			return;
+		}
+		const faceUp = !FACE_DOWN_ZONES.has(zone);
+		const entity = this._cardManager.createEntity(createDummyCard(zone), faceUp);
 		this._devEntities.push(entity);
-		await this._deckRenderer.addCard(entity, true);
+		await renderer.addCard(entity, true);
 	}
 
-	private _fillDeck(): void {
-		for (let i = 0; i < DECK_SIZE; i++) {
-			setTimeout(() => {
-				this._addCardToDeck();
-			}, i * 100);
+	private _fillZone(zone: Zone, count: number): void {
+		for (let i = 0; i < count; i++) {
+			setTimeout(() => this._addCard(zone), i * FILL_DELAY_MS);
 		}
 	}
 
 	private _clearDevCards(): void {
+		const anim = AnimationManager.instance;
 		for (const entity of this._devEntities) {
+			anim?.getMyRenderer(entity.zone)?.removeCard(entity.instanceId);
 			this._cardManager.destroyEntity(entity.instanceId);
 		}
 		this._devEntities = [];
-		this._deckRenderer.dispose();
-		this._deckRenderer = new DeckZoneRenderer(DEV_OWNER, this._deckAnchor);
 		resetDummyCardIndex();
 	}
 
@@ -113,8 +119,10 @@ export class DevToolPanel {
 		title.paddingBottom = '4px';
 		stack.addControl(title);
 
-		this._addButton(stack, 'Add Card to Deck', COLORS.btn, COLORS.btnHover, () => this._addCardToDeck());
-		this._addButton(stack, `Fill Deck (${DECK_SIZE})`, COLORS.btn, COLORS.btnHover, () => this._fillDeck());
+		for (const { zone, label } of ZONE_BUTTONS) {
+			this._addButton(stack, label, COLORS.btn, COLORS.btnHover, () => this._addCard(zone));
+		}
+		this._addButton(stack, `Fill Deck (${DECK_SIZE})`, COLORS.btn, COLORS.btnHover, () => this._fillZone('DECK', DECK_SIZE));
 		this._addButton(stack, 'Clear Dev Cards', COLORS.danger, COLORS.dangerHover, () => this._clearDevCards());
 
 		this._root = this._createPanel(stack);
