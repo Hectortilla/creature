@@ -308,6 +308,10 @@ export default class AnimationManager implements IScript {
 		return this._zones.get(this._zoneKey('my', zone));
 	}
 
+	getOppRenderer(zone: Zone): ZoneRenderer | undefined {
+		return this._zones.get(this._zoneKey('opp', zone));
+	}
+
 	private _anchor(name: string): TransformNode {
 		const node = this._scene.getTransformNodeByName(name);
 		if (!node) throw new Error(`AnimationManager: missing required anchor node "${name}" in scene`);

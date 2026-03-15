@@ -15,12 +15,14 @@ const DECK_SIZE = 22;
 const FILL_DELAY_MS = 100;
 const FACE_DOWN_ZONES: ReadonlySet<Zone> = new Set<Zone>(['DECK']);
 
+type Perspective = 'my' | 'opp';
+
 const ZONE_BUTTONS: { zone: Zone; label: string }[] = [
-	{ zone: 'DECK', label: 'Add to Deck' },
-	{ zone: 'HAND', label: 'Add to Hand' },
-	{ zone: 'SUPPORTING', label: 'Add to Supporting' },
-	{ zone: 'ATTACKING', label: 'Add to Attacking' },
-	{ zone: 'GRAVEYARD', label: 'Add to Graveyard' },
+	{ zone: 'DECK', label: 'Deck' },
+	{ zone: 'HAND', label: 'Hand' },
+	{ zone: 'SUPPORTING', label: 'Supporting' },
+	{ zone: 'ATTACKING', label: 'Attacking' },
+	{ zone: 'GRAVEYARD', label: 'Graveyard' },
 ];
 
 const COLORS = {
@@ -50,10 +52,15 @@ export class DevToolPanel {
 
 	// ── Actions ──────────────────────────────────────────────────────
 
-	private async _addCard(zone: Zone): Promise<void> {
-		const renderer = AnimationManager.instance?.getMyRenderer(zone);
+	private _getRenderer(perspective: Perspective, zone: Zone) {
+		const anim = AnimationManager.instance;
+		return perspective === 'my' ? anim?.getMyRenderer(zone) : anim?.getOppRenderer(zone);
+	}
+
+	private async _addCard(perspective: Perspective, zone: Zone): Promise<void> {
+		const renderer = this._getRenderer(perspective, zone);
 		if (!renderer) {
-			console.warn(`DevToolPanel: no renderer for zone ${zone} (is a game running?)`);
+			console.warn(`DevToolPanel: no renderer for ${perspective}/${zone} (is a game running?)`);
 			return;
 		}
 		const faceUp = !FACE_DOWN_ZONES.has(zone);
@@ -62,9 +69,9 @@ export class DevToolPanel {
 		await renderer.addCard(entity, true);
 	}
 
-	private _fillZone(zone: Zone, count: number): void {
+	private _fillZone(perspective: Perspective, zone: Zone, count: number): void {
 		for (let i = 0; i < count; i++) {
-			setTimeout(() => this._addCard(zone), i * FILL_DELAY_MS);
+			setTimeout(() => this._addCard(perspective, zone), i * FILL_DELAY_MS);
 		}
 	}
 
@@ -72,6 +79,7 @@ export class DevToolPanel {
 		const anim = AnimationManager.instance;
 		for (const entity of this._devEntities) {
 			anim?.getMyRenderer(entity.zone)?.removeCard(entity.instanceId);
+			anim?.getOppRenderer(entity.zone)?.removeCard(entity.instanceId);
 			this._cardManager.destroyEntity(entity.instanceId);
 		}
 		this._devEntities = [];
@@ -119,10 +127,9 @@ export class DevToolPanel {
 		title.paddingBottom = '4px';
 		stack.addControl(title);
 
-		for (const { zone, label } of ZONE_BUTTONS) {
-			this._addButton(stack, label, COLORS.btn, COLORS.btnHover, () => this._addCard(zone));
-		}
-		this._addButton(stack, `Fill Deck (${DECK_SIZE})`, COLORS.btn, COLORS.btnHover, () => this._fillZone('DECK', DECK_SIZE));
+		this._addSectionButtons(stack, 'My', 'my');
+		this._addSectionButtons(stack, 'Opponent', 'opp');
+
 		this._addButton(stack, 'Clear Dev Cards', COLORS.danger, COLORS.dangerHover, () => this._clearDevCards());
 
 		this._root = this._createPanel(stack);
@@ -145,6 +152,20 @@ export class DevToolPanel {
 		panel.isPointerBlocker = false;
 		panel.addControl(content);
 		return panel;
+	}
+
+	private _addSectionButtons(parent: StackPanel, title: string, perspective: Perspective): void {
+		const header = new TextBlock(`devTool_${perspective}_title`, `── ${title} ──`);
+		header.color = COLORS.title;
+		header.fontSize = 11;
+		header.height = '22px';
+		header.paddingTop = '6px';
+		parent.addControl(header);
+
+		for (const { zone, label } of ZONE_BUTTONS) {
+			this._addButton(parent, `${label}`, COLORS.btn, COLORS.btnHover, () => this._addCard(perspective, zone));
+		}
+		this._addButton(parent, `Fill Deck (${DECK_SIZE})`, COLORS.btn, COLORS.btnHover, () => this._fillZone(perspective, 'DECK', DECK_SIZE));
 	}
 
 	private _addButton(parent: StackPanel, label: string, bg: string, hover: string, onClick: () => void): void {
