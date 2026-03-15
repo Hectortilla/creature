@@ -227,9 +227,11 @@ export default class BoardController implements IScript {
 	}
 
 	private _handleCardPlayed(raw: Record<string, unknown>): void {
+		const instanceId = raw.instance_id as string;
+		const playerId = raw.player_id as string;
+		this._ensureCardEntity(instanceId);
 		this._emit('cardMoved', {
-			instanceId: raw.instance_id as string,
-			ownerId: raw.player_id as string,
+			instanceId, ownerId: playerId,
 			fromZone: 'HAND' as Zone,
 			toZone: 'SUPPORTING' as Zone,
 		});
@@ -265,8 +267,10 @@ export default class BoardController implements IScript {
 		const sourceZone = (raw.source_zone as Zone) ?? null;
 
 		if (sourceZone) {
+			const associationCardId = raw.association_card_id as string;
+			this._ensureCardEntity(associationCardId);
 			this._emit('cardMoved', {
-				instanceId: raw.association_card_id as string,
+				instanceId: associationCardId,
 				ownerId: raw.player_id as string,
 				fromZone: sourceZone,
 				toZone: 'SUPPORTING' as Zone,
@@ -440,6 +444,16 @@ export default class BoardController implements IScript {
 				maxElements: myPlayer?.elementPool?.max_elements ?? {},
 			},
 		};
+	}
+
+	/**
+	 * If no card entity exists yet for `instanceId`, look it up in the
+	 * state store (which already has it after applyServerState) and emit
+	 * `cardAdded` so AnimationManager creates the mesh.
+	 */
+	private _ensureCardEntity(instanceId: string): void {
+		const card = this._stateStore.getCard(instanceId);
+		if (card) this._emit('cardAdded', card);
 	}
 
 	private _getPlayerPool(playerId: string): { elements: Record<string, number>; maxElements: Record<string, number> } {

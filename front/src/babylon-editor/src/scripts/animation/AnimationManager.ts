@@ -161,7 +161,16 @@ export default class AnimationManager implements IScript {
 		if (!destRenderer) return;
 
 		const wasInRenderer = this._rendererContains(sourceRenderer, data.instanceId);
-		if (wasInRenderer) sourceRenderer!.removeCard(data.instanceId);
+		if (wasInRenderer) {
+			sourceRenderer!.removeCard(data.instanceId);
+		} else if (data.fromZone === ZONE_HAND && !this._isMine(data.ownerId) && sourceRenderer) {
+			// Opponent card revealed — remove one face-down placeholder from hand
+			const placeholder = sourceRenderer.getEntities().at(-1);
+			if (placeholder) {
+				sourceRenderer.removeCard(placeholder.instanceId);
+				this._cardManager.destroyEntity(placeholder.instanceId);
+			}
+		}
 
 		const from = wasInRenderer
 			? entity.mesh.position.clone()
