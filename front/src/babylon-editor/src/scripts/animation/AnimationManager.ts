@@ -288,13 +288,13 @@ export default class AnimationManager implements IScript {
 		this._zones.clear();
 
 		this._registerZone('my', ZONE_DECK, new DeckZoneRenderer(this._anchor('My_Deck_Anchor')));
-		this._registerZone('my', ZONE_HAND, new HandZoneRenderer(this._anchor('My_Hand_Anchor'), true));
+		this._registerZone('my', ZONE_HAND, new HandZoneRenderer(this._anchor('My_Hand_Anchor')));
 		this._registerZone('my', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, this._anchor('My_Supporting_Anchor'), 3));
 		this._registerZone('my', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, this._anchor('My_Attacking_Anchor'), 2));
 		this._registerZone('my', ZONE_GRAVEYARD, new GraveyardZoneRenderer(this._anchor('My_Graveyard_Anchor')));
 
 		this._registerZone('opp', ZONE_DECK, new DeckZoneRenderer(this._anchor('Opp_Deck_Anchor')));
-		this._registerZone('opp', ZONE_HAND, new HandZoneRenderer(this._anchor('Opp_Hand_Anchor'), false));
+		this._registerZone('opp', ZONE_HAND, new HandZoneRenderer(this._anchor('Opp_Hand_Anchor')));
 		this._registerZone('opp', ZONE_SUPPORTING, new FieldZoneRenderer(ZONE_SUPPORTING, this._anchor('Opp_Supporting_Anchor'), 3));
 		this._registerZone('opp', ZONE_ATTACKING, new FieldZoneRenderer(ZONE_ATTACKING, this._anchor('Opp_Attacking_Anchor'), 2));
 		this._registerZone('opp', ZONE_GRAVEYARD, new GraveyardZoneRenderer(this._anchor('Opp_Graveyard_Anchor')));

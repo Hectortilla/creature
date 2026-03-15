@@ -4,7 +4,7 @@ import type { CardEntity } from '../entities/CardEntity';
 import type { Zone } from '../game/models';
 import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
 
-const DEFAULT_SLOT_SPACING = 100;
+const DEFAULT_SLOT_SPACING = 150;
 
 export class FieldZoneRenderer implements ZoneRenderer {
 	readonly zone: Zone;

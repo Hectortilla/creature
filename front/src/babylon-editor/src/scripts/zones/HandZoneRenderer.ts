@@ -5,14 +5,12 @@ import type { Zone } from '../game/models';
 import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
 
 // Fan layout constants
-const MAX_TOTAL_WIDTH = 399; // maximum horizontal span for the hand
-const PREFERRED_CARD_SPACING = 100; // ideal gap between cards
+const MAX_TOTAL_WIDTH = 399;
+const PREFERRED_CARD_SPACING = 100;
 const ARC_HEIGHT = 80;
-const MAX_FAN_ANGLE = (20 * Math.PI) / 180; // max rotation at the edges
+const MAX_FAN_ANGLE = (20 * Math.PI) / 180;
 const MAX_JITTER = 0.08;
 
-// Opponent compact layout
-const OPP_CARD_SPACING = 20;
 
 interface CardTransform {
 	position: Vector3;
@@ -22,12 +20,10 @@ interface CardTransform {
 export class HandZoneRenderer implements ZoneRenderer {
 	readonly zone: Zone = 'HAND';
 	private _anchor: TransformNode;
-	private _isLocalPlayer: boolean;
 	private _entities: CardEntity[] = [];
 
-	constructor(anchorNode: TransformNode, isLocalPlayer: boolean) {
+	constructor(anchorNode: TransformNode) {
 		this._anchor = anchorNode;
-		this._isLocalPlayer = isLocalPlayer;
 	}
 
 	async addCard(entity: CardEntity, animate: boolean): Promise<void> {
@@ -44,9 +40,7 @@ export class HandZoneRenderer implements ZoneRenderer {
 		const n = this._entities.length;
 		if (n === 0) return;
 
-		const transforms = this._isLocalPlayer
-			? this._fanLayout(n)
-			: this._compactLayout(n);
+		const transforms = this._fanLayout(n);
 
 		await Promise.all(
 			this._entities.map((entity, i) => {
@@ -97,7 +91,6 @@ export class HandZoneRenderer implements ZoneRenderer {
 		const desiredWidth = (n - 1) * PREFERRED_CARD_SPACING;
 		const actualWidth = Math.min(desiredWidth, MAX_TOTAL_WIDTH);
 		const halfSpan = actualWidth / 2;
-		// Scale arc and rotation proportionally to how spread out the cards are
 		const spreadRatio = n <= 1 ? 0 : actualWidth / MAX_TOTAL_WIDTH;
 
 		const result: CardTransform[] = [];
@@ -121,24 +114,6 @@ export class HandZoneRenderer implements ZoneRenderer {
 				.multiply(Quaternion.RotationAxis(Vector3.Right(), jitter / 4));
 
 			result.push({ position, rotation });
-		}
-
-		return result;
-	}
-
-	private _compactLayout(n: number): CardTransform[] {
-		const base = this._anchor.getAbsolutePosition();
-		const baseRot = this._anchorRotation();
-		const totalWidth = (n - 1) * OPP_CARD_SPACING;
-		const result: CardTransform[] = [];
-
-		for (let i = 0; i < n; i++) {
-			const position = new Vector3(
-				base.x - totalWidth / 2 + i * OPP_CARD_SPACING,
-				base.y,
-				base.z,
-			);
-			result.push({ position, rotation: baseRot.clone() });
 		}
 
 		return result;
