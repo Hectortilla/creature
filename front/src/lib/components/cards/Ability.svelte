@@ -5,8 +5,8 @@
     import NarrativeText from '$lib/components/NarrativeText.svelte';
 
     // Icons
-    import physical from "$lib/icons/physical-type.svg?raw";
-    import magical from "$lib/icons/magical-type.svg?raw";
+    import physical from "$lib/assets/icons/physical-type.svg?raw";
+    import magical from "$lib/assets/icons/magical-type.svg?raw";
 
     // Tipado de props
     type IconName =

@@ -8,7 +8,7 @@
     import Icon from "$lib/components/creature/Icon.svelte";
 
     // Icons
-    import arrowIcon from "$lib/icons/arrow.svg?raw";
+    import arrowIcon from "$lib/assets/icons/arrow.svg?raw";
 
     interface Props {
         label: string;
@@ -162,9 +162,9 @@
 </div>
 
 <style lang="scss">
-    @use "$lib/styles/abstracts/variables" as variables;
-    @use "$lib/styles/abstracts/mixins" as mixins;
-	@use "$lib/styles/abstracts/functions" as functions;
+    @use "../../styles/abstracts/variables" as variables;
+    @use "../../styles/abstracts/mixins" as mixins;
+	@use "../../styles/abstracts/functions" as functions;
 
     .input-container {
         width: functions.rem(180);

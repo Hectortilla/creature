@@ -1,0 +1,83 @@
+@use "sass:map";
+@use "../../abstracts/variables" as *;
+@use "../../abstracts/functions" as *;
+
+.theme-toxico {
+    //-- Base colors
+    --color-background: #{color(toxic, 200, 18%, 9%)};
+    --color-text: #{color(toxic, 100, 30%, 90%)};
+
+    //-- Nav colors
+    --color-nav-active-background: #{color(toxic, 100, 4%, 28%, .2)};
+    --color-nav-active-light-top: #{color(toxic, 100, 100%, 80%, .6)};
+    --color-nav-active-light-bottom: #{color(toxic, 200, 30%, 60%, .2)};
+    --color-nav-active-text-shadow: #{color(toxic, 200, 26%, 18%)};
+    --color-nav-active-point-light: #{color(toxic, 100, 100%, 60%)};
+
+    //-- Input colors
+    --color-input-border: #{color(toxic, 100, 80%, 30%)};
+    --color-input-text: #{color(toxic, 100, 30%, 90%)};
+    --color-input-button-background: #{color(toxic, 100, 80%, 20%)};
+    --color-input-label: #{color(toxic, 100, 20%, 70%, .8)};
+    --color-input-button-light-top: #{color(toxic, 100, 80%, 80%)};
+    --color-input-button-light-bottom: #{color(toxic, 200, 40%, 20%, .8)};
+    --color-input-placeholder: #{color(toxic, 100, 10%, 40%)};
+    --color-input-text-error: #{color(semantic, error, 80%, 50%)};
+    --color-input-text-warning: #{color(toxic, 100, 30%, 60%)};
+    --color-input-text-max: #{color(toxic, 200, 80%, 50%)};
+    --color-input-search-background: #{color(toxic, 200, 10%, 20%, .84)};
+
+    //-- Button
+    --color-button-primary-background: #{color(toxic, 100, 80%, 50%)};
+    --color-button-primary-text: #{color(toxic, 100, 80%, 10%)};
+    --color-button-secondary-background: #{color(toxic, 100, 80%, 10%)};
+
+    //-- Pop in
+    --color-pop-in-background: #{color(toxic, 100, 4%, 28%, .2)};
+
+    //-- Creature Card
+    --color-creature-foreground: #{color(toxic, 100, 30%, 90%)};
+    --color-creature-card-light-top: #{color(toxic, 100, 80%, 80%, .2)};
+    --color-creature-card-light-bottom: #{color(toxic, 200, 20%, 30%, .4)};
+    --color-creature-card-light-top-hover: #{color(toxic, 100, 80%, 80%, .4)};
+    --color-creature-card-light-bottom-hover: #{color(toxic, 200, 30%, 40%, .4)};
+    --color-creature-card-reflection-one: #{color(toxic, 100, 30%, 90%, .4)};
+    --color-creature-card-reflection-two: #{color(toxic, 100, 30%, 90%, .2)};
+    // Code
+    --color-creature-code-background-gradient-0: #{color(base, 200, 20%, 20%)};
+    --color-creature-code-background-gradient-50: #{color(base, 100, 60%, 30%)};
+    --color-creature-code-background-gradient-100: #{color(base, 100, 40%, 20%)};
+    --color-creature-code-light-top: #{color(base, 100, 80%, 100%)};
+    --color-creature-code-light-bottom: #{color(base, 200, 20%, 30%, .8)};
+    --color-creature-code-text-shadow: #{color(base, 200, 10%, 5%, .6)};
+    // Evolution
+    --color-creature-evolution-background-gradient-0: #{color(base, 100, 60%, 44%)};
+    --color-creature-evolution-background-gradient-50: #{color(base, 100, 60%, 28%)};
+    --color-creature-evolution-background-gradient-100: #{color(base, 100, 60%, 44%)};
+    --color-creature-evolution-icon: #{color(base, 100, 60%, 90%)};
+    --color-creature-evolution-text-shadow: #{color(base, 100, 2%, 2%, .8)};
+    // Classification
+    --color-creature-classification-background-gradient-0: #{color(base, 100, 60%, 44%)};
+    --color-creature-classification-background-gradient-50: #{color(base, 100, 60%, 28%)};
+    --color-creature-classification-background-gradient-100: #{color(base, 100, 60%, 44%)};
+    --color-creature-classification-icon: #{color(base, 100, 60%, 90%)};
+    --color-creature-classification-text-shadow: #{color(base, 100, 2%, 2%, .8)};
+    --color-creature-classification-light-top: #{color(base, 100, 80%, 100%)};
+    --color-creature-classification-light-bottom: #{color(base, 200, 20%, 30%, .8)};
+    // Loader
+    --color-creature-loader-background: #{color(toxic, 200, 40%, 20%, 1)};
+    --color-creature-loader-spinner: #{color(toxic, 200, 40%, 60%, 1)};
+
+    //-- Divider
+    --color-divider-bar: #{color(toxic, 200, 10%, 18%)};
+    --color-divider-text: #{color(toxic, 200, 10%, 60%)};
+
+    // Card
+    --color-card-background: #{color(toxic, 100, 80%, 10%)};
+    --color-effect-text: #{color(toxic, 100, 30%, 90%, .8)};
+
+    // Force
+    --color-force-background: #{color(toxic, 100, 60%, 38%)};
+    --color-force-foreground: #{color(toxic, 100, 0%, 90%)};
+    --color-forces-border: #{color(toxic, 100, 60%, 38%)};
+}

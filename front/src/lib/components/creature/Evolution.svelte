@@ -1,6 +1,6 @@
 <script lang="ts">
     // Icons
-    import evolutionIcon from "$lib/icons/evolution.svg?raw"
+    import evolutionIcon from "$lib/assets/icons/evolution.svg?raw"
 
     interface PageProps {
         evolutionCode: number | null,

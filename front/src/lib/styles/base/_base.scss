@@ -5,25 +5,39 @@
 
 html,
 body {
-    font-family: variables.$font-main;
-    font-weight: 400;
+    position: relative;
     text-rendering: geometricPrecision;
-    padding-bottom: functions.rem(40);
+    padding: 0;
     margin: 0;
-    background-color: var(--color-background);
     color: var(--color-text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--color-background);
+
+    @include mixins.fontProps("main", 400, 85, normal);
 
     &.no-scroll {
         overflow-y: hidden;
     }
+
+    &::-webkit-scrollbar {
+        width: 0;
+    }
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: var(--color-background);
+    z-index: -1;
 }
 
 * {
     box-sizing: border-box;
-}
-
-body {
-    text-rendering: geometricPrecision;
 }
 
 svg {

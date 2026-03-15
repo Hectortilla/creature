@@ -3,8 +3,8 @@
     import { fade } from "svelte/transition"
 
     // Icons
-    import searchIcon from "$lib/icons/search.svg?raw"
-    import refreshIcon from "$lib/icons/refresh.svg?raw"
+    import searchIcon from "$lib/assets/icons/search.svg?raw"
+    import refreshIcon from "$lib/assets/icons/refresh.svg?raw"
 
     interface Props {
         placeholder: string,
@@ -47,12 +47,13 @@
 </div>
 
 <style lang="scss">
-    @use "$lib/styles/abstracts/variables" as variables;
-    @use "$lib/styles/abstracts/mixins" as mixins;
-	@use "$lib/styles/abstracts/functions" as functions;
+    @use "../../styles/abstracts/variables" as variables;
+    @use "../../styles/abstracts/mixins" as mixins;
+	@use "../../styles/abstracts/functions" as functions;
 
     .input-wrapper {
         $padding-reset: functions.rem(6);
+        $padding-serach-icon: functions.rem(4);
 
         position: relative;
         flex: 1;
@@ -86,11 +87,12 @@
 
         .icon-search {
             position: absolute;
-            top: $padding-reset;
-            left: $padding-reset;
-            width: calc(functions.rem(variables.$input-height) - ($padding-reset * 2));
-            height: calc(functions.rem(variables.$input-height) - ($padding-reset * 2));
+            top: $padding-serach-icon;
+            left: $padding-serach-icon;
+            width: calc(functions.rem(variables.$input-height) - ($padding-serach-icon * 2));
+            height: calc(functions.rem(variables.$input-height) - ($padding-serach-icon * 2));
             padding: functions.rem(10);
+            color: var(--color-highlight);
             z-index: 1;
             pointer-events: none;
         }
@@ -102,6 +104,7 @@
             width: calc(functions.rem(variables.$input-height) - ($padding-reset * 2));
             height: calc(functions.rem(variables.$input-height) - ($padding-reset * 2));
             padding: functions.rem(10);
+            color: var(--color-highlight);
             border-radius: calc(functions.rem(variables.$input-radius) - $padding-reset);
             cursor: pointer;
             will-change: opacity, box-shadow;
@@ -111,9 +114,6 @@
             &:hover {
                 background-color: var(--color-input-button-background);
                 color: var(--color-input-button-light-top);
-                box-shadow:
-                    0 functions.rem(2) functions.rem(4) functions.rem(-2) var(--color-input-button-light-top) inset,
-                    0 functions.rem(-2) functions.rem(6) functions.rem(1) var(--color-input-button-light-bottom) inset;
             }
         }
     }

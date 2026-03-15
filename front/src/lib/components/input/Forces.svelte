@@ -8,7 +8,7 @@
     import Button from "$lib/components/Button.svelte"
 
     // Icons
-    import closeIcon from "$lib/icons/plus.svg?raw";
+    import closeIcon from "$lib/assets/icons/plus.svg?raw";
 
     interface Forces {
         element: number;

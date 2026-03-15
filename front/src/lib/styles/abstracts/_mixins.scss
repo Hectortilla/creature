@@ -2,6 +2,21 @@
 @use "variables";
 @use "functions";
 
+/// Font Properties
+@mixin fontProps($fontType: "main", $fontWeight: 400, $fontWidth: 100, $fontStyle: normal) {
+    & {
+        @if($fontType == "title") {
+            font-family: variables.$font-title;
+            line-height: 120%;
+        } @else {
+            font-family: variables.$font-main;
+        }
+        font-weight: $fontWeight;
+        font-variation-settings: "wdth" $fontWidth;
+        font-style: $fontStyle;
+    }
+}
+
 /// Display flex
 @mixin displayFlex(
     $flexDirection: column,
@@ -21,10 +36,25 @@
 }
 
 /// Transition default
-@mixin transition($time: 0.4s, $property: all) {
+@mixin transition($time: 0.4s, $property: all, $delay: 0s) {
     & {
-        transition: $property $time cubic-bezier(0.3, 0.45, 0.44, 1);
+        transition: $property $time cubic-bezier(0.3, 0.45, 0.44, 1) $delay;
     }
+}
+
+@mixin isCardLoaded($index: 1){
+    & {
+        opacity: 0;
+        transform: translateY(20%) rotate3d(1, 1, 0, 45deg);
+
+        @include transition(.6s, all, calc(.08s * $index));
+
+        &.is-loaded {
+            transform: translateY(0) rotate3d(0, 0, 0, 0);
+            opacity: 1;
+        }
+    }
+    
 }
 
 /// Margins
@@ -37,5 +67,22 @@
     @media (max-width: 600px) {
         padding-left: functions.rem(variables.$margin-page-mobile);
         padding-right: functions.rem(variables.$margin-page-mobile);
+    }
+}
+
+/// Stylished text
+@mixin stylishedText($bevelSize: 1px) {
+    & {
+        background: var(--color-stylished-gradient-text);
+
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        -moz-background-clip: text;
+        -moz-text-fill-color: transparent;
+
+        background-clip: text;
+        color: transparent;
+
+        filter: drop-shadow(0 calc($bevelSize * -1) 0 white);
     }
 }

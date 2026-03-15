@@ -1,0 +1,218 @@
+<script lang="ts">
+    import { onMount, onDestroy } from "svelte";
+    import { fade } from "svelte/transition";
+    import type { Snippet } from "svelte";
+
+    // Constants
+    import { FONT_BASE_SIZE } from "$lib/constants";
+
+    interface Props {
+        gap?: number;
+        margin?: number;
+        top?: number;
+        smoothFactor?: number;
+        showScrollReference?: boolean;
+        height?: number | null;
+        scrollVelocity?: number;
+        itemsLength?: number;
+        children?: Snippet;
+    }
+
+    let {
+        gap = 100,
+        margin = 120,
+        top = 0,
+        smoothFactor = 1,
+        showScrollReference = true,
+        height = null,
+        itemsLength = 0,
+        children,
+        scrollVelocity = $bindable(0)
+    }: Props = $props();
+
+    const TRACK_WIDTH = 100;
+
+    let container: HTMLDivElement;
+    let wrapper: HTMLDivElement;
+    let targetScroll = 0;
+    let scrollLeft = $state(0);
+    let smoothFactorMix = $derived(smoothFactor / 10);
+    let containerWidth = $state(0);
+    let wrapperWidth = $state(0);
+    let scrollPercent = $state(0);
+    let barWidth = $state(0)
+    let refBarIsLoaded = $state(false);
+    let cardsAreLoaded = $state(false);
+    let resizeObserver: ResizeObserver;
+
+    function handleWheel(e: WheelEvent) {
+        e.preventDefault();
+
+        build();
+        const maxScroll = wrapperWidth - containerWidth;
+
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+        targetScroll -= delta;
+
+        if (targetScroll < -maxScroll) targetScroll = -maxScroll;
+        if (targetScroll > 0) targetScroll = 0;
+    }
+
+    function animate() {
+        const diff = targetScroll - scrollLeft;
+
+        if (Math.abs(diff) < 0.1) {
+            scrollLeft = targetScroll;
+            scrollVelocity = 0;
+        } else {
+            const movement = diff * smoothFactorMix;
+
+            scrollLeft += movement;
+            scrollVelocity = movement;
+        }
+
+        const maxScroll = wrapperWidth - containerWidth;
+        scrollPercent = maxScroll ? -scrollLeft / maxScroll : 0;
+
+        requestAnimationFrame(animate);
+    }
+
+    function build() {
+        if (!container || !wrapper) return;
+
+        containerWidth = container.getBoundingClientRect().width;
+        wrapperWidth = wrapper.getBoundingClientRect().width;
+        barWidth = wrapperWidth ? (containerWidth / wrapperWidth) * 100 : 0;
+    }
+
+    $effect(() => {
+        itemsLength;
+        build();
+    });
+
+    onMount(() => {
+        setTimeout(() => {
+            build();
+            refBarIsLoaded = true;
+        }, 200)
+
+        resizeObserver = new ResizeObserver(() => {
+            build();
+        });
+
+        animate();
+    });
+
+    onDestroy(() => {
+        resizeObserver?.disconnect();
+        containerWidth = 0;
+        wrapperWidth = 0;
+        barWidth = 0;
+    });
+
+</script>
+
+<div
+    class="horizontal-scroll"
+    style={`height:${height ? height/FONT_BASE_SIZE + 'rem': '100%'}`}
+    role="slider"
+    aria-valuenow={0}
+    tabindex="0"
+    bind:this={container}
+    onwheel={handleWheel}
+>
+    <div class="horizontal-center">
+        <div
+            bind:this={wrapper}
+            class="horizontal-wrapper"
+            class:card-animation={cardsAreLoaded}
+            style={`
+                transform:translateX(${scrollLeft}px);
+                --gap:${gap / FONT_BASE_SIZE}rem;
+                --padding:${margin / FONT_BASE_SIZE}rem;
+                --top:${top}%;
+            `}
+        >
+            {@render children?.()}
+        </div>
+    </div>
+
+    {#if showScrollReference && refBarIsLoaded && containerWidth < wrapperWidth}
+        <div 
+            transition:fade 
+            class="scroll-reference" 
+            class:height={height}
+            style={`--reference-width:${TRACK_WIDTH / FONT_BASE_SIZE}rem`}
+        >
+            <div
+                class="scroll-bar"
+                style={`--bar-width:${barWidth}%; margin-left:${scrollPercent * (100 - (barWidth))}%;`}
+            ></div>
+        </div>
+    {/if}
+</div>
+
+<style lang="scss">
+    @use "../styles/abstracts/variables" as variables;
+    @use "../styles/abstracts/mixins" as mixins;
+	@use "../styles/abstracts/functions" as functions;
+
+    .horizontal-scroll {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+
+        @include mixins.displayFlex(row, 0, flex-start, center, nowrap);
+
+        .horizontal-center {
+            width: 100%;
+            height: auto;
+            min-width: max-content;
+
+            @include mixins.displayFlex(row, 0, center, flex-start, nowrap);
+
+
+            .horizontal-wrapper {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: flex-start;
+                flex-wrap: nowrap;
+                gap: var(--gap);
+                width: max-content;
+                height: auto;
+                padding: var(--top) var(--padding) 0 var(--padding);
+            }
+        }
+
+        .scroll-reference {
+            position: absolute;
+            width: var(--reference-width);
+            height: functions.rem(4);
+            right: functions.rem(variables.$margin-page-desktop);
+            background-color: var(--color-scroll-reference-background);
+            border-radius: functions.rem(20);
+            backdrop-filter: blur(functions.rem(12));
+            overflow: hidden;
+
+            &:not(.height) {
+                bottom: functions.rem(variables.$margin-page-desktop);
+            }
+
+            &.height {
+                bottom: 0;
+            }
+
+            .scroll-bar {
+                position: relative;
+                display: block;
+                width: var(--bar-width);
+                height: 100%;
+                background-color: var(--color-scroll-reference-bar);
+                border-radius: functions.rem(20);
+            }
+        }
+    }
+
+</style>

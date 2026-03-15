@@ -2,9 +2,9 @@
     import { formatHandle } from "$lib/utils/formatHandle"
 
     // Icons
-    import plusIcon from "$lib/icons/plus.svg?raw"
-    import minusIcon from "$lib/icons/minus.svg?raw"
-    import infoIcon from "$lib/icons/info.svg?raw"
+    import plusIcon from "$lib/assets/icons/plus.svg?raw"
+    import minusIcon from "$lib/assets/icons/minus.svg?raw"
+    import infoIcon from "$lib/assets/icons/info.svg?raw"
 
     interface Props {
         label: string;

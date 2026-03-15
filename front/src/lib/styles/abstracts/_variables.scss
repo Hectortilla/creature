@@ -4,8 +4,8 @@
 
 $colors: (
     base: (
-        100: 50deg, // hsla(50,s,l,a);
-        200: 24deg, // hsla(24,s,l,a);
+        100: 38deg, // hsla(50,s,l,a);
+        200: 27deg, // hsla(24,s,l,a);
     ),
     ether: (
         100: 0deg, // hsla(50,s,l,a);
@@ -68,16 +68,15 @@ $colors: (
 /*
 * Fonts
 */
-$font-main: 'Titillium Web', sans-serif;
-$font-title: "Cormorant", serif;
+$font-main: "Open Sans", sans-serif;
+$font-title: "Sinistre", serif;
 $font-number: "Cormorant Infant", serif;
 $font-base: 16;
-
 
 /*
 * Margins
 */
-$margin-page-desktop: 32;
+$margin-page-desktop: 50;
 $margin-page-mobile: 10;
 
 /*
@@ -85,5 +84,5 @@ $margin-page-mobile: 10;
 */
 $input-height: 48;
 $input-padding: 12;
-$input-radius: 18;
+$input-radius: 16;
 $input-font-size: 16;

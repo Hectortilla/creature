@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Frontend",
-            "command": "npm run dev",
+            "command": "npm run dev -- --host",
             "request": "launch",
             "type": "node-terminal",
             "cwd": "${workspaceFolder}/front",
