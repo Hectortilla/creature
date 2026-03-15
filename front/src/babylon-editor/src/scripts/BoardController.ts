@@ -182,27 +182,31 @@ export default class BoardController implements IScript {
 	// Pure-emit event handlers (no state mutation)
 	// ====================================================================
 
+	private _opponentDrawCounter = 0;
+
 	private _handleCardDrawn(raw: Record<string, unknown>): void {
 		const playerId = raw.player_id as string;
-		const instanceId = raw.instance_id as string;
+		let instanceId = raw.instance_id as string;
 		const cardId = (raw.card_id as number) ?? 0;
-		const card = this._stateStore.getCard(instanceId);
+		const isOwn = playerId === this._stateStore.myPlayerId;
 
-		if (card) {
+		if (isOwn) {
+			const card = this._stateStore.getCard(instanceId)!;
 			this._emit('cardAdded', card);
-		} else if (instanceId && cardId > 0) {
-			const stub: ClientCard = {
+		} else {
+			instanceId = `opponent-draw-${playerId}-${++this._opponentDrawCounter}`;
+			this._emit('cardAdded', {
 				instanceId, cardId, ownerId: playerId,
 				name: '', zone: 'HAND' as Zone,
 				currentHealth: 0, maxHealth: 0,
 				physicalDefence: 0, magicDefence: 0,
-				isAlive: true, faceUp: playerId === this._stateStore.myPlayerId,
-			};
-			this._emit('cardAdded', stub);
+				isAlive: true, faceUp: false,
+			} satisfies ClientCard);
 		}
 
+
 		this._emit('cardMoved', {
-			instanceId: instanceId || `opponent-draw-${Date.now()}`,
+			instanceId,
 			ownerId: playerId,
 			fromZone: 'DECK' as Zone,
 			toZone: 'HAND' as Zone,
