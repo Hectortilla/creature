@@ -4,16 +4,16 @@
  */
 
 import { loadScene, scriptsDictionary, scriptAssetsCache, _applyScriptsForObject, _removeRegisteredScriptInstance, _preloadScriptsAssets } from "babylonjs-editor-tools";
-import * as scripts_BoardController from "./scripts/BoardController";
 import * as scripts_game_GameConnection from "./scripts/game/GameConnection";
+import * as scripts_BoardController from "./scripts/BoardController";
 import * as scripts_animation_AnimationManager from "./scripts/animation/AnimationManager";
 import * as scripts_interaction_InteractionManager from "./scripts/interaction/InteractionManager";
 import * as scripts_hud_HudController from "./scripts/hud/HudController";
 import * as scripts_effects_RotateAnimation from "./scripts/effects/RotateAnimation";
 
 export const scriptsMap = {
-    "scripts/BoardController.ts": scripts_BoardController,
-	"scripts/game/GameConnection.ts": scripts_game_GameConnection,
+    "scripts/game/GameConnection.ts": scripts_game_GameConnection,
+	"scripts/BoardController.ts": scripts_BoardController,
 	"scripts/animation/AnimationManager.ts": scripts_animation_AnimationManager,
 	"scripts/interaction/InteractionManager.ts": scripts_interaction_InteractionManager,
 	"scripts/hud/HudController.ts": scripts_hud_HudController,
