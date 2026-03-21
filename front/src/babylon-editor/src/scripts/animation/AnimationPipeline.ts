@@ -53,11 +53,7 @@ export class AnimationPipeline {
 		while (this._queue.length > 0) {
 			const animation = this._queue.shift()!;
 			this._currentAnimation = animation;
-			try {
-				await animation.execute(this._scene);
-			} catch (err) {
-				console.warn(`Animation "${animation.name}" failed:`, err);
-			}
+			await animation.execute(this._scene);
 			this._currentAnimation = null;
 		}
 

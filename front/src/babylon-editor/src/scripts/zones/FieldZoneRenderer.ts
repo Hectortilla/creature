@@ -2,16 +2,20 @@ import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { CardEntity } from '../entities/CardEntity';
 import type { Zone } from '../game/models';
-import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
+import { ZoneRendererBase, animateTransform } from './ZoneRenderer';
 
 const DEFAULT_SLOT_SPACING = 150;
 
-export class FieldZoneRenderer implements ZoneRenderer {
+export class FieldZoneRenderer extends ZoneRendererBase {
 	readonly zone: Zone;
 	private _anchor: TransformNode;
 	private _maxSlots: number;
 	private _slotSpacing: number;
-	private _entities: CardEntity[] = [];
+	private readonly _entities: CardEntity[] = [];
+
+	protected get entityList(): CardEntity[] {
+		return this._entities;
+	}
 
 	constructor(
 		zone: Zone,
@@ -19,6 +23,7 @@ export class FieldZoneRenderer implements ZoneRenderer {
 		maxSlots: number,
 		slotSpacing: number = DEFAULT_SLOT_SPACING,
 	) {
+		super();
 		this.zone = zone;
 		this._anchor = anchorNode;
 		this._maxSlots = maxSlots;
@@ -33,11 +38,6 @@ export class FieldZoneRenderer implements ZoneRenderer {
 		}
 		this._entities.push(entity);
 		await this.repositionAll(animate);
-	}
-
-	removeCard(instanceId: string): void {
-		const idx = this._entities.findIndex((e) => e.instanceId === instanceId);
-		if (idx !== -1) this._entities.splice(idx, 1);
 	}
 
 	async repositionAll(animate: boolean): Promise<void> {
@@ -78,18 +78,6 @@ export class FieldZoneRenderer implements ZoneRenderer {
 	getExitPosition(index?: number): Vector3 {
 		const n = index ?? Math.max(0, this._entities.length - 1);
 		return this._slotPosition(n);
-	}
-
-	getEntities(): CardEntity[] {
-		return [...this._entities];
-	}
-
-	get count(): number {
-		return this._entities.length;
-	}
-
-	dispose(): void {
-		this._entities = [];
 	}
 
 	private _slotPosition(index: number): Vector3 {

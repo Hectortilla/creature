@@ -3,7 +3,7 @@
  *
  * Subscribes to BoardController events and translates them into
  * zone-renderer operations and animation-pipeline sequences.
- * Zero dependency on GameStateStore.
+ * Reads deck card ids from `gameStarted.state` (authoritative server snapshot).
  */
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
@@ -14,7 +14,6 @@ import type { IScript } from 'babylonjs-editor-tools';
 import BoardController from '../BoardController';
 import { CardEntityManager } from '../entities/CardEntityManager';
 import type { Zone, ClientCard, ClientGameState } from '../game/models';
-import { createFaceDownCard } from '../game/models';
 
 import type {
 	CardMovedData,
@@ -58,6 +57,7 @@ export default class AnimationManager implements IScript {
 	private _zones = new Map<string, ZoneRenderer>();
 
 	private _boardReady = false;
+	private _pendingCardMoves: CardMovedData[] = [];
 	private _swapInProgress = new Set<string>();
 	private _destroyInProgress = new Set<string>();
 
@@ -100,7 +100,6 @@ export default class AnimationManager implements IScript {
 	private _subscribe(): void {
 		this._board.on('gameStarted', this._onGameStarted);
 		this._board.on('stateReplaced', this._onStateReplaced);
-		this._board.on('cardAdded', this._onCardAdded);
 		this._board.on('cardsSwapped', this._onCardsSwapped);
 		this._board.on('cardMoved', this._onCardMoved);
 		this._board.on('attackDeclared', this._onAttackDeclared);
@@ -114,7 +113,6 @@ export default class AnimationManager implements IScript {
 	private _unsubscribe(): void {
 		this._board.off('gameStarted', this._onGameStarted);
 		this._board.off('stateReplaced', this._onStateReplaced);
-		this._board.off('cardAdded', this._onCardAdded);
 		this._board.off('cardsSwapped', this._onCardsSwapped);
 		this._board.off('cardMoved', this._onCardMoved);
 		this._board.off('attackDeclared', this._onAttackDeclared);
@@ -132,49 +130,41 @@ export default class AnimationManager implements IScript {
 	private _onGameStarted = (data: GameStartedEventData): void => {
 		this._myPlayerId = data.myPlayerId;
 		this._opponentId = data.opponentId;
-		this._buildBoard(data);
-		this._boardReady = true;
+		void this._runGameStarted(data);
 	};
+
+	private async _runGameStarted(data: GameStartedEventData): Promise<void> {
+		await this._buildBoard(data);
+		this._boardReady = true;
+		const pending = this._pendingCardMoves;
+		this._pendingCardMoves = [];
+		for (const move of pending) this._onCardMoved(move);
+	}
 
 	private _onStateReplaced = (_state: ClientGameState): void => {
 		this._animationPipeline.skipAll();
+		this._pendingCardMoves = [];
 		this._tearDownBoard();
 		this._boardReady = true;
 	};
 
-	private _onCardAdded = (card: ClientCard): void => {
-		if (!this._boardReady) return;
-		this._cardManager.createEntity(card, card.faceUp);
-	};
-
 	private _onCardMoved = (data: CardMovedData): void => {
-		if (!this._boardReady) return;
+		if (!this._boardReady) {
+			this._pendingCardMoves.push(data);
+			return;
+		}
 
 		if (this._swapInProgress.delete(data.instanceId)) return;
 		if (this._destroyInProgress.delete(data.instanceId)) return;
 
 		const entity = this._cardManager.getByInstanceId(data.instanceId);
-		if (!entity) return;
 
 		const sourceRenderer = this._rendererFor(data.ownerId, data.fromZone);
 		const destRenderer = this._rendererFor(data.ownerId, data.toZone);
-		if (!destRenderer) return;
 
-		const wasInRenderer = this._rendererContains(sourceRenderer, data.instanceId);
-		if (wasInRenderer) {
-			sourceRenderer!.removeCard(data.instanceId);
-		} else if (data.fromZone === ZONE_HAND && !this._isMine(data.ownerId) && sourceRenderer) {
-			// Opponent card revealed — remove one face-down placeholder from hand
-			const placeholder = sourceRenderer.getEntities().at(-1);
-			if (placeholder) {
-				sourceRenderer.removeCard(placeholder.instanceId);
-				this._cardManager.destroyEntity(placeholder.instanceId);
-			}
-		}
+		sourceRenderer.removeCard(data.instanceId);
 
-		const from = wasInRenderer
-			? entity.mesh.position.clone()
-			: (sourceRenderer?.getExitPosition() ?? entity.mesh.position.clone());
+		const from = entity.mesh.getAbsolutePosition().clone()
 		const to = destRenderer.getEntryPosition();
 
 		const batch: GameAnimation[] = [new CardMoveAnimation(entity, from, to)];
@@ -185,7 +175,6 @@ export default class AnimationManager implements IScript {
 
 		batch.push(this._callback(() => {
 			destRenderer.addCard(entity, false);
-			if (wasInRenderer) sourceRenderer!.repositionAll(true);
 		}));
 
 		this._animationPipeline.enqueueBatch(batch);
@@ -325,21 +314,16 @@ export default class AnimationManager implements IScript {
 	private async _buildBoard(data: GameStartedEventData): Promise<void> {
 		const myId = this._myPlayerId;
 		const oppId = this._opponentId;
-		const deckSize = data.deckSize;
 		const DELAY_MS = 100;
-
 		const allPromises: Promise<void>[] = [];
+
 		for (const ownerId of [myId, oppId]) {
-			const prefix = ownerId === myId ? 'my' : 'opp';
 			const renderer = this._rendererFor(ownerId, ZONE_DECK);
-			if (!renderer) continue;
 
-			for (let i = 0; i < deckSize; i++) {
-				const entity = this._cardManager.createEntity(
-					createFaceDownCard(`${prefix}_deck_${i}`, ownerId),
-					false,
-				);
+			const deckCards = this._gatherInitialCardsInDeck(data.state, ownerId);
 
+			for (const [i, card] of deckCards.entries()) {
+				const entity = this._cardManager.getByInstanceId(card.instanceId);
 				const p = new Promise<void>(resolve => {
 					setTimeout(async () => {
 						await renderer.addCard(entity, true);
@@ -350,8 +334,14 @@ export default class AnimationManager implements IScript {
 				allPromises.push(p);
 			}
 		}
-
 		await Promise.all(allPromises);
+	}
+
+	private _gatherInitialCardsInDeck(state: ClientGameState, ownerId: string): ClientCard[] {
+		const player = state.players[ownerId];
+		const handIds = player.zones.HAND?.card_ids ?? [];
+		const deckIds = player.zones.DECK?.card_ids ?? [];
+		return [...handIds, ...deckIds].map((id) => state.cards[id]);
 	}
 
 	private _tearDownBoard(): void {
@@ -373,7 +363,7 @@ export default class AnimationManager implements IScript {
 		return `${perspective}_${zone}`;
 	}
 
-	private _rendererFor(ownerId: string, zone: Zone): ZoneRenderer | undefined {
+	private _rendererFor(ownerId: string, zone: Zone): ZoneRenderer {
 		const p = this._isMine(ownerId) ? 'my' : 'opp';
 		return this._zones.get(this._zoneKey(p, zone));
 	}

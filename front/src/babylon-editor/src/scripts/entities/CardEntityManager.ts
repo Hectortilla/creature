@@ -43,17 +43,9 @@ export class CardEntityManager {
 
 	createEntity(cardData: ClientCard, faceUp: boolean): CardEntity {
 		const blueprint = faceUp ? this._faceUpBlueprint : this._faceDownBlueprint;
-		if (!blueprint) {
-			throw new Error(
-				`CardEntityManager: no ${faceUp ? 'face-up' : 'face-down'} blueprint. Call initBlueprints() first.`,
-			);
-		}
 
 		const meshName = `Card_${cardData.instanceId}`;
 		const mesh = cloneMeshWithScripts(blueprint, meshName);
-		if (!mesh) {
-			throw new Error(`CardEntityManager: failed to clone blueprint for ${cardData.instanceId}`);
-		}
 
 		mesh.setEnabled(true);
 
@@ -71,6 +63,14 @@ export class CardEntityManager {
 		this._meshToEntity.delete(entity.mesh);
 		this._entities.delete(instanceId);
 		entity.dispose();
+	}
+
+	syncFromState(cards: Record<string, ClientCard>): void {
+		for (const card of Object.values(cards)) {
+			if (!this._entities.has(card.instanceId)) {
+				this.createEntity(card, card.faceUp);
+			}
+		}
 	}
 
 	// ── Lookups ──────────────────────────────────────────────────────

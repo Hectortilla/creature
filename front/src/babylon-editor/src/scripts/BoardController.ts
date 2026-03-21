@@ -15,7 +15,8 @@ import GameConnection from './game/GameConnection';
 import { CardDefinitionCache } from './game/CardDefinitionCache';
 import { GameStateStore } from './state/GameStateStore';
 import type { GameMessage, ValidAction } from './game/types';
-import type { Zone, TurnPhase, ClientCard, ClientGameState, ClientPlayerState } from './game/models';
+import type { Zone, TurnPhase, ClientGameState, ClientPlayerState } from './game/models';
+import { CardEntityManager } from './entities/CardEntityManager';
 
 import type {
 	StateChangeEvents,
@@ -104,9 +105,11 @@ export default class BoardController implements IScript {
 		this._registerCardsFromEvents(message.data);
 		const d = message.data;
 
-		// 1. Apply authoritative state
-		if (d.game_state)
+		// 1. Apply authoritative state and sync card entities
+		if (d.game_state) {
 			this._stateStore.applyServerState(d.game_state as Record<string, unknown>);
+			CardEntityManager.instance?.syncFromState(this._stateStore.state!.cards);
+		}
 
 		// 2. Game started (must fire before granular events so subscribers can initialize)
 		if (message.type === 'game_started')
@@ -182,28 +185,9 @@ export default class BoardController implements IScript {
 	// Pure-emit event handlers (no state mutation)
 	// ====================================================================
 
-	private _opponentDrawCounter = 0;
-
 	private _handleCardDrawn(raw: Record<string, unknown>): void {
 		const playerId = raw.player_id as string;
-		let instanceId = raw.instance_id as string;
-		const cardId = (raw.card_id as number) ?? 0;
-		const isOwn = playerId === this._stateStore.myPlayerId;
-
-		if (isOwn) {
-			const card = this._stateStore.getCard(instanceId)!;
-			this._emit('cardAdded', card);
-		} else {
-			instanceId = `opponent-draw-${playerId}-${++this._opponentDrawCounter}`;
-			this._emit('cardAdded', {
-				instanceId, cardId, ownerId: playerId,
-				name: '', zone: 'HAND' as Zone,
-				currentHealth: 0, maxHealth: 0,
-				physicalDefence: 0, magicDefence: 0,
-				isAlive: true, faceUp: false,
-			} satisfies ClientCard);
-		}
-
+		const instanceId = raw.instance_id as string;
 
 		this._emit('cardMoved', {
 			instanceId,
@@ -229,7 +213,6 @@ export default class BoardController implements IScript {
 	private _handleCardPlayed(raw: Record<string, unknown>): void {
 		const instanceId = raw.instance_id as string;
 		const playerId = raw.player_id as string;
-		this._ensureCardEntity(instanceId);
 		this._emit('cardMoved', {
 			instanceId, ownerId: playerId,
 			fromZone: 'HAND' as Zone,
@@ -268,7 +251,6 @@ export default class BoardController implements IScript {
 
 		if (sourceZone) {
 			const associationCardId = raw.association_card_id as string;
-			this._ensureCardEntity(associationCardId);
 			this._emit('cardMoved', {
 				instanceId: associationCardId,
 				ownerId: raw.player_id as string,
@@ -444,16 +426,6 @@ export default class BoardController implements IScript {
 				maxElements: myPlayer?.elementPool?.max_elements ?? {},
 			},
 		};
-	}
-
-	/**
-	 * If no card entity exists yet for `instanceId`, look it up in the
-	 * state store (which already has it after applyServerState) and emit
-	 * `cardAdded` so AnimationManager creates the mesh.
-	 */
-	private _ensureCardEntity(instanceId: string): void {
-		const card = this._stateStore.getCard(instanceId);
-		if (card) this._emit('cardAdded', card);
 	}
 
 	private _getPlayerPool(playerId: string): { elements: Record<string, number>; maxElements: Record<string, number> } {

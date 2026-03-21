@@ -1,0 +1,260 @@
+---
+alwaysApply: true
+---
+
+# Coding Style Rules (Strict - Fail Fast Philosophy)
+
+## Core Philosophy
+- Write concise, readable, idiomatic code
+- Prefer simplicity over defensive programming
+- Assume inputs are valid unless explicitly stated otherwise
+- FAIL FAST: let the code throw errors if assumptions are violated
+
+---
+
+## 🔥 CRITICAL RULE: FAIL FAST (NO NULL DEFENSE)
+
+If a value is expected to exist:
+- DO NOT check for null or undefined
+- DO NOT guard against missing data
+- LET IT THROW naturally
+
+This is intentional and REQUIRED.
+
+### BAD:
+```js
+if (!user) return;
+const name = user?.name;
+````
+
+### GOOD:
+
+```js
+const name = user.name;
+```
+
+---
+
+### BAD:
+
+```js
+if (!config || !config.apiKey) {
+  throw new Error("Missing config");
+}
+```
+
+### GOOD:
+
+```js
+const apiKey = config.apiKey;
+```
+
+---
+
+### BAD:
+
+```js
+const name = user?.profile?.name ?? "Anonymous";
+```
+
+### GOOD:
+
+```js
+const name = user.profile.name;
+```
+
+---
+
+## 🚫 DO NOT ADD SAFETY CHECKS
+
+* No `if (!x)` guards unless explicitly required
+* No fallback values for required data
+* No silent failures
+* No defensive defaults
+
+Assume:
+
+* Data is correct
+* Types/contracts are respected
+* Errors should surface, not be hidden
+
+---
+
+## 🚫 Avoid Excessive try/catch
+
+### DO NOT:
+
+* Wrap logic in try/catch unless handling external boundaries
+* Catch errors just to log or ignore them
+
+### BAD:
+
+```js
+try {
+  return process(data);
+} catch (e) {
+  return null;
+}
+```
+
+### GOOD:
+
+```js
+return process(data);
+```
+
+### ALLOWED (boundary handling only):
+
+```js
+try {
+  const res = await fetch(url);
+  return await res.json();
+} catch (e) {
+  throw e; // or handle meaningfully
+}
+```
+
+---
+
+## 🚫 Avoid Deep Nesting
+
+### BAD:
+
+```js
+if (user) {
+  if (user.profile) {
+    doThing(user.profile);
+  }
+}
+```
+
+### GOOD:
+
+```js
+doThing(user.profile);
+```
+
+---
+
+## ⚠️ Optional Chaining Rule
+
+* Use optional chaining ONLY when null is a valid and expected case
+* Otherwise, DO NOT use it
+
+### BAD:
+
+```js
+user?.profile?.name
+```
+
+### GOOD:
+
+```js
+user.profile.name
+```
+
+---
+
+## ✅ Function Style
+
+* Keep functions short and direct
+* No defensive branching
+* No unnecessary abstractions
+
+### BAD:
+
+```js
+function getUserName(user) {
+  if (!user) return null;
+  return user.name;
+}
+```
+
+### GOOD:
+
+```js
+function getUserName(user) {
+  return user.name;
+}
+```
+
+---
+
+## ⚠️ Error Philosophy
+
+* Errors are GOOD when they indicate broken assumptions
+* Do NOT hide errors
+* Do NOT “handle” errors unless you can recover
+
+---
+
+## Style Priority Order
+
+1. Readability
+2. Simplicity
+3. Fail-fast correctness
+4. Minimalism
+5. Defensive safety (FORBIDDEN unless requested)
+
+---
+
+## 🧠 Instruction to AI (MANDATORY)
+
+Follow these rules strictly.
+
+If data is expected:
+
+* Access it directly
+* Do not check for null/undefined
+* Do not add guards
+
+If unsure:
+
+* Choose the simplest implementation
+* DO NOT add safety checks
+
+Violating these rules is incorrect.
+
+````
+
+---
+
+# ➕ Add enforcement (important)
+
+Update your second file too:
+
+```md
+---
+alwaysApply: true
+---
+
+Before returning code:
+- Remove all unnecessary null/undefined checks
+- Remove optional chaining where data is required
+- Remove defensive guards
+- Ensure fail-fast behavior
+
+If the code would silently handle errors:
+- Rewrite it so errors surface instead
+````
+
+---
+
+# ⚠️ Very important reality check
+
+This style is powerful, but it has **a clear boundary**:
+
+### ✅ Use fail-fast inside:
+
+* business logic
+* internal functions
+* trusted data flows
+
+### ❌ Be careful at:
+
+* API boundaries
+* user input
+* external services
+* database responses
+
+There, you *should* validate.

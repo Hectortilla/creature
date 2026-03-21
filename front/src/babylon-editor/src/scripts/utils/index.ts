@@ -7,7 +7,6 @@ import { scriptsDictionary, applyScriptOnObject } from "babylonjs-editor-tools";
  */
 export function cloneMeshWithScripts(source: Mesh, name: string): Mesh | null {
     const clone = source.clone(name);
-    if (!clone) return null;
 
     const registered = scriptsDictionary.get(source);
     if (!registered?.length) return clone;

@@ -7,7 +7,7 @@ Core game state models including configuration and full game state.
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 from datetime import datetime
 
 from pydantic import Field, SkipValidation, field_serializer, computed_field
@@ -16,7 +16,6 @@ from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, TurnPhase, GameStatus
 from app.models.game.card import GameCard
 from app.models.game.player import PlayerState
-from typing import TYPE_CHECKING, Any
 
 from app.models.game.attack import AttackDefinition
 from app.models.game.enums import DamageType
@@ -152,15 +151,37 @@ class GameState(GameBaseModel):
                         return p.player_id
         return None
 
-    _VISIBLE_OPPONENT_ZONES = {Zone.SUPPORTING, Zone.ATTACKING, Zone.GRAVEYARD}
+    @staticmethod
+    def _anonymized_card_payload(card: GameCard) -> dict[str, Any]:
+        """Strip identity for hidden cards (any deck card, opponent hand)."""
+        d = card.model_dump(mode="json")
+        d["card_id"] = 0
+        d["name"] = ""
+        d["description"] = None
+        d["attacks"] = []
+        d["element_contribution"] = []
+        d["element_ids"] = []
+        d["skill_ids"] = []
+        d["association_ids"] = []
+        d["associations"] = []
+        d["health"] = 0
+        d["current_health"] = 0
+        d["physical_defence"] = 0
+        d["magic_defence"] = 0
+        d["is_evolution"] = False
+        d["evolves_from_id"] = None
+        # Computed fields were evaluated before we cleared stats — force safe values.
+        d["is_alive"] = False
+        d["can_attack"] = False
+        d["can_promote"] = False
+        d["can_evolve"] = False
+        return d
 
     def serialize_for_player(self, player_id: str) -> dict[str, Any]:
         """Full game-state dict with per-player card visibility.
 
-        Own cards in every zone are included.  Opponent cards are included
-        only when in a public zone (SUPPORTING, ATTACKING, GRAVEYARD).
-        Opponent DECK/HAND card IDs remain in zone ``card_ids`` lists so the
-        frontend knows the count, but have no entry in ``cards``.
+        Deck cards are always anonymized (for both players). Opponent hand
+        cards are anonymized. Everything else is sent in full.
         """
         payload = self.model_dump(mode='json')
 
@@ -169,11 +190,16 @@ class GameState(GameBaseModel):
             for pid, ps in self.room.players.items()
         }
 
-        payload["cards"] = {
-            cid: card.model_dump(mode='json')
-            for cid, card in self.cards.items()
-            if card.owner_id == player_id or card.zone in self._VISIBLE_OPPONENT_ZONES
-        }
+        cards_out: dict[str, dict[str, Any]] = {}
+        for cid, card in self.cards.items():
+            if card.zone == Zone.DECK:
+                cards_out[cid] = self._anonymized_card_payload(card)
+            elif card.owner_id != player_id and card.zone == Zone.HAND:
+                cards_out[cid] = self._anonymized_card_payload(card)
+            else:
+                cards_out[cid] = card.model_dump(mode="json")
+
+        payload["cards"] = cards_out
 
         return payload
 

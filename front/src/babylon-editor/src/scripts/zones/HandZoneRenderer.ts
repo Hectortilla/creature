@@ -2,7 +2,7 @@ import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { CardEntity } from '../entities/CardEntity';
 import type { Zone } from '../game/models';
-import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
+import { ZoneRendererBase, animateTransform } from './ZoneRenderer';
 
 // Fan layout constants
 const MAX_TOTAL_WIDTH = 399;
@@ -17,23 +17,23 @@ interface CardTransform {
 	rotation: Quaternion;
 }
 
-export class HandZoneRenderer implements ZoneRenderer {
+export class HandZoneRenderer extends ZoneRendererBase {
 	readonly zone: Zone = 'HAND';
 	private _anchor: TransformNode;
-	private _entities: CardEntity[] = [];
+	private readonly _entities: CardEntity[] = [];
+
+	protected get entityList(): CardEntity[] {
+		return this._entities;
+	}
 
 	constructor(anchorNode: TransformNode) {
+		super();
 		this._anchor = anchorNode;
 	}
 
 	async addCard(entity: CardEntity, animate: boolean): Promise<void> {
 		this._entities.push(entity);
 		await this.repositionAll(animate);
-	}
-
-	removeCard(instanceId: string): void {
-		const idx = this._entities.findIndex((e) => e.instanceId === instanceId);
-		if (idx !== -1) this._entities.splice(idx, 1);
 	}
 
 	async repositionAll(animate: boolean): Promise<void> {
@@ -59,18 +59,6 @@ export class HandZoneRenderer implements ZoneRenderer {
 
 	getExitPosition(): Vector3 {
 		return this._anchor.getAbsolutePosition().clone();
-	}
-
-	getEntities(): CardEntity[] {
-		return [...this._entities];
-	}
-
-	get count(): number {
-		return this._entities.length;
-	}
-
-	dispose(): void {
-		this._entities = [];
 	}
 
 	private _anchorRotation(): Quaternion {

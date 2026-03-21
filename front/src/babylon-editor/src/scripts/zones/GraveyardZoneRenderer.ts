@@ -2,18 +2,23 @@ import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { CardEntity } from '../entities/CardEntity';
 import type { Zone } from '../game/models';
-import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
+import { ZoneRendererBase, animateTransform } from './ZoneRenderer';
 
 const PILE_X_OFFSET = 5;
 const PILE_Y_OFFSET = 1.5;
 const PILE_Z_OFFSET = 3;
 
-export class GraveyardZoneRenderer implements ZoneRenderer {
+export class GraveyardZoneRenderer extends ZoneRendererBase {
 	readonly zone: Zone = 'GRAVEYARD';
 	private _anchor: TransformNode;
-	private _entities: CardEntity[] = [];
+	private readonly _entities: CardEntity[] = [];
+
+	protected get entityList(): CardEntity[] {
+		return this._entities;
+	}
 
 	constructor(anchorNode: TransformNode) {
+		super();
 		this._anchor = anchorNode;
 	}
 
@@ -28,11 +33,6 @@ export class GraveyardZoneRenderer implements ZoneRenderer {
 			entity.mesh.position.copyFrom(pos);
 			entity.mesh.rotationQuaternion = rot;
 		}
-	}
-
-	removeCard(instanceId: string): void {
-		const idx = this._entities.findIndex((e) => e.instanceId === instanceId);
-		if (idx !== -1) this._entities.splice(idx, 1);
 	}
 
 	async repositionAll(animate: boolean): Promise<void> {
@@ -52,18 +52,6 @@ export class GraveyardZoneRenderer implements ZoneRenderer {
 
 	getExitPosition(): Vector3 {
 		return this._pilePosition(Math.max(0, this._entities.length - 1));
-	}
-
-	getEntities(): CardEntity[] {
-		return [...this._entities];
-	}
-
-	get count(): number {
-		return this._entities.length;
-	}
-
-	dispose(): void {
-		this._entities = [];
 	}
 
 	private _pilePosition(index: number): Vector3 {

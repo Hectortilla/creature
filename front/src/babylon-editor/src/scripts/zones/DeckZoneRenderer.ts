@@ -2,18 +2,23 @@ import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { CardEntity } from '../entities/CardEntity';
 import type { Zone } from '../game/models';
-import { type ZoneRenderer, animateTransform } from './ZoneRenderer';
+import { ZoneRendererBase, animateTransform } from './ZoneRenderer';
 
 const CARD_STACK_Y_OFFSET = 1.5;
 const MAX_POSITION_JITTER = 2;
 const MAX_ROTATION_JITTER = 0.08;
 
-export class DeckZoneRenderer implements ZoneRenderer {
+export class DeckZoneRenderer extends ZoneRendererBase {
 	readonly zone: Zone = 'DECK';
 	private _anchor: TransformNode;
-	private _entities: CardEntity[] = [];
+	private readonly _entities: CardEntity[] = [];
+
+	protected get entityList(): CardEntity[] {
+		return this._entities;
+	}
 
 	constructor(anchorNode: TransformNode) {
+		super();
 		this._anchor = anchorNode;
 	}
 
@@ -29,11 +34,6 @@ export class DeckZoneRenderer implements ZoneRenderer {
 			entity.mesh.position.copyFrom(pos);
 			entity.mesh.rotationQuaternion = rot;
 		}
-	}
-
-	removeCard(instanceId: string): void {
-		const idx = this._entities.findIndex((e) => e.instanceId === instanceId);
-		if (idx !== -1) this._entities.splice(idx, 1);
 	}
 
 	async repositionAll(animate: boolean): Promise<void> {
@@ -53,18 +53,6 @@ export class DeckZoneRenderer implements ZoneRenderer {
 
 	getExitPosition(): Vector3 {
 		return this._stackPosition(Math.max(0, this._entities.length - 1));
-	}
-
-	getEntities(): CardEntity[] {
-		return [...this._entities];
-	}
-
-	get count(): number {
-		return this._entities.length;
-	}
-
-	dispose(): void {
-		this._entities = [];
 	}
 
 	private _stackPosition(index: number): Vector3 {
