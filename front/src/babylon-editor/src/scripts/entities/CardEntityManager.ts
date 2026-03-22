@@ -67,10 +67,36 @@ export class CardEntityManager {
 
 	syncFromState(cards: Record<string, ClientCard>): void {
 		for (const card of Object.values(cards)) {
-			if (!this._entities.has(card.instanceId)) {
+			const existing = this._entities.get(card.instanceId);
+			if (!existing) {
 				this.createEntity(card, card.faceUp);
+				continue;
+			}
+			const wasFaceUp = existing.cardData.faceUp;
+			existing.updateCardData(card);
+			if (card.faceUp !== wasFaceUp) {
+				this._swapMesh(existing, card.faceUp);
 			}
 		}
+	}
+
+	private _swapMesh(entity: CardEntity, faceUp: boolean): void {
+		const blueprint = faceUp ? this._faceUpBlueprint : this._faceDownBlueprint;
+		const oldMesh = entity.mesh;
+
+		const newMesh = cloneMeshWithScripts(blueprint, oldMesh.name);
+		newMesh.position.copyFrom(oldMesh.position);
+		newMesh.rotation.copyFrom(oldMesh.rotation);
+		if (oldMesh.rotationQuaternion) {
+			newMesh.rotationQuaternion = oldMesh.rotationQuaternion.clone();
+		}
+		newMesh.scaling.copyFrom(oldMesh.scaling);
+		newMesh.setEnabled(oldMesh.isEnabled());
+
+		this._meshToEntity.delete(oldMesh);
+		oldMesh.dispose();
+		entity.mesh = newMesh;
+		this._meshToEntity.set(newMesh, entity);
 	}
 
 	// ── Lookups ──────────────────────────────────────────────────────

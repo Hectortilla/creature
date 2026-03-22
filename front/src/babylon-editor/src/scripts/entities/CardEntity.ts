@@ -25,6 +25,10 @@ export class CardEntity {
 		return this._mesh;
 	}
 
+	set mesh(mesh: Mesh) {
+		this._mesh = mesh;
+	}
+
 	get cardData(): ClientCard {
 		return this._cardData;
 	}
