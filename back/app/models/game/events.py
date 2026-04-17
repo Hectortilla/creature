@@ -47,15 +47,6 @@ class CardDrawnEvent(GameEvent):
     cards_remaining: int = 0
 
 
-class CardMovedEvent(GameEvent):
-    """Event fired when a card moves between zones."""
-    event_type: Literal["CardMovedEvent"] = "CardMovedEvent"
-    instance_id: str = ""
-    owner_id: str = ""
-    from_zone: Optional[Zone] = None
-    to_zone: Optional[Zone] = None
-
-
 class CardPlayedEvent(GameEvent):
     """Event fired when a card is played from hand to supporting zone."""
     event_type: Literal["CardPlayedEvent"] = "CardPlayedEvent"
@@ -247,7 +238,6 @@ class EffectAppliedEvent(GameEvent):
 # Single registry — union and dict are both derived from this list
 _ALL_EVENT_CLASSES: list[type[GameEvent]] = [
     CardDrawnEvent,
-    CardMovedEvent,
     CardPlayedEvent,
     CardPromotedEvent,
     CardSwappedEvent,
@@ -285,7 +275,6 @@ __all__ = [
     "GameEvent",
     # Card Movement
     "CardDrawnEvent",
-    "CardMovedEvent",
     "CardPlayedEvent",
     "CardPromotedEvent",
     "CardSwappedEvent",

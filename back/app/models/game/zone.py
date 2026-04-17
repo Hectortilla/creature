@@ -59,10 +59,5 @@ class ZoneState(GameBaseModel):
             return True
         return False
     
-    def has_card(self, card_id: str) -> bool:
-        """Check if a card is in this zone."""
-        return card_id in self.card_ids
-
-
 __all__ = ["ZoneState"]
 

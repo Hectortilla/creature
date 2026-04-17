@@ -1,26 +1,21 @@
 """
 Game Reducer
 
-Pure functions that apply events to game state.
+Functions that apply events to game state via in-place mutation.
 The reducer is the ONLY place where state mutations happen.
 
-Pattern:
-    new_state = apply_event(state, event)
-
-All functions are pure - they don't modify the input state,
-they return a new state with the changes applied.
+Pipeline:
+    apply_event(state, players, event)  →  mutates state & players in place
 """
 
 from __future__ import annotations
 
-from copy import deepcopy
 from typing import TYPE_CHECKING
 
 from app.models.game.enums import Zone, GameStatus, CardStatus
 from app.models.game.events import (
     GameEvent,
     CardDrawnEvent,
-    CardMovedEvent,
     CardPlayedEvent,
     CardPromotedEvent,
     CardSwappedEvent,
@@ -44,101 +39,37 @@ if TYPE_CHECKING:
     from app.models.game.player import PlayerState
 
 
+# Dispatch table: event type -> handler function
+_EVENT_HANDLERS: dict[type, callable] = {}
+
+
+def _handler(event_type):
+    """Decorator to register an event handler."""
+    def decorator(fn):
+        _EVENT_HANDLERS[event_type] = fn
+        return fn
+    return decorator
+
+
 def apply_event(state: "GameState", players: dict[str, "PlayerState"], event: GameEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """
-    Apply a single event to the game state and players.
-    
-    This is the main entry point for the reducer.
-    Returns a new state and players dict with the event applied.
-    
-    Args:
-        state: Current game state (not modified)
-        players: Current players dict (not modified) - kept for compatibility
-        event: Event to apply
-    
-    Returns:
-        Tuple of (new game state, new players dict) with event applied
-    """
-    from app.models.game.player import PlayerState
-    
-    # Create deep copies to ensure immutability
-    # Note: We use a custom approach to handle the room reference
-    # We deep copy state but need to preserve the room reference
-    import copy
-    new_state = copy.deepcopy(state)
-    # Restore room reference (don't deep copy it to avoid circular issues)
-    new_state.room = state.room
-    new_players = {pid: deepcopy(player) for pid, player in players.items()}
-    
-    # Dispatch to specific handler
-    if isinstance(event, CardDrawnEvent):
-        result_state, result_players = _apply_card_drawn(new_state, new_players, event)
-    elif isinstance(event, CardMovedEvent):
-        result_state, result_players = _apply_card_moved(new_state, new_players, event)
-    elif isinstance(event, CardPlayedEvent):
-        result_state, result_players = _apply_card_played(new_state, new_players, event)
-    elif isinstance(event, CardPromotedEvent):
-        result_state, result_players = _apply_card_promoted(new_state, new_players, event)
-    elif isinstance(event, CardSwappedEvent):
-        result_state, result_players = _apply_card_swapped(new_state, new_players, event)
-    elif isinstance(event, CardAssociatedEvent):
-        result_state, result_players = _apply_card_associated(new_state, new_players, event)
-    elif isinstance(event, CardEvolvedEvent):
-        result_state, result_players = _apply_card_evolved(new_state, new_players, event)
-    elif isinstance(event, DamageDealtEvent):
-        result_state, result_players = _apply_damage_dealt(new_state, new_players, event)
-    elif isinstance(event, CardDestroyedEvent):
-        result_state, result_players = _apply_card_destroyed(new_state, new_players, event)
-    elif isinstance(event, ElementsConsumedEvent):
-        result_state, result_players = _apply_elements_consumed(new_state, new_players, event)
-    elif isinstance(event, ElementsRestoredEvent):
-        result_state, result_players = _apply_elements_restored(new_state, new_players, event)
-    elif isinstance(event, TurnStartedEvent):
-        result_state, result_players = _apply_turn_started(new_state, new_players, event)
-    elif isinstance(event, TurnEndedEvent):
-        result_state, result_players = _apply_turn_ended(new_state, new_players, event)
-    elif isinstance(event, PhaseChangedEvent):
-        result_state, result_players = _apply_phase_changed(new_state, new_players, event)
-    elif isinstance(event, GameStartedEvent):
-        result_state, result_players = _apply_game_started(new_state, new_players, event)
-    elif isinstance(event, GameEndedEvent):
-        result_state, result_players = _apply_game_ended(new_state, new_players, event)
-    elif isinstance(event, NoDefenderEvent):
-        result_state, result_players = _apply_no_defender(new_state, new_players, event)
-    elif isinstance(event, AttackDeclaredEvent):
-        result_state, result_players = _apply_attack_declared(new_state, new_players, event)
-    else:
-        # Unknown event type - return state and players unchanged
-        result_state, result_players = new_state, new_players
-    
-    # Update room.players and return (players are already in state.room.players)
-    result_state.room.players = result_players
-    return result_state, result_players
+    Apply a single event to the game state and players (in place).
 
+    Returns the same (state, players) tuple for call-site compatibility.
+    """
+    handler = _EVENT_HANDLERS.get(type(event))
+    if handler:
+        handler(state, players, event)
 
-def apply_events(state: "GameState", players: dict[str, "PlayerState"], events: list[GameEvent]) -> tuple["GameState", dict[str, "PlayerState"]]:
-    """
-    Apply multiple events in sequence.
-    
-    Args:
-        state: Initial game state
-        players: Initial players dict
-        events: List of events to apply in order
-    
-    Returns:
-        Tuple of (final game state, final players dict) after all events applied
-    """
-    current_state = state
-    current_players = players
-    for event in events:
-        current_state, current_players = apply_event(current_state, current_players, event)
-    return current_state, current_players
+    state.room.players = players
+    return state, players
 
 
 # ============================================================================
 # Card Movement Reducers
 # ============================================================================
 
+@_handler(CardDrawnEvent)
 def _apply_card_drawn(state: "GameState", players: dict[str, "PlayerState"], event: CardDrawnEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card drawn event - move card from deck to hand."""
     player = players[event.player_id]
@@ -159,27 +90,7 @@ def _apply_card_drawn(state: "GameState", players: dict[str, "PlayerState"], eve
     return state, players
 
 
-def _apply_card_moved(state: "GameState", players: dict[str, "PlayerState"], event: CardMovedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
-    """Apply generic card movement event."""
-    player = players[event.owner_id]
-    card = state.cards.get(event.instance_id)
-    
-    if card and event.from_zone and event.to_zone:
-        # Remove from source zone
-        if event.instance_id in player.zones[event.from_zone].card_ids:
-            player.zones[event.from_zone].card_ids.remove(event.instance_id)
-        
-        # Add to target zone
-        if event.instance_id not in player.zones[event.to_zone].card_ids:
-            player.zones[event.to_zone].card_ids.append(event.instance_id)
-        
-        # Update card state
-        card.zone = event.to_zone
-        card.turns_in_zone = 0
-    
-    return state, players
-
-
+@_handler(CardPlayedEvent)
 def _apply_card_played(state: "GameState", players: dict[str, "PlayerState"], event: CardPlayedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card played event - move from hand to supporting zone."""
     player = players[event.player_id]
@@ -204,6 +115,7 @@ def _apply_card_played(state: "GameState", players: dict[str, "PlayerState"], ev
     return state, players
 
 
+@_handler(CardPromotedEvent)
 def _apply_card_promoted(state: "GameState", players: dict[str, "PlayerState"], event: CardPromotedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card promoted event - move from supporting to attacking zone."""
     player = players[event.player_id]
@@ -235,6 +147,7 @@ def _apply_card_promoted(state: "GameState", players: dict[str, "PlayerState"], 
     return state, players
 
 
+@_handler(CardSwappedEvent)
 def _apply_card_swapped(state: "GameState", players: dict[str, "PlayerState"], event: CardSwappedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card swapped event - swap supporting and attacking cards."""
     player = players[event.player_id]
@@ -270,6 +183,7 @@ def _apply_card_swapped(state: "GameState", players: dict[str, "PlayerState"], e
 # Association & Evolution Reducers
 # ============================================================================
 
+@_handler(CardAssociatedEvent)
 def _apply_card_associated(state: "GameState", players: dict[str, "PlayerState"], event: CardAssociatedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card associated event."""
     player = players[event.player_id]
@@ -295,6 +209,7 @@ def _apply_card_associated(state: "GameState", players: dict[str, "PlayerState"]
     return state, players
 
 
+@_handler(CardEvolvedEvent)
 def _apply_card_evolved(state: "GameState", players: dict[str, "PlayerState"], event: CardEvolvedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card evolved event."""
     player = players[event.player_id]
@@ -336,6 +251,7 @@ def _apply_card_evolved(state: "GameState", players: dict[str, "PlayerState"], e
 # Combat Reducers
 # ============================================================================
 
+@_handler(AttackDeclaredEvent)
 def _apply_attack_declared(state: "GameState", players: dict[str, "PlayerState"], event: AttackDeclaredEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply attack declared event - mark attacker as having attacked."""
     attacker = state.cards.get(event.attacker_id)
@@ -346,6 +262,7 @@ def _apply_attack_declared(state: "GameState", players: dict[str, "PlayerState"]
     return state, players
 
 
+@_handler(DamageDealtEvent)
 def _apply_damage_dealt(state: "GameState", players: dict[str, "PlayerState"], event: DamageDealtEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply damage dealt event - reduce target's health."""
     target = state.cards.get(event.target_id)
@@ -356,6 +273,7 @@ def _apply_damage_dealt(state: "GameState", players: dict[str, "PlayerState"], e
     return state, players
 
 
+@_handler(CardDestroyedEvent)
 def _apply_card_destroyed(state: "GameState", players: dict[str, "PlayerState"], event: CardDestroyedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply card destroyed event - move to graveyard."""
     player = players[event.owner_id]
@@ -385,6 +303,7 @@ def _apply_card_destroyed(state: "GameState", players: dict[str, "PlayerState"],
 # Element Reducers
 # ============================================================================
 
+@_handler(ElementsConsumedEvent)
 def _apply_elements_consumed(state: "GameState", players: dict[str, "PlayerState"], event: ElementsConsumedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply elements consumed event - reduce element pool."""
     player = players[event.player_id]
@@ -396,6 +315,7 @@ def _apply_elements_consumed(state: "GameState", players: dict[str, "PlayerState
     return state, players
 
 
+@_handler(ElementsRestoredEvent)
 def _apply_elements_restored(state: "GameState", players: dict[str, "PlayerState"], event: ElementsRestoredEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply elements restored event - restore element pool."""
     player = players[event.player_id]
@@ -409,6 +329,7 @@ def _apply_elements_restored(state: "GameState", players: dict[str, "PlayerState
 # Turn & Phase Reducers
 # ============================================================================
 
+@_handler(TurnStartedEvent)
 def _apply_turn_started(state: "GameState", players: dict[str, "PlayerState"], event: TurnStartedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply turn started event."""
     state.active_player_id = event.player_id
@@ -429,6 +350,7 @@ def _apply_turn_started(state: "GameState", players: dict[str, "PlayerState"], e
     return state, players
 
 
+@_handler(TurnEndedEvent)
 def _apply_turn_ended(state: "GameState", players: dict[str, "PlayerState"], event: TurnEndedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply turn ended event."""
     player = players[event.player_id]
@@ -445,6 +367,7 @@ def _apply_turn_ended(state: "GameState", players: dict[str, "PlayerState"], eve
     return state, players
 
 
+@_handler(PhaseChangedEvent)
 def _apply_phase_changed(state: "GameState", players: dict[str, "PlayerState"], event: PhaseChangedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply phase changed event."""
     if event.to_phase:
@@ -457,6 +380,7 @@ def _apply_phase_changed(state: "GameState", players: dict[str, "PlayerState"], 
 # Game-Level Reducers
 # ============================================================================
 
+@_handler(GameStartedEvent)
 def _apply_game_started(state: "GameState", players: dict[str, "PlayerState"], event: GameStartedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply game started event."""
     state.status = GameStatus.IN_PROGRESS
@@ -465,6 +389,7 @@ def _apply_game_started(state: "GameState", players: dict[str, "PlayerState"], e
     return state, players
 
 
+@_handler(GameEndedEvent)
 def _apply_game_ended(state: "GameState", players: dict[str, "PlayerState"], event: GameEndedEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply game ended event."""
     state.status = GameStatus.FINISHED
@@ -473,6 +398,7 @@ def _apply_game_ended(state: "GameState", players: dict[str, "PlayerState"], eve
     return state, players
 
 
+@_handler(NoDefenderEvent)
 def _apply_no_defender(state: "GameState", players: dict[str, "PlayerState"], event: NoDefenderEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
     """Apply no defender event."""
     if event.must_defend:

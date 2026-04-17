@@ -17,7 +17,6 @@ from app.models.game.enums import Zone, TurnPhase, GameStatus, DamageType
 from app.models.game.events import (
     GameEvent,
     CardDrawnEvent,
-    CardMovedEvent,
     CardPlayedEvent,
     CardPromotedEvent,
     CardSwappedEvent,

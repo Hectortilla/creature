@@ -24,6 +24,10 @@ from app.models.game.element import ElementContribution
 if TYPE_CHECKING:
     from app.websocket.models import GameRoom
 
+# Fields visible on hidden cards (deck, opponent hand).
+# Everything else is zeroed out so new card fields don't leak.
+_VISIBLE_HIDDEN_FIELDS = {"instance_id", "owner_id", "zone", "status", "turns_in_zone"}
+
 
 class GameConfiguration(GameBaseModel):
     """
@@ -91,26 +95,6 @@ class GameState(GameBaseModel):
         player = self.room.players[card.owner_id]
         player.zones[card.zone.name].add_card(card.instance_id)
     
-    def move_card(self, card_id: str, to_zone: Zone) -> bool:
-        """Move a card to a different zone. Returns False if not possible."""
-        card = self.cards.get(card_id)
-        if not card:
-            return False
-        
-        player = self.room.players[card.owner_id]
-        from_zone = card.zone
-        
-        if not player.zones[from_zone.name].remove_card(card_id):
-            return False
-        
-        if not player.zones[to_zone.name].add_card(card_id):
-            player.zones[from_zone.name].add_card(card_id)
-            return False
-        
-        card.zone = to_zone
-        card.turns_in_zone = 0
-        return True
-    
     def is_first_turn(self, player_id: str) -> bool:
         """Check if this is the first turn for a player."""
         return self.room.players[player_id].turn_count == 0
@@ -157,26 +141,19 @@ class GameState(GameBaseModel):
     def _anonymized_card_payload(card: GameCard) -> dict[str, Any]:
         """Strip identity for hidden cards (any deck card, opponent hand)."""
         d = card.model_dump(mode="json")
-        d["card_id"] = 0
-        d["name"] = ""
-        d["description"] = None
-        d["attacks"] = []
-        d["element_contribution"] = []
-        d["element_ids"] = []
-        d["skill_ids"] = []
-        d["association_ids"] = []
-        d["associations"] = []
-        d["health"] = 0
-        d["current_health"] = 0
-        d["physical_defence"] = 0
-        d["magic_defence"] = 0
-        d["is_evolution"] = False
-        d["evolves_from_id"] = None
-        # Computed fields were evaluated before we cleared stats — force safe values.
-        d["is_alive"] = False
-        d["can_attack"] = False
-        d["can_promote"] = False
-        d["can_evolve"] = False
+        for key in d:
+            if key in _VISIBLE_HIDDEN_FIELDS:
+                continue
+            if isinstance(d[key], list):
+                d[key] = []
+            elif isinstance(d[key], dict):
+                d[key] = {}
+            elif isinstance(d[key], bool):
+                d[key] = False
+            elif isinstance(d[key], (int, float)):
+                d[key] = 0
+            else:
+                d[key] = None
         return d
 
     def serialize_for_player(self, player_id: str) -> dict[str, Any]:

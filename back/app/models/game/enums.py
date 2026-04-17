@@ -98,43 +98,14 @@ class GameStatus(str, Enum):
 class CardStatus(str, Enum):
     """
     Status flags for cards in active zones.
-    
+
     - READY: Card is ready and contributing normally
     - SWAPPED: Card was swapped this turn, no element contribution
-    - EXHAUSTED: Card has attacked this turn
     - ASSOCIATED: Card is being used as an association
     """
     READY = "READY"
     SWAPPED = "SWAPPED"
-    EXHAUSTED = "EXHAUSTED"
     ASSOCIATED = "ASSOCIATED"
-
-
-class EffectTiming(str, Enum):
-    """
-    When effects trigger.
-    
-    - IMMEDIATE: Triggers immediately when condition is met
-    - START_OF_TURN: Triggers at the start of owner's turn
-    - END_OF_TURN: Triggers at the end of owner's turn
-    - ON_ATTACK: Triggers when this card attacks
-    - ON_DEFEND: Triggers when this card is attacked
-    - ON_DAMAGE: Triggers when this card takes damage
-    - ON_DESTROY: Triggers when this card is destroyed
-    - ON_PLAY: Triggers when this card enters play
-    - ON_PROMOTE: Triggers when this card moves to attacking zone
-    - PASSIVE: Always active while card is in active zone
-    """
-    IMMEDIATE = "IMMEDIATE"
-    START_OF_TURN = "START_OF_TURN"
-    END_OF_TURN = "END_OF_TURN"
-    ON_ATTACK = "ON_ATTACK"
-    ON_DEFEND = "ON_DEFEND"
-    ON_DAMAGE = "ON_DAMAGE"
-    ON_DESTROY = "ON_DESTROY"
-    ON_PLAY = "ON_PLAY"
-    ON_PROMOTE = "ON_PROMOTE"
-    PASSIVE = "PASSIVE"
 
 
 __all__ = [
@@ -143,6 +114,5 @@ __all__ = [
     "DamageType",
     "GameStatus",
     "CardStatus",
-    "EffectTiming",
 ]
 
