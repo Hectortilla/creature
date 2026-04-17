@@ -90,7 +90,7 @@ export class ActionButtonPanel {
 	}
 
 	private _onActionsChanged = (data: ValidActionsChangedData): void => {
-		this._actionBuilder.setValidActions(data.actions);
+		// ActionBuilder is shared with InteractionManager which already calls setValidActions
 		this._isMyTurn = data.isMyTurn;
 		this._refresh();
 	};

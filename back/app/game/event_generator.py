@@ -93,7 +93,7 @@ class ActionToEventGenerator:
         """Create draw events."""
         events = []
         player = state.room.get_player(action.player_id)
-        deck = player.zones[Zone.DECK]
+        deck = player.zones[Zone.DECK.name]
         
         for i in range(min(action.count, len(deck.card_ids))):
             instance_id = deck.card_ids[i]
@@ -322,8 +322,8 @@ class ActionToEventGenerator:
             return events
         
         # Check for no defenders (No Defenders Rule)
-        if len(opponent.zones[Zone.ATTACKING].card_ids) == 0:
-            if len(opponent.zones[Zone.SUPPORTING].card_ids) > 0:
+        if len(opponent.zones[Zone.ATTACKING.name].card_ids) == 0:
+            if len(opponent.zones[Zone.SUPPORTING.name].card_ids) > 0:
                 # Must force defend — store pending attack so it can resume
                 events.append(NoDefenderEvent(
                     game_id=state.game_id,
@@ -387,7 +387,7 @@ class ActionToEventGenerator:
             # If next is draw phase (new turn for same player), add draw events
             if next_phase == TurnPhase.DRAW:
                 draw_count = state.config.initial_draw if player.turn_count == 0 else state.config.normal_draw
-                deck = player.zones[Zone.DECK]
+                deck = player.zones[Zone.DECK.name]
                 for i in range(min(draw_count, len(deck.card_ids))):
                     instance_id = deck.card_ids[i]
                     card = state.get_card(instance_id)
@@ -427,7 +427,7 @@ class ActionToEventGenerator:
             
             # Draw phase
             draw_count = state.config.initial_draw if next_player.turn_count == 0 else state.config.normal_draw
-            deck = next_player.zones[Zone.DECK]
+            deck = next_player.zones[Zone.DECK.name]
             for i in range(min(draw_count, len(deck.card_ids))):
                 instance_id = deck.card_ids[i]
                 card = state.get_card(instance_id)
@@ -503,10 +503,10 @@ class ActionToEventGenerator:
         
         if phase == TurnPhase.PROMOTION:
             # Skip if no promotable cards or attacking zone full
-            attacking = player.zones[Zone.ATTACKING]
+            attacking = player.zones[Zone.ATTACKING.name]
             if attacking.is_full:
                 return True
-            supporting = player.zones[Zone.SUPPORTING]
+            supporting = player.zones[Zone.SUPPORTING.name]
             for card_id in supporting.card_ids:
                 card = state.get_card(card_id)
                 if card and card.can_promote:
@@ -514,8 +514,8 @@ class ActionToEventGenerator:
             return True
         
         if phase == TurnPhase.SWAP:
-            supporting = player.zones[Zone.SUPPORTING]
-            attacking = player.zones[Zone.ATTACKING]
+            supporting = player.zones[Zone.SUPPORTING.name]
+            attacking = player.zones[Zone.ATTACKING.name]
             return len(supporting.card_ids) == 0 or len(attacking.card_ids) == 0
         
         if phase == TurnPhase.ASSOCIATION:
@@ -524,7 +524,7 @@ class ActionToEventGenerator:
         if phase == TurnPhase.EVOLUTION:
             if state.is_first_turn(player_id) or state.is_second_turn(player_id):
                 return True
-            hand = player.zones[Zone.HAND]
+            hand = player.zones[Zone.HAND.name]
             for card_id in hand.card_ids:
                 card = state.get_card(card_id)
                 if card and card.is_evolution:
@@ -534,7 +534,7 @@ class ActionToEventGenerator:
         if phase == TurnPhase.ATTACK:
             if state.is_first_turn(player_id):
                 return True
-            attacking = player.zones[Zone.ATTACKING]
+            attacking = player.zones[Zone.ATTACKING.name]
             return len(attacking.card_ids) == 0
         
         return False

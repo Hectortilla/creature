@@ -140,7 +140,7 @@ class RuleValidator:
     def _validate_draw(self, state: "GameState", action: DrawAction) -> ValidationResult:
         """Validate draw action."""
         player = state.room.get_player(action.player_id)
-        deck = player.zones[Zone.DECK]
+        deck = player.zones[Zone.DECK.name]
         
         if len(deck.card_ids) < action.count:
             return ValidationResult(
@@ -159,7 +159,7 @@ class RuleValidator:
         # (but placement is allowed, so this check is OK)
         
         # Check card is in hand
-        hand = player.zones[Zone.HAND]
+        hand = player.zones[Zone.HAND.name]
         if action.instance_id not in hand.card_ids:
             return ValidationResult(
                 valid=False,
@@ -168,7 +168,7 @@ class RuleValidator:
             )
         
         # Check supporting zone has space
-        supporting = player.zones[Zone.SUPPORTING]
+        supporting = player.zones[Zone.SUPPORTING.name]
         if supporting.is_full:
             return ValidationResult(
                 valid=False,
@@ -181,8 +181,8 @@ class RuleValidator:
     def _validate_multi_play_card(self, state: "GameState", action: MultiPlayCardAction) -> ValidationResult:
         """Validate playing multiple cards."""
         player = state.room.get_player(action.player_id)
-        supporting = player.zones[Zone.SUPPORTING]
-        hand = player.zones[Zone.HAND]
+        supporting = player.zones[Zone.SUPPORTING.name]
+        hand = player.zones[Zone.HAND.name]
         
         # Check we have enough slots
         available_slots = supporting.available_slots()
@@ -217,7 +217,7 @@ class RuleValidator:
         player = state.room.get_player(action.player_id)
         
         # Check card is in supporting zone
-        supporting = player.zones[Zone.SUPPORTING]
+        supporting = player.zones[Zone.SUPPORTING.name]
         if action.instance_id not in supporting.card_ids:
             return ValidationResult(
                 valid=False,
@@ -226,7 +226,7 @@ class RuleValidator:
             )
         
         # Check attacking zone has space
-        attacking = player.zones[Zone.ATTACKING]
+        attacking = player.zones[Zone.ATTACKING.name]
         if attacking.is_full:
             return ValidationResult(
                 valid=False,
@@ -250,7 +250,7 @@ class RuleValidator:
         player = state.room.get_player(action.player_id)
         
         # Check supporting card is in supporting zone
-        supporting = player.zones[Zone.SUPPORTING]
+        supporting = player.zones[Zone.SUPPORTING.name]
         if action.supporting_card_id not in supporting.card_ids:
             return ValidationResult(
                 valid=False,
@@ -259,7 +259,7 @@ class RuleValidator:
             )
         
         # Check attacking card is in attacking zone
-        attacking = player.zones[Zone.ATTACKING]
+        attacking = player.zones[Zone.ATTACKING.name]
         if action.attacking_card_id not in attacking.card_ids:
             return ValidationResult(
                 valid=False,
@@ -272,8 +272,8 @@ class RuleValidator:
     def _validate_multi_swap(self, state: "GameState", action: MultiSwapAction) -> ValidationResult:
         """Validate multiple swaps."""
         player = state.room.get_player(action.player_id)
-        supporting_zone = player.zones[Zone.SUPPORTING]
-        attacking_zone = player.zones[Zone.ATTACKING]
+        supporting_zone = player.zones[Zone.SUPPORTING.name]
+        attacking_zone = player.zones[Zone.ATTACKING.name]
         
         used_supporting = set()
         used_attacking = set()
@@ -333,8 +333,8 @@ class RuleValidator:
             )
 
         # Check association card is in hand or supporting zone
-        hand = player.zones[Zone.HAND]
-        supporting = player.zones[Zone.SUPPORTING]
+        hand = player.zones[Zone.HAND.name]
+        supporting = player.zones[Zone.SUPPORTING.name]
         
         if action.association_card_id not in hand.card_ids and action.association_card_id not in supporting.card_ids:
             return ValidationResult(
@@ -344,7 +344,7 @@ class RuleValidator:
             )
         
         # Check target card is in an active zone
-        attacking = player.zones[Zone.ATTACKING]
+        attacking = player.zones[Zone.ATTACKING.name]
         if action.target_card_id not in supporting.card_ids and action.target_card_id not in attacking.card_ids:
             return ValidationResult(
                 valid=False,
@@ -382,7 +382,7 @@ class RuleValidator:
             )
         
         # Check evolution card is in hand
-        hand = player.zones[Zone.HAND]
+        hand = player.zones[Zone.HAND.name]
         if action.evolution_card_id not in hand.card_ids:
             return ValidationResult(
                 valid=False,
@@ -391,8 +391,8 @@ class RuleValidator:
             )
         
         # Check target card is in an active zone
-        supporting = player.zones[Zone.SUPPORTING]
-        attacking = player.zones[Zone.ATTACKING]
+        supporting = player.zones[Zone.SUPPORTING.name]
+        attacking = player.zones[Zone.ATTACKING.name]
         if action.target_card_id not in supporting.card_ids and action.target_card_id not in attacking.card_ids:
             return ValidationResult(
                 valid=False,
@@ -449,7 +449,7 @@ class RuleValidator:
             )
         
         # Check attacker is in attacking zone
-        attacking = player.zones[Zone.ATTACKING]
+        attacking = player.zones[Zone.ATTACKING.name]
         if action.attacker_id not in attacking.card_ids:
             return ValidationResult(
                 valid=False,
@@ -492,7 +492,7 @@ class RuleValidator:
             )
         
         # Check target is in opponent's attacking zone
-        opponent_attacking = opponent.zones[Zone.ATTACKING]
+        opponent_attacking = opponent.zones[Zone.ATTACKING.name]
         if action.target_card_id not in opponent_attacking.card_ids:
             # Check if opponent has no attackers (No Defenders rule)
             if len(opponent_attacking.card_ids) == 0:
@@ -529,7 +529,7 @@ class RuleValidator:
         player = state.room.get_player(action.player_id)
         
         # Check card is in supporting zone
-        supporting = player.zones[Zone.SUPPORTING]
+        supporting = player.zones[Zone.SUPPORTING.name]
         if action.instance_id not in supporting.card_ids:
             return ValidationResult(
                 valid=False,
@@ -538,7 +538,7 @@ class RuleValidator:
             )
         
         # Check attacking zone has space
-        attacking = player.zones[Zone.ATTACKING]
+        attacking = player.zones[Zone.ATTACKING.name]
         if attacking.is_full:
             return ValidationResult(
                 valid=False,

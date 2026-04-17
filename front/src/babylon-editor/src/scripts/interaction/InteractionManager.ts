@@ -20,7 +20,7 @@ export default class InteractionManager implements IScript {
 	private _scene: Scene;
 	private _board!: BoardController;
 	private _cardManager!: CardEntityManager;
-	private _actionBuilder!: ActionBuilder;
+	public actionBuilder!: ActionBuilder;
 
 	private _enabled = true;
 	private _hoveredEntity: CardEntity | null = null;
@@ -50,7 +50,7 @@ export default class InteractionManager implements IScript {
 
 		this._cardManager = CardEntityManager.getOrCreate(this._scene);
 
-		this._actionBuilder = new ActionBuilder(conn);
+		this.actionBuilder = new ActionBuilder(conn);
 
 		this._pointerObserver = this._scene.onPointerObservable.add(this._handlePointer);
 		board.on('validActionsChanged', this._onValidActionsChanged);
@@ -168,11 +168,11 @@ export default class InteractionManager implements IScript {
 	private _handleSourceSelection(entity: CardEntity): void {
 		if (!this._interactableIds.has(entity.instanceId)) return;
 
-		const actions = this._actionBuilder.getActionsForCard(entity.instanceId);
+		const actions = this.actionBuilder.getActionsForCard(entity.instanceId);
 		if (actions.length === 0) return;
 
-		const twoStep = actions.filter(a => this._actionBuilder.isTwoStepAction(a));
-		const instant = actions.filter(a => !this._actionBuilder.isTwoStepAction(a));
+		const twoStep = actions.filter(a => this.actionBuilder.isTwoStepAction(a));
+		const instant = actions.filter(a => !this.actionBuilder.isTwoStepAction(a));
 
 		if (twoStep.length > 0) {
 			this._selectedEntity = entity;
@@ -180,13 +180,13 @@ export default class InteractionManager implements IScript {
 			this._selectionMode = 'target';
 			this._pendingAction = twoStep[0];
 
-			this._targetIds = new Set(this._actionBuilder.getValidTargetIds(twoStep[0]));
+			this._targetIds = new Set(this.actionBuilder.getValidTargetIds(twoStep[0]));
 			this._highlightTargets();
 			return;
 		}
 
 		if (instant.length > 0) {
-			this._actionBuilder.execute(instant[0]);
+			this.actionBuilder.execute(instant[0]);
 		}
 	}
 
@@ -202,13 +202,13 @@ export default class InteractionManager implements IScript {
 
 		const sourceId = this._selectedEntity!.instanceId;
 		const actionType = this._pendingAction!.action;
-		const matchingAction = this._actionBuilder.getActionsForCard(sourceId).find(a =>
+		const matchingAction = this.actionBuilder.getActionsForCard(sourceId).find(a =>
 			a.action === actionType
 			&& (a.target_card_id === entity.instanceId || a.attacking_card_id === entity.instanceId),
 		);
 
 		if (matchingAction) {
-			this._actionBuilder.execute(matchingAction);
+			this.actionBuilder.execute(matchingAction);
 		}
 
 		this._clearSelection();
@@ -219,8 +219,8 @@ export default class InteractionManager implements IScript {
 	// ====================================================================
 
 	private _onValidActionsChanged = (data: ValidActionsChangedData): void => {
-		this._actionBuilder.setValidActions(data.actions);
-		this._interactableIds = new Set(this._actionBuilder.getInteractableCardIds());
+		this.actionBuilder.setValidActions(data.actions);
+		this._interactableIds = new Set(this.actionBuilder.getInteractableCardIds());
 		this._applyInteractableHighlights();
 	};
 

@@ -2,10 +2,8 @@ import type { Scene } from '@babylonjs/core/scene';
 import type { IScript } from 'babylonjs-editor-tools';
 import { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 
-import GameConnection from '../game/GameConnection';
 import BoardController from '../BoardController';
 import { CardEntityManager } from '../entities/CardEntityManager';
-import { ActionBuilder } from '../state/ActionBuilder';
 
 import { PhaseIndicator } from './PhaseIndicator';
 import { TurnBanner } from './TurnBanner';
@@ -35,14 +33,8 @@ export default class HudController implements IScript {
 		const board = BoardController.instance;
 		if (!board) throw new Error('HudController: BoardController not initialized');
 
-		const conn = GameConnection.instance;
-		if (!conn) throw new Error('HudController: GameConnection not initialized');
-
 		const cardManager = CardEntityManager.getOrCreate(this._scene);
-
 		const interactionManager = getScriptByClassForObject(this._scene, InteractionManager);
-
-		const actionBuilder = new ActionBuilder(conn);
 
 		this._guiTexture = AdvancedDynamicTexture.CreateFullscreenUI('GameHUD', true, this._scene);
 
@@ -50,9 +42,10 @@ export default class HudController implements IScript {
 		this._turnBanner = new TurnBanner(this._guiTexture, board);
 		this._elementPoolDisplay = new ElementPoolDisplay(this._guiTexture, board);
 		this._healthBars = new HealthBarManager(this._guiTexture, board, cardManager);
-		this._actionButtons = new ActionButtonPanel(this._guiTexture, board, actionBuilder);
 
+		// Reuse the InteractionManager's ActionBuilder — single source of truth
 		if (interactionManager) {
+			this._actionButtons = new ActionButtonPanel(this._guiTexture, board, interactionManager.actionBuilder);
 			this._cardDetailPanel = new CardDetailPanel(this._guiTexture, interactionManager);
 		}
 	}

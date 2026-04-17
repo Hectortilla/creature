@@ -193,8 +193,8 @@ def _apply_card_associated(state: "GameState", players: dict[str, "PlayerState"]
     if assoc_card and target_card:
         # Remove from source zone
         if event.source_zone:
-            if event.association_card_id in player.zones[event.source_zone].card_ids:
-                player.zones[event.source_zone].card_ids.remove(event.association_card_id)
+            if event.association_card_id in player.zones[event.source_zone.name].card_ids:
+                player.zones[event.source_zone.name].card_ids.remove(event.association_card_id)
         
         # Mark as associated
         assoc_card.status = CardStatus.ASSOCIATED
@@ -225,15 +225,15 @@ def _apply_card_evolved(state: "GameState", players: dict[str, "PlayerState"], e
         
         # Remove base from its zone
         if target_zone in (Zone.SUPPORTING, Zone.ATTACKING):
-            if event.base_card_id in player.zones[target_zone].card_ids:
-                player.zones[target_zone].card_ids.remove(event.base_card_id)
+            if event.base_card_id in player.zones[target_zone.name].card_ids:
+                player.zones[target_zone.name].card_ids.remove(event.base_card_id)
         
         # Move base to graveyard
         player.zones[Zone.GRAVEYARD.name].card_ids.append(event.base_card_id)
         base_card.zone = Zone.GRAVEYARD
         
         # Place evolution in target zone
-        player.zones[target_zone].card_ids.append(event.evolution_card_id)
+        player.zones[target_zone.name].card_ids.append(event.evolution_card_id)
         evo_card.zone = target_zone
         evo_card.turns_in_zone = 0
         
@@ -284,8 +284,8 @@ def _apply_card_destroyed(state: "GameState", players: dict[str, "PlayerState"],
         
         # Remove from current zone
         if current_zone in (Zone.SUPPORTING, Zone.ATTACKING):
-            if event.instance_id in player.zones[current_zone].card_ids:
-                player.zones[current_zone].card_ids.remove(event.instance_id)
+            if event.instance_id in player.zones[current_zone.name].card_ids:
+                player.zones[current_zone.name].card_ids.remove(event.instance_id)
         
         # Add to graveyard
         if event.instance_id not in player.zones[Zone.GRAVEYARD.name].card_ids:
