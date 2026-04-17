@@ -26,7 +26,7 @@ from app.models.game.events import (
     TurnStartedEvent,
     TurnEndedEvent,
 )
-from app.game.effects import EffectTrigger, EffectContext, EffectRegistry
+from app.game.effects import EffectTrigger, EffectContext, get_effect
 from app.game.reducer import apply_event
 
 if TYPE_CHECKING:
@@ -161,7 +161,7 @@ class EventLoop:
                 continue
 
             for skill_id in card.skill_ids:
-                effect = EffectRegistry.get_effect(str(skill_id))
+                effect = get_effect(str(skill_id))
                 if not effect:
                     continue
 

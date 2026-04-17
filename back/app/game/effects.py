@@ -402,57 +402,21 @@ class OnTurnStartEffect(Effect):
         return EffectResult(state_modifications=modifications)
 
 
-# ============================================================================
-# Effect Registry
-# ============================================================================
+# ── Effect registry ─────────────────────────────────────────────────────
+# Plain dict: effect_id (str) → Effect instance.
+# Looked up by skill_id from card data. Register instances at module level.
 
-class EffectRegistry:
-    """
-    Registry for all available effects.
-    
-    Effects are registered by ID and can be looked up to create instances.
-    """
-    
-    _effects: dict[str, type[Effect]] = {}
-    _instances: dict[str, Effect] = {}
-    
-    @classmethod
-    def register(cls, effect_class: type[Effect], effect_id: str) -> None:
-        """Register an effect class."""
-        cls._effects[effect_id] = effect_class
-    
-    @classmethod
-    def get_effect_class(cls, effect_id: str) -> Optional[type[Effect]]:
-        """Get an effect class by ID."""
-        return cls._effects.get(effect_id)
-    
-    @classmethod
-    def create_effect(cls, effect_id: str, **kwargs) -> Optional[Effect]:
-        """Create an effect instance by ID."""
-        effect_class = cls._effects.get(effect_id)
-        if effect_class:
-            return effect_class(effect_id=effect_id, **kwargs)
-        return None
-    
-    @classmethod
-    def register_instance(cls, effect: Effect) -> None:
-        """Register a pre-configured effect instance."""
-        cls._instances[effect.effect_id] = effect
-    
-    @classmethod
-    def get_effect(cls, effect_id: str) -> Optional[Effect]:
-        """Get a registered effect instance."""
-        return cls._instances.get(effect_id)
+_EFFECT_INSTANCES: dict[str, Effect] = {}
 
 
-# Register built-in effects
-EffectRegistry.register(StatModifierEffect, "stat_modifier")
-EffectRegistry.register(ElementBonusEffect, "element_bonus")
-EffectRegistry.register(OnPlayEffect, "on_play")
-EffectRegistry.register(OnDestroyEffect, "on_destroy")
-EffectRegistry.register(OnAttackEffect, "on_attack")
-EffectRegistry.register(OnDefendEffect, "on_defend")
-EffectRegistry.register(OnTurnStartEffect, "on_turn_start")
+def register_effect(effect: Effect) -> None:
+    """Register a pre-configured effect instance."""
+    _EFFECT_INSTANCES[effect.effect_id] = effect
+
+
+def get_effect(effect_id: str) -> Optional[Effect]:
+    """Get a registered effect instance by ID."""
+    return _EFFECT_INSTANCES.get(effect_id)
 
 
 # ============================================================================
@@ -477,7 +441,7 @@ def get_passive_stat_modifiers(state: "GameState", target_card: "GameCard") -> d
             if not card:
                 continue
             for skill_id in card.skill_ids:
-                effect = EffectRegistry.get_effect(str(skill_id))
+                effect = get_effect(str(skill_id))
                 if not effect or not isinstance(effect, StatModifierEffect):
                     continue
                 context = EffectContext(state=state, source_card=card)
@@ -508,7 +472,7 @@ def get_passive_element_bonus(state: "GameState", player_id: str) -> dict[int, i
         if not card:
             continue
         for skill_id in card.skill_ids:
-            effect = EffectRegistry.get_effect(str(skill_id))
+            effect = get_effect(str(skill_id))
             if not effect or not isinstance(effect, ElementBonusEffect):
                 continue
             context = EffectContext(state=state, source_card=card)

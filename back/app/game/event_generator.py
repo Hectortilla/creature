@@ -221,15 +221,88 @@ class ActionToEventGenerator:
         
         return events
     
+    def _build_combat_events(
+        self,
+        state: "GameState",
+        attacker: "GameCard",
+        target: "GameCard",
+        attack,
+        attacker_owner_id: str,
+        consume_elements: bool = True,
+    ) -> list[GameEvent]:
+        """Build element-consumption + attack-declared + damage + destruction events."""
+        events: list[GameEvent] = []
+
+        if consume_elements:
+            element_costs = {c.element_id: c.amount for c in attack.necessary_force}
+            if element_costs:
+                events.append(ElementsConsumedEvent(
+                    game_id=state.game_id,
+                    player_id=attacker_owner_id,
+                    elements=element_costs,
+                    for_attack_id=attack.attack_id,
+                ))
+
+        events.append(AttackDeclaredEvent(
+            game_id=state.game_id,
+            attacker_owner_id=attacker_owner_id,
+            attacker_id=attacker.instance_id,
+            target_id=target.instance_id,
+            attack_id=attack.attack_id,
+            attack_name=attack.name,
+        ))
+
+        attacker_mods = get_passive_stat_modifiers(state, attacker)
+        target_mods = get_passive_stat_modifiers(state, target)
+        effect_mod = attacker_mods["attack_bonus"] - target_mods["defense_bonus"]
+        damage_calc = calculate_damage(attack, attacker, target, effect_modifier=effect_mod)
+
+        if damage_calc.final_damage > 0:
+            events.append(DamageDealtEvent(
+                game_id=state.game_id,
+                source_id=attacker.instance_id,
+                target_id=target.instance_id,
+                damage_type=attack.type,
+                base_damage=damage_calc.base_damage,
+                element_bonus=damage_calc.element_bonus,
+                defense_reduction=damage_calc.defense_value,
+                final_damage=damage_calc.final_damage,
+                remaining_health=target.current_health - damage_calc.final_damage,
+            ))
+            if target.current_health - damage_calc.final_damage <= 0:
+                events.append(CardDestroyedEvent(
+                    game_id=state.game_id,
+                    instance_id=target.instance_id,
+                    owner_id=target.owner_id,
+                    card_name=target.name,
+                    destroyed_by=attacker.instance_id,
+                ))
+
+        if damage_calc.reflected_damage > 0:
+            events.append(DamageDealtEvent(
+                game_id=state.game_id,
+                source_id=target.instance_id,
+                target_id=attacker.instance_id,
+                damage_type=attack.type,
+                base_damage=0,
+                element_bonus=0,
+                defense_reduction=0,
+                final_damage=damage_calc.reflected_damage,
+                remaining_health=attacker.current_health - damage_calc.reflected_damage,
+            ))
+            if attacker.current_health - damage_calc.reflected_damage <= 0:
+                events.append(CardDestroyedEvent(
+                    game_id=state.game_id,
+                    instance_id=attacker.instance_id,
+                    owner_id=attacker.owner_id,
+                    card_name=attacker.name,
+                    destroyed_by=target.instance_id,
+                ))
+
+        return events
+
     def _create_attack_events(self, state: "GameState", action: AttackAction) -> list[GameEvent]:
-        """
-        Create attack events.
-        
-        This is the most complex as it involves:
-        1. Checking for no defenders
-        2. Calculating damage
-        3. Determining destruction
-        """
+        """Create attack events, handling no-defender rule."""
         events = []
         player = state.room.get_player(action.player_id)
         opponent = state.room.get_opponent(action.player_id)
@@ -284,80 +357,10 @@ class ActionToEventGenerator:
         if not target:
             return events
         
-        # Consume elements event (using 'necessary_force' matching AttackBase)
-        element_costs = {cost.element_id: cost.amount for cost in attack.necessary_force}
-        if element_costs:
-            events.append(ElementsConsumedEvent(
-                game_id=state.game_id,
-                player_id=action.player_id,
-                elements=element_costs,
-                for_attack_id=attack.attack_id,
-            ))
-        
-        # Attack declared event
-        events.append(AttackDeclaredEvent(
-            game_id=state.game_id,
-            attacker_owner_id=action.player_id,
-            attacker_id=action.attacker_id,
-            target_id=action.target_card_id,
-            attack_id=attack.attack_id,
-            attack_name=attack.name,
+        events.extend(self._build_combat_events(
+            state, attacker, target, attack, action.player_id,
         ))
-        
-        # Calculate damage (include passive stat modifiers from active skills)
-        attacker_mods = get_passive_stat_modifiers(state, attacker)
-        target_mods = get_passive_stat_modifiers(state, target)
-        effect_mod = attacker_mods["attack_bonus"] - target_mods["defense_bonus"]
-        damage_calc = calculate_damage(attack, attacker, target, effect_modifier=effect_mod)
-        
-        # Damage to target (using 'type' matching AttackBase)
-        if damage_calc.final_damage > 0:
-            events.append(DamageDealtEvent(
-                game_id=state.game_id,
-                source_id=action.attacker_id,
-                target_id=action.target_card_id,
-                damage_type=attack.type,
-                base_damage=damage_calc.base_damage,
-                element_bonus=damage_calc.element_bonus,
-                defense_reduction=damage_calc.defense_value,
-                final_damage=damage_calc.final_damage,
-                remaining_health=target.current_health - damage_calc.final_damage,
-            ))
-            
-            # Check destruction
-            if target.current_health - damage_calc.final_damage <= 0:
-                events.append(CardDestroyedEvent(
-                    game_id=state.game_id,
-                    instance_id=action.target_card_id,
-                    owner_id=target.owner_id,
-                    card_name=target.name,
-                    destroyed_by=action.attacker_id,
-                ))
-        
-        # Reflected damage to attacker
-        if damage_calc.reflected_damage > 0:
-            events.append(DamageDealtEvent(
-                game_id=state.game_id,
-                source_id=action.target_card_id,
-                target_id=action.attacker_id,
-                damage_type=attack.type,
-                base_damage=0,
-                element_bonus=0,
-                defense_reduction=0,
-                final_damage=damage_calc.reflected_damage,
-                remaining_health=attacker.current_health - damage_calc.reflected_damage,
-            ))
-            
-            # Check attacker destruction
-            if attacker.current_health - damage_calc.reflected_damage <= 0:
-                events.append(CardDestroyedEvent(
-                    game_id=state.game_id,
-                    instance_id=action.attacker_id,
-                    owner_id=attacker.owner_id,
-                    card_name=attacker.name,
-                    destroyed_by=action.target_card_id,
-                ))
-        
+
         return events
     
     def _create_pass_events(self, state: "GameState", action: PassPhaseAction) -> list[GameEvent]:
@@ -474,77 +477,9 @@ class ActionToEventGenerator:
                         break
 
             if attacker and attack:
-                # Consume elements (they were NOT consumed before the NoDefenderEvent)
-                element_costs = {cost.element_id: cost.amount for cost in attack.necessary_force}
-                if element_costs:
-                    events.append(ElementsConsumedEvent(
-                        game_id=state.game_id,
-                        player_id=pending["attacker_owner_id"],
-                        elements=element_costs,
-                        for_attack_id=attack.attack_id,
-                    ))
-
-                # Declare the attack
-                events.append(AttackDeclaredEvent(
-                    game_id=state.game_id,
-                    attacker_owner_id=pending["attacker_owner_id"],
-                    attacker_id=pending["attacker_id"],
-                    target_id=action.instance_id,
-                    attack_id=attack.attack_id,
-                    attack_name=attack.name,
+                events.extend(self._build_combat_events(
+                    state, attacker, card, attack, pending["attacker_owner_id"],
                 ))
-
-                # Calculate damage (include passive modifiers)
-                attacker_mods = get_passive_stat_modifiers(state, attacker)
-                target_mods = get_passive_stat_modifiers(state, card)
-                effect_mod = attacker_mods["attack_bonus"] - target_mods["defense_bonus"]
-                damage_calc = calculate_damage(attack, attacker, card, effect_modifier=effect_mod)
-
-                # Damage to target
-                if damage_calc.final_damage > 0:
-                    events.append(DamageDealtEvent(
-                        game_id=state.game_id,
-                        source_id=pending["attacker_id"],
-                        target_id=action.instance_id,
-                        damage_type=attack.type,
-                        base_damage=damage_calc.base_damage,
-                        element_bonus=damage_calc.element_bonus,
-                        defense_reduction=damage_calc.defense_value,
-                        final_damage=damage_calc.final_damage,
-                        remaining_health=card.current_health - damage_calc.final_damage,
-                    ))
-
-                    if card.current_health - damage_calc.final_damage <= 0:
-                        events.append(CardDestroyedEvent(
-                            game_id=state.game_id,
-                            instance_id=action.instance_id,
-                            owner_id=card.owner_id,
-                            card_name=card.name,
-                            destroyed_by=pending["attacker_id"],
-                        ))
-
-                # Reflected damage to attacker
-                if damage_calc.reflected_damage > 0:
-                    events.append(DamageDealtEvent(
-                        game_id=state.game_id,
-                        source_id=action.instance_id,
-                        target_id=pending["attacker_id"],
-                        damage_type=attack.type,
-                        base_damage=0,
-                        element_bonus=0,
-                        defense_reduction=0,
-                        final_damage=damage_calc.reflected_damage,
-                        remaining_health=attacker.current_health - damage_calc.reflected_damage,
-                    ))
-
-                    if attacker.current_health - damage_calc.reflected_damage <= 0:
-                        events.append(CardDestroyedEvent(
-                            game_id=state.game_id,
-                            instance_id=pending["attacker_id"],
-                            owner_id=attacker.owner_id,
-                            card_name=attacker.name,
-                            destroyed_by=action.instance_id,
-                        ))
 
         return events
     
