@@ -74,7 +74,13 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     @computed_field
     @property
     def can_attack(self) -> bool:
-        """Check if the card can attack."""
+        """Check if the card can attack.
+
+        Note: Swapped cards CAN attack if they can afford it with other cards'
+        elements. This matches the rule: "The attacking card may still attack."
+        Element affordability naturally limits this since swapped cards don't
+        contribute elements on the turn they're swapped.
+        """
         return (
             self.zone == Zone.ATTACKING
             and not self.has_attacked_this_turn

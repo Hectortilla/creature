@@ -314,20 +314,19 @@ class GameEngine:
         valid_actions.append(ConcedeAction(player_id=state.active_player_id))
          
         if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
-            # Find opponent
-            active_opponent = None
-            for pid, p in state.room.players.items():
-                if pid != state.active_player_id:
-                    active_opponent = p
-                    break
-            if active_opponent and active_opponent.player_id == state.active_player_id:
-                for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
-                    card = state.get_card(card_id)
-                    if card:
-                        valid_actions.append(ForceDefendAction(
-                            player_id=state.active_player_id,
-                            instance_id=card_id,
-                        ))
+            # The defender (not the active player) must choose a supporting
+            # creature to move to the attacking zone.
+            defender_id = state.pending_defender_id
+            if defender_id:
+                defender = state.room.players.get(defender_id)
+                if defender:
+                    for card_id in defender.zones[Zone.SUPPORTING.name].card_ids:
+                        card = state.get_card(card_id)
+                        if card:
+                            valid_actions.append(ForceDefendAction(
+                                player_id=defender_id,
+                                instance_id=card_id,
+                            ))
             return [action.to_dict(state) for action in valid_actions]
         
         phase = state.current_phase

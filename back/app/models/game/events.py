@@ -218,6 +218,9 @@ class NoDefenderEvent(GameEvent):
     attacker_id: str = ""
     must_defend: bool = False
     game_lost: bool = False
+    pending_attacker_card_id: str = ""
+    pending_attack_id: int = 0
+    pending_attacker_owner_id: str = ""
 
 
 # ============================================================================

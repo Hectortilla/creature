@@ -454,3 +454,67 @@ EffectRegistry.register(OnAttackEffect, "on_attack")
 EffectRegistry.register(OnDefendEffect, "on_defend")
 EffectRegistry.register(OnTurnStartEffect, "on_turn_start")
 
+
+# ============================================================================
+# Passive Effect Query Helpers
+# ============================================================================
+
+def get_passive_stat_modifiers(state: "GameState", target_card: "GameCard") -> dict:
+    """
+    Collect passive stat modifiers affecting a target card.
+
+    Iterates all active cards across both players, checks their skills for
+    StatModifierEffect instances, and sums bonuses for the target card.
+
+    Returns:
+        Dict with keys: attack_bonus, defense_bonus, health_bonus
+    """
+    modifiers = {"attack_bonus": 0, "defense_bonus": 0, "health_bonus": 0}
+
+    for player in state.room.players.values():
+        for card_id in player.get_active_cards():
+            card = state.cards.get(card_id)
+            if not card:
+                continue
+            for skill_id in card.skill_ids:
+                effect = EffectRegistry.get_effect(str(skill_id))
+                if not effect or not isinstance(effect, StatModifierEffect):
+                    continue
+                context = EffectContext(state=state, source_card=card)
+                affected = effect.get_affected_cards(context)
+                if target_card in affected:
+                    modifiers["attack_bonus"] += effect.attack_bonus
+                    modifiers["defense_bonus"] += effect.defense_bonus
+                    modifiers["health_bonus"] += effect.health_bonus
+
+    return modifiers
+
+
+def get_passive_element_bonus(state: "GameState", player_id: str) -> dict[int, int]:
+    """
+    Collect passive element bonuses for a player.
+
+    Iterates that player's active cards, checks their skills for
+    ElementBonusEffect instances, and sums the bonus contributions.
+
+    Returns:
+        Dict of element_id -> bonus_amount
+    """
+    bonuses: dict[int, int] = {}
+    player = state.room.players[player_id]
+
+    for card_id in player.get_active_cards():
+        card = state.cards.get(card_id)
+        if not card:
+            continue
+        for skill_id in card.skill_ids:
+            effect = EffectRegistry.get_effect(str(skill_id))
+            if not effect or not isinstance(effect, ElementBonusEffect):
+                continue
+            context = EffectContext(state=state, source_card=card)
+            if effect.should_trigger(context):
+                current = bonuses.get(effect.element_id, 0)
+                bonuses[effect.element_id] = current + effect.bonus_amount
+
+    return bonuses
+

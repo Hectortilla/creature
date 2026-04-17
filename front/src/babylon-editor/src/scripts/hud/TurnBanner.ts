@@ -2,7 +2,7 @@ import { Rectangle } from '@babylonjs/gui/2D/controls/rectangle';
 import { TextBlock } from '@babylonjs/gui/2D/controls/textBlock';
 import type { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 import type BoardController from '../BoardController';
-import type { TurnChangedData } from '../state/events';
+import type { TurnChangedData, NoDefenderData } from '../state/events';
 
 const FADE_IN_MS = 200;
 const HOLD_MS = 1000;
@@ -42,6 +42,7 @@ export class TurnBanner {
 		this._backdrop.addControl(this._text);
 
 		board.on('turnChanged', this._onTurnChanged);
+		board.on('noDefender', this._onNoDefender);
 	}
 
 	private _onTurnChanged = (data: TurnChangedData): void => {
@@ -49,6 +50,12 @@ export class TurnBanner {
 			data.isMyTurn ? 'YOUR TURN' : "OPPONENT'S TURN",
 			data.isMyTurn ? MY_TURN_COLOR : OPP_TURN_COLOR,
 		);
+	};
+
+	private _onNoDefender = (data: NoDefenderData): void => {
+		if (data.mustDefend) {
+			this._show('CHOOSE A DEFENDER!', '#FF9800');
+		}
 	};
 
 	private _show(message: string, accentColor: string): void {
@@ -100,6 +107,7 @@ export class TurnBanner {
 	dispose(): void {
 		this._cancelAnimation();
 		this._board.off('turnChanged', this._onTurnChanged);
+		this._board.off('noDefender', this._onNoDefender);
 		this._backdrop.dispose();
 	}
 }

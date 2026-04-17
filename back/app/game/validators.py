@@ -323,7 +323,15 @@ class RuleValidator:
                 error="Cannot associate cards on first turn",
                 error_code="FIRST_TURN_RESTRICTION"
             )
-        
+
+        # Check card is not being associated with itself
+        if action.association_card_id == action.target_card_id:
+            return ValidationResult(
+                valid=False,
+                error="Cannot associate a card with itself",
+                error_code="SELF_ASSOCIATION"
+            )
+
         # Check association card is in hand or supporting zone
         hand = player.zones[Zone.HAND]
         supporting = player.zones[Zone.SUPPORTING]

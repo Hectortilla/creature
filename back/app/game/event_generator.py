@@ -37,6 +37,7 @@ from app.models.game.events import (
 )
 from app.game.actions import *
 from app.game.elements import calculate_damage
+from app.game.effects import get_passive_stat_modifiers
 
 if TYPE_CHECKING:
     from app.models.game.state import GameState
@@ -251,13 +252,16 @@ class ActionToEventGenerator:
         # Check for no defenders (No Defenders Rule)
         if len(opponent.zones[Zone.ATTACKING].card_ids) == 0:
             if len(opponent.zones[Zone.SUPPORTING].card_ids) > 0:
-                # Must force defend
+                # Must force defend — store pending attack so it can resume
                 events.append(NoDefenderEvent(
                     game_id=state.game_id,
                     defender_id=opponent.player_id,
                     attacker_id=action.player_id,
                     must_defend=True,
                     game_lost=False,
+                    pending_attacker_card_id=action.attacker_id,
+                    pending_attack_id=action.attack_id,
+                    pending_attacker_owner_id=action.player_id,
                 ))
                 return events
             else:
@@ -301,8 +305,11 @@ class ActionToEventGenerator:
             attack_name=attack.name,
         ))
         
-        # Calculate damage
-        damage_calc = calculate_damage(attack, attacker, target)
+        # Calculate damage (include passive stat modifiers from active skills)
+        attacker_mods = get_passive_stat_modifiers(state, attacker)
+        target_mods = get_passive_stat_modifiers(state, target)
+        effect_mod = attacker_mods["attack_bonus"] - target_mods["defense_bonus"]
+        damage_calc = calculate_damage(attack, attacker, target, effect_modifier=effect_mod)
         
         # Damage to target (using 'type' matching AttackBase)
         if damage_calc.final_damage > 0:
@@ -441,11 +448,12 @@ class ActionToEventGenerator:
         return events
     
     def _create_force_defend_events(self, state: "GameState", action: ForceDefendAction) -> list[GameEvent]:
-        """Create force defend events."""
+        """Create force defend events and resume the pending attack."""
         events = []
         card = state.get_card(action.instance_id)
-        
+
         if card:
+            # Promote the defending card to the attacking zone
             events.append(CardPromotedEvent(
                 game_id=state.game_id,
                 player_id=action.player_id,
@@ -453,7 +461,92 @@ class ActionToEventGenerator:
                 card_id=card.card_id,
                 card_name=card.name,
             ))
-        
+
+        # Resume the pending attack against the just-promoted card
+        if state.pending_attack and card:
+            pending = state.pending_attack
+            attacker = state.get_card(pending["attacker_id"])
+
+            attack = None
+            if attacker:
+                for atk in attacker.attacks:
+                    if atk.attack_id == pending["attack_id"]:
+                        attack = atk
+                        break
+
+            if attacker and attack:
+                # Consume elements (they were NOT consumed before the NoDefenderEvent)
+                element_costs = {cost.element_id: cost.amount for cost in attack.necessary_force}
+                if element_costs:
+                    events.append(ElementsConsumedEvent(
+                        game_id=state.game_id,
+                        player_id=pending["attacker_owner_id"],
+                        elements=element_costs,
+                        for_attack_id=attack.attack_id,
+                    ))
+
+                # Declare the attack
+                events.append(AttackDeclaredEvent(
+                    game_id=state.game_id,
+                    attacker_owner_id=pending["attacker_owner_id"],
+                    attacker_id=pending["attacker_id"],
+                    target_id=action.instance_id,
+                    attack_id=attack.attack_id,
+                    attack_name=attack.name,
+                ))
+
+                # Calculate damage (include passive modifiers)
+                attacker_mods = get_passive_stat_modifiers(state, attacker)
+                target_mods = get_passive_stat_modifiers(state, card)
+                effect_mod = attacker_mods["attack_bonus"] - target_mods["defense_bonus"]
+                damage_calc = calculate_damage(attack, attacker, card, effect_modifier=effect_mod)
+
+                # Damage to target
+                if damage_calc.final_damage > 0:
+                    events.append(DamageDealtEvent(
+                        game_id=state.game_id,
+                        source_id=pending["attacker_id"],
+                        target_id=action.instance_id,
+                        damage_type=attack.type,
+                        base_damage=damage_calc.base_damage,
+                        element_bonus=damage_calc.element_bonus,
+                        defense_reduction=damage_calc.defense_value,
+                        final_damage=damage_calc.final_damage,
+                        remaining_health=card.current_health - damage_calc.final_damage,
+                    ))
+
+                    if card.current_health - damage_calc.final_damage <= 0:
+                        events.append(CardDestroyedEvent(
+                            game_id=state.game_id,
+                            instance_id=action.instance_id,
+                            owner_id=card.owner_id,
+                            card_name=card.name,
+                            destroyed_by=pending["attacker_id"],
+                        ))
+
+                # Reflected damage to attacker
+                if damage_calc.reflected_damage > 0:
+                    events.append(DamageDealtEvent(
+                        game_id=state.game_id,
+                        source_id=action.instance_id,
+                        target_id=pending["attacker_id"],
+                        damage_type=attack.type,
+                        base_damage=0,
+                        element_bonus=0,
+                        defense_reduction=0,
+                        final_damage=damage_calc.reflected_damage,
+                        remaining_health=attacker.current_health - damage_calc.reflected_damage,
+                    ))
+
+                    if attacker.current_health - damage_calc.reflected_damage <= 0:
+                        events.append(CardDestroyedEvent(
+                            game_id=state.game_id,
+                            instance_id=pending["attacker_id"],
+                            owner_id=attacker.owner_id,
+                            card_name=attacker.name,
+                            destroyed_by=action.instance_id,
+                        ))
+
         return events
     
     def _create_concede_events(self, state: "GameState", action: ConcedeAction) -> list[GameEvent]:
@@ -492,10 +585,10 @@ class ActionToEventGenerator:
             return len(supporting.card_ids) == 0 or len(attacking.card_ids) == 0
         
         if phase == TurnPhase.ASSOCIATION:
-            return player.turn_count == 0
-        
+            return state.is_first_turn(player_id)
+
         if phase == TurnPhase.EVOLUTION:
-            if player.turn_count <= 1:
+            if state.is_first_turn(player_id) or state.is_second_turn(player_id):
                 return True
             hand = player.zones[Zone.HAND]
             for card_id in hand.card_ids:
@@ -503,9 +596,9 @@ class ActionToEventGenerator:
                 if card and card.is_evolution:
                     return False
             return True
-        
+
         if phase == TurnPhase.ATTACK:
-            if player.turn_count == 0:
+            if state.is_first_turn(player_id):
                 return True
             attacking = player.zones[Zone.ATTACKING]
             return len(attacking.card_ids) == 0

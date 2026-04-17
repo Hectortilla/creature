@@ -218,7 +218,7 @@ Damage is permanently subtracted from life.
 
 ### 7.3 Destruction
 
-* If a creature’s life drops below **0**:
+* If a creature’s life reaches **0** or below:
 
   * It is destroyed
   * Moved to the graveyard

@@ -197,10 +197,10 @@ def _apply_card_played(state: "GameState", players: dict[str, "PlayerState"], ev
         # Update card state
         card.zone = Zone.SUPPORTING
         card.turns_in_zone = 0
-        
+
         # Recalculate elements
-        _recalculate_elements(state, event.player_id)
-    
+        _recalculate_elements(state, players, event.player_id)
+
     return state, players
 
 
@@ -221,10 +221,17 @@ def _apply_card_promoted(state: "GameState", players: dict[str, "PlayerState"], 
         # Update card state
         card.zone = Zone.ATTACKING
         card.turns_in_zone = 0
-        
+
         # Recalculate elements
-        _recalculate_elements(state, event.player_id)
-    
+        _recalculate_elements(state, players, event.player_id)
+
+    # If this promotion resolves a force defend, resume normal game flow
+    if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
+        state.status = GameStatus.IN_PROGRESS
+        state.pending_action = None
+        state.pending_defender_id = None
+        state.pending_attack = None
+
     return state, players
 
 
@@ -254,8 +261,8 @@ def _apply_card_swapped(state: "GameState", players: dict[str, "PlayerState"], e
         attacking_card.turns_in_zone = 0
         
         # Recalculate elements (swapped cards don't contribute this turn)
-        _recalculate_elements(state, event.player_id)
-    
+        _recalculate_elements(state, players, event.player_id)
+
     return state, players
 
 
@@ -283,8 +290,8 @@ def _apply_card_associated(state: "GameState", players: dict[str, "PlayerState"]
             target_card.associations.append(event.association_card_id)
         
         # Recalculate elements
-        _recalculate_elements(state, event.player_id)
-    
+        _recalculate_elements(state, players, event.player_id)
+
     return state, players
 
 
@@ -320,8 +327,8 @@ def _apply_card_evolved(state: "GameState", players: dict[str, "PlayerState"], e
         base_card.associations.clear()
         
         # Recalculate elements
-        _recalculate_elements(state, event.player_id)
-    
+        _recalculate_elements(state, players, event.player_id)
+
     return state, players
 
 
@@ -367,9 +374,9 @@ def _apply_card_destroyed(state: "GameState", players: dict[str, "PlayerState"],
             player.zones[Zone.GRAVEYARD.name].card_ids.append(event.instance_id)
         
         card.zone = Zone.GRAVEYARD
-        
+
         # Recalculate elements
-        _recalculate_elements(state, event.owner_id)
+        _recalculate_elements(state, players, event.owner_id)
     
     return state, players
 
@@ -471,6 +478,12 @@ def _apply_no_defender(state: "GameState", players: dict[str, "PlayerState"], ev
     if event.must_defend:
         state.status = GameStatus.PAUSED
         state.pending_action = "force_defend"
+        state.pending_defender_id = event.defender_id
+        state.pending_attack = {
+            "attacker_id": event.pending_attacker_card_id,
+            "attack_id": event.pending_attack_id,
+            "attacker_owner_id": event.pending_attacker_owner_id,
+        }
     elif event.game_lost:
         state.status = GameStatus.FINISHED
         # Winner is the attacker
@@ -483,17 +496,20 @@ def _apply_no_defender(state: "GameState", players: dict[str, "PlayerState"], ev
 # Helper Functions
 # ============================================================================
 
-def _recalculate_elements(state: "GameState", player_id: str) -> None:
+def _recalculate_elements(state: "GameState", players: dict[str, "PlayerState"], player_id: str) -> None:
     """
     Recalculate element pool for a player based on their active cards.
-    
+
     Note: This mutates the state in place (called from within reducers
-    that already have a copy).
+    that already have a copy). Uses the `players` dict (not state.room.players)
+    to ensure we read the most up-to-date zone data from the current handler.
     """
-    player = state.room.players[player_id]
-    player.element_pool.elements.clear()
-    player.element_pool.max_elements.clear()
-    
+    player = players[player_id]
+    old_max = dict(player.element_pool.max_elements)
+    old_available = dict(player.element_pool.elements)
+
+    # Compute new max from current active cards
+    new_max: dict[int, int] = {}
     for card_id in player.get_active_cards():
         card = state.cards.get(card_id)
         if card and card.zone in (Zone.SUPPORTING, Zone.ATTACKING):
@@ -503,10 +519,33 @@ def _recalculate_elements(state: "GameState", player_id: str) -> None:
             # Associated cards don't contribute
             if card.status == CardStatus.ASSOCIATED:
                 continue
-            
+
             for contrib in card.element_contribution:
-                current = player.element_pool.elements.get(contrib.element_id, 0)
-                player.element_pool.elements[contrib.element_id] = current + contrib.amount
-    
-    player.element_pool.max_elements = dict(player.element_pool.elements)
+                current = new_max.get(contrib.element_id, 0)
+                new_max[contrib.element_id] = current + contrib.amount
+
+    # Add passive element bonuses from skills (e.g. ElementBonusEffect)
+    from app.game.effects import get_passive_element_bonus
+    passive_bonuses = get_passive_element_bonus(state, player_id)
+    for elem_id, bonus in passive_bonuses.items():
+        new_max[elem_id] = new_max.get(elem_id, 0) + bonus
+
+    # Adjust available elements preserving consumed state
+    new_available: dict[int, int] = {}
+    all_element_ids = set(list(old_max.keys()) + list(new_max.keys()) + list(old_available.keys()))
+    for elem_id in all_element_ids:
+        prev_max = old_max.get(elem_id, 0)
+        curr_max = new_max.get(elem_id, 0)
+        prev_avail = old_available.get(elem_id, 0)
+
+        if curr_max >= prev_max:
+            # Max increased or same — available gains the difference
+            new_available[elem_id] = prev_avail + (curr_max - prev_max)
+        else:
+            # Max decreased — cap available at new max
+            new_available[elem_id] = min(prev_avail, curr_max)
+
+    # Remove zero-value entries
+    player.element_pool.elements = {k: v for k, v in new_available.items() if v > 0}
+    player.element_pool.max_elements = {k: v for k, v in new_max.items() if v > 0}
 

@@ -51,6 +51,8 @@ class GameState(GameBaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     event_log: list[dict[str, Any]] = Field(default_factory=list, exclude=True)
     pending_action: Optional[str] = None
+    pending_defender_id: Optional[str] = None
+    pending_attack: Optional[dict[str, Any]] = None
     config: GameConfiguration = Field(default_factory=GameConfiguration)
 
     @computed_field
