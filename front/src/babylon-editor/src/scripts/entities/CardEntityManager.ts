@@ -1,6 +1,7 @@
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
 import { CardEntity } from './CardEntity';
+import { CardTextureManager } from './CardTextureManager';
 import type { ClientCard, Zone } from '../game/models';
 import { cloneMeshWithScripts } from '../utils';
 
@@ -13,9 +14,11 @@ export class CardEntityManager {
 
 	private _faceUpBlueprint: Mesh | null = null;
 	private _faceDownBlueprint: Mesh | null = null;
+	private _textureManager: CardTextureManager;
 
 	private constructor(scene: Scene) {
 		this._scene = scene;
+		this._textureManager = CardTextureManager.getOrCreate(scene);
 	}
 
 	static getOrCreate(scene: Scene): CardEntityManager {
@@ -52,6 +55,10 @@ export class CardEntityManager {
 		const entity = new CardEntity(cardData.instanceId, mesh, cardData);
 		this._entities.set(cardData.instanceId, entity);
 		this._meshToEntity.set(mesh, entity);
+
+		if (faceUp) {
+			this._textureManager.applyTexture(entity);
+		}
 
 		return entity;
 	}
@@ -94,9 +101,18 @@ export class CardEntityManager {
 		newMesh.setEnabled(oldMesh.isEnabled());
 
 		this._meshToEntity.delete(oldMesh);
+		const oldMat = oldMesh.material;
 		oldMesh.dispose();
+		if (oldMat && oldMat.name.startsWith('CardMat_')) {
+			oldMat.dispose();
+		}
+
 		entity.mesh = newMesh;
 		this._meshToEntity.set(newMesh, entity);
+
+		if (faceUp) {
+			this._textureManager.applyTexture(entity);
+		}
 	}
 
 	// ── Lookups ──────────────────────────────────────────────────────
@@ -133,6 +149,7 @@ export class CardEntityManager {
 		this._meshToEntity.clear();
 		this._faceUpBlueprint = null;
 		this._faceDownBlueprint = null;
+		this._textureManager.dispose();
 		CardEntityManager.instance = null;
 	}
 }

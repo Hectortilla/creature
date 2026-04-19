@@ -91,7 +91,11 @@ export class CardEntity {
 
 	dispose(): void {
 		this._resetVisuals();
+		const mat = this._mesh.material;
 		this._mesh.dispose();
+		if (mat && mat.name.startsWith('CardMat_')) {
+			mat.dispose();
+		}
 	}
 
 	private _resetVisuals(): void {

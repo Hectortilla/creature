@@ -176,9 +176,6 @@ export type ActionResultData = {
         event_type: "CardDrawnEvent";
       } & CardDrawnEvent)
     | ({
-        event_type: "CardMovedEvent";
-      } & CardMovedEvent)
-    | ({
         event_type: "CardPlayedEvent";
       } & CardPlayedEvent)
     | ({
@@ -241,7 +238,12 @@ export type ActionResultData = {
    * Winner Id
    */
   winner_id?: string | null;
-  game_state?: GameState | null;
+  /**
+   * Game State
+   */
+  game_state?: {
+    [key: string]: unknown;
+  } | null;
   /**
    * Valid Actions
    */
@@ -761,36 +763,6 @@ export type CardEvolvedEvent = {
    * Evolution Card Name
    */
   evolution_card_name?: string;
-};
-
-/**
- * CardMovedEvent
- *
- * Event fired when a card moves between zones.
- */
-export type CardMovedEvent = {
-  /**
-   * Timestamp
-   */
-  timestamp?: string;
-  /**
-   * Game Id
-   */
-  game_id?: string | null;
-  /**
-   * Event Type
-   */
-  event_type?: "CardMovedEvent";
-  /**
-   * Instance Id
-   */
-  instance_id?: string;
-  /**
-   * Owner Id
-   */
-  owner_id?: string;
-  from_zone?: Zone | null;
-  to_zone?: Zone | null;
 };
 
 /**
@@ -1757,7 +1729,12 @@ export type GameStartedData = {
    * Success
    */
   success: boolean;
-  game_state: GameState;
+  /**
+   * Game State
+   */
+  game_state: {
+    [key: string]: unknown;
+  };
   /**
    * Events
    */
@@ -1765,9 +1742,6 @@ export type GameStartedData = {
     | ({
         event_type: "CardDrawnEvent";
       } & CardDrawnEvent)
-    | ({
-        event_type: "CardMovedEvent";
-      } & CardMovedEvent)
     | ({
         event_type: "CardPlayedEvent";
       } & CardPlayedEvent)
@@ -1898,6 +1872,16 @@ export type GameState = {
    * Pending Action
    */
   pending_action?: string | null;
+  /**
+   * Pending Defender Id
+   */
+  pending_defender_id?: string | null;
+  /**
+   * Pending Attack
+   */
+  pending_attack?: {
+    [key: string]: unknown;
+  } | null;
   config?: GameConfiguration;
   /**
    * Total Cards
@@ -2079,6 +2063,18 @@ export type NoDefenderEvent = {
    * Game Lost
    */
   game_lost?: boolean;
+  /**
+   * Pending Attacker Card Id
+   */
+  pending_attacker_card_id?: string;
+  /**
+   * Pending Attack Id
+   */
+  pending_attack_id?: number;
+  /**
+   * Pending Attacker Owner Id
+   */
+  pending_attacker_owner_id?: string;
 };
 
 /**
@@ -2502,7 +2498,7 @@ export type ValidActionSchema = {
   /**
    * Description
    */
-  description: string;
+  description?: string | null;
   /**
    * Card Name
    */
@@ -2627,109 +2623,6 @@ export type ZoneState = {
 };
 
 /**
- * ActionResultData
- *
- * Data for action_result message.
- */
-export type ActionResultDataWritable = {
-  /**
-   * Success
-   */
-  success: boolean;
-  /**
-   * Error
-   */
-  error?: string | null;
-  /**
-   * Events
-   */
-  events: Array<
-    | ({
-        event_type: "CardDrawnEvent";
-      } & CardDrawnEvent)
-    | ({
-        event_type: "CardMovedEvent";
-      } & CardMovedEvent)
-    | ({
-        event_type: "CardPlayedEvent";
-      } & CardPlayedEvent)
-    | ({
-        event_type: "CardPromotedEvent";
-      } & CardPromotedEvent)
-    | ({
-        event_type: "CardSwappedEvent";
-      } & CardSwappedEvent)
-    | ({
-        event_type: "CardAssociatedEvent";
-      } & CardAssociatedEvent)
-    | ({
-        event_type: "CardEvolvedEvent";
-      } & CardEvolvedEvent)
-    | ({
-        event_type: "AttackDeclaredEvent";
-      } & AttackDeclaredEvent)
-    | ({
-        event_type: "DamageDealtEvent";
-      } & DamageDealtEvent)
-    | ({
-        event_type: "CardDestroyedEvent";
-      } & CardDestroyedEvent)
-    | ({
-        event_type: "ElementsConsumedEvent";
-      } & ElementsConsumedEvent)
-    | ({
-        event_type: "ElementsRestoredEvent";
-      } & ElementsRestoredEvent)
-    | ({
-        event_type: "TurnStartedEvent";
-      } & TurnStartedEvent)
-    | ({
-        event_type: "TurnEndedEvent";
-      } & TurnEndedEvent)
-    | ({
-        event_type: "PhaseChangedEvent";
-      } & PhaseChangedEvent)
-    | ({
-        event_type: "GameStartedEvent";
-      } & GameStartedEvent)
-    | ({
-        event_type: "GameEndedEvent";
-      } & GameEndedEvent)
-    | ({
-        event_type: "NoDefenderEvent";
-      } & NoDefenderEvent)
-    | ({
-        event_type: "EffectTriggeredEvent";
-      } & EffectTriggeredEvent)
-    | ({
-        event_type: "EffectAppliedEvent";
-      } & EffectAppliedEvent)
-  >;
-  /**
-   * Game Over
-   */
-  game_over: boolean;
-  /**
-   * Winner Id
-   */
-  winner_id?: string | null;
-  game_state?: GameStateWritable | null;
-  /**
-   * Valid Actions
-   */
-  valid_actions?: Array<ValidActionSchema>;
-};
-
-/**
- * ActionResultMessage
- *
- * Result of an action.
- */
-export type ActionResultMessageWritable = {
-  data: ActionResultDataWritable;
-};
-
-/**
  * GameLeftData
  *
  * Data for game_left message.
@@ -2770,97 +2663,6 @@ export type GameRoomWritable = {
 };
 
 /**
- * GameStartedData
- *
- * Data for game_started message.
- */
-export type GameStartedDataWritable = {
-  /**
-   * Success
-   */
-  success: boolean;
-  game_state: GameStateWritable;
-  /**
-   * Events
-   */
-  events: Array<
-    | ({
-        event_type: "CardDrawnEvent";
-      } & CardDrawnEvent)
-    | ({
-        event_type: "CardMovedEvent";
-      } & CardMovedEvent)
-    | ({
-        event_type: "CardPlayedEvent";
-      } & CardPlayedEvent)
-    | ({
-        event_type: "CardPromotedEvent";
-      } & CardPromotedEvent)
-    | ({
-        event_type: "CardSwappedEvent";
-      } & CardSwappedEvent)
-    | ({
-        event_type: "CardAssociatedEvent";
-      } & CardAssociatedEvent)
-    | ({
-        event_type: "CardEvolvedEvent";
-      } & CardEvolvedEvent)
-    | ({
-        event_type: "AttackDeclaredEvent";
-      } & AttackDeclaredEvent)
-    | ({
-        event_type: "DamageDealtEvent";
-      } & DamageDealtEvent)
-    | ({
-        event_type: "CardDestroyedEvent";
-      } & CardDestroyedEvent)
-    | ({
-        event_type: "ElementsConsumedEvent";
-      } & ElementsConsumedEvent)
-    | ({
-        event_type: "ElementsRestoredEvent";
-      } & ElementsRestoredEvent)
-    | ({
-        event_type: "TurnStartedEvent";
-      } & TurnStartedEvent)
-    | ({
-        event_type: "TurnEndedEvent";
-      } & TurnEndedEvent)
-    | ({
-        event_type: "PhaseChangedEvent";
-      } & PhaseChangedEvent)
-    | ({
-        event_type: "GameStartedEvent";
-      } & GameStartedEvent)
-    | ({
-        event_type: "GameEndedEvent";
-      } & GameEndedEvent)
-    | ({
-        event_type: "NoDefenderEvent";
-      } & NoDefenderEvent)
-    | ({
-        event_type: "EffectTriggeredEvent";
-      } & EffectTriggeredEvent)
-    | ({
-        event_type: "EffectAppliedEvent";
-      } & EffectAppliedEvent)
-  >;
-  /**
-   * Valid Actions
-   */
-  valid_actions?: Array<ValidActionSchema>;
-};
-
-/**
- * GameStartedMessage
- *
- * Game has started.
- */
-export type GameStartedMessageWritable = {
-  data: GameStartedDataWritable;
-};
-
-/**
  * GameState
  *
  * Complete state of a game.
@@ -2892,6 +2694,16 @@ export type GameStateWritable = {
    * Pending Action
    */
   pending_action?: string | null;
+  /**
+   * Pending Defender Id
+   */
+  pending_defender_id?: string | null;
+  /**
+   * Pending Attack
+   */
+  pending_attack?: {
+    [key: string]: unknown;
+  } | null;
   config?: GameConfiguration;
 };
 
