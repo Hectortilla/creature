@@ -34,13 +34,13 @@ import { FieldZoneRenderer } from '../zones/FieldZoneRenderer';
 import { GraveyardZoneRenderer } from '../zones/GraveyardZoneRenderer';
 import { AnimationPipeline } from './AnimationPipeline';
 import type { GameAnimation } from './GameAnimation';
-import { CardMoveAnimation } from './CardMoveAnimation';
-import { CardFlipAnimation } from './CardFlipAnimation';
-import { AttackAnimation } from './AttackAnimation';
-import { DamageAnimation } from './DamageAnimation';
-import { DestroyAnimation } from './DestroyAnimation';
-import { DelayAnimation } from './DelayAnimation';
-import { ParallelAnimation } from './ParallelAnimation';
+import { cardMove } from './CardMoveAnimation';
+import { cardFlip } from './CardFlipAnimation';
+import { attackLunge } from './AttackAnimation';
+import { damageShake } from './DamageAnimation';
+import { destroyCard } from './DestroyAnimation';
+import { delay } from './DelayAnimation';
+import { parallel } from './ParallelAnimation';
 
 const ZONE_DECK = 'DECK' as Zone;
 const ZONE_HAND = 'HAND' as Zone;
@@ -167,10 +167,10 @@ export default class AnimationManager implements IScript {
 		const from = entity.mesh.getAbsolutePosition().clone()
 		const to = destRenderer.getEntryPosition();
 
-		const batch: GameAnimation[] = [new CardMoveAnimation(entity, from, to)];
+		const batch: GameAnimation[] = [cardMove(entity, from, to)];
 
 		if (data.fromZone === ZONE_DECK && data.toZone === ZONE_HAND && this._isMine(data.ownerId)) {
-			batch.push(new CardFlipAnimation(entity, true));
+			batch.push(cardFlip(entity, true));
 		}
 
 		batch.push(this._callback(() => {
@@ -197,12 +197,12 @@ export default class AnimationManager implements IScript {
 		supRenderer.removeCard(data.supportingId);
 		atkRenderer.removeCard(data.attackingId);
 
-		const parallel = new ParallelAnimation([
-			new CardMoveAnimation(supEntity, supEntity.mesh.position.clone(), atkRenderer.getEntryPosition()),
-			new CardMoveAnimation(atkEntity, atkEntity.mesh.position.clone(), supRenderer.getEntryPosition()),
-		]);
+		const swapAnim = parallel(
+			cardMove(supEntity, supEntity.mesh.position.clone(), atkRenderer.getEntryPosition()),
+			cardMove(atkEntity, atkEntity.mesh.position.clone(), supRenderer.getEntryPosition()),
+		);
 
-		this._animationPipeline.enqueue(parallel);
+		this._animationPipeline.enqueue(swapAnim);
 		this._animationPipeline.enqueue(this._callback(() => {
 			atkRenderer.addCard(supEntity, false);
 			supRenderer.addCard(atkEntity, false);
@@ -218,7 +218,7 @@ export default class AnimationManager implements IScript {
 		const target = this._cardManager.getByInstanceId(data.targetId);
 		const targetOrPos = target ?? this._opponentFieldCenter();
 
-		this._animationPipeline.enqueue(new AttackAnimation(attacker, targetOrPos));
+		this._animationPipeline.enqueue(attackLunge(attacker, targetOrPos));
 	};
 
 	private _onCardHealthChanged = (data: CardHealthChangedData): void => {
@@ -227,8 +227,7 @@ export default class AnimationManager implements IScript {
 		const entity = this._cardManager.getByInstanceId(data.instanceId);
 		if (!entity) return;
 
-		const damage = data.oldHealth - data.newHealth;
-		this._animationPipeline.enqueue(new DamageAnimation(entity, damage, data.newHealth));
+		this._animationPipeline.enqueue(damageShake(entity));
 	};
 
 	private _onCardDestroyed = (data: CardDestroyedData): void => {
@@ -245,7 +244,7 @@ export default class AnimationManager implements IScript {
 		const graveyardRenderer = this._rendererFor(data.ownerId, ZONE_GRAVEYARD);
 		const graveyardPos = graveyardRenderer?.getEntryPosition() ?? Vector3.Zero();
 
-		this._animationPipeline.enqueue(new DestroyAnimation(entity, graveyardPos));
+		this._animationPipeline.enqueue(destroyCard(entity, graveyardPos));
 		this._animationPipeline.enqueue(this._callback(() => {
 			entity.mesh.visibility = 1;
 			entity.mesh.scaling.setAll(1);
@@ -256,12 +255,12 @@ export default class AnimationManager implements IScript {
 
 	private _onPhaseChanged = (_data: PhaseChangedData): void => {
 		if (!this._boardReady) return;
-		this._animationPipeline.enqueue(new DelayAnimation(200));
+		this._animationPipeline.enqueue(delay(200));
 	};
 
 	private _onTurnChanged = (_data: TurnChangedData): void => {
 		if (!this._boardReady) return;
-		this._animationPipeline.enqueue(new DelayAnimation(800));
+		this._animationPipeline.enqueue(delay(800));
 	};
 
 	private _onGameOver = (_data: GameOverData): void => {

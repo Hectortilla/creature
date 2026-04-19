@@ -1,82 +1,57 @@
 import { Animation } from '@babylonjs/core/Animations/animation';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import type { Scene } from '@babylonjs/core/scene';
+import type { Animatable } from '@babylonjs/core/Animations/animatable';
 import type { CardEntity } from '../entities/CardEntity';
 import type { GameAnimation } from './GameAnimation';
 import { ANIM_FPS, isMeshDisposed, msToFrames } from './utils';
 
-const DEFAULT_DURATION_MS = 600;
-// Phase split: lunge 25%, hold ~17%, return 58%
 const LUNGE_RATIO = 0.25;
-const HOLD_RATIO = 0.42; // cumulative: lunge + hold
+const HOLD_RATIO = 0.42;
 
-export class AttackAnimation implements GameAnimation {
-	readonly name: string;
-	readonly duration: number;
+export function attackLunge(
+	attacker: CardEntity,
+	target: CardEntity | Vector3,
+	duration = 600,
+): GameAnimation {
+	const targetPos = target instanceof Vector3 ? target.clone() : target.mesh.position.clone();
+	let origin: Vector3 | null = null;
+	let animatable: Animatable | null = null;
+	let resolve: (() => void) | null = null;
 
-	private _attacker: CardEntity;
-	private _targetPos: Vector3;
-	private _origin: Vector3 | null = null;
-	private _animatable: ReturnType<Scene['beginDirectAnimation']> | null = null;
-	private _resolve: (() => void) | null = null;
+	return {
+		name: `Attack(${attacker.instanceId})`,
+		duration,
 
-	constructor(
-		attacker: CardEntity,
-		target: CardEntity | Vector3,
-		duration: number = DEFAULT_DURATION_MS,
-	) {
-		this._attacker = attacker;
-		this._targetPos = target instanceof Vector3 ? target.clone() : target.mesh.position.clone();
-		this.duration = duration;
-		this.name = `Attack(${attacker.instanceId})`;
-	}
+		execute(scene: Scene) {
+			const mesh = attacker.mesh;
+			if (isMeshDisposed(mesh)) return Promise.resolve();
 
-	execute(scene: Scene): Promise<void> {
-		const mesh = this._attacker.mesh;
-		if (isMeshDisposed(mesh)) return Promise.resolve();
+			origin = mesh.position.clone();
+			const frames = msToFrames(duration);
+			const lungePos = Vector3.Lerp(origin, targetPos, 0.8);
 
-		this._origin = mesh.position.clone();
-		const frames = msToFrames(this.duration);
-		const lungeFrame = Math.round(frames * LUNGE_RATIO);
-		const holdFrame = Math.round(frames * HOLD_RATIO);
+			const posAnim = new Animation('atkPos', 'position', ANIM_FPS, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CONSTANT);
+			posAnim.setKeys([
+				{ frame: 0, value: origin.clone() },
+				{ frame: Math.round(frames * LUNGE_RATIO), value: lungePos },
+				{ frame: Math.round(frames * HOLD_RATIO), value: lungePos.clone() },
+				{ frame: frames, value: origin.clone() },
+			]);
 
-		// Lunge most of the way toward target, not all the way (stop ~80% there)
-		const lungePos = Vector3.Lerp(this._origin, this._targetPos, 0.8);
-
-		const posAnim = new Animation(
-			'atkPos',
-			'position',
-			ANIM_FPS,
-			Animation.ANIMATIONTYPE_VECTOR3,
-			Animation.ANIMATIONLOOPMODE_CONSTANT,
-		);
-		posAnim.setKeys([
-			{ frame: 0, value: this._origin.clone() },
-			{ frame: lungeFrame, value: lungePos },
-			{ frame: holdFrame, value: lungePos.clone() },
-			{ frame: frames, value: this._origin.clone() },
-		]);
-
-		return new Promise<void>((resolve) => {
-			this._resolve = resolve;
-			this._animatable = scene.beginDirectAnimation(mesh, [posAnim], 0, frames, false);
-			this._animatable.onAnimationEndObservable.addOnce(() => {
-				this._animatable = null;
-				this._resolve = null;
-				resolve();
+			return new Promise<void>(res => {
+				resolve = res;
+				animatable = scene.beginDirectAnimation(mesh, [posAnim], 0, frames, false);
+				animatable.onAnimationEndObservable.addOnce(() => { animatable = null; resolve = null; res(); });
 			});
-		});
-	}
+		},
 
-	cancel(): void {
-		this._animatable?.stop();
-		this._animatable = null;
-
-		if (this._origin && !isMeshDisposed(this._attacker.mesh)) {
-			this._attacker.mesh.position.copyFrom(this._origin);
-		}
-
-		this._resolve?.();
-		this._resolve = null;
-	}
+		cancel() {
+			animatable?.stop();
+			animatable = null;
+			if (origin && !isMeshDisposed(attacker.mesh)) attacker.mesh.position.copyFrom(origin);
+			resolve?.();
+			resolve = null;
+		},
+	};
 }

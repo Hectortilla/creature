@@ -1,68 +1,43 @@
 import { Animation } from '@babylonjs/core/Animations/animation';
 import type { Scene } from '@babylonjs/core/scene';
+import type { Animatable } from '@babylonjs/core/Animations/animatable';
 import type { CardEntity } from '../entities/CardEntity';
 import type { GameAnimation } from './GameAnimation';
 import { ANIM_FPS, isMeshDisposed, msToFrames } from './utils';
 
-const DEFAULT_DURATION_MS = 300;
+export function cardFlip(entity: CardEntity, faceUp: boolean, duration = 300): GameAnimation {
+	let animatable: Animatable | null = null;
+	let resolve: (() => void) | null = null;
+	const endX = faceUp ? 0 : Math.PI;
 
-export class CardFlipAnimation implements GameAnimation {
-	readonly name: string;
-	readonly duration: number;
+	return {
+		name: `Flip(${entity.instanceId}, ${faceUp ? 'up' : 'down'})`,
+		duration,
 
-	private _entity: CardEntity;
-	private _faceUp: boolean;
-	private _animatable: ReturnType<Scene['beginDirectAnimation']> | null = null;
-	private _resolve: (() => void) | null = null;
+		execute(scene: Scene) {
+			const mesh = entity.mesh;
+			if (isMeshDisposed(mesh)) return Promise.resolve();
 
-	constructor(entity: CardEntity, faceUp: boolean, duration: number = DEFAULT_DURATION_MS) {
-		this._entity = entity;
-		this._faceUp = faceUp;
-		this.duration = duration;
-		this.name = `Flip(${entity.instanceId}, ${faceUp ? 'up' : 'down'})`;
-	}
+			const frames = msToFrames(duration);
+			const flipAnim = new Animation('flipX', 'rotation.x', ANIM_FPS, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+			flipAnim.setKeys([
+				{ frame: 0, value: mesh.rotation.x },
+				{ frame: frames, value: endX },
+			]);
 
-	execute(scene: Scene): Promise<void> {
-		const mesh = this._entity.mesh;
-		if (isMeshDisposed(mesh)) return Promise.resolve();
-
-		const frames = msToFrames(this.duration);
-		const startX = mesh.rotation.x;
-		const endX = this._faceUp ? 0 : Math.PI;
-
-		const flipAnim = new Animation(
-			'flipX',
-			'rotation.x',
-			ANIM_FPS,
-			Animation.ANIMATIONTYPE_FLOAT,
-			Animation.ANIMATIONLOOPMODE_CONSTANT,
-		);
-		flipAnim.setKeys([
-			{ frame: 0, value: startX },
-			{ frame: frames, value: endX },
-		]);
-
-		return new Promise<void>((resolve) => {
-			this._resolve = resolve;
-			this._animatable = scene.beginDirectAnimation(mesh, [flipAnim], 0, frames, false);
-			this._animatable.onAnimationEndObservable.addOnce(() => {
-				this._animatable = null;
-				this._resolve = null;
-				resolve();
+			return new Promise<void>(res => {
+				resolve = res;
+				animatable = scene.beginDirectAnimation(mesh, [flipAnim], 0, frames, false);
+				animatable.onAnimationEndObservable.addOnce(() => { animatable = null; resolve = null; res(); });
 			});
-		});
-	}
+		},
 
-	cancel(): void {
-		this._animatable?.stop();
-		this._animatable = null;
-
-		const mesh = this._entity.mesh;
-		if (!isMeshDisposed(mesh)) {
-			mesh.rotation.x = this._faceUp ? 0 : Math.PI;
-		}
-
-		this._resolve?.();
-		this._resolve = null;
-	}
+		cancel() {
+			animatable?.stop();
+			animatable = null;
+			if (!isMeshDisposed(entity.mesh)) entity.mesh.rotation.x = endX;
+			resolve?.();
+			resolve = null;
+		},
+	};
 }

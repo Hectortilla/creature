@@ -2,109 +2,76 @@ import { Animation } from '@babylonjs/core/Animations/animation';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import type { Quaternion } from '@babylonjs/core/Maths/math.vector';
 import type { Scene } from '@babylonjs/core/scene';
+import type { Animatable } from '@babylonjs/core/Animations/animatable';
 import type { CardEntity } from '../entities/CardEntity';
 import type { GameAnimation } from './GameAnimation';
 import { ANIM_FPS, isMeshDisposed, msToFrames } from './utils';
 
-const DEFAULT_DURATION_MS = 400;
 const ARC_HEIGHT_FACTOR = 0.15;
 
-export class CardMoveAnimation implements GameAnimation {
-	readonly name: string;
-	readonly duration: number;
+export function cardMove(
+	entity: CardEntity,
+	from: Vector3,
+	to: Vector3,
+	toRotation?: Quaternion,
+	duration = 400,
+): GameAnimation {
+	let animatable: Animatable | null = null;
+	let resolve: (() => void) | null = null;
 
-	private _entity: CardEntity;
-	private _from: Vector3;
-	private _to: Vector3;
-	private _toRotation: Quaternion | undefined;
-	private _animatable: ReturnType<Scene['beginDirectAnimation']> | null = null;
-	private _resolve: (() => void) | null = null;
+	return {
+		name: `Move(${entity.instanceId})`,
+		duration,
 
-	constructor(
-		entity: CardEntity,
-		fromPosition: Vector3,
-		toPosition: Vector3,
-		toRotation?: Quaternion,
-		duration: number = DEFAULT_DURATION_MS,
-	) {
-		this._entity = entity;
-		this._from = fromPosition;
-		this._to = toPosition;
-		this._toRotation = toRotation;
-		this.duration = duration;
-		this.name = `Move(${entity.instanceId})`;
-	}
+		execute(scene: Scene) {
+			const mesh = entity.mesh;
+			if (isMeshDisposed(mesh)) return Promise.resolve();
 
-	execute(scene: Scene): Promise<void> {
-		const mesh = this._entity.mesh;
-		if (isMeshDisposed(mesh)) {
-			return Promise.resolve();
-		}
+			const frames = msToFrames(duration);
+			const midFrame = Math.round(frames / 2);
+			const animations: Animation[] = [];
 
-		const frames = msToFrames(this.duration);
-		const midFrame = Math.round(frames / 2);
-		const animations: Animation[] = [];
+			const dist = Vector3.Distance(from, to);
+			const mid = Vector3.Lerp(from, to, 0.5);
+			mid.y += dist * ARC_HEIGHT_FACTOR;
 
-		// Bezier arc: raise Y at midpoint for a slight parabolic curve
-		const dist = Vector3.Distance(this._from, this._to);
-		const arcPeak = dist * ARC_HEIGHT_FACTOR;
-		const mid = Vector3.Lerp(this._from, this._to, 0.5);
-		mid.y += arcPeak;
-
-		const posAnim = new Animation(
-			'movePos',
-			'position',
-			ANIM_FPS,
-			Animation.ANIMATIONTYPE_VECTOR3,
-			Animation.ANIMATIONLOOPMODE_CONSTANT,
-		);
-		posAnim.setKeys([
-			{ frame: 0, value: this._from.clone() },
-			{ frame: midFrame, value: mid },
-			{ frame: frames, value: this._to.clone() },
-		]);
-		animations.push(posAnim);
-
-		if (this._toRotation) {
-			mesh.rotationQuaternion ??= this._toRotation.clone();
-			const rotAnim = new Animation(
-				'moveRot',
-				'rotationQuaternion',
-				ANIM_FPS,
-				Animation.ANIMATIONTYPE_QUATERNION,
-				Animation.ANIMATIONLOOPMODE_CONSTANT,
-			);
-			rotAnim.setKeys([
-				{ frame: 0, value: mesh.rotationQuaternion!.clone() },
-				{ frame: frames, value: this._toRotation },
+			const posAnim = new Animation('movePos', 'position', ANIM_FPS, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CONSTANT);
+			posAnim.setKeys([
+				{ frame: 0, value: from.clone() },
+				{ frame: midFrame, value: mid },
+				{ frame: frames, value: to.clone() },
 			]);
-			animations.push(rotAnim);
-		}
+			animations.push(posAnim);
 
-		mesh.position.copyFrom(this._from);
+			if (toRotation) {
+				mesh.rotationQuaternion ??= toRotation.clone();
+				const rotAnim = new Animation('moveRot', 'rotationQuaternion', ANIM_FPS, Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONLOOPMODE_CONSTANT);
+				rotAnim.setKeys([
+					{ frame: 0, value: mesh.rotationQuaternion!.clone() },
+					{ frame: frames, value: toRotation },
+				]);
+				animations.push(rotAnim);
+			}
 
-		return new Promise<void>((resolve) => {
-			this._resolve = resolve;
-			this._animatable = scene.beginDirectAnimation(mesh, animations, 0, frames, false);
-			this._animatable.onAnimationEndObservable.addOnce(() => {
-				this._animatable = null;
-				this._resolve = null;
-				resolve();
+			mesh.position.copyFrom(from);
+
+			return new Promise<void>(res => {
+				resolve = res;
+				animatable = scene.beginDirectAnimation(mesh, animations, 0, frames, false);
+				animatable.onAnimationEndObservable.addOnce(() => { animatable = null; resolve = null; res(); });
 			});
-		});
-	}
+		},
 
-	cancel(): void {
-		this._animatable?.stop();
-		this._animatable = null;
-
-		const mesh = this._entity.mesh;
-		if (!isMeshDisposed(mesh)) {
-			mesh.position.copyFrom(this._to);
-			if (this._toRotation) mesh.rotationQuaternion = this._toRotation.clone();
-		}
-
-		this._resolve?.();
-		this._resolve = null;
-	}
+		cancel() {
+			animatable?.stop();
+			animatable = null;
+			const mesh = entity.mesh;
+			if (!isMeshDisposed(mesh)) {
+				mesh.position.copyFrom(to);
+				if (toRotation) mesh.rotationQuaternion = toRotation.clone();
+			}
+			resolve?.();
+			resolve = null;
+		},
+	};
 }

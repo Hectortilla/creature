@@ -1,16 +1,13 @@
 """
 Game Actions
 
-Defines all player actions that can be taken during a game.
-Each action represents a discrete player decision.
-
-All actions use Pydantic BaseModel for validation and serialization.
+All player actions that can be taken during a game.
+Each action is a thin data container with a type tag and valid-phase metadata.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Any
-from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any
 
 from app.models.game.enums import TurnPhase
 from app.models.game.base import GameBaseModel
@@ -19,408 +16,106 @@ if TYPE_CHECKING:
     from app.models.game.state import GameState
 
 
-class Action(GameBaseModel, ABC):
-    """
-    Base class for all game actions.
-    
-    Uses Pydantic's model_dump() for serialization.
-    """
+# ── Base ────────────────────────────────────────────────────────────────
+
+class Action(GameBaseModel):
+    """Base class for all game actions."""
     player_id: str
-    
-    @property
-    @abstractmethod
-    def valid_phases(self) -> list[TurnPhase] | None:
-        """Return list of phases this action is valid in, or None for any phase."""
-        pass
-    
-    @property
-    @abstractmethod
-    def action_type(self) -> str:
-        """Return the type name of this action."""
-        pass
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        """Get a human-readable description of this action."""
-        return f"{self.action_type} action"
-    
+
+    # Subclasses set these as class attributes — no @property boilerplate.
+    action_type: str = ""
+    valid_phases: list[TurnPhase] | None = None
+
     def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        """
-        Convert action to a dictionary for API responses.
-        Includes action type and description.
-        """
         d = self.model_dump(mode='json')
         d["action"] = self.action_type
         d["action_type"] = self.action_type
-        d["description"] = self.get_description(state)
+        # Resolve card names for display (generic — works for any card-id field)
+        if state:
+            _enrich_card_names(d, state)
         return d
 
 
+# ── Actions ─────────────────────────────────────────────────────────────
+
 class DrawAction(Action):
-    """Action to draw cards from deck to hand."""
+    action_type: str = "draw"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.DRAW]
     count: int = 1
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.DRAW]
-    
-    @property
-    def action_type(self) -> str:
-        return "draw"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        return f"Draw {self.count} card{'s' if self.count != 1 else ''}"
 
 
 class PlayCardAction(Action):
-    """Action to play a card from hand to supporting zone."""
+    action_type: str = "play_card"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.PLACEMENT]
     instance_id: str = ""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.PLACEMENT]
-    
-    @property
-    def action_type(self) -> str:
-        return "play_card"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            card = state.get_card(self.instance_id)
-            card_name = card.name if card else self.instance_id
-        else:
-            card_name = self.instance_id
-        return f"Play {card_name} to supporting zone"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            card = state.get_card(self.instance_id)
-            d["card_name"] = card.name if card else None
-        return d
-
-
-class PromoteAction(Action):
-    """Action to promote a card from supporting zone to attacking zone."""
-    instance_id: str = ""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.PROMOTION]
-    
-    @property
-    def action_type(self) -> str:
-        return "promote"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            card = state.get_card(self.instance_id)
-            card_name = card.name if card else self.instance_id
-        else:
-            card_name = self.instance_id
-        return f"Promote {card_name} to attacking zone"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            card = state.get_card(self.instance_id)
-            d["card_name"] = card.name if card else None
-        return d
-
-
-class SwapAction(Action):
-    """Action to swap a supporting card with an attacking card."""
-    supporting_card_id: str = ""
-    attacking_card_id: str = ""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.SWAP]
-    
-    @property
-    def action_type(self) -> str:
-        return "swap"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            supp = state.get_card(self.supporting_card_id)
-            atk = state.get_card(self.attacking_card_id)
-            supp_name = supp.name if supp else self.supporting_card_id
-            atk_name = atk.name if atk else self.attacking_card_id
-        else:
-            supp_name = self.supporting_card_id
-            atk_name = self.attacking_card_id
-        return f"Swap {supp_name} with {atk_name}"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            supp = state.get_card(self.supporting_card_id)
-            atk = state.get_card(self.attacking_card_id)
-            d["supporting_card_name"] = supp.name if supp else None
-            d["attacking_card_name"] = atk.name if atk else None
-        return d
-
-
-class AssociationAction(Action):
-    """Action to associate a card with an active creature."""
-    association_card_id: str = ""
-    target_card_id: str = ""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.ASSOCIATION]
-    
-    @property
-    def action_type(self) -> str:
-        return "associate"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            assoc = state.get_card(self.association_card_id)
-            target = state.get_card(self.target_card_id)
-            assoc_name = assoc.name if assoc else self.association_card_id
-            target_name = target.name if target else self.target_card_id
-        else:
-            assoc_name = self.association_card_id
-            target_name = self.target_card_id
-        return f"Associate {assoc_name} with {target_name}"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            assoc = state.get_card(self.association_card_id)
-            target = state.get_card(self.target_card_id)
-            d["association_card_name"] = assoc.name if assoc else None
-            d["target_card_name"] = target.name if target else None
-        return d
-
-
-class EvolutionAction(Action):
-    """Action to evolve a creature with an evolution card."""
-    evolution_card_id: str = ""
-    target_card_id: str = ""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.EVOLUTION]
-    
-    @property
-    def action_type(self) -> str:
-        return "evolve"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            evo = state.get_card(self.evolution_card_id)
-            target = state.get_card(self.target_card_id)
-            evo_name = evo.name if evo else self.evolution_card_id
-            target_name = target.name if target else self.target_card_id
-        else:
-            evo_name = self.evolution_card_id
-            target_name = self.target_card_id
-        return f"Evolve {target_name} into {evo_name}"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            evo = state.get_card(self.evolution_card_id)
-            target = state.get_card(self.target_card_id)
-            d["evolution_card_name"] = evo.name if evo else None
-            d["target_card_name"] = target.name if target else None
-        return d
-
-
-class AttackAction(Action):
-    """Action to attack with a creature."""
-    attacker_id: str = ""
-    attack_id: int = 0
-    target_card_id: str = ""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.ATTACK]
-    
-    @property
-    def action_type(self) -> str:
-        return "attack"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            attacker = state.get_card(self.attacker_id)
-            attacker_name = attacker.name if attacker else self.attacker_id
-            
-            attack_name = str(self.attack_id)
-            if attacker:
-                for atk in attacker.attacks:
-                    if atk.attack_id == self.attack_id:
-                        attack_name = atk.name
-                        break
-            
-            if self.target_card_id:
-                target = state.get_card(self.target_card_id)
-                target_name = target.name if target else self.target_card_id
-                return f"{attacker_name} uses {attack_name} on {target_name}"
-            else:
-                return f"{attacker_name} uses {attack_name} (no defenders)"
-        else:
-            return f"Attack with {self.attacker_id}"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            attacker = state.get_card(self.attacker_id)
-            target = state.get_card(self.target_card_id) if self.target_card_id else None
-            
-            attack_name = None
-            if attacker:
-                for atk in attacker.attacks:
-                    if atk.attack_id == self.attack_id:
-                        attack_name = atk.name
-                        break
-            
-            d["attacker_name"] = attacker.name if attacker else None
-            d["attack_name"] = attack_name
-            d["target_name"] = target.name if target else None
-        return d
-
-
-class PassPhaseAction(Action):
-    """Action to pass/end the current phase."""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return None
-    
-    @property
-    def action_type(self) -> str:
-        return "pass"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        return "Pass current phase"
-
-
-class ForceDefendAction(Action):
-    """Action taken when a player must move a supporting creature to defend."""
-    instance_id: str = ""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.ATTACK]
-    
-    @property
-    def action_type(self) -> str:
-        return "force_defend"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            card = state.get_card(self.instance_id)
-            card_name = card.name if card else self.instance_id
-        else:
-            card_name = self.instance_id
-        return f"Move {card_name} to defend"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            card = state.get_card(self.instance_id)
-            d["card_name"] = card.name if card else None
-        return d
-
-
-class ConcedeAction(Action):
-    """Action to concede the game."""
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return None
-    
-    @property
-    def action_type(self) -> str:
-        return "concede"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        return "Concede the game"
 
 
 class MultiPlayCardAction(Action):
-    """Action to play multiple cards from hand to supporting zone at once."""
+    action_type: str = "multi_play_card"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.PLACEMENT]
     instance_ids: list[str] = []
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.PLACEMENT]
-    
-    @property
-    def action_type(self) -> str:
-        return "multi_play_card"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            card_names = []
-            for inst_id in self.instance_ids:
-                card = state.get_card(inst_id)
-                card_names.append(card.name if card else inst_id)
-            return f"Play {', '.join(card_names)} to supporting zone"
-        else:
-            return f"Play {len(self.instance_ids)} cards to supporting zone"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            cards_info = []
-            for inst_id in self.instance_ids:
-                card = state.get_card(inst_id)
-                cards_info.append({
-                    "instance_id": inst_id,
-                    "card_name": card.name if card else None,
-                })
-            d["cards"] = cards_info
-        return d
+
+
+class PromoteAction(Action):
+    action_type: str = "promote"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.PROMOTION]
+    instance_id: str = ""
+
+
+class SwapAction(Action):
+    action_type: str = "swap"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.SWAP]
+    supporting_card_id: str = ""
+    attacking_card_id: str = ""
 
 
 class MultiSwapAction(Action):
-    """Action to perform multiple swaps at once."""
+    action_type: str = "multi_swap"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.SWAP]
     swaps: list[tuple[str, str]] = []
-    
-    @property
-    def valid_phases(self) -> list[TurnPhase] | None:
-        return [TurnPhase.SWAP]
-    
-    @property
-    def action_type(self) -> str:
-        return "multi_swap"
-    
-    def get_description(self, state: "GameState" = None) -> str:
-        if state:
-            swap_descs = []
-            for supp_id, atk_id in self.swaps:
-                supp = state.get_card(supp_id)
-                atk = state.get_card(atk_id)
-                supp_name = supp.name if supp else supp_id
-                atk_name = atk.name if atk else atk_id
-                swap_descs.append(f"{supp_name} ↔ {atk_name}")
-            return f"Swap: {', '.join(swap_descs)}"
-        else:
-            return f"Perform {len(self.swaps)} swaps"
-    
-    def to_dict(self, state: "GameState" = None) -> dict[str, Any]:
-        d = super().to_dict(state)
-        if state:
-            swaps_info = []
-            for supp_id, atk_id in self.swaps:
-                supp = state.get_card(supp_id)
-                atk = state.get_card(atk_id)
-                swaps_info.append({
-                    "supporting_card_id": supp_id,
-                    "attacking_card_id": atk_id,
-                    "supporting_card_name": supp.name if supp else None,
-                    "attacking_card_name": atk.name if atk else None,
-                })
-            d["swaps"] = swaps_info
-        return d
 
 
-# Action type mapping for deserialization
-ACTION_TYPES = {
+class AssociationAction(Action):
+    action_type: str = "associate"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.ASSOCIATION]
+    association_card_id: str = ""
+    target_card_id: str = ""
+
+
+class EvolutionAction(Action):
+    action_type: str = "evolve"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.EVOLUTION]
+    evolution_card_id: str = ""
+    target_card_id: str = ""
+
+
+class AttackAction(Action):
+    action_type: str = "attack"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.ATTACK]
+    attacker_id: str = ""
+    attack_id: int = 0
+    target_card_id: str = ""
+
+
+class PassPhaseAction(Action):
+    action_type: str = "pass"
+    valid_phases: list[TurnPhase] | None = None
+
+
+class ForceDefendAction(Action):
+    action_type: str = "force_defend"
+    valid_phases: list[TurnPhase] | None = [TurnPhase.ATTACK]
+    instance_id: str = ""
+
+
+class ConcedeAction(Action):
+    action_type: str = "concede"
+    valid_phases: list[TurnPhase] | None = None
+
+
+# ── Factory ─────────────────────────────────────────────────────────────
+
+ACTION_TYPES: dict[str, type[Action]] = {
     "draw": DrawAction,
     "play_card": PlayCardAction,
     "promote": PromoteAction,
@@ -437,14 +132,38 @@ ACTION_TYPES = {
 
 
 def create_action(action_type: str, player_id: str, **kwargs) -> Action:
-    """
-    Factory function to create an action from type name and parameters.
-    
-    Raises:
-        ValueError: If the action type is unknown
-    """
     if action_type not in ACTION_TYPES:
         raise ValueError(f"Unknown action type: {action_type}")
-    
-    action_class = ACTION_TYPES[action_type]
-    return action_class(player_id=player_id, **kwargs)
+    return ACTION_TYPES[action_type](player_id=player_id, **kwargs)
+
+
+# ── Card-name enrichment for API responses ──────────────────────────────
+
+# Fields that contain card instance IDs → corresponding name field
+_CARD_ID_TO_NAME = {
+    "instance_id": "card_name",
+    "attacker_id": "attacker_name",
+    "target_card_id": "target_name",
+    "supporting_card_id": "supporting_card_name",
+    "attacking_card_id": "attacking_card_name",
+    "association_card_id": "association_card_name",
+    "evolution_card_id": "evolution_card_name",
+}
+
+
+def _enrich_card_names(d: dict, state: "GameState") -> None:
+    """Add human-readable card names to an action dict."""
+    for id_field, name_field in _CARD_ID_TO_NAME.items():
+        card_id = d.get(id_field)
+        if card_id:
+            card = state.get_card(card_id)
+            d[name_field] = card.name if card else None
+
+    # Attack name resolution
+    if "attacker_id" in d and "attack_id" in d:
+        attacker = state.get_card(d["attacker_id"])
+        if attacker:
+            for atk in attacker.attacks:
+                if atk.attack_id == d["attack_id"]:
+                    d["attack_name"] = atk.name
+                    break

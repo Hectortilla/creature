@@ -14,7 +14,7 @@ class ValidActionSchema(ActionData):
     """Action.to_dict() output = ActionData fields + server enrichments."""
     player_id: str
     action: str
-    description: str
+    description: Optional[str] = None
     card_name: Optional[str] = None
     attack_name: Optional[str] = None
     target_name: Optional[str] = None
