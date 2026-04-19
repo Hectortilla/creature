@@ -2,10 +2,7 @@
 Game Engine
 
 Stateless coordinator that orchestrates the game pipeline:
-    Action → Validator → Evaluator → Events → EventLoop → Reducer → New State
-
-The engine does NOT hold any state - it just coordinates the flow.
-All game state is passed in and returned.
+    Action → Validator → action.to_events() → EventLoop → Reducer → New State
 """
 
 from __future__ import annotations
@@ -27,7 +24,6 @@ from app.models.game.events import (
     GameEndedEvent,
     TurnStartedEvent,
     PhaseChangedEvent,
-    ElementsRestoredEvent,
 )
 from app.game.actions import (
     Action,
@@ -35,407 +31,153 @@ from app.game.actions import (
     PassPhaseAction,
     ConcedeAction,
     ForceDefendAction,
-    PlayCardAction,
-    PromoteAction,
-    SwapAction,
-    AssociationAction,
-    EvolutionAction,
-    AttackAction,
+    ACTION_TYPES,
     create_action,
 )
 from app.game.validators import RuleValidator
-from app.game.event_generator import ActionToEventGenerator
 from app.game.event_loop import EventLoop
 from app.game.reducer import apply_event
 
 
 @dataclass
 class ActionResult:
-    """
-    Result of processing an action.
-    
-    Attributes:
-        success: Whether the action was successful
-        events: All events generated (including triggered effects)
-        error: Error message if action failed
-        game_over: Whether the game ended
-        winner_id: ID of winner if game ended
-        state: The new game state after processing
-        final_players: The updated players dict after processing
-        valid_actions: Valid actions for the acting player after this action
-    """
     success: bool
     events: list[GameEvent] = field(default_factory=list)
     error: Optional[str] = None
     game_over: bool = False
     winner_id: Optional[str] = None
     state: Optional[GameState] = None
-    final_players: Optional[dict[str, PlayerState]] = None
+    final_players: Optional[dict[str, "PlayerState"]] = None
     valid_actions: list[dict[str, Any]] = field(default_factory=list)
 
 
 class GameEngine:
-    """
-    Stateless game engine that coordinates the pipeline.
-    
-    Pipeline:
-        Action → Validator → Evaluator → Events → EventLoop → Reducer → New State
-    
-    The engine is stateless - create a new one each time or reuse the same instance.
-    All game data lives in GameState which is passed in and returned.
-    """
-    
+    """Stateless engine — coordinates validation, event generation, and state updates."""
+
     def __init__(self, config: Optional[GameConfiguration] = None):
         self.config = config or GameConfiguration()
         self.validator = RuleValidator()
-        self.event_generator = ActionToEventGenerator()
         self.event_loop = EventLoop()
-    
-    def create_game(
-        self,
-        room: "GameRoom"
-    ) -> GameState:
-        """
-        Create a new game state with decks set up.
-        
-        Returns:
-            Initialized GameState (status=STARTING)
-        """
-        # Create state with room reference
+
+    def create_game(self, room: "GameRoom") -> GameState:
         state = GameState.create(room, self.config)
-        # Create cards for each player
-        
-        # Shuffle decks
         for player in room.players.values():
             state._setup_deck(player)
             player.shuffle_deck()
-        
         state.status = GameStatus.STARTING
         return state
-    
-    def start_game(self, state: GameRoom) -> ActionResult:
-        """
-        Start a game - sets up first turn and draws initial cards.
-        
-        Randomly selects the first player from available players.
-        
-        Args:
-            state: Game state (status must be STARTING)
-        
-        Returns:
-            ActionResult with new state
-        """
-        # Randomly select the first player
+
+    def start_game(self, state: "GameRoom") -> ActionResult:
         player_ids = list(state.room.players.keys())
         first_player_id = random.choice(player_ids)
-        
-        # Build initial events
+
         initial_events: list[GameEvent] = [
-            GameStartedEvent(
-                game_id=state.game_id,
-                player_ids=player_ids,
-                first_player_id=first_player_id,
-            ),
-            TurnStartedEvent(
-                game_id=state.game_id,
-                player_id=first_player_id,
-                turn_number=1,
-                is_first_turn=True,
-            ),
+            GameStartedEvent(game_id=state.game_id, player_ids=player_ids, first_player_id=first_player_id),
+            TurnStartedEvent(game_id=state.game_id, player_id=first_player_id, turn_number=1, is_first_turn=True),
         ]
-        
-        # Draw phase events (first turn draws initial_draw amount)
+
+        # Draw initial cards
         draw_action = DrawAction(player_id=first_player_id, count=self.config.initial_draw)
-        draw_events = self.event_generator.create(state, draw_action)
-        initial_events.extend(draw_events)
-        
-        # Phase change to placement
+        initial_events.extend(draw_action.to_events(state))
+
         initial_events.append(PhaseChangedEvent(
-            game_id=state.game_id,
-            player_id=first_player_id,
-            from_phase=TurnPhase.DRAW,
-            to_phase=TurnPhase.PLACEMENT,
+            game_id=state.game_id, player_id=first_player_id,
+            from_phase=TurnPhase.DRAW, to_phase=TurnPhase.PLACEMENT,
         ))
-        
-        # Process all events through the event loop
+
         result = self.event_loop.process(state, state.room.players, initial_events)
-        
-        # Update room's players reference in the final state
-        # (The reducer already does this, but ensure it's set correctly)
         if result.final_state:
             result.final_state.room.players = result.final_players
-        
-        # Get valid actions for the first player after game start
-        valid_actions = []
-        if result.final_state:
-            valid_actions = self.get_valid_actions(result.final_state)
-        
+
+        valid_actions = self.get_valid_actions(result.final_state) if result.final_state else []
+
         return ActionResult(
-            success=True,
-            events=result.all_events,
-            state=result.final_state,
-            final_players=result.final_players,
+            success=True, events=result.all_events,
+            state=result.final_state, final_players=result.final_players,
             valid_actions=valid_actions,
         )
-    
+
     def process_action(self, state: GameState, action: Action) -> ActionResult:
-        """
-        Process a player action through the complete pipeline.
-        
-        Pipeline:
-            Action → Validator → Evaluator → Events → EventLoop → Reducer → New State
-        
-        Args:
-            state: Current game state (NOT modified)
-            action: Action to process
-        
-        Returns:
-            ActionResult with new state (original state is unchanged)
-        """
-        # 1. Validate action
+        # 1. Validate
         validation = self.validator.validate(state, action)
         if not validation.valid:
-            return ActionResult(
-                success=False,
-                error=validation.error,
-                state=state,
-            )
-        
+            return ActionResult(success=False, error=validation.error, state=state)
+
         try:
-            # 2. Transform action to events
-            events = self.event_generator.create(state, action)
-            
-            # 3. Process events through the event loop (applies reducer + triggers effects)
+            # 2. Generate events (action knows how)
+            events = action.to_events(state)
+
+            # 3. Process through event loop (reducer + effect triggers)
             result = self.event_loop.process(state, state.room.players, events)
-            
-            # Update room's players reference
             result.final_state.room.players = result.final_players
-            
-            # 4. Check for game end
+
+            # 4. Check game end
             winner_id = result.final_state.check_game_end()
             game_over = winner_id is not None
-            
+
             if game_over and result.final_state.status != GameStatus.FINISHED:
-                # Find opponent
-                loser_id = None
-                for pid in result.final_players.keys():
-                    if pid != winner_id:
-                        loser_id = pid
-                        break
+                loser_id = next((pid for pid in result.final_players if pid != winner_id), None)
                 if loser_id:
                     end_event = GameEndedEvent(
                         game_id=result.final_state.game_id,
-                        winner_id=winner_id,
-                        loser_id=loser_id,
+                        winner_id=winner_id, loser_id=loser_id,
                         reason="No cards remaining",
                     )
                     result.final_state, result.final_players = apply_event(result.final_state, result.final_players, end_event)
                     result.final_state.room.players = result.final_players
                     result.all_events.append(end_event)
-            
-            # Get valid actions for the acting player after the action
-            valid_actions = []
-            if result.final_state and not game_over:
-                valid_actions = self.get_valid_actions(result.final_state)
-            
+
+            valid_actions = self.get_valid_actions(result.final_state) if result.final_state and not game_over else []
+
             return ActionResult(
-                success=True,
-                events=result.all_events,
+                success=True, events=result.all_events,
                 game_over=game_over or result.final_state.status == GameStatus.FINISHED,
                 winner_id=result.final_state.winner_id,
-                state=result.final_state,
-                final_players=result.final_players,
+                state=result.final_state, final_players=result.final_players,
                 valid_actions=valid_actions,
             )
-        except Exception as e:
-            return ActionResult(
-                success=False,
-                error=traceback.format_exc(),
-                state=state,
-            )
-    
-    def process_action_from_dict(
-        self,
-        state: GameState,
-        player_id: str,
-        action_data: dict
-    ) -> ActionResult:
-        """
-        Process a player action from a dictionary.
-        
-        Handles action creation from dict and validation that player is in the game.
-        Then delegates to process_action.
-        
-        Args:
-            state: Current game state (NOT modified)
-            player_id: ID of the player taking the action
-            action_data: Dictionary containing action_type and parameters
-        
-        Returns:
-            ActionResult with new state (original state is unchanged)
-        """
+        except Exception:
+            return ActionResult(success=False, error=traceback.format_exc(), state=state)
+
+    def process_action_from_dict(self, state: GameState, player_id: str, action_data: dict) -> ActionResult:
         if player_id not in state.room.players:
-            return ActionResult(
-                success=False,
-                error="Player not in this game",
-                state=state,
-            )
-        
+            return ActionResult(success=False, error="Player not in this game", state=state)
         action_type = action_data.get("action_type")
         if not action_type:
-            return ActionResult(
-                success=False,
-                error="Missing action_type",
-                state=state,
-            )
-        
+            return ActionResult(success=False, error="Missing action_type", state=state)
         try:
             action_params = {k: v for k, v in action_data.items() if k != "action_type"}
             action = create_action(action_type, player_id=player_id, **action_params)
             return self.process_action(state, action)
         except Exception as e:
-            return ActionResult(
-                success=False,
-                error=str(e),
-                state=state,
-            )
+            return ActionResult(success=False, error=str(e), state=state)
 
     def get_valid_actions(self, state: GameState) -> list[dict[str, Any]]:
-        """
-        Get all valid actions for a player in the current state.
-        
-        Returns a list of action dictionaries with action type, parameters, and description.
-        """
-        valid_actions: list[Action] = []
-        player = state.room.players[state.active_player_id]
-        
-        # Can always pass or concede
-        valid_actions.append(PassPhaseAction(player_id=state.active_player_id))
-        valid_actions.append(ConcedeAction(player_id=state.active_player_id))
-         
+        actions: list[Action] = []
+
+        # Pass + Concede always available
+        actions.append(PassPhaseAction(player_id=state.active_player_id))
+        actions.append(ConcedeAction(player_id=state.active_player_id))
+
+        # Force defend: defender picks a supporting card
         if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
-            # The defender (not the active player) must choose a supporting
-            # creature to move to the attacking zone.
-            defender_id = state.pending_defender_id
-            if defender_id:
-                defender = state.room.players.get(defender_id)
-                if defender:
-                    for card_id in defender.zones[Zone.SUPPORTING.name].card_ids:
-                        card = state.get_card(card_id)
-                        if card:
-                            valid_actions.append(ForceDefendAction(
-                                player_id=defender_id,
-                                instance_id=card_id,
-                            ))
-            return [action.to_dict(state) for action in valid_actions]
-        
-        phase = state.current_phase
-        
-        if phase == TurnPhase.PLACEMENT:
-            for card_id in player.zones[Zone.HAND.name].card_ids:
-                card = state.get_card(card_id)
-                if card and not player.zones[Zone.SUPPORTING.name].is_full:
-                    valid_actions.append(PlayCardAction(
-                        player_id=state.active_player_id,
-                        instance_id=card_id,
-                    ))
-        
-        elif phase == TurnPhase.PROMOTION:
-            for card_id in player.zones[Zone.SUPPORTING.name].card_ids:
-                card = state.get_card(card_id)
-                if card and card.can_promote and not player.zones[Zone.ATTACKING.name].is_full:
-                    valid_actions.append(PromoteAction(
-                        player_id=state.active_player_id,
-                        instance_id=card_id,
-                    ))
-        
-        elif phase == TurnPhase.SWAP:
-            for supp_id in player.zones[Zone.SUPPORTING.name].card_ids:
-                for atk_id in player.zones[Zone.ATTACKING.name].card_ids:
-                    valid_actions.append(SwapAction(
-                        player_id=state.active_player_id,
-                        supporting_card_id=supp_id,
-                        attacking_card_id=atk_id,
-                    ))
-        
-        elif phase == TurnPhase.ASSOCIATION:
-            if not state.is_first_turn(state.active_player_id):
-                for assoc_id in (player.zones[Zone.HAND.name].card_ids + 
-                                player.zones[Zone.SUPPORTING.name].card_ids):
-                    assoc_card = state.get_card(assoc_id)
-                    if assoc_card and assoc_card.association_ids:
-                        for target_id in player.get_active_cards():
-                            if target_id != assoc_id:
-                                valid_actions.append(AssociationAction(
-                                    player_id=state.active_player_id,
-                                    association_card_id=assoc_id,
-                                    target_card_id=target_id,
-                                ))
-        
-        elif phase == TurnPhase.EVOLUTION:
-            if not state.is_first_turn(state.active_player_id) and not state.is_second_turn(state.active_player_id):
-                for evo_id in player.zones[Zone.HAND.name].card_ids:
-                    evo_card = state.get_card(evo_id)
-                    if evo_card and evo_card.is_evolution:
-                        for target_id in player.get_active_cards():
-                            target_card = state.get_card(target_id)
-                            if (target_card and 
-                                target_card.can_evolve and
-                                target_card.card_id == evo_card.evolves_from_id):
-                                valid_actions.append(EvolutionAction(
-                                    player_id=state.active_player_id,
-                                    evolution_card_id=evo_id,
-                                    target_card_id=target_id,
-                                ))
-        
-        elif phase == TurnPhase.ATTACK:
-            if not state.is_first_turn(state.active_player_id):
-                # Find opponent
-                opponent = None
-                for pid, p in state.room.players.items():
-                    if pid != state.active_player_id:
-                        opponent = p
-                        break
-                if not opponent:
-                    return [action.to_dict(state) for action in valid_actions]
-                
-                for attacker_id in player.zones[Zone.ATTACKING.name].card_ids:
-                    attacker = state.get_card(attacker_id)
-                    if attacker and attacker.can_attack:
-                        for attack in attacker.attacks:
-                            can_afford = all(
-                                player.element_pool.get_available(cost.element_id) >= cost.amount
-                                for cost in attack.necessary_force
-                            )
-                            
-                            if can_afford:
-                                # Add attack for each valid target
-                                for target_id in opponent.zones[Zone.ATTACKING.name].card_ids:
-                                    valid_actions.append(AttackAction(
-                                        player_id=state.active_player_id,
-                                        attacker_id=attacker_id,
-                                        attack_id=attack.attack_id,
-                                        target_card_id=target_id,
-                                    ))
-                                
-                                # If no defenders, can attack with empty target
-                                if len(opponent.zones[Zone.ATTACKING.name].card_ids) == 0:
-                                    valid_actions.append(AttackAction(
-                                        player_id=state.active_player_id,
-                                        attacker_id=attacker_id,
-                                        attack_id=attack.attack_id,
-                                        target_card_id="",
-                                    ))
-        
-        return [action.to_dict(state) for action in valid_actions]
+            if state.pending_defender_id:
+                actions.extend(ForceDefendAction.get_valid(state, state.pending_defender_id))
+            return [a.to_dict(state) for a in actions]
+
+        # Enumerate valid actions for current phase from each action type
+        for action_cls in ACTION_TYPES.values():
+            phases = action_cls.model_fields["valid_phases"].default
+            if phases and state.current_phase in phases:
+                actions.extend(action_cls.get_valid(state, state.active_player_id))
+
+        return [a.to_dict(state) for a in actions]
 
 
-# Singleton engine instance - since it's stateless, one instance is enough
+# Singleton
 _engine: Optional[GameEngine] = None
 
-
 def get_engine(config: Optional[GameConfiguration] = None) -> GameEngine:
-    """Get or create the game engine singleton."""
     global _engine
     if _engine is None:
         _engine = GameEngine(config)
