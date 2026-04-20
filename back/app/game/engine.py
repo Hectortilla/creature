@@ -91,9 +91,18 @@ class GameEngine:
 
         valid_actions = self.get_valid_actions(result.final_state) if result.final_state else []
 
+        # Auto-advance through phases with no phase-specific actions
+        if result.final_state and valid_actions:
+            final_state, all_events, valid_actions, game_over, winner_id = self._auto_advance_phases(
+                result.final_state, result.all_events, valid_actions,
+            )
+        else:
+            final_state = result.final_state
+            all_events = result.all_events
+
         return ActionResult(
-            success=True, events=result.all_events,
-            state=result.final_state, final_players=result.final_players,
+            success=True, events=all_events,
+            state=final_state, final_players=final_state.room.players if final_state else result.final_players,
             valid_actions=valid_actions,
         )
 
@@ -129,11 +138,19 @@ class GameEngine:
 
             valid_actions = self.get_valid_actions(result.final_state) if result.final_state and not game_over else []
 
+            # Auto-advance through phases with no phase-specific actions
+            final_state = result.final_state
+            all_events = result.all_events
+            if final_state and not game_over and valid_actions:
+                final_state, all_events, valid_actions, game_over, winner_id = self._auto_advance_phases(
+                    final_state, all_events, valid_actions,
+                )
+
             return ActionResult(
-                success=True, events=result.all_events,
-                game_over=game_over or result.final_state.status == GameStatus.FINISHED,
-                winner_id=result.final_state.winner_id,
-                state=result.final_state, final_players=result.final_players,
+                success=True, events=all_events,
+                game_over=game_over or final_state.status == GameStatus.FINISHED,
+                winner_id=final_state.winner_id,
+                state=final_state, final_players=final_state.room.players,
                 valid_actions=valid_actions,
             )
         except Exception:
@@ -151,6 +168,68 @@ class GameEngine:
             return self.process_action(state, action)
         except Exception as e:
             return ActionResult(success=False, error=str(e), state=state)
+
+    def _only_pass_and_concede(self, valid_actions: list[dict[str, Any]]) -> bool:
+        """Check if valid_actions contains only pass and concede (no phase-specific actions)."""
+        return all(a.get("action_type") in ("pass", "concede") for a in valid_actions)
+
+    def _auto_advance_phases(
+        self,
+        state: GameState,
+        accumulated_events: list[GameEvent],
+        valid_actions: list[dict[str, Any]],
+    ) -> tuple[GameState, list[GameEvent], list[dict[str, Any]], bool, Optional[str]]:
+        """
+        Auto-advance through phases that have no phase-specific actions.
+
+        After any action, if the only remaining valid actions are pass and concede,
+        automatically process a PassPhaseAction to advance to the next meaningful phase.
+        """
+        game_over = state.winner_id is not None
+        winner_id = state.winner_id
+        iterations = 0
+        max_iterations = 14  # 7 phases × 2 players
+
+        while (
+            iterations < max_iterations
+            and not game_over
+            and state.status == GameStatus.IN_PROGRESS
+            and valid_actions
+            and self._only_pass_and_concede(valid_actions)
+        ):
+            iterations += 1
+
+            pass_action = PassPhaseAction(player_id=state.active_player_id)
+
+            validation = self.validator.validate(state, pass_action)
+            if not validation.valid:
+                break
+
+            events = pass_action.to_events(state)
+            result = self.event_loop.process(state, state.room.players, events)
+            result.final_state.room.players = result.final_players
+            state = result.final_state
+            accumulated_events.extend(result.all_events)
+
+            winner_id = state.check_game_end()
+            game_over = winner_id is not None
+
+            if game_over and state.status != GameStatus.FINISHED:
+                loser_id = next((pid for pid in result.final_players if pid != winner_id), None)
+                if loser_id:
+                    end_event = GameEndedEvent(
+                        game_id=state.game_id,
+                        winner_id=winner_id, loser_id=loser_id,
+                        reason="No cards remaining",
+                    )
+                    state, final_players = apply_event(state, result.final_players, end_event)
+                    state.room.players = final_players
+                    accumulated_events.append(end_event)
+
+            if not game_over:
+                valid_actions = self.get_valid_actions(state)
+
+        return state, accumulated_events, valid_actions, game_over, winner_id
 
     def get_valid_actions(self, state: GameState) -> list[dict[str, Any]]:
         actions: list[Action] = []
