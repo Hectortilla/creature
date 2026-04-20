@@ -90,6 +90,11 @@ export interface ElementsChangedData {
 	maxPool: Record<string, number>;
 }
 
+export interface ElementPoolsUpdatedData {
+	myPool: { elements: Record<string, number>; maxElements: Record<string, number> };
+	oppPool: { elements: Record<string, number>; maxElements: Record<string, number> };
+}
+
 export interface NoDefenderData {
 	defenderId: string;
 	attackerId: string;
@@ -129,6 +134,7 @@ export interface GameStartedEventData {
 	currentPhase: TurnPhase;
 	deckSize: number;
 	myElementPool: { elements: Record<string, number>; maxElements: Record<string, number> };
+	opponentElementPool: { elements: Record<string, number>; maxElements: Record<string, number> };
 }
 
 // ============================================================================
@@ -151,6 +157,7 @@ export interface StateChangeEvents {
 	cardEvolved: CardEvolvedData;
 	elementsConsumed: ElementsChangedData;
 	elementsRestored: ElementsChangedData;
+	elementPoolsUpdated: ElementPoolsUpdatedData;
 	noDefender: NoDefenderData;
 	effectTriggered: EffectTriggeredData;
 	effectApplied: EffectAppliedData;

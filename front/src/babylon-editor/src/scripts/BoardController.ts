@@ -109,6 +109,7 @@ export default class BoardController implements IScript {
 		if (d.game_state) {
 			this._stateStore.applyServerState(d.game_state as Record<string, unknown>);
 			CardEntityManager.instance?.syncFromState(this._stateStore.state!.cards);
+			this._emitElementPoolsUpdated();
 		}
 
 		// 2. Game started (must fire before granular events so subscribers can initialize)
@@ -413,6 +414,7 @@ export default class BoardController implements IScript {
 		const myId = this._stateStore.myPlayerId;
 		const oppId = this._stateStore.getOpponentId() ?? '';
 		const myPlayer = state.players[myId];
+		const oppPlayer = state.players[oppId];
 
 		return {
 			state,
@@ -425,7 +427,20 @@ export default class BoardController implements IScript {
 				elements: myPlayer?.elementPool?.elements ?? {},
 				maxElements: myPlayer?.elementPool?.max_elements ?? {},
 			},
+			opponentElementPool: {
+				elements: oppPlayer?.elementPool?.elements ?? {},
+				maxElements: oppPlayer?.elementPool?.max_elements ?? {},
+			},
 		};
+	}
+
+	private _emitElementPoolsUpdated(): void {
+		const myId = this._stateStore.myPlayerId;
+		const oppId = this._stateStore.getOpponentId() ?? '';
+		this._emit('elementPoolsUpdated', {
+			myPool: this._getPlayerPool(myId),
+			oppPool: this._getPlayerPool(oppId),
+		});
 	}
 
 	private _getPlayerPool(playerId: string): { elements: Record<string, number>; maxElements: Record<string, number> } {
