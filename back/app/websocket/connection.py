@@ -37,6 +37,13 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket, player: PlayerState) -> None:
         await websocket.accept()
 
+        # Cancel any existing player loop from a prior connection to prevent
+        # duplicate broadcast subscriptions (which cause duplicate messages).
+        old_task = self.player_tasks.pop(player.player_id, None)
+        if old_task:
+            old_task.cancel()
+            await asyncio.gather(old_task, return_exceptions=True)
+
         self.connections[player.player_id] = websocket
 
         ready = asyncio.Event()
@@ -99,7 +106,13 @@ class ConnectionManager:
             subscription_task.cancel()
             await asyncio.gather(subscription_task, return_exceptions=True)
 
-    async def disconnect(self, player_id: str):
+    async def disconnect(self, player_id: str, websocket: WebSocket | None = None):
+        # If a specific websocket is provided, only disconnect if it's still the
+        # active connection. This prevents a stale handler's finally-block from
+        # tearing down a newer reconnection.
+        if websocket and self.connections.get(player_id) is not websocket:
+            return
+
         task = self.player_tasks.pop(player_id, None)
         if task:
             task.cancel()
