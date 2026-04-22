@@ -18,6 +18,20 @@ export function createDummyCard(zone: Zone = 'DECK'): ClientCard {
 		magicDefence: 5,
 		isAlive: true,
 		faceUp: false,
+		description: null,
+		elementIds: [],
+		skillIds: [],
+		associationIds: [],
+		isEvolution: false,
+		evolvesFromId: null,
+		status: 'READY',
+		turnsInZone: 0,
+		associations: [],
+		hasAttackedThisTurn: false,
+		swappedThisTurn: false,
+		canAttack: false,
+		canPromote: false,
+		canEvolve: false,
 	};
 }
 

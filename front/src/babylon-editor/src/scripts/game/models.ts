@@ -84,6 +84,20 @@ export interface ClientCard {
 	faceUp: boolean;
 	attacks?: AttackDefinition[];
 	elementContribution?: ElementContribution[];
+	description: string | null;
+	elementIds: number[];
+	skillIds: number[];
+	associationIds: number[];
+	isEvolution: boolean;
+	evolvesFromId: number | null;
+	status: string;
+	turnsInZone: number;
+	associations: string[];
+	hasAttackedThisTurn: boolean;
+	swappedThisTurn: boolean;
+	canAttack: boolean;
+	canPromote: boolean;
+	canEvolve: boolean;
 }
 
 /** Creates a minimal ClientCard for a face-down placeholder (e.g. deck stack). */
@@ -100,6 +114,20 @@ export function createFaceDownCard(instanceId: string, ownerId: string, zone: Zo
 		magicDefence: 0,
 		isAlive: true,
 		faceUp: false,
+		description: null,
+		elementIds: [],
+		skillIds: [],
+		associationIds: [],
+		isEvolution: false,
+		evolvesFromId: null,
+		status: 'READY',
+		turnsInZone: 0,
+		associations: [],
+		hasAttackedThisTurn: false,
+		swappedThisTurn: false,
+		canAttack: false,
+		canPromote: false,
+		canEvolve: false,
 	};
 }
 

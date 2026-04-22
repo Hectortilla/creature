@@ -128,6 +128,20 @@ export class GameStateStore {
 					faceUp: ((rc.card_id as number) ?? 0) > 0,
 					attacks: rc.attacks as ClientCard['attacks'],
 					elementContribution: rc.element_contribution as ClientCard['elementContribution'],
+					description: (rc.description as string | null) ?? null,
+					elementIds: (rc.element_ids as number[]) ?? [],
+					skillIds: (rc.skill_ids as number[]) ?? [],
+					associationIds: (rc.association_ids as number[]) ?? [],
+					isEvolution: (rc.is_evolution as boolean) ?? false,
+					evolvesFromId: (rc.evolves_from_id as number | null) ?? null,
+					status: (rc.status as string) ?? 'READY',
+					turnsInZone: (rc.turns_in_zone as number) ?? 0,
+					associations: (rc.associations as string[]) ?? [],
+					hasAttackedThisTurn: (rc.has_attacked_this_turn as boolean) ?? false,
+					swappedThisTurn: (rc.swapped_this_turn as boolean) ?? false,
+					canAttack: (rc.can_attack as boolean) ?? false,
+					canPromote: (rc.can_promote as boolean) ?? false,
+					canEvolve: (rc.can_evolve as boolean) ?? false,
 				};
 			}
 		}
