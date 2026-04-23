@@ -61,7 +61,7 @@ class HealthBar {
 		this._label.isPointerBlocker = false;
 		this._container.addControl(this._label);
 
-		this.updateHealth(entity.cardData.currentHealth, entity.cardData.maxHealth);
+		this.updateHealth(entity.cardData.current_health, entity.cardData.health);
 	}
 
 	updateHealth(current: number, max: number): void {

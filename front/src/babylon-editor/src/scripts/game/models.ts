@@ -40,6 +40,9 @@ export type {
 	ElementPool,
 	AttackDefinition,
 	ZoneState,
+	GameCard,
+	CardStatus,
+	PlayerState,
 } from '$lib/api/types.gen';
 
 import type {
@@ -47,10 +50,8 @@ import type {
 	TurnPhase,
 	GameStatus,
 	GameConfiguration,
-	AttackDefinition,
-	ElementContribution,
-	ElementPool,
-	ZoneState,
+	GameCard,
+	PlayerState,
 } from '$lib/api/types.gen';
 
 export enum CardVisualState {
@@ -65,95 +66,48 @@ export enum CardVisualState {
 /**
  * Client-side card representation.
  *
- * Built incrementally from backend events + CardDefinitionCache lookups.
- * The backend excludes GameCard from the serialized GameState, so the
- * client constructs these from CardDrawnEvent / CardPlayedEvent data.
+ * Extends the auto-generated GameCard type with the client-only `faceUp` field
+ * used for visibility control (opponent's hand cards are face-down).
  */
-export interface ClientCard {
-	instanceId: string;
-	cardId: number;
-	ownerId: string;
-	name: string;
-	zone: Zone;
-	currentHealth: number;
-	maxHealth: number;
-	physicalDefence: number;
-	magicDefence: number;
-	isAlive: boolean;
+export type ClientCard = GameCard & {
 	/** false when the card identity is hidden (opponent draw) */
 	faceUp: boolean;
-	attacks?: AttackDefinition[];
-	elementContribution?: ElementContribution[];
-	description: string | null;
-	elementIds: number[];
-	skillIds: number[];
-	associationIds: number[];
-	isEvolution: boolean;
-	evolvesFromId: number | null;
-	status: string;
-	turnsInZone: number;
-	associations: string[];
-	hasAttackedThisTurn: boolean;
-	swappedThisTurn: boolean;
-	canAttack: boolean;
-	canPromote: boolean;
-	canEvolve: boolean;
-}
+};
 
 /** Creates a minimal ClientCard for a face-down placeholder (e.g. deck stack). */
 export function createFaceDownCard(instanceId: string, ownerId: string, zone: Zone = 'DECK'): ClientCard {
 	return {
-		instanceId,
-		cardId: 0,
-		ownerId,
+		instance_id: instanceId,
+		card_id: 0,
+		owner_id: ownerId,
 		name: '',
 		zone,
-		currentHealth: 0,
-		maxHealth: 0,
-		physicalDefence: 0,
-		magicDefence: 0,
-		isAlive: true,
+		current_health: 0,
+		health: 0,
+		physical_defence: 0,
+		magic_defence: 0,
+		is_alive: false,
 		faceUp: false,
-		description: null,
-		elementIds: [],
-		skillIds: [],
-		associationIds: [],
-		isEvolution: false,
-		evolvesFromId: null,
-		status: 'READY',
-		turnsInZone: 0,
-		associations: [],
-		hasAttackedThisTurn: false,
-		swappedThisTurn: false,
-		canAttack: false,
-		canPromote: false,
-		canEvolve: false,
+		can_attack: false,
+		can_promote: false,
+		can_evolve: false,
 	};
-}
-
-/** Client-side player state, built from events. */
-export interface ClientPlayerState {
-	playerId: string;
-	name: string;
-	zones: Record<string, ZoneState>;
-	elementPool: ElementPool;
 }
 
 /**
  * Full client-side game state.
  *
- * Mirrors the backend GameState fields that are serialized (game_id,
- * turn_number, etc.) and adds client-owned data that the backend
- * excludes (cards map, per-player zones).
+ * Extends the backend GameState with the `cards` and `players` maps that the
+ * backend excludes from its Pydantic schema but includes in serialize_for_player().
  */
 export interface ClientGameState {
-	gameId: string;
-	activePlayerId: string | null;
-	turnNumber: number;
-	currentPhase: TurnPhase;
+	game_id: string;
+	active_player_id: string | null;
+	turn_number: number;
+	current_phase: TurnPhase;
 	status: GameStatus;
-	winnerId: string | null;
+	winner_id: string | null;
 	config: GameConfiguration | null;
-	players: Record<string, ClientPlayerState>;
+	players: Record<string, PlayerState>;
 	cards: Record<string, ClientCard>;
 }

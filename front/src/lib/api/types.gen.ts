@@ -1043,6 +1043,17 @@ export type CardReadWithRelations = {
 };
 
 /**
+ * CardStatus
+ *
+ * Status flags for cards in active zones.
+ *
+ * - READY: Card is ready and contributing normally
+ * - SWAPPED: Card was swapped this turn, no element contribution
+ * - ASSOCIATED: Card is being used as an association
+ */
+export type CardStatus = "READY" | "SWAPPED" | "ASSOCIATED";
+
+/**
  * CardSwappedEvent
  *
  * Event fired when two cards are swapped between zones.
@@ -1550,6 +1561,134 @@ export type ErrorData = {
  */
 export type ErrorMessage = {
   data: ErrorData;
+};
+
+/**
+ * GameCard
+ *
+ * Represents a card instance in the game.
+ *
+ * This is distinct from the database Card model - this represents
+ * a specific instance of a card during gameplay with runtime state.
+ *
+ * Inherits shared fields from:
+ * - CardIdentityFields: name, description
+ * - CardCombatFields: health, physical_defence, magic_defence
+ *
+ * Adds game-specific fields for runtime state.
+ */
+export type GameCard = {
+  /**
+   * Health
+   */
+  health: number;
+  /**
+   * Physical Defence
+   */
+  physical_defence: number;
+  /**
+   * Magic Defence
+   */
+  magic_defence: number;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Instance Id
+   */
+  instance_id: string;
+  /**
+   * Card Id
+   */
+  card_id: number;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Current Health
+   */
+  current_health: number;
+  /**
+   * Element Ids
+   */
+  element_ids?: Array<number>;
+  /**
+   * Element Contribution
+   */
+  element_contribution?: Array<ElementContribution>;
+  /**
+   * Attacks
+   */
+  attacks?: Array<AttackDefinition>;
+  /**
+   * Skill Ids
+   */
+  skill_ids?: Array<number>;
+  /**
+   * Association Ids
+   */
+  association_ids?: Array<number>;
+  /**
+   * Is Evolution
+   */
+  is_evolution?: boolean;
+  /**
+   * Evolves From Id
+   */
+  evolves_from_id?: number | null;
+  zone?: Zone;
+  status?: CardStatus;
+  /**
+   * Turns In Zone
+   */
+  turns_in_zone?: number;
+  /**
+   * Associations
+   */
+  associations?: Array<string>;
+  /**
+   * Has Attacked This Turn
+   */
+  has_attacked_this_turn?: boolean;
+  /**
+   * Swapped This Turn
+   */
+  swapped_this_turn?: boolean;
+  /**
+   * Is Alive
+   *
+   * Check if the card is still alive.
+   */
+  readonly is_alive: boolean;
+  /**
+   * Can Attack
+   *
+   * Check if the card can attack.
+   *
+   * Note: Swapped cards CAN attack if they can afford it with other cards'
+   * elements. This matches the rule: "The attacking card may still attack."
+   * Element affordability naturally limits this since swapped cards don't
+   * contribute elements on the turn they're swapped.
+   */
+  readonly can_attack: boolean;
+  /**
+   * Can Promote
+   *
+   * Check if the card can be promoted to attacking zone.
+   */
+  readonly can_promote: boolean;
+  /**
+   * Can Evolve
+   *
+   * Check if the card can be evolved.
+   */
+  readonly can_evolve: boolean;
 };
 
 /**
@@ -2180,6 +2319,37 @@ export type PlayerLeftMessage = {
 };
 
 /**
+ * PlayerState
+ *
+ * Represents a player's state in the game.
+ */
+export type PlayerState = {
+  /**
+   * Player Id
+   */
+  player_id: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Turn Count
+   */
+  turn_count?: number;
+  element_pool?: ElementPool;
+  /**
+   * Zones
+   */
+  zones?: {
+    [key: string]: ZoneState;
+  };
+  /**
+   * Has Passed Phase
+   */
+  has_passed_phase?: boolean;
+};
+
+/**
  * PongData
  *
  * Data for pong message.
@@ -2623,6 +2793,105 @@ export type ZoneState = {
 };
 
 /**
+ * GameCard
+ *
+ * Represents a card instance in the game.
+ *
+ * This is distinct from the database Card model - this represents
+ * a specific instance of a card during gameplay with runtime state.
+ *
+ * Inherits shared fields from:
+ * - CardIdentityFields: name, description
+ * - CardCombatFields: health, physical_defence, magic_defence
+ *
+ * Adds game-specific fields for runtime state.
+ */
+export type GameCardWritable = {
+  /**
+   * Health
+   */
+  health: number;
+  /**
+   * Physical Defence
+   */
+  physical_defence: number;
+  /**
+   * Magic Defence
+   */
+  magic_defence: number;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Instance Id
+   */
+  instance_id: string;
+  /**
+   * Card Id
+   */
+  card_id: number;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Current Health
+   */
+  current_health: number;
+  /**
+   * Element Ids
+   */
+  element_ids?: Array<number>;
+  /**
+   * Element Contribution
+   */
+  element_contribution?: Array<ElementContribution>;
+  /**
+   * Attacks
+   */
+  attacks?: Array<AttackDefinition>;
+  /**
+   * Skill Ids
+   */
+  skill_ids?: Array<number>;
+  /**
+   * Association Ids
+   */
+  association_ids?: Array<number>;
+  /**
+   * Is Evolution
+   */
+  is_evolution?: boolean;
+  /**
+   * Evolves From Id
+   */
+  evolves_from_id?: number | null;
+  zone?: Zone;
+  status?: CardStatus;
+  /**
+   * Turns In Zone
+   */
+  turns_in_zone?: number;
+  /**
+   * Associations
+   */
+  associations?: Array<string>;
+  /**
+   * Has Attacked This Turn
+   */
+  has_attacked_this_turn?: boolean;
+  /**
+   * Swapped This Turn
+   */
+  swapped_this_turn?: boolean;
+};
+
+/**
  * GameLeftData
  *
  * Data for game_left message.
@@ -2768,6 +3037,37 @@ export type ListRoomsDataWritable = {
  */
 export type PingDataWritable = {
   [key: string]: unknown;
+};
+
+/**
+ * PlayerState
+ *
+ * Represents a player's state in the game.
+ */
+export type PlayerStateWritable = {
+  /**
+   * Player Id
+   */
+  player_id: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Turn Count
+   */
+  turn_count?: number;
+  element_pool?: ElementPool;
+  /**
+   * Zones
+   */
+  zones?: {
+    [key: string]: ZoneStateWritable;
+  };
+  /**
+   * Has Passed Phase
+   */
+  has_passed_phase?: boolean;
 };
 
 /**
@@ -4459,6 +4759,61 @@ export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses 
 
 export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponse =
   DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses[keyof DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses];
+
+export type DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/domain/game-card";
+};
+
+export type DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: GameCard;
+  };
+
+export type DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponse =
+  DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses[keyof DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses];
+
+export type DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/domain/card-status";
+};
+
+export type DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: CardStatus;
+  };
+
+export type DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponse =
+  DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses[keyof DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses];
+
+export type DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/player-state";
+  };
+
+export type DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: PlayerState;
+  };
+
+export type DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponse =
+  DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses[keyof DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses];
 
 export type RootGetData = {
   body?: never;

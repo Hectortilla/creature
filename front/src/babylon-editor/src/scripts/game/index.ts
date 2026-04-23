@@ -52,6 +52,8 @@ export type {
 	AttackDefinition,
 	ZoneState,
 	ClientCard,
-	ClientPlayerState,
 	ClientGameState,
+	GameCard,
+	CardStatus,
+	PlayerState,
 } from './models';

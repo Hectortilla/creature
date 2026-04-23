@@ -12,6 +12,8 @@ import type {
 	ClientCard,
 	ClientGameState,
 } from '../game/models';
+// Note: event data interfaces use their own camelCase field names.
+// These are populated by BoardController from raw server events.
 
 import type { ValidAction } from '../game/types';
 

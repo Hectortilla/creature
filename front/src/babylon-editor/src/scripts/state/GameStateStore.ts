@@ -12,15 +12,13 @@ import type {
 	Zone,
 	TurnPhase,
 	ClientCard,
-	ClientPlayerState,
 	ClientGameState,
 	GameConfiguration,
-	ZoneState,
+	PlayerState,
+	GameCard,
 } from '../game/models';
 
 import type { ValidAction } from '../game/types';
-
-const ALL_ZONES: Zone[] = ['DECK', 'HAND', 'SUPPORTING', 'ATTACKING', 'GRAVEYARD'] as Zone[];
 
 export class GameStateStore {
 	static instance: GameStateStore | null = null;
@@ -55,11 +53,11 @@ export class GameStateStore {
 	}
 
 	get isMyTurn(): boolean {
-		return this._state?.activePlayerId === this._myPlayerId;
+		return this._state?.active_player_id === this._myPlayerId;
 	}
 
 	get currentPhase(): TurnPhase | null {
-		return this._state?.currentPhase ?? null;
+		return this._state?.current_phase ?? null;
 	}
 
 	getCard(instanceId: string): ClientCard | undefined {
@@ -69,7 +67,7 @@ export class GameStateStore {
 	getCardsInZone(playerId: string, zone: Zone): ClientCard[] {
 		const player = this._state?.players[playerId];
 		if (!player) return [];
-		const zoneState = player.zones[zone as string];
+		const zoneState = player.zones?.[zone as string];
 		if (!zoneState?.card_ids) return [];
 		return zoneState.card_ids
 			.map((id) => this._state!.cards[id])
@@ -96,65 +94,28 @@ export class GameStateStore {
 	// ── State application ─────────────────────────────────────────────
 
 	applyServerState(raw: Record<string, unknown>): void {
-		const rawPlayers = raw.players as Record<string, Record<string, unknown>> | undefined;
-		const rawCards = raw.cards as Record<string, Record<string, unknown>> | undefined;
-
-		const players: Record<string, ClientPlayerState> = {};
-		if (rawPlayers) {
-			for (const [pid, rp] of Object.entries(rawPlayers)) {
-				players[pid] = {
-					playerId: (rp.player_id as string) ?? pid,
-					name: (rp.name as string) ?? pid,
-					zones: (rp.zones as Record<string, ZoneState>) ?? this._emptyZones(pid),
-					elementPool: (rp.element_pool as ClientPlayerState['elementPool']) ?? { elements: {}, max_elements: {} },
-				};
-			}
-		}
+		const rawPlayers = raw.players as Record<string, PlayerState> | undefined;
+		const rawCards = raw.cards as Record<string, GameCard> | undefined;
 
 		const cards: Record<string, ClientCard> = {};
 		if (rawCards) {
 			for (const [cid, rc] of Object.entries(rawCards)) {
 				cards[cid] = {
-					instanceId: (rc.instance_id as string) ?? cid,
-					cardId: (rc.card_id as number) ?? 0,
-					ownerId: (rc.owner_id as string) ?? '',
-					name: (rc.name as string) ?? '',
-					zone: (rc.zone as Zone) ?? ('DECK' as Zone),
-					currentHealth: (rc.current_health as number) ?? 0,
-					maxHealth: (rc.health as number) ?? 0,
-					physicalDefence: (rc.physical_defence as number) ?? 0,
-					magicDefence: (rc.magic_defence as number) ?? 0,
-					isAlive: (rc.is_alive as boolean) ?? true,
-					faceUp: ((rc.card_id as number) ?? 0) > 0,
-					attacks: rc.attacks as ClientCard['attacks'],
-					elementContribution: rc.element_contribution as ClientCard['elementContribution'],
-					description: (rc.description as string | null) ?? null,
-					elementIds: (rc.element_ids as number[]) ?? [],
-					skillIds: (rc.skill_ids as number[]) ?? [],
-					associationIds: (rc.association_ids as number[]) ?? [],
-					isEvolution: (rc.is_evolution as boolean) ?? false,
-					evolvesFromId: (rc.evolves_from_id as number | null) ?? null,
-					status: (rc.status as string) ?? 'READY',
-					turnsInZone: (rc.turns_in_zone as number) ?? 0,
-					associations: (rc.associations as string[]) ?? [],
-					hasAttackedThisTurn: (rc.has_attacked_this_turn as boolean) ?? false,
-					swappedThisTurn: (rc.swapped_this_turn as boolean) ?? false,
-					canAttack: (rc.can_attack as boolean) ?? false,
-					canPromote: (rc.can_promote as boolean) ?? false,
-					canEvolve: (rc.can_evolve as boolean) ?? false,
+					...rc,
+					faceUp: (rc.card_id ?? 0) > 0,
 				};
 			}
 		}
 
 		this._state = {
-			gameId: (raw.game_id as string) ?? '',
-			activePlayerId: (raw.active_player_id as string) ?? null,
-			turnNumber: (raw.turn_number as number) ?? 0,
-			currentPhase: (raw.current_phase as TurnPhase) ?? ('DRAW' as TurnPhase),
+			game_id: (raw.game_id as string) ?? '',
+			active_player_id: (raw.active_player_id as string) ?? null,
+			turn_number: (raw.turn_number as number) ?? 0,
+			current_phase: (raw.current_phase as TurnPhase) ?? ('DRAW' as TurnPhase),
 			status: (raw.status as ClientGameState['status']) ?? ('WAITING' as ClientGameState['status']),
-			winnerId: (raw.winner_id as string) ?? null,
+			winner_id: (raw.winner_id as string) ?? null,
 			config: (raw.config as GameConfiguration) ?? null,
-			players,
+			players: rawPlayers ?? {},
 			cards,
 		};
 	}
@@ -169,15 +130,5 @@ export class GameStateStore {
 		this._state = null;
 		this._validActions = [];
 		GameStateStore.instance = null;
-	}
-
-	// ── Private ──────────────────────────────────────────────────────
-
-	private _emptyZones(playerId: string): Record<string, ZoneState> {
-		const zones: Record<string, ZoneState> = {};
-		for (const z of ALL_ZONES) {
-			zones[z as string] = { zone: z, owner_id: playerId, card_ids: [], is_full: false };
-		}
-		return zones;
 	}
 }

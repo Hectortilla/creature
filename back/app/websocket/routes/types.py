@@ -35,6 +35,9 @@ from app.models.schemas.websocket.server import (
 from app.models.game.element import ElementContribution, ElementPool
 from app.models.game.attack import AttackDefinition
 from app.models.game.zone import ZoneState
+from app.models.game.card import GameCard
+from app.models.game.enums import CardStatus
+from app.models.game.player import PlayerState
 
 router = APIRouter(prefix="/websocket-messages", tags=["WebSocket Messages"])
 
@@ -192,4 +195,22 @@ async def _domain_attack_definition_type() -> AttackDefinition:
 @router.get("/domain/zone-state", response_model=ZoneState, include_in_schema=True)
 async def _domain_zone_state_type() -> ZoneState:
     """Game domain type: ZoneState (for type generation)."""
+    ...
+
+
+@router.get("/domain/game-card", response_model=GameCard, include_in_schema=True)
+async def _domain_game_card_type() -> GameCard:
+    """Game domain type: GameCard (for type generation)."""
+    ...
+
+
+@router.get("/domain/card-status", response_model=CardStatus, include_in_schema=True)
+async def _domain_card_status_type() -> CardStatus:
+    """Game domain type: CardStatus (for type generation)."""
+    ...
+
+
+@router.get("/domain/player-state", response_model=PlayerState, include_in_schema=True)
+async def _domain_player_state_type() -> PlayerState:
+    """Game domain type: PlayerState (for type generation)."""
     ...

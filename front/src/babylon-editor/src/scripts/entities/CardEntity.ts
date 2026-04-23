@@ -15,8 +15,8 @@ export class CardEntity {
 	private _cardData: ClientCard;
 	private _visualState: CardVisualState = CardVisualState.IDLE;
 
-	constructor(instanceId: string, mesh: Mesh, cardData: ClientCard) {
-		this.instanceId = instanceId;
+	constructor(_instanceId: string, mesh: Mesh, cardData: ClientCard) {
+		this.instanceId = cardData.instance_id;
 		this._mesh = mesh;
 		this._cardData = cardData;
 	}
@@ -38,15 +38,15 @@ export class CardEntity {
 	}
 
 	get ownerId(): string {
-		return this._cardData.ownerId;
+		return this._cardData.owner_id;
 	}
 
 	get zone(): Zone {
-		return this._cardData.zone;
+		return this._cardData.zone ?? ('DECK' as Zone);
 	}
 
 	get isAlive(): boolean {
-		return this._cardData.isAlive;
+		return this._cardData.is_alive;
 	}
 
 	updateCardData(data: Partial<ClientCard>): void {

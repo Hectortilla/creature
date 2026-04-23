@@ -322,7 +322,7 @@ export default class AnimationManager implements IScript {
 			const deckCards = this._gatherInitialCardsInDeck(data.state, ownerId);
 
 			for (const [i, card] of deckCards.entries()) {
-				const entity = this._cardManager.getByInstanceId(card.instanceId);
+				const entity = this._cardManager.getByInstanceId(card.instance_id);
 				const p = new Promise<void>(resolve => {
 					setTimeout(async () => {
 						await renderer.addCard(entity, true);

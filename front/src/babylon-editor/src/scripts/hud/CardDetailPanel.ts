@@ -72,49 +72,49 @@ export class CardDetailPanel {
 
 		// ── Header ──
 		this._addLine(card.name || 'Unknown', TITLE_COLOR, 14, true);
-		this._addLine(`id: ${card.cardId}  inst: ${card.instanceId.slice(0, 8)}`, DIM_COLOR, 9, false);
+		this._addLine(`id: ${card.card_id}  inst: ${card.instance_id.slice(0, 8)}`, DIM_COLOR, 9, false);
 
 		// ── Status ──
 		this._addSection('Status');
 		this._addLine(`Zone: ${card.zone} | Status: ${card.status}`, VALUE_COLOR, 10, false);
-		this._addLine(`Alive: ${card.isAlive} | Turns in zone: ${card.turnsInZone}`, VALUE_COLOR, 10, false);
-		this._addLine(`Attacked: ${card.hasAttackedThisTurn} | Swapped: ${card.swappedThisTurn}`, VALUE_COLOR, 10, false);
+		this._addLine(`Alive: ${card.is_alive} | Turns in zone: ${card.turns_in_zone}`, VALUE_COLOR, 10, false);
+		this._addLine(`Attacked: ${card.has_attacked_this_turn} | Swapped: ${card.swapped_this_turn}`, VALUE_COLOR, 10, false);
 
 		// ── Capabilities ──
 		this._addSection('Capabilities');
-		this._addLine(`Can Attack: ${card.canAttack} | Can Promote: ${card.canPromote}`, VALUE_COLOR, 10, false);
-		this._addLine(`Can Evolve: ${card.canEvolve}`, VALUE_COLOR, 10, false);
+		this._addLine(`Can Attack: ${card.can_attack} | Can Promote: ${card.can_promote}`, VALUE_COLOR, 10, false);
+		this._addLine(`Can Evolve: ${card.can_evolve}`, VALUE_COLOR, 10, false);
 
 		// ── Combat ──
 		this._addSection('Combat');
-		this._addLine(`HP: ${card.currentHealth} / ${card.maxHealth}`, VALUE_COLOR, 11, false);
-		this._addLine(`DEF: ${card.physicalDefence} phys | ${card.magicDefence} mag`, VALUE_COLOR, 11, false);
+		this._addLine(`HP: ${card.current_health} / ${card.health}`, VALUE_COLOR, 11, false);
+		this._addLine(`DEF: ${card.physical_defence} phys | ${card.magic_defence} mag`, VALUE_COLOR, 11, false);
 
 		// ── Elements ──
 		this._addSection('Elements');
-		this._addLine(`Element IDs: [${card.elementIds.join(', ')}]`, VALUE_COLOR, 10, false);
-		const contribStr = card.elementContribution?.map(e => `e${e.element_id}:${e.amount}`).join(', ') || 'none';
+		this._addLine(`Element IDs: [${(card.element_ids ?? []).join(', ')}]`, VALUE_COLOR, 10, false);
+		const contribStr = card.element_contribution?.map((e: { element_id: number; amount: number }) => `e${e.element_id}:${e.amount}`).join(', ') || 'none';
 		this._addLine(`Contribution: ${contribStr}`, VALUE_COLOR, 10, false);
 
 		// ── Evolution (conditional) ──
-		if (card.isEvolution || card.evolvesFromId != null) {
+		if (card.is_evolution || card.evolves_from_id != null) {
 			this._addSection('Evolution');
-			this._addLine(`Is Evolution: ${card.isEvolution} | From: ${card.evolvesFromId ?? 'N/A'}`, DIM_COLOR, 10, false);
+			this._addLine(`Is Evolution: ${card.is_evolution} | From: ${card.evolves_from_id ?? 'N/A'}`, DIM_COLOR, 10, false);
 		}
 
 		// ── Associations (conditional) ──
-		if (card.associationIds.length > 0 || card.associations.length > 0) {
+		if ((card.association_ids ?? []).length > 0 || (card.associations ?? []).length > 0) {
 			this._addSection('Associations');
-			this._addLine(`Assoc IDs: [${card.associationIds.join(', ')}]`, DIM_COLOR, 10, false);
-			if (card.associations.length > 0) {
-				this._addLine(`Active: [${card.associations.map(s => s.slice(0, 8)).join(', ')}]`, DIM_COLOR, 10, false);
+			this._addLine(`Assoc IDs: [${(card.association_ids ?? []).join(', ')}]`, DIM_COLOR, 10, false);
+			if ((card.associations ?? []).length > 0) {
+				this._addLine(`Active: [${card.associations!.map((s: string) => s.slice(0, 8)).join(', ')}]`, DIM_COLOR, 10, false);
 			}
 		}
 
 		// ── Skills (conditional) ──
-		if (card.skillIds.length > 0) {
+		if ((card.skill_ids ?? []).length > 0) {
 			this._addSection('Skills');
-			this._addLine(`Skill IDs: [${card.skillIds.join(', ')}]`, DIM_COLOR, 10, false);
+			this._addLine(`Skill IDs: [${card.skill_ids!.join(', ')}]`, DIM_COLOR, 10, false);
 		}
 
 		// ── Description (conditional) ──
@@ -133,7 +133,7 @@ export class CardDetailPanel {
 				if (atk.dice_rolls != null) idLine += ` | dice: ${atk.dice_rolls}`;
 				this._addLine(idLine, DIM_COLOR, 9, false);
 				if (atk.necessary_force && atk.necessary_force.length > 0) {
-					const costStr = atk.necessary_force.map(e => `e${e.element_id}:${e.amount}`).join(', ');
+					const costStr = atk.necessary_force.map((e: { element_id: number; amount: number }) => `e${e.element_id}:${e.amount}`).join(', ');
 					this._addLine(`  Cost: ${costStr}`, DIM_COLOR, 10, false);
 				}
 				if (atk.effect) {

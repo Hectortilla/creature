@@ -15,7 +15,7 @@ import GameConnection from './game/GameConnection';
 import { CardDefinitionCache } from './game/CardDefinitionCache';
 import { GameStateStore } from './state/GameStateStore';
 import type { GameMessage, ValidAction } from './game/types';
-import type { Zone, TurnPhase, ClientGameState, ClientPlayerState } from './game/models';
+import type { Zone, TurnPhase, ClientGameState } from './game/models';
 import { CardEntityManager } from './entities/CardEntityManager';
 
 import type {
@@ -420,16 +420,16 @@ export default class BoardController implements IScript {
 			state,
 			myPlayerId: myId,
 			opponentId: oppId,
-			isMyTurn: state.activePlayerId === myId,
-			currentPhase: state.currentPhase,
+			isMyTurn: state.active_player_id === myId,
+			currentPhase: state.current_phase,
 			deckSize: state.config?.deck_size ?? 0,
 			myElementPool: {
-				elements: myPlayer?.elementPool?.elements ?? {},
-				maxElements: myPlayer?.elementPool?.max_elements ?? {},
+				elements: myPlayer?.element_pool?.elements ?? {},
+				maxElements: myPlayer?.element_pool?.max_elements ?? {},
 			},
 			opponentElementPool: {
-				elements: oppPlayer?.elementPool?.elements ?? {},
-				maxElements: oppPlayer?.elementPool?.max_elements ?? {},
+				elements: oppPlayer?.element_pool?.elements ?? {},
+				maxElements: oppPlayer?.element_pool?.max_elements ?? {},
 			},
 		};
 	}
@@ -446,8 +446,8 @@ export default class BoardController implements IScript {
 	private _getPlayerPool(playerId: string): { elements: Record<string, number>; maxElements: Record<string, number> } {
 		const player = this._stateStore.state?.players[playerId];
 		return {
-			elements: (player?.elementPool?.elements ?? {}) as Record<string, number>,
-			maxElements: (player?.elementPool?.max_elements ?? {}) as Record<string, number>,
+			elements: (player?.element_pool?.elements ?? {}) as Record<string, number>,
+			maxElements: (player?.element_pool?.max_elements ?? {}) as Record<string, number>,
 		};
 	}
 }

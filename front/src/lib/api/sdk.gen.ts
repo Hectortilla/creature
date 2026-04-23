@@ -61,10 +61,16 @@ import type {
   DeleteTypesItemIdDeleteResponses,
   DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetData,
   DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses,
+  DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetData,
+  DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses,
   DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetData,
   DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses,
   DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetData,
   DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses,
+  DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetData,
+  DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses,
+  DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetData,
+  DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses,
   DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetData,
   DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses,
   GetAllAbilitiesGetData,
@@ -1557,6 +1563,63 @@ export const domainZoneStateTypeGameWebsocketMessagesDomainZoneStateGet = <
     unknown,
     ThrowOnError
   >({ url: "/game/websocket-messages/domain/zone-state", ...options });
+
+/**
+ *  Domain Game Card Type
+ *
+ * Game domain type: GameCard (for type generation).
+ */
+export const domainGameCardTypeGameWebsocketMessagesDomainGameCardGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<
+    DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetData,
+    ThrowOnError
+  >,
+) =>
+  (options?.client ?? client).get<
+    DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/game/websocket-messages/domain/game-card", ...options });
+
+/**
+ *  Domain Card Status Type
+ *
+ * Game domain type: CardStatus (for type generation).
+ */
+export const domainCardStatusTypeGameWebsocketMessagesDomainCardStatusGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<
+    DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetData,
+    ThrowOnError
+  >,
+) =>
+  (options?.client ?? client).get<
+    DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/game/websocket-messages/domain/card-status", ...options });
+
+/**
+ *  Domain Player State Type
+ *
+ * Game domain type: PlayerState (for type generation).
+ */
+export const domainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGet = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<
+    DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetData,
+    ThrowOnError
+  >,
+) =>
+  (options?.client ?? client).get<
+    DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/game/websocket-messages/domain/player-state", ...options });
 
 /**
  * Root

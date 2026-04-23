@@ -47,13 +47,13 @@ export class CardEntityManager {
 	createEntity(cardData: ClientCard, faceUp: boolean): CardEntity {
 		const blueprint = faceUp ? this._faceUpBlueprint : this._faceDownBlueprint;
 
-		const meshName = `Card_${cardData.instanceId}`;
+		const meshName = `Card_${cardData.instance_id}`;
 		const mesh = cloneMeshWithScripts(blueprint, meshName);
 
 		mesh.setEnabled(true);
 
-		const entity = new CardEntity(cardData.instanceId, mesh, cardData);
-		this._entities.set(cardData.instanceId, entity);
+		const entity = new CardEntity(cardData.instance_id, mesh, cardData);
+		this._entities.set(cardData.instance_id, entity);
 		this._meshToEntity.set(mesh, entity);
 
 		if (faceUp) {
@@ -74,7 +74,7 @@ export class CardEntityManager {
 
 	syncFromState(cards: Record<string, ClientCard>): void {
 		for (const card of Object.values(cards)) {
-			const existing = this._entities.get(card.instanceId);
+			const existing = this._entities.get(card.instance_id);
 			if (!existing) {
 				this.createEntity(card, card.faceUp);
 				continue;
