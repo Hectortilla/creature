@@ -38,6 +38,7 @@ from app.models.game.zone import ZoneState
 from app.models.game.card import GameCard
 from app.models.game.enums import CardStatus
 from app.models.game.player import PlayerState
+from app.models.game.state import GameStateForPlayer
 
 router = APIRouter(prefix="/websocket-messages", tags=["WebSocket Messages"])
 
@@ -213,4 +214,10 @@ async def _domain_card_status_type() -> CardStatus:
 @router.get("/domain/player-state", response_model=PlayerState, include_in_schema=True)
 async def _domain_player_state_type() -> PlayerState:
     """Game domain type: PlayerState (for type generation)."""
+    ...
+
+
+@router.get("/domain/game-state-for-player", response_model=GameStateForPlayer, include_in_schema=True)
+async def _domain_game_state_for_player_type() -> GameStateForPlayer:
+    """Game domain type: GameStateForPlayer (for type generation)."""
     ...

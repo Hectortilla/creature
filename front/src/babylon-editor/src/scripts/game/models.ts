@@ -43,15 +43,13 @@ export type {
 	GameCard,
 	CardStatus,
 	PlayerState,
+	GameStateForPlayer,
 } from '$lib/api/types.gen';
 
 import type {
 	Zone,
-	TurnPhase,
-	GameStatus,
-	GameConfiguration,
 	GameCard,
-	PlayerState,
+	GameStateForPlayer,
 } from '$lib/api/types.gen';
 
 export enum CardVisualState {
@@ -97,17 +95,9 @@ export function createFaceDownCard(instanceId: string, ownerId: string, zone: Zo
 /**
  * Full client-side game state.
  *
- * Extends the backend GameState with the `cards` and `players` maps that the
- * backend excludes from its Pydantic schema but includes in serialize_for_player().
+ * Extends the auto-generated GameStateForPlayer, overriding `cards` to use
+ * ClientCard (which adds the client-only `faceUp` field).
  */
-export interface ClientGameState {
-	game_id: string;
-	active_player_id: string | null;
-	turn_number: number;
-	current_phase: TurnPhase;
-	status: GameStatus;
-	winner_id: string | null;
-	config: GameConfiguration | null;
-	players: Record<string, PlayerState>;
+export type ClientGameState = Omit<GameStateForPlayer, 'cards'> & {
 	cards: Record<string, ClientCard>;
-}
+};

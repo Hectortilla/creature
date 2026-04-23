@@ -69,6 +69,8 @@ import type {
   DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses,
   DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetData,
   DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses,
+  DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetData,
+  DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetResponses,
   DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetData,
   DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses,
   DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetData,
@@ -1620,6 +1622,27 @@ export const domainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGet = <
     unknown,
     ThrowOnError
   >({ url: "/game/websocket-messages/domain/player-state", ...options });
+
+/**
+ *  Domain Game State For Player Type
+ *
+ * Game domain type: GameStateForPlayer (for type generation).
+ */
+export const domainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGet =
+  <ThrowOnError extends boolean = false>(
+    options?: Options<
+      DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetData,
+      ThrowOnError
+    >,
+  ) =>
+    (options?.client ?? client).get<
+      DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetResponses,
+      unknown,
+      ThrowOnError
+    >({
+      url: "/game/websocket-messages/domain/game-state-for-player",
+      ...options,
+    });
 
 /**
  * Root

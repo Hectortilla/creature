@@ -56,4 +56,5 @@ export type {
 	GameCard,
 	CardStatus,
 	PlayerState,
+	GameStateForPlayer,
 } from './models';

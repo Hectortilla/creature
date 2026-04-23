@@ -13,8 +13,7 @@ import type {
 	TurnPhase,
 	ClientCard,
 	ClientGameState,
-	GameConfiguration,
-	PlayerState,
+	GameStateForPlayer,
 	GameCard,
 } from '../game/models';
 
@@ -94,30 +93,15 @@ export class GameStateStore {
 	// ── State application ─────────────────────────────────────────────
 
 	applyServerState(raw: Record<string, unknown>): void {
-		const rawPlayers = raw.players as Record<string, PlayerState> | undefined;
-		const rawCards = raw.cards as Record<string, GameCard> | undefined;
+		const rawState: GameStateForPlayer = raw as never;
+		const rawCards = (rawState.cards ?? {}) as Record<string, GameCard>;
 
 		const cards: Record<string, ClientCard> = {};
-		if (rawCards) {
-			for (const [cid, rc] of Object.entries(rawCards)) {
-				cards[cid] = {
-					...rc,
-					faceUp: (rc.card_id ?? 0) > 0,
-				};
-			}
+		for (const [cid, rc] of Object.entries(rawCards)) {
+			cards[cid] = { ...rc, faceUp: (rc.card_id ?? 0) > 0 };
 		}
 
-		this._state = {
-			game_id: (raw.game_id as string) ?? '',
-			active_player_id: (raw.active_player_id as string) ?? null,
-			turn_number: (raw.turn_number as number) ?? 0,
-			current_phase: (raw.current_phase as TurnPhase) ?? ('DRAW' as TurnPhase),
-			status: (raw.status as ClientGameState['status']) ?? ('WAITING' as ClientGameState['status']),
-			winner_id: (raw.winner_id as string) ?? null,
-			config: (raw.config as GameConfiguration) ?? null,
-			players: rawPlayers ?? {},
-			cards,
-		};
+		this._state = { ...(rawState as object), cards } as ClientGameState;
 	}
 
 	updateValidActions(actions: ValidAction[]): void {

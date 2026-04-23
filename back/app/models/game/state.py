@@ -29,6 +29,29 @@ if TYPE_CHECKING:
 _VISIBLE_HIDDEN_FIELDS = {"instance_id", "owner_id", "zone", "status", "turns_in_zone"}
 
 
+class GameStateForPlayer(GameBaseModel):
+    """
+    Read schema representing the game state payload sent to a player.
+
+    This matches the output of GameState.serialize_for_player() and includes
+    the cards and players maps that are excluded from the base GameState schema.
+    """
+    game_id: str
+    active_player_id: Optional[str] = None
+    turn_number: int = 0
+    current_phase: TurnPhase = TurnPhase.DRAW
+    status: GameStatus = GameStatus.WAITING
+    winner_id: Optional[str] = None
+    created_at: Optional[str] = None
+    pending_action: Optional[str] = None
+    pending_defender_id: Optional[str] = None
+    pending_attack: Optional[dict[str, Any]] = None
+    config: Optional["GameConfiguration"] = None
+    total_cards: int = 0
+    players: dict[str, PlayerState] = {}
+    cards: dict[str, GameCard] = {}
+
+
 class GameConfiguration(GameBaseModel):
     """
     Configuration options for a game.
@@ -247,5 +270,6 @@ class GameState(GameBaseModel):
 __all__ = [
     "GameConfiguration",
     "GameState",
+    "GameStateForPlayer",
 ]
 
