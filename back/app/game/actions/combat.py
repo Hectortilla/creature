@@ -210,8 +210,14 @@ class ForceDefendAction(Action):
 
     @classmethod
     def get_valid(cls, state: "GameState", player_id: str) -> list[Action]:
+        if state.pending_action != "force_defend":
+            return []
+        if state.pending_defender_id and state.pending_defender_id != player_id:
+            return []
         player = state.room.players.get(player_id)
         if not player:
+            return []
+        if player.zones[Zone.ATTACKING.name].is_full:
             return []
         return [
             cls(player_id=player_id, instance_id=cid)
