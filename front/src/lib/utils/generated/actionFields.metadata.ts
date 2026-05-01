@@ -21,7 +21,6 @@ export const FIELD_METADATA: FieldMetadata[] = [
 		"tsType": "string | null",
 		"description": "Card instance ID",
 		"usedBy": [
-			"play_card",
 			"promote",
 			"force_defend"
 		],
@@ -32,7 +31,7 @@ export const FIELD_METADATA: FieldMetadata[] = [
 		"tsType": "Array<string>",
 		"description": "List of card instance IDs",
 		"usedBy": [
-			"multi_play_card"
+			"play_card"
 		],
 		"isOptional": true
 	},
@@ -94,7 +93,7 @@ export const FIELD_METADATA: FieldMetadata[] = [
 	},
 	{
 		"name": "swaps",
-		"tsType": "f card instance IDs (used by: multi_play_card)\n   */\n  instance_ids?: Array<string>;\n  /**\n   * Count\n   *\n   * Number of cards to draw (used by: draw)\n   */\n  count?: number;\n  /**\n   * Target Card Id\n   *\n   * Target card instance ID (used by: associate, evolve, attack)\n   */\n  target_card_id?: string | null;\n  /**\n   * Attacker Id\n   *\n   * Attacker card instance ID (used by: attack)\n   */\n  attacker_id?: string | null;\n  /**\n   * Attack Id\n   *\n   * Attack ID to use (used by: attack)\n   */\n  attack_id?: string | null;\n  /**\n   * Supporting Card Id\n   *\n   * Supporting card instance ID (used by: swap)\n   */\n  supporting_card_id?: string | null;\n  /**\n   * Attacking Card Id\n   *\n   * Attacking card instance ID (used by: swap)\n   */\n  attacking_card_id?: string | null;\n  /**\n   * Swaps\n   *\n   * List of swap pairs (used by: multi_swap). Each swap is {supporting_card_id: str, attacking_card_id: str}\n   */\n  swaps?: Array<{\n    [key: string]: unknown;\n  }>;\n  /**\n   * Association Card Id\n   *\n   * Association card instance ID (used by: associate)\n   */\n  association_card_id?: string | null;\n  /**\n   * Evolution Card Id\n   *\n   * Evolution card instance ID (used by: evolve)\n   */\n  evolution_card_id?: string | null;\n}",
+		"tsType": "List of card instance IDs (used by: play_card)\n   */\n  instance_ids?: Array<string>;\n  /**\n   * Count\n   *\n   * Number of cards to draw (used by: draw)\n   */\n  count?: number;\n  /**\n   * Target Card Id\n   *\n   * Target card instance ID (used by: associate, evolve, attack)\n   */\n  target_card_id?: string | null;\n  /**\n   * Attacker Id\n   *\n   * Attacker card instance ID (used by: attack)\n   */\n  attacker_id?: string | null;\n  /**\n   * Attack Id\n   *\n   * Attack ID to use (used by: attack)\n   */\n  attack_id?: string | null;\n  /**\n   * Supporting Card Id\n   *\n   * Supporting card instance ID (used by: swap)\n   */\n  supporting_card_id?: string | null;\n  /**\n   * Attacking Card Id\n   *\n   * Attacking card instance ID (used by: swap)\n   */\n  attacking_card_id?: string | null;\n  /**\n   * Swaps\n   *\n   * List of swap pairs (used by: multi_swap). Each swap is {supporting_card_id: str, attacking_card_id: str}\n   */\n  swaps?: Array<{\n    [key: string]: unknown;\n  }>;\n  /**\n   * Association Card Id\n   *\n   * Association card instance ID (used by: associate)\n   */\n  association_card_id?: string | null;\n  /**\n   * Evolution Card Id\n   *\n   * Evolution card instance ID (used by: evolve)\n   */\n  evolution_card_id?: string | null;\n}",
 		"description": "List of swap pairs. Each swap is {supporting_card_id: str, attacking_card_id: str}",
 		"usedBy": [
 			"multi_swap"
@@ -139,7 +138,6 @@ export const ALL_ACTION_TYPES: string[] = [
 	"draw",
 	"evolve",
 	"force_defend",
-	"multi_play_card",
 	"multi_swap",
 	"pass",
 	"play_card",
