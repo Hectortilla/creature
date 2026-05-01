@@ -1,8 +1,9 @@
 import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { CardEntity } from '../entities/CardEntity';
-import { getDeactivationQuaternion, type Zone } from '../game/models';
+import type { Zone } from '../game/models';
 import { ZoneRendererBase, animateTransform } from './ZoneRenderer';
+import { getDeactivationQuaternion } from './CardDeactivation';
 
 const DEFAULT_SLOT_SPACING = 150;
 
