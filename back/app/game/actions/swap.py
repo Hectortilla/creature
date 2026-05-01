@@ -11,6 +11,18 @@ if TYPE_CHECKING:
     from app.game.validators import ValidationResult
 
 
+def _validate_swap_pair(state: "GameState", supporting_zone, attacking_zone, supp_id: str, atk_id: str) -> "ValidationResult":
+    from app.game.validators import ValidationResult
+    if supp_id not in supporting_zone.card_ids:
+        return ValidationResult(valid=False, error=f"Card {supp_id} is not in supporting zone", error_code="CARD_NOT_IN_SUPPORTING")
+    if atk_id not in attacking_zone.card_ids:
+        return ValidationResult(valid=False, error=f"Card {atk_id} is not in attacking zone", error_code="CARD_NOT_IN_ATTACKING")
+    supporting_card = state.get_card(supp_id)
+    if not supporting_card or not supporting_card.can_promote:
+        return ValidationResult(valid=False, error=f"Card {supp_id} must spend at least one full turn in supporting zone before swapping", error_code="CARD_NOT_READY")
+    return ValidationResult(valid=True)
+
+
 class SwapAction(Action):
     action_type: str = "swap"
     valid_phases: list[TurnPhase] | None = [TurnPhase.SWAP]
@@ -18,16 +30,14 @@ class SwapAction(Action):
     attacking_card_id: str = ""
 
     def validate(self, state: "GameState") -> "ValidationResult":
-        from app.game.validators import ValidationResult
         player = state.room.get_player(self.player_id)
-        if self.supporting_card_id not in player.zones[Zone.SUPPORTING.name].card_ids:
-            return ValidationResult(valid=False, error="Card is not in supporting zone", error_code="CARD_NOT_IN_SUPPORTING")
-        if self.attacking_card_id not in player.zones[Zone.ATTACKING.name].card_ids:
-            return ValidationResult(valid=False, error="Card is not in attacking zone", error_code="CARD_NOT_IN_ATTACKING")
-        supporting_card = state.get_card(self.supporting_card_id)
-        if not supporting_card or not supporting_card.can_promote:
-            return ValidationResult(valid=False, error="Card must spend at least one full turn in supporting zone before swapping", error_code="CARD_NOT_READY")
-        return ValidationResult(valid=True)
+        return _validate_swap_pair(
+            state,
+            player.zones[Zone.SUPPORTING.name],
+            player.zones[Zone.ATTACKING.name],
+            self.supporting_card_id,
+            self.attacking_card_id,
+        )
 
     def to_events(self, state: "GameState") -> list[GameEvent]:
         return [CardSwappedEvent(
@@ -43,7 +53,7 @@ class SwapAction(Action):
         return [
             cls(player_id=player_id, supporting_card_id=s, attacking_card_id=a)
             for s in supp_ids for a in atk_ids
-            if state.get_card(s) and state.get_card(s).can_promote
+            if (c := state.get_card(s)) and c.can_promote
         ]
 
 
@@ -64,13 +74,9 @@ class MultiSwapAction(Action):
             if a_id in used_a:
                 return ValidationResult(valid=False, error=f"Card {a_id} used in multiple swaps", error_code="DUPLICATE_SWAP")
             used_s.add(s_id); used_a.add(a_id)
-            if s_id not in supporting_zone.card_ids:
-                return ValidationResult(valid=False, error=f"Card {s_id} is not in supporting zone", error_code="CARD_NOT_IN_SUPPORTING")
-            if a_id not in attacking_zone.card_ids:
-                return ValidationResult(valid=False, error=f"Card {a_id} is not in attacking zone", error_code="CARD_NOT_IN_ATTACKING")
-            supporting_card = state.get_card(s_id)
-            if not supporting_card or not supporting_card.can_promote:
-                return ValidationResult(valid=False, error=f"Card {s_id} must spend at least one full turn in supporting zone before swapping", error_code="CARD_NOT_READY")
+            result = _validate_swap_pair(state, supporting_zone, attacking_zone, s_id, a_id)
+            if not result.valid:
+                return result
         return ValidationResult(valid=True)
 
     def to_events(self, state: "GameState") -> list[GameEvent]:

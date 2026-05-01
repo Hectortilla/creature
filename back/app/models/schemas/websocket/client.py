@@ -42,12 +42,12 @@ class ActionData(BaseModel):
     )
     instance_id: Optional[str] = Field(
         default=None,
-        description="Card instance ID (used by: play_card, promote, force_defend)",
+        description="Card instance ID (used by: promote, force_defend)",
         examples=["card_instance_123"]
     )
     instance_ids: list[str] = Field(
         default_factory=list,
-        description="List of card instance IDs (used by: multi_play_card)",
+        description="List of card instance IDs (used by: play_card)",
         examples=[["card_instance_123", "card_instance_456"]]
     )
     count: int = Field(
