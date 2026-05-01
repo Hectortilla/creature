@@ -65,10 +65,10 @@ class ActionData(BaseModel):
         description="Attacker card instance ID (used by: attack)",
         examples=["card_instance_123"]
     )
-    attack_id: Optional[str] = Field(
+    attack_id: Optional[int] = Field(
         default=None,
         description="Attack ID to use (used by: attack)",
-        examples=["1", "2"]
+        examples=[1, 2]
     )
     supporting_card_id: Optional[str] = Field(
         default=None,

@@ -3,6 +3,7 @@ import type { IScript } from 'babylonjs-editor-tools';
 import { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 
 import BoardController from '../BoardController';
+import GameConnection from '../game/GameConnection';
 import { CardEntityManager } from '../entities/CardEntityManager';
 
 import { PhaseIndicator } from './PhaseIndicator';
@@ -11,6 +12,9 @@ import { ElementPoolDisplay } from './ElementPoolDisplay';
 import { CardDetailPanel } from './CardDetailPanel';
 import { HealthBarManager } from './HealthBar';
 import { ActionButtonPanel } from './ActionButtonPanel';
+import { AttackPickerPanel } from './AttackPickerPanel';
+import { ForceDefendPanel } from './ForceDefendPanel';
+import { ToastPanel } from './ToastPanel';
 import InteractionManager from '../interaction/InteractionManager';
 import { getScriptByClassForObject } from 'babylonjs-editor-tools';
 
@@ -24,6 +28,9 @@ export default class HudController implements IScript {
 	private _cardDetailPanel!: CardDetailPanel;
 	private _healthBars!: HealthBarManager;
 	private _actionButtons!: ActionButtonPanel;
+	private _attackPicker!: AttackPickerPanel;
+	private _forceDefendPanel: ForceDefendPanel | null = null;
+	private _toastPanel!: ToastPanel;
 
 	public constructor(scene: Scene) {
 		this._scene = scene;
@@ -42,11 +49,19 @@ export default class HudController implements IScript {
 		this._turnBanner = new TurnBanner(this._guiTexture, board);
 		this._elementPoolDisplay = new ElementPoolDisplay(this._guiTexture, board);
 		this._healthBars = new HealthBarManager(this._guiTexture, board, cardManager);
+		this._toastPanel = new ToastPanel(this._guiTexture, board);
 
 		// Reuse the InteractionManager's ActionBuilder — single source of truth
 		if (interactionManager) {
 			this._actionButtons = new ActionButtonPanel(this._guiTexture, board, interactionManager.actionBuilder);
 			this._cardDetailPanel = new CardDetailPanel(this._guiTexture, interactionManager);
+			this._attackPicker = new AttackPickerPanel(this._guiTexture);
+			interactionManager.setAttackPicker(this._attackPicker);
+		}
+
+		const myPlayerId = GameConnection.instance?.getStateStore()?.myPlayerId ?? '';
+		if (myPlayerId) {
+			this._forceDefendPanel = new ForceDefendPanel(this._guiTexture, board, myPlayerId);
 		}
 	}
 
@@ -61,6 +76,9 @@ export default class HudController implements IScript {
 		this._cardDetailPanel?.dispose();
 		this._healthBars?.dispose();
 		this._actionButtons?.dispose();
+		this._attackPicker?.dispose();
+		this._forceDefendPanel?.dispose();
+		this._toastPanel?.dispose();
 		this._guiTexture?.dispose();
 	}
 }

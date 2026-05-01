@@ -110,7 +110,7 @@ export type ActionData = {
    *
    * Attack ID to use (used by: attack)
    */
-  attack_id?: string | null;
+  attack_id?: number | null;
   /**
    * Supporting Card Id
    *
@@ -2780,7 +2780,7 @@ export type ValidActionSchema = {
    *
    * Attack ID to use (used by: attack)
    */
-  attack_id?: string | null;
+  attack_id?: number | null;
   /**
    * Supporting Card Id
    *

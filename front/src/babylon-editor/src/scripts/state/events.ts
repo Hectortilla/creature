@@ -128,6 +128,11 @@ export interface ValidActionsChangedData {
 	isMyTurn: boolean;
 }
 
+export interface ActionFailedData {
+	error: string;
+	errorCode: string | null;
+}
+
 export interface GameStartedEventData {
 	state: ClientGameState;
 	myPlayerId: string;
@@ -165,6 +170,7 @@ export interface StateChangeEvents {
 	effectApplied: EffectAppliedData;
 	cardsSwapped: CardsSwappedData;
 	turnEnded: { playerId: string; turnNumber: number };
+	actionFailed: ActionFailedData;
 }
 
 export type StateChangeCallback<T> = (data: T) => void;

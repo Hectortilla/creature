@@ -22,7 +22,7 @@ const SOURCE_CARD_FIELDS = [
 ] as const;
 
 const STRIP_FIELDS = new Set([
-	'action', 'player_id', 'description',
+	'action', 'player_id', 'description', 'valid_phases',
 	'card_name', 'attacker_name', 'attack_name', 'target_name',
 	'supporting_card_name', 'attacking_card_name',
 	'association_card_name', 'evolution_card_name',
@@ -76,19 +76,58 @@ export class ActionBuilder {
 	}
 
 	getValidTargetIds(action: ValidAction): string[] {
+		return this.getValidTargets(action).targets;
+	}
+
+	/**
+	 * Returns valid target instance IDs for a two-step action plus a flag
+	 * indicating whether at least one matching action has an empty target
+	 * (the attack-into-no-defenders case from README §8).
+	 */
+	getValidTargets(action: ValidAction): { targets: string[]; allowsNoDefender: boolean } {
 		const mapping = TWO_STEP_ACTIONS[action.action];
-		if (!mapping) return [];
+		if (!mapping) return { targets: [], allowsNoDefender: false };
 
 		const sourceId = action[mapping.source] as string;
-		if (!sourceId) return [];
+		if (!sourceId) return { targets: [], allowsNoDefender: false };
 
 		const targets = new Set<string>();
+		let allowsNoDefender = false;
 		for (const a of this._validActions) {
 			if (a.action !== action.action || a[mapping.source] !== sourceId) continue;
 			const target = a[mapping.target] as string;
 			if (target) targets.add(target);
+			else if (action.action === 'attack') allowsNoDefender = true;
 		}
-		return [...targets];
+		return { targets: [...targets], allowsNoDefender };
+	}
+
+	/**
+	 * Returns the distinct attack IDs available for a given attacker.
+	 * Used by the AttackPicker UI to know whether to prompt.
+	 */
+	getAttackIdsForAttacker(attackerId: string): number[] {
+		const ids = new Set<number>();
+		for (const a of this._validActions) {
+			if (a.action !== 'attack') continue;
+			if (a.attacker_id !== attackerId) continue;
+			const aid = a.attack_id;
+			if (typeof aid === 'number') ids.add(aid);
+		}
+		return [...ids];
+	}
+
+	/**
+	 * Find the attack action for a given attacker / attack_id / optional target.
+	 * Pass an empty target to look for a no-defender attack.
+	 */
+	findAttackAction(attackerId: string, attackId: number, targetId: string): ValidAction | undefined {
+		return this._validActions.find(a =>
+			a.action === 'attack'
+			&& a.attacker_id === attackerId
+			&& a.attack_id === attackId
+			&& (a.target_card_id ?? '') === targetId,
+		);
 	}
 
 	// ── Action categories ───────────────────────────────────────────────

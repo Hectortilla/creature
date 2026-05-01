@@ -98,7 +98,10 @@ export default class BoardController implements IScript {
 
 	private _handleRawMessage = (message: GameMessage): void => {
 		if (message.data?.success === false) {
+			const error = (message.data.error as string) ?? 'Action failed';
+			const errorCode = (message.data.error_code as string | undefined) ?? null;
 			console.error('BoardController: game action failed', message);
+			this._emit('actionFailed', { error, errorCode });
 			return;
 		}
 

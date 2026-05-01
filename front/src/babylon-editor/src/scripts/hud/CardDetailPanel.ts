@@ -4,12 +4,14 @@ import { StackPanel } from '@babylonjs/gui/2D/controls/stackPanel';
 import type { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
 import type InteractionManager from '../interaction/InteractionManager';
 import type { ClientCard } from '../game/models';
+import { formatAttackLines } from './attackFormat';
 
 const BG_COLOR = 'rgba(15, 10, 40, 0.85)';
 const TITLE_COLOR = '#D4AF37';
 const SECTION_COLOR = '#8888CC';
 const VALUE_COLOR = '#FFFFFF';
 const DIM_COLOR = 'rgba(255, 255, 255, 0.6)';
+const DISABLED_COLOR = 'rgba(255, 255, 255, 0.25)';
 
 export class CardDetailPanel {
 	private _root: Rectangle;
@@ -126,26 +128,45 @@ export class CardDetailPanel {
 		// ── Attacks ──
 		this._addSection('Attacks');
 		if (card.attacks && card.attacks.length > 0) {
+			const affordable = this._affordableAttackIds(card);
 			for (const atk of card.attacks) {
-				this._addLine(`ATK: ${atk.name ?? 'Attack'}`, SECTION_COLOR, 15, true);
-				this._addLine(`  ${atk.damage ?? '?'} dmg | ${atk.type} | elem ${atk.element_id}`, VALUE_COLOR, 14, false);
-				let idLine = `  id: ${atk.attack_id}`;
-				if (atk.dice_rolls != null) idLine += ` | dice: ${atk.dice_rolls}`;
-				this._addLine(idLine, DIM_COLOR, 13, false);
-				if (atk.necessary_force && atk.necessary_force.length > 0) {
-					const costStr = atk.necessary_force.map((e: { element_id: number; amount: number }) => `e${e.element_id}:${e.amount}`).join(', ');
-					this._addLine(`  Cost: ${costStr}`, DIM_COLOR, 14, false);
-				}
-				if (atk.effect) {
-					this._addLine(`  Effect: ${atk.effect}`, DIM_COLOR, 14, false);
-				}
-				if (atk.description) {
-					this._addLine(`  ${atk.description}`, DIM_COLOR, 13, false);
-				}
+				const lines = formatAttackLines(atk);
+				const isAffordable = affordable.has(atk.attack_id);
+				const titleColor = isAffordable ? SECTION_COLOR : DISABLED_COLOR;
+				const valueColor = isAffordable ? VALUE_COLOR : DISABLED_COLOR;
+				const dimColor = isAffordable ? DIM_COLOR : DISABLED_COLOR;
+
+				this._addLine(lines.title, titleColor, 15, true);
+				this._addLine(`  ${lines.stats}`, valueColor, 14, false);
+				this._addLine(`  ${lines.id}`, dimColor, 13, false);
+				if (lines.cost) this._addLine(`  ${lines.cost}`, dimColor, 14, false);
+				if (lines.effect) this._addLine(`  ${lines.effect}`, dimColor, 14, false);
+				if (lines.description) this._addLine(`  ${lines.description}`, dimColor, 13, false);
 			}
 		} else {
 			this._addLine('  No attacks', DIM_COLOR, 14, false);
 		}
+	}
+
+	/**
+	 * Returns the set of attack_ids on this card that currently have a
+	 * matching ValidAction (sufficient elements + a valid target or
+	 * no-defender path). When the player isn't viewing their own attacker
+	 * during the ATTACK phase, no actions match and every attack is treated
+	 * as informational (and rendered at full brightness).
+	 */
+	private _affordableAttackIds(card: ClientCard): Set<number> {
+		const actions = this._interactionManager.actionBuilder.getActionsForCard(card.instance_id);
+		const attackActions = actions.filter(a => a.action === 'attack');
+		if (attackActions.length === 0) {
+			// Not in an attack-decision context — show all attacks normally.
+			return new Set((card.attacks ?? []).map((a: { attack_id: number }) => a.attack_id));
+		}
+		const ids = new Set<number>();
+		for (const a of attackActions) {
+			if (typeof a.attack_id === 'number') ids.add(a.attack_id);
+		}
+		return ids;
 	}
 
 	private _addSection(title: string): void {

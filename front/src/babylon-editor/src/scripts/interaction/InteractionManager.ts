@@ -12,9 +12,12 @@ import { CardVisualState } from '../game/models';
 import type { ValidAction } from '../game/types';
 import { ActionBuilder } from '../state/ActionBuilder';
 import type { ValidActionsChangedData } from '../state/events';
+import type { AttackPickerPanel } from '../hud/AttackPickerPanel';
 
 const INTERACTABLE_OUTLINE_WIDTH = 0.01;
 const INTERACTABLE_OUTLINE_COLOR = { r: 0.5, g: 0.7, b: 0.3 };
+
+type SelectionMode = 'source' | 'attackPick' | 'target';
 
 export default class InteractionManager implements IScript {
 	private _scene: Scene;
@@ -28,7 +31,10 @@ export default class InteractionManager implements IScript {
 	private _interactableIds = new Set<string>();
 	private _targetIds = new Set<string>();
 	private _pendingAction: ValidAction | null = null;
-	private _selectionMode: 'source' | 'target' = 'source';
+	private _pendingAttackId: number | null = null;
+	private _selectionMode: SelectionMode = 'source';
+
+	private _attackPicker: AttackPickerPanel | null = null;
 
 	private _pointerObserver: ReturnType<Scene['onPointerObservable']['add']> | null = null;
 
@@ -94,6 +100,10 @@ export default class InteractionManager implements IScript {
 		}
 	}
 
+	public setAttackPicker(panel: AttackPickerPanel): void {
+		this._attackPicker = panel;
+	}
+
 	// ====================================================================
 	// Hover
 	// ====================================================================
@@ -142,6 +152,9 @@ export default class InteractionManager implements IScript {
 		if (!this._enabled) return;
 		if (pointerInfo.type !== PointerEventTypes.POINTERTAP) return;
 
+		// Ignore board clicks while the attack picker is open — picker handles its own input.
+		if (this._selectionMode === 'attackPick') return;
+
 		const pickResult = pointerInfo.pickInfo;
 		if (!pickResult?.hit || !pickResult.pickedMesh) {
 			this._clearSelection();
@@ -156,7 +169,7 @@ export default class InteractionManager implements IScript {
 
 		if (this._selectionMode === 'source') {
 			this._handleSourceSelection(entity);
-		} else {
+		} else if (this._selectionMode === 'target') {
 			this._handleTargetSelection(entity);
 		}
 	};
@@ -171,28 +184,122 @@ export default class InteractionManager implements IScript {
 		const actions = this.actionBuilder.getActionsForCard(entity.instanceId);
 		if (actions.length === 0) return;
 
-		const twoStep = actions.filter(a => this.actionBuilder.isTwoStepAction(a));
+		const attackActions = actions.filter(a => a.action === 'attack');
+		const otherTwoStep = actions.filter(a => a.action !== 'attack' && this.actionBuilder.isTwoStepAction(a));
 		const instant = actions.filter(a => !this.actionBuilder.isTwoStepAction(a));
 
-		if (twoStep.length > 0) {
-			this._selectedEntity = entity;
-			entity.setVisualState(CardVisualState.SELECTED);
-			this._selectionMode = 'target';
-			this._pendingAction = twoStep[0];
-
-			this._targetIds = new Set(this.actionBuilder.getValidTargetIds(twoStep[0]));
-			this._highlightTargets();
+		// 1. Attack flow (may need a picker for multi-attack cards)
+		if (attackActions.length > 0) {
+			this._beginAttackFlow(entity);
 			return;
 		}
 
+		// 2. Other two-step actions (swap, associate, evolve)
+		if (otherTwoStep.length > 0) {
+			this._enterTargetMode(entity, otherTwoStep[0]);
+			return;
+		}
+
+		// 3. Instant actions
 		if (instant.length > 0) {
 			this.actionBuilder.execute(instant[0]);
 		}
 	}
 
 	// ====================================================================
+	// Attack flow
+	// ====================================================================
+
+	private _beginAttackFlow(entity: CardEntity): void {
+		const attackIds = this.actionBuilder.getAttackIdsForAttacker(entity.instanceId);
+		if (attackIds.length === 0) return;
+
+		// Single available attack — skip the picker.
+		if (attackIds.length === 1) {
+			this._commitAttackChoice(entity, attackIds[0]);
+			return;
+		}
+
+		// Multiple available attacks — open the picker. If the picker isn't
+		// installed yet (HudController hasn't wired it), fall back to the
+		// first available attack so the player isn't stuck.
+		if (!this._attackPicker) {
+			this._commitAttackChoice(entity, attackIds[0]);
+			return;
+		}
+
+		const cardData = entity.cardData;
+		const allAttacks = cardData.attacks ?? [];
+		const affordable = new Set<number>(attackIds);
+
+		this._selectedEntity = entity;
+		entity.setVisualState(CardVisualState.SELECTED);
+		this._selectionMode = 'attackPick';
+
+		this._attackPicker.show(
+			cardData,
+			allAttacks,
+			affordable,
+			(attackId) => this._onAttackPicked(attackId),
+			() => this._onAttackPickCancelled(),
+		);
+	}
+
+	private _onAttackPicked(attackId: number): void {
+		this._attackPicker?.hide();
+		const entity = this._selectedEntity;
+		if (!entity) {
+			this._clearSelection();
+			return;
+		}
+		this._commitAttackChoice(entity, attackId);
+	}
+
+	private _onAttackPickCancelled(): void {
+		this._attackPicker?.hide();
+		this._clearSelection();
+	}
+
+	private _commitAttackChoice(entity: CardEntity, attackId: number): void {
+		this._pendingAttackId = attackId;
+
+		// Find the candidate actions for this attacker × attack pair.
+		const candidates = this.actionBuilder
+			.getActionsForCard(entity.instanceId)
+			.filter(a => a.action === 'attack' && a.attack_id === attackId);
+
+		if (candidates.length === 0) {
+			this._clearSelection();
+			return;
+		}
+
+		// No-defender shortcut: opponent has no attacking creatures, so the
+		// only matching action has target_card_id="". Fire immediately.
+		const noDefenderAction = candidates.find(a => !(a.target_card_id ?? ''));
+		const targetedActions = candidates.filter(a => !!(a.target_card_id ?? ''));
+
+		if (targetedActions.length === 0 && noDefenderAction) {
+			this.actionBuilder.execute(noDefenderAction);
+			this._clearSelection();
+			return;
+		}
+
+		this._enterTargetMode(entity, targetedActions[0] ?? candidates[0]);
+	}
+
+	// ====================================================================
 	// Target selection
 	// ====================================================================
+
+	private _enterTargetMode(entity: CardEntity, action: ValidAction): void {
+		this._selectedEntity = entity;
+		entity.setVisualState(CardVisualState.SELECTED);
+		this._selectionMode = 'target';
+		this._pendingAction = action;
+
+		this._targetIds = new Set(this.actionBuilder.getValidTargetIds(action));
+		this._highlightTargets();
+	}
 
 	private _handleTargetSelection(entity: CardEntity): void {
 		if (!this._targetIds.has(entity.instanceId)) {
@@ -201,11 +308,21 @@ export default class InteractionManager implements IScript {
 		}
 
 		const sourceId = this._selectedEntity!.instanceId;
+		const targetId = entity.instanceId;
 		const actionType = this._pendingAction!.action;
-		const matchingAction = this.actionBuilder.getActionsForCard(sourceId).find(a =>
-			a.action === actionType
-			&& (a.target_card_id === entity.instanceId || a.attacking_card_id === entity.instanceId),
-		);
+
+		let matchingAction: ValidAction | undefined;
+
+		if (actionType === 'attack' && this._pendingAttackId != null) {
+			matchingAction = this.actionBuilder.findAttackAction(
+				sourceId, this._pendingAttackId, targetId,
+			);
+		} else {
+			matchingAction = this.actionBuilder.getActionsForCard(sourceId).find(a =>
+				a.action === actionType
+				&& (a.target_card_id === targetId || a.attacking_card_id === targetId),
+			);
+		}
 
 		if (matchingAction) {
 			this.actionBuilder.execute(matchingAction);
@@ -263,10 +380,12 @@ export default class InteractionManager implements IScript {
 	// ====================================================================
 
 	private _clearSelection(): void {
+		this._attackPicker?.hide();
 		this._selectedEntity?.setVisualState(CardVisualState.IDLE);
 		this._selectedEntity = null;
 		this._selectionMode = 'source';
 		this._pendingAction = null;
+		this._pendingAttackId = null;
 		this._targetIds.clear();
 		this._applyInteractableHighlights();
 	}
