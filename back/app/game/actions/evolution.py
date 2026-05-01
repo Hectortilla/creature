@@ -32,7 +32,7 @@ class EvolutionAction(Action):
         if self.target_card_id not in supporting.card_ids and self.target_card_id not in attacking.card_ids:
             return ValidationResult(valid=False, error="Target card must be in an active zone", error_code="INVALID_TARGET")
         evo_card = state.get_card(self.evolution_card_id)
-        if not evo_card or not evo_card.is_evolution:
+        if not evo_card or evo_card.evolves_from_id is None:
             return ValidationResult(valid=False, error="Card is not an evolution", error_code="NOT_EVOLUTION_CARD")
         target_card = state.get_card(self.target_card_id)
         if not target_card:
@@ -62,7 +62,7 @@ class EvolutionAction(Action):
         actions = []
         for evo_id in player.zones[Zone.HAND.name].card_ids:
             evo_card = state.get_card(evo_id)
-            if evo_card and evo_card.is_evolution:
+            if evo_card and evo_card.evolves_from_id is not None:
                 for target_id in player.get_active_cards():
                     target_card = state.get_card(target_id)
                     if target_card and target_card.can_evolve and target_card.card_id == evo_card.evolves_from_id:

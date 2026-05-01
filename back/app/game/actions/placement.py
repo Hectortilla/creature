@@ -40,7 +40,7 @@ class PlayCardAction(Action):
         if instance_id not in hand.card_ids:
             return ValidationResult(valid=False, error=f"Card {instance_id} is not in your hand", error_code="CARD_NOT_IN_HAND")
         card = state.get_card(instance_id)
-        if card and card.is_evolution:
+        if card and card.evolves_from_id is not None:
             return ValidationResult(valid=False, error=f"Evolution card {instance_id} cannot be placed directly; use the Evolution Phase", error_code="EVOLUTION_CARD_PLACEMENT")
         return ValidationResult(valid=True)
 
@@ -63,5 +63,5 @@ class PlayCardAction(Action):
         return [
             cls(player_id=player_id, instance_ids=[cid])
             for cid in player.zones[Zone.HAND.name].card_ids
-            if (c := state.get_card(cid)) and not c.is_evolution
+            if (c := state.get_card(cid)) and c.evolves_from_id is None
         ]

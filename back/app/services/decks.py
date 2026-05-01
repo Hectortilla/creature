@@ -199,7 +199,6 @@ class DeckService(BaseService[Deck, DeckCreate]):
             created_at=deck.created_at,
             updated_at=deck.updated_at,
             cards=cards,
-            is_valid_for_playing=deck.is_valid_for_playing(self.db)
         )
     
     def get_all_summaries(self) -> list[DeckReadSummary]:
@@ -209,7 +208,6 @@ class DeckService(BaseService[Deck, DeckCreate]):
         for deck in decks:
             # Count cards without loading them
             card_count = self.get_deck_card_count(deck.id)
-            is_valid = deck.is_valid_for_playing(self.db)
             summaries.append(DeckReadSummary(
                 id=deck.id,
                 user_id=deck.user_id,
@@ -218,7 +216,6 @@ class DeckService(BaseService[Deck, DeckCreate]):
                 created_at=deck.created_at,
                 updated_at=deck.updated_at,
                 card_count=card_count,
-                is_valid_for_playing=is_valid
             ))
         return summaries
     

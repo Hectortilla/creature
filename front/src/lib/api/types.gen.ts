@@ -78,13 +78,13 @@ export type ActionData = {
   /**
    * Instance Id
    *
-   * Card instance ID (used by: play_card, promote, force_defend)
+   * Card instance ID (used by: promote, force_defend)
    */
   instance_id?: string | null;
   /**
    * Instance Ids
    *
-   * List of card instance IDs (used by: multi_play_card)
+   * List of card instance IDs (used by: play_card)
    */
   instance_ids?: Array<string>;
   /**
@@ -1310,7 +1310,7 @@ export type DeckReadSummary = {
   /**
    * Is Valid For Playing
    */
-  is_valid_for_playing?: boolean;
+  readonly is_valid_for_playing: boolean;
 };
 
 /**
@@ -1350,7 +1350,7 @@ export type DeckReadWithCards = {
   /**
    * Is Valid For Playing
    */
-  is_valid_for_playing?: boolean;
+  readonly is_valid_for_playing: boolean;
 };
 
 /**
@@ -1686,10 +1686,6 @@ export type GameCard = {
    * Association Ids
    */
   association_ids?: Array<number>;
-  /**
-   * Is Evolution
-   */
-  is_evolution?: boolean;
   /**
    * Evolves From Id
    */
@@ -2752,13 +2748,13 @@ export type ValidActionSchema = {
   /**
    * Instance Id
    *
-   * Card instance ID (used by: play_card, promote, force_defend)
+   * Card instance ID (used by: promote, force_defend)
    */
   instance_id?: string | null;
   /**
    * Instance Ids
    *
-   * List of card instance IDs (used by: multi_play_card)
+   * List of card instance IDs (used by: play_card)
    */
   instance_ids?: Array<string>;
   /**
@@ -3110,6 +3106,78 @@ export type ActionResultMessageWritable = {
 };
 
 /**
+ * DeckReadSummary
+ *
+ * Lightweight schema for deck listing (without full card data).
+ */
+export type DeckReadSummaryWritable = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * User Id
+   */
+  user_id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Updated At
+   */
+  updated_at: string;
+  /**
+   * Card Count
+   */
+  card_count?: number;
+};
+
+/**
+ * DeckReadWithCards
+ *
+ * Schema for reading a deck with its cards.
+ */
+export type DeckReadWithCardsWritable = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * User Id
+   */
+  user_id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Updated At
+   */
+  updated_at: string;
+  /**
+   * Cards
+   */
+  cards?: Array<CardReadWithRelations>;
+};
+
+/**
  * GameCard
  *
  * Represents a card instance in the game.
@@ -3180,10 +3248,6 @@ export type GameCardWritable = {
    * Association Ids
    */
   association_ids?: Array<number>;
-  /**
-   * Is Evolution
-   */
-  is_evolution?: boolean;
   /**
    * Evolves From Id
    */

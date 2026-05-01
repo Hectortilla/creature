@@ -263,7 +263,6 @@ class GameState(GameBaseModel):
             attacks=attacks,
             skill_ids=card_data.get("skill_ids", []),
             association_ids=card_data.get("association_ids", []),
-            is_evolution=card_data.get("is_evolution", False),
             evolves_from_id=card_data.get("evolves_from_id"),
         )
 

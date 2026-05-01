@@ -97,9 +97,9 @@ export class CardDetailPanel {
 		this._addLine(`Contribution: ${contribStr}`, VALUE_COLOR, 10, false);
 
 		// ── Evolution (conditional) ──
-		if (card.is_evolution || card.evolves_from_id != null) {
+		if (card.evolves_from_id != null) {
 			this._addSection('Evolution');
-			this._addLine(`Is Evolution: ${card.is_evolution} | From: ${card.evolves_from_id ?? 'N/A'}`, DIM_COLOR, 10, false);
+			this._addLine(`Evolves From: ${card.evolves_from_id}`, DIM_COLOR, 10, false);
 		}
 
 		// ── Associations (conditional) ──

@@ -53,7 +53,6 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     association_ids: list[int] = []
     
     # Evolution
-    is_evolution: bool = False
     evolves_from_id: Optional[int] = None
     
     # Runtime state
@@ -171,7 +170,6 @@ class GameCardInput(GameBaseModel):
     attacks: list[dict[str, Any]] = []
     skill_ids: list[int] = []
     association_ids: list[int] = []
-    is_evolution: bool = False
     evolves_from_id: Optional[int] = None
     
     @classmethod
@@ -269,7 +267,6 @@ class GameCardInput(GameBaseModel):
             attacks=attacks,
             skill_ids=skill_ids,
             association_ids=association_ids,
-            is_evolution=card.is_evolution_id is not None,
             evolves_from_id=card.is_evolution_id,
         )
 

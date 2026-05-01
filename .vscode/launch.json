@@ -25,6 +25,13 @@
             "type": "node-terminal",
             "request": "launch",
             "cwd": "${workspaceFolder}/back",
+        },
+        {
+            "name": "Generate API client",
+            "command": "npm run generate",
+            "type": "node-terminal",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/front",
         }
     ],
     "inputs": [

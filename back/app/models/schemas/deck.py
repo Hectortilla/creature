@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Optional
 
+from pydantic import computed_field
+
 from app.models.base.deck import DeckBase
+from app.models.game.state import GameConfiguration
 from app.models.schemas.card import CardRead, CardReadWithRelations
 
 
@@ -27,11 +30,18 @@ class DeckRead(DeckBase):
 class DeckReadSummary(DeckRead):
     """Lightweight schema for deck listing (without full card data)."""
     card_count: int = 0
-    is_valid_for_playing: bool = False
+
+    @computed_field
+    @property
+    def is_valid_for_playing(self) -> bool:
+        return self.card_count == GameConfiguration().deck_size
 
 
 class DeckReadWithCards(DeckRead):
     """Schema for reading a deck with its cards."""
     cards: list[CardReadWithRelations] = []
-    is_valid_for_playing: bool = False
 
+    @computed_field
+    @property
+    def is_valid_for_playing(self) -> bool:
+        return len(self.cards) == GameConfiguration().deck_size

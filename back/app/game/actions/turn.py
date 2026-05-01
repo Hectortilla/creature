@@ -124,7 +124,7 @@ def _should_skip_phase(state: "GameState", phase: TurnPhase, player_id: str) -> 
         if state.is_first_turn(player_id) or state.is_second_turn(player_id):
             return True
         return not any(
-            state.get_card(cid) and state.get_card(cid).is_evolution
+            (c := state.get_card(cid)) and c.evolves_from_id is not None
             for cid in player.zones[Zone.HAND.name].card_ids
         )
     if phase == TurnPhase.ATTACK:
