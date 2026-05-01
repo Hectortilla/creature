@@ -1,7 +1,7 @@
 import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { CardEntity } from '../entities/CardEntity';
-import type { Zone } from '../game/models';
+import { getDeactivationQuaternion, type Zone } from '../game/models';
 import { ZoneRendererBase, animateTransform } from './ZoneRenderer';
 
 const DEFAULT_SLOT_SPACING = 150;
@@ -62,9 +62,10 @@ export class FieldZoneRenderer extends ZoneRendererBase {
 					base.y,
 					base.z,
 				);
-				if (animate) return animateTransform(entity.mesh, pos, baseRot);
+				const targetRot = baseRot.multiply(getDeactivationQuaternion(entity.cardData));
+				if (animate) return animateTransform(entity.mesh, pos, targetRot);
 				entity.mesh.position.copyFrom(pos);
-				entity.mesh.rotationQuaternion = baseRot.clone();
+				entity.mesh.rotationQuaternion = targetRot;
 				return Promise.resolve();
 			}),
 		);

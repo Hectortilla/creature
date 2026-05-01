@@ -51,6 +51,7 @@ import type {
 	GameCard,
 	GameStateForPlayer,
 } from '$lib/api/types.gen';
+import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector';
 
 export enum CardVisualState {
 	IDLE = 'IDLE',
@@ -101,3 +102,20 @@ export function createFaceDownCard(instanceId: string, ownerId: string, zone: Zo
 export type ClientGameState = Omit<GameStateForPlayer, 'cards'> & {
 	cards: Record<string, ClientCard>;
 };
+
+const DEG_TO_RAD = Math.PI / 180;
+
+export function getDeactivationAngle(card: ClientCard): number {
+	if (card.has_attacked_this_turn) return 90;
+	if (card.zone === 'SUPPORTING' && card.turns_in_zone === 0 && !card.swapped_this_turn) {
+		return 90;
+	}
+	if (card.swapped_this_turn) return 45;
+	return 0;
+}
+
+export function getDeactivationQuaternion(card: ClientCard): Quaternion {
+	const angle = getDeactivationAngle(card);
+	if (angle === 0) return Quaternion.Identity();
+	return Quaternion.RotationAxis(Vector3.Up(), angle * DEG_TO_RAD);
+}

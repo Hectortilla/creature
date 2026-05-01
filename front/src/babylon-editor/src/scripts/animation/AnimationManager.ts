@@ -219,6 +219,9 @@ export default class AnimationManager implements IScript {
 		const targetOrPos = target ?? this._opponentFieldCenter();
 
 		this._animationPipeline.enqueue(attackLunge(attacker, targetOrPos));
+		this._animationPipeline.enqueue(this._callback(() => {
+			this._findRendererContaining(data.attackerId)?.repositionAll(true);
+		}));
 	};
 
 	private _onCardHealthChanged = (data: CardHealthChangedData): void => {
@@ -261,6 +264,9 @@ export default class AnimationManager implements IScript {
 	private _onTurnChanged = (_data: TurnChangedData): void => {
 		if (!this._boardReady) return;
 		this._animationPipeline.enqueue(delay(800));
+		this._animationPipeline.enqueue(this._callback(() => {
+			for (const renderer of this._zones.values()) renderer.repositionAll(true);
+		}));
 	};
 
 	private _onGameOver = (_data: GameOverData): void => {
