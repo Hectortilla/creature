@@ -53,6 +53,12 @@ export class CardDefinitionCache {
 		return this._initialized;
 	}
 
+	/** Resolves once definitions have been fetched. Resolves immediately if already loaded. */
+	whenReady(): Promise<void> {
+		if (this._initialized) return Promise.resolve();
+		return this._initPromise ?? Promise.resolve();
+	}
+
 	/**
 	 * Fetch all card definitions from the REST API.
 	 * Converts the WebSocket URL to an HTTP URL automatically.

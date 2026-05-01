@@ -26,10 +26,31 @@ export class CardTextureManager {
 	/**
 	 * Resolve the card's image URL and apply a textured PBRMaterial to its mesh.
 	 * No-op if the card is face-down.
+	 *
+	 * If card definitions haven't loaded yet, defer applying the material
+	 * until they have — otherwise the placeholder gets baked into the mesh
+	 * and never re-resolves.
 	 */
 	applyTexture(entity: CardEntity): void {
 		if (!entity.cardData.faceUp) return;
 
+		const cache = CardDefinitionCache.getOrCreate();
+		const meshAtCall = entity.mesh;
+
+		if (!cache.initialized) {
+			cache.whenReady().then(() => {
+				if (!entity.cardData.faceUp) return;
+				if (entity.mesh !== meshAtCall) return;
+				if (meshAtCall.isDisposed()) return;
+				this._applyNow(entity);
+			});
+			return;
+		}
+
+		this._applyNow(entity);
+	}
+
+	private _applyNow(entity: CardEntity): void {
 		const imageUrl = this._resolveImageUrl(entity.instanceId);
 		const texture = this._getOrLoadTexture(imageUrl);
 
