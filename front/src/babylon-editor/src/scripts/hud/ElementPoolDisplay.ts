@@ -23,7 +23,7 @@ export class ElementPoolDisplay {
 		this._board = board;
 
 		this._root = new Rectangle('elementPool_root');
-		this._root.width = '150px';
+		this._root.width = '210px';
 		this._root.adaptHeightToChildren = true;
 		this._root.left = '10px';
 		this._root.top = '-10px';
@@ -98,8 +98,8 @@ export class ElementPoolDisplay {
 
 	private _addSectionTitle(text: string, color: string): void {
 		const title = new TextBlock(`elemTitle_${text}`, text);
-		title.height = '24px';
-		title.fontSize = 12;
+		title.height = '32px';
+		title.fontSize = 16;
 		title.fontWeight = 'bold';
 		title.color = color;
 		title.isPointerBlocker = false;
@@ -115,8 +115,8 @@ export class ElementPoolDisplay {
 		for (const [elemId, current] of Object.entries(elements)) {
 			const max = maxElements[elemId] ?? current;
 			const row = new TextBlock(`elemRow_${prefix}_${elemId}`, `  Elem ${elemId}: ${current} / ${max}`);
-			row.height = '20px';
-			row.fontSize = 11;
+			row.height = '26px';
+			row.fontSize = 14;
 			row.color = (current as number) > 0 ? VALUE_COLOR : DEPLETED_COLOR;
 			row.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
 			row.isPointerBlocker = false;

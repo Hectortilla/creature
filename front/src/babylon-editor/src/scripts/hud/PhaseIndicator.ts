@@ -45,8 +45,8 @@ export class PhaseIndicator {
 		this._board = board;
 
 		this._root = new Rectangle('phaseIndicator_root');
-		this._root.width = '620px';
-		this._root.height = '50px';
+		this._root.width = '820px';
+		this._root.height = '66px';
 		this._root.top = '10px';
 		this._root.verticalAlignment = Rectangle.VERTICAL_ALIGNMENT_TOP;
 		this._root.horizontalAlignment = Rectangle.HORIZONTAL_ALIGNMENT_CENTER;
@@ -58,13 +58,13 @@ export class PhaseIndicator {
 
 		const row = new StackPanel('phaseIndicator_row');
 		row.isVertical = false;
-		row.height = '36px';
+		row.height = '48px';
 		row.isPointerBlocker = false;
 		this._root.addControl(row);
 
 		this._turnLabel = new TextBlock('phaseIndicator_turn', '');
-		this._turnLabel.width = '90px';
-		this._turnLabel.fontSize = 11;
+		this._turnLabel.width = '120px';
+		this._turnLabel.fontSize = 15;
 		this._turnLabel.color = ACTIVE_COLOR;
 		this._turnLabel.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
 		this._turnLabel.isPointerBlocker = false;
@@ -72,17 +72,17 @@ export class PhaseIndicator {
 
 		for (const phase of PHASES) {
 			const box = new Rectangle(`phase_${phase}`);
-			box.width = '70px';
-			box.height = '30px';
+			box.width = '94px';
+			box.height = '40px';
 			box.cornerRadius = 4;
 			box.thickness = 0;
 			box.background = FUTURE_COLOR;
 			box.isPointerBlocker = false;
-			box.paddingLeft = '2px';
-			box.paddingRight = '2px';
+			box.paddingLeft = '3px';
+			box.paddingRight = '3px';
 
 			const label = new TextBlock(`phaseLabel_${phase}`, PHASE_LABELS[phase as string] ?? (phase as string));
-			label.fontSize = 11;
+			label.fontSize = 15;
 			label.color = TEXT_COLOR_DIM;
 			label.isPointerBlocker = false;
 			box.addControl(label);

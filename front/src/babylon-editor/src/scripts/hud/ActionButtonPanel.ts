@@ -30,8 +30,8 @@ export class ActionButtonPanel {
 		this._actionBuilder = actionBuilder;
 
 		this._root = new Rectangle('actionBtnPanel_root');
-		this._root.width = '180px';
-		this._root.height = '90px';
+		this._root.width = '240px';
+		this._root.height = '120px';
 		this._root.left = '-10px';
 		this._root.top = '-10px';
 		this._root.verticalAlignment = Rectangle.VERTICAL_ALIGNMENT_BOTTOM;
@@ -66,15 +66,15 @@ export class ActionButtonPanel {
 		onClick: () => void,
 	): Button {
 		const btn = Button.CreateSimpleButton(name, label);
-		btn.width = '150px';
-		btn.height = '32px';
+		btn.width = '200px';
+		btn.height = '44px';
 		btn.color = TEXT_COLOR;
-		btn.fontSize = 12;
+		btn.fontSize = 16;
 		btn.cornerRadius = 6;
 		btn.thickness = 0;
 		btn.background = bgColor;
-		btn.paddingTop = '4px';
-		btn.paddingBottom = '4px';
+		btn.paddingTop = '6px';
+		btn.paddingBottom = '6px';
 		btn.isPointerBlocker = true;
 		btn.onPointerClickObservable.add(onClick);
 		btn.onPointerEnterObservable.add(() => {

@@ -11,9 +11,9 @@ import type {
 	CardDestroyedData,
 } from '../state/events';
 
-const BAR_WIDTH = 60;
-const BAR_HEIGHT = 10;
-const LINK_OFFSET_Y = -50;
+const BAR_WIDTH = 84;
+const BAR_HEIGHT = 14;
+const LINK_OFFSET_Y = -54;
 const BG_COLOR = 'rgba(0, 0, 0, 0.6)';
 
 const FIELD_ZONES: Zone[] = ['SUPPORTING' as Zone, 'ATTACKING' as Zone];
@@ -56,7 +56,7 @@ class HealthBar {
 		this._container.addControl(this._fill);
 
 		this._label = new TextBlock(`hb_label_${id}`, '');
-		this._label.fontSize = 8;
+		this._label.fontSize = 11;
 		this._label.color = '#FFFFFF';
 		this._label.isPointerBlocker = false;
 		this._container.addControl(this._label);
