@@ -75,6 +75,7 @@ export class CardTextureManager {
 		if (cached) return cached;
 
 		const texture = new Texture(url, this._scene);
+		texture.wAng = Math.PI / 2;
 		this._textureCache.set(url, texture);
 		return texture;
 	}
