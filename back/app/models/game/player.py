@@ -7,11 +7,12 @@ Represents a player's state in the game.
 from __future__ import annotations
 
 import random
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import Field, model_validator
 
 from app.models.game.base import GameBaseModel
+from app.models.game.card import GameCardInput
 from app.models.game.enums import Zone
 from app.models.game.element import ElementPool
 from app.models.game.zone import ZoneState
@@ -27,7 +28,7 @@ class PlayerState(GameBaseModel):
     element_pool: ElementPool = Field(default_factory=ElementPool)
     zones: dict[str, ZoneState] = Field(default_factory=dict)
     has_passed_phase: bool = False
-    deck: Optional[list[dict]] = Field(default=None, exclude=True)
+    deck: Optional[list[GameCardInput]] = Field(default=None, exclude=True)
 
     @model_validator(mode='after')
     def initialize_zones(self) -> "PlayerState":

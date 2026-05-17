@@ -7,7 +7,7 @@ Represents a card instance during gameplay with runtime state.
 from __future__ import annotations
 
 import uuid
-from typing import Optional, Any
+from typing import TYPE_CHECKING, Optional, Any
 
 from pydantic import computed_field, model_validator
 
@@ -16,6 +16,10 @@ from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, CardStatus
 from app.models.game.element import ElementContribution
 from app.models.game.attack import AttackDefinition
+
+if TYPE_CHECKING:
+    from app.models.schemas.attack import AttackReadWithElement
+    from app.models.schemas.card import CardReadWithRelations
 
 
 class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
@@ -166,14 +170,14 @@ class GameCardInput(GameBaseModel):
     physical_defence: int = 0
     magic_defence: int = 0
     element_ids: list[int] = []
-    element_contribution: list[dict[str, int]] = []
+    element_contribution: list[ElementContribution] = []
     attacks: list[dict[str, Any]] = []
     skill_ids: list[int] = []
     association_ids: list[int] = []
     evolves_from_id: Optional[int] = None
     
     @classmethod
-    def _normalize_necessary_force(cls, necessary_force: list[dict] | None) -> list[dict]:
+    def _normalize_necessary_force(cls, necessary_force: list[dict[str, Any]] | None) -> list[dict]:
         """
         Normalize necessary_force structure: convert from {value, elementData} to {element_id, amount}.
         
@@ -201,7 +205,7 @@ class GameCardInput(GameBaseModel):
         return normalized
     
     @classmethod
-    def _build_attack_dict(cls, attack: Any) -> dict[str, Any]:
+    def _build_attack_dict(cls, attack: AttackReadWithElement) -> dict[str, Any]:
         """Build attack dictionary from attack object."""
         return {
             "id": attack.id,
@@ -216,7 +220,7 @@ class GameCardInput(GameBaseModel):
         }
     
     @classmethod
-    def from_card_read(cls, card: Any) -> "GameCardInput":
+    def from_card_read(cls, card: CardReadWithRelations) -> "GameCardInput":
         """
         Create GameCardInput from CardReadWithRelations.
         

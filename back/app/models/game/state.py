@@ -14,7 +14,7 @@ from pydantic import Field, SkipValidation, field_serializer, computed_field
 
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, TurnPhase, GameStatus
-from app.models.game.card import GameCard
+from app.models.game.card import GameCard, GameCardInput
 from app.models.game.player import PlayerState
 
 from app.models.game.attack import AttackDefinition
@@ -215,19 +215,19 @@ class GameState(GameBaseModel):
 
 
     @staticmethod
-    def _create_game_card(card_data: dict[str, Any], owner_id: str) -> GameCard:
-        """Create a GameCard from card data dict."""
+    def _create_game_card(card_data: GameCardInput, owner_id: str) -> GameCard:
+        """Create a GameCard from card data."""
         attacks = []
-        for attack_data in card_data.get("attacks", []):
+        for attack_data in card_data.attacks:
             necessary_force = [
                 ElementContribution(element_id=e["element_id"], amount=e["amount"])
                 for e in attack_data.get("necessary_force", [])
             ]
-            
+
             attack_type = DamageType.PHYSICAL
             if attack_data.get("type", "").lower() == "magical":
                 attack_type = DamageType.MAGICAL
-            
+
             attacks.append(AttackDefinition(
                 attack_id=attack_data["id"],
                 name=attack_data["name"],
@@ -239,31 +239,27 @@ class GameState(GameBaseModel):
                 description=attack_data.get("description"),
                 dice_rolls=attack_data.get("dice_rolls"),
             ))
-        
-        element_contribution = []
-        for contrib in card_data.get("element_contribution", []):
-            element_contribution.append(
-                ElementContribution(element_id=contrib["element_id"], amount=contrib["amount"])
-            )
-        
+
+        element_contribution = list(card_data.element_contribution)
+
         # Default: contribute 1 of each element the card has
         if not element_contribution:
-            for elem_id in card_data.get("element_ids", []):
+            for elem_id in card_data.element_ids:
                 element_contribution.append(ElementContribution(element_id=elem_id, amount=1))
-        
+
         return GameCard.create(
-            card_id=card_data["id"],
+            card_id=card_data.id,
             owner_id=owner_id,
-            name=card_data["name"],
-            health=card_data.get("health", 10),
-            physical_defence=card_data.get("physical_defence", 0),
-            magic_defence=card_data.get("magic_defence", 0),
-            element_ids=card_data.get("element_ids", []),
+            name=card_data.name,
+            health=card_data.health,
+            physical_defence=card_data.physical_defence,
+            magic_defence=card_data.magic_defence,
+            element_ids=card_data.element_ids,
             element_contribution=element_contribution,
             attacks=attacks,
-            skill_ids=card_data.get("skill_ids", []),
-            association_ids=card_data.get("association_ids", []),
-            evolves_from_id=card_data.get("evolves_from_id"),
+            skill_ids=card_data.skill_ids,
+            association_ids=card_data.association_ids,
+            evolves_from_id=card_data.evolves_from_id,
         )
 
 __all__ = [
