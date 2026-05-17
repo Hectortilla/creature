@@ -52,7 +52,7 @@ class PlayerLeftData(BaseModel):
 class GameStartedData(BaseModel):
     """Data for game_started message."""
     success: bool
-    game_state: Annotated[GameStateForPlayer, SkipValidation]
+    game_state: GameStateForPlayer
     events: list[GameEventUnion]
     valid_actions: list[ValidActionSchema] = Field(default_factory=list)
 
@@ -69,7 +69,7 @@ class ActionResultData(BaseModel):
     events: list[GameEventUnion]
     game_over: bool
     winner_id: Optional[str] = None
-    game_state: Optional[Annotated[GameStateForPlayer, SkipValidation]] = None
+    game_state: Optional[GameStateForPlayer] = None
     valid_actions: list[ValidActionSchema] = Field(default_factory=list)
 
 

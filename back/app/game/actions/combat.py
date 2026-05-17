@@ -202,10 +202,10 @@ class ForceDefendAction(Action):
             ))
         if state.pending_attack and card:
             pending = state.pending_attack
-            attacker = state.get_card(pending["attacker_id"])
-            attack = next((a for a in attacker.attacks if a.attack_id == pending["attack_id"]), None) if attacker else None
+            attacker = state.get_card(pending.attacker_id)
+            attack = next((a for a in attacker.attacks if a.attack_id == pending.attack_id), None) if attacker else None
             if attacker and attack:
-                events.extend(build_combat_events(state, attacker, card, attack, pending["attacker_owner_id"]))
+                events.extend(build_combat_events(state, attacker, card, attack, pending.attacker_owner_id))
         return events
 
     @classmethod

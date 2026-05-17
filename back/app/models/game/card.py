@@ -157,10 +157,29 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
         self.turns_in_zone += 1
 
 
+class AttackInput(GameBaseModel):
+    """
+    Input format for a single attack when creating a game.
+
+    Mirrors the dict shape produced by enrichment/serialization; `type` stays
+    a string at this boundary and is mapped to DamageType when the attack is
+    materialized into an AttackDefinition in _create_game_card.
+    """
+    id: int
+    name: str
+    damage: int = 0
+    type: str = "physical"
+    element_id: int = 0
+    necessary_force: list[ElementContribution] = []
+    effect: Optional[str] = None
+    description: Optional[str] = None
+    dice_rolls: Optional[int] = None
+
+
 class GameCardInput(GameBaseModel):
     """
     Input format for card data when creating a game.
-    
+
     This is the format expected by the game engine's create_game method.
     Represents card data as it comes from the deck before being instantiated.
     """
@@ -171,7 +190,7 @@ class GameCardInput(GameBaseModel):
     magic_defence: int = 0
     element_ids: list[int] = []
     element_contribution: list[ElementContribution] = []
-    attacks: list[dict[str, Any]] = []
+    attacks: list[AttackInput] = []
     skill_ids: list[int] = []
     association_ids: list[int] = []
     evolves_from_id: Optional[int] = None
@@ -205,19 +224,19 @@ class GameCardInput(GameBaseModel):
         return normalized
     
     @classmethod
-    def _build_attack_dict(cls, attack: AttackReadWithElement) -> dict[str, Any]:
-        """Build attack dictionary from attack object."""
-        return {
-            "id": attack.id,
-            "name": attack.name,
-            "damage": attack.damage or 0,
-            "type": attack.type or "physical",
-            "element_id": attack.element_id or 0,
-            "necessary_force": cls._normalize_necessary_force(attack.necessary_force),
-            "effect": attack.effect,
-            "description": attack.description,
-            "dice_rolls": attack.dice_rolls,
-        }
+    def _build_attack_input(cls, attack: AttackReadWithElement) -> AttackInput:
+        """Build AttackInput from an enriched attack object."""
+        return AttackInput(
+            id=attack.id,
+            name=attack.name,
+            damage=attack.damage or 0,
+            type=attack.type or "physical",
+            element_id=attack.element_id or 0,
+            necessary_force=cls._normalize_necessary_force(attack.necessary_force),
+            effect=attack.effect,
+            description=attack.description,
+            dice_rolls=attack.dice_rolls,
+        )
     
     @classmethod
     def from_card_read(cls, card: CardReadWithRelations) -> "GameCardInput":
@@ -247,9 +266,9 @@ class GameCardInput(GameBaseModel):
         # Build attacks list
         attacks = []
         if card.first_attack:
-            attacks.append(cls._build_attack_dict(card.first_attack))
+            attacks.append(cls._build_attack_input(card.first_attack))
         if card.second_attack:
-            attacks.append(cls._build_attack_dict(card.second_attack))
+            attacks.append(cls._build_attack_input(card.second_attack))
         
         # Build skill_ids and association_ids
         skill_ids = []
@@ -275,5 +294,5 @@ class GameCardInput(GameBaseModel):
         )
 
 
-__all__ = ["GameCard", "GameCardInput"]
+__all__ = ["GameCard", "GameCardInput", "AttackInput"]
 

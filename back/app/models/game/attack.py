@@ -45,8 +45,16 @@ class AttackResult(GameBaseModel):
     attacker_damage: int = 0
 
 
+class PendingAttack(GameBaseModel):
+    """An attack waiting on a forced defend resolution."""
+    attacker_id: str
+    attack_id: int
+    attacker_owner_id: str
+
+
 __all__ = [
     "AttackDefinition",
     "AttackResult",
+    "PendingAttack",
 ]
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.models.game.attack import PendingAttack
 from app.models.game.enums import Zone, GameStatus, CardStatus
 from app.models.game.events import (
     GameEvent,
@@ -405,11 +406,11 @@ def _apply_no_defender(state: "GameState", players: dict[str, "PlayerState"], ev
         state.status = GameStatus.PAUSED
         state.pending_action = "force_defend"
         state.pending_defender_id = event.defender_id
-        state.pending_attack = {
-            "attacker_id": event.pending_attacker_card_id,
-            "attack_id": event.pending_attack_id,
-            "attacker_owner_id": event.pending_attacker_owner_id,
-        }
+        state.pending_attack = PendingAttack(
+            attacker_id=event.pending_attacker_card_id,
+            attack_id=event.pending_attack_id,
+            attacker_owner_id=event.pending_attacker_owner_id,
+        )
     elif event.game_lost:
         state.status = GameStatus.FINISHED
         # Winner is the attacker

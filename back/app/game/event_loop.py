@@ -123,20 +123,17 @@ class EventLoop:
 
                 # 1. Apply event to state and players through reducer
                 current_state, current_players = apply_event(current_state, current_players, event)
-
-                # 2. Log the event
-                current_state.log_event(event.model_dump(mode='json'))
                 all_events.append(event)
 
-                # 3. Check for triggered effects
+                # 2. Check for triggered effects
                 new_events = self._process_effects(current_state, current_players, event)
 
-                # 4. Queue any new events
+                # 3. Queue any new events
                 for new_event in new_events:
                     event_queue.append(new_event)
                     triggered_events.append(new_event)
 
-            # 5. Queue drained — auto-advance if current phase has no actions
+            # 4. Queue drained — auto-advance if current phase has no actions
             if auto_advance_passes >= max_auto_advance:
                 break
 
