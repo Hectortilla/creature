@@ -24,9 +24,11 @@ import type {
 	GameOverData,
 	AttackDeclaredData,
 	CardsSwappedData,
+	CardAssociatedData,
 	GameStartedEventData,
 } from '../state/events';
 
+import type { CardEntity } from '../entities/CardEntity';
 import type { ZoneRenderer } from '../zones/ZoneRenderer';
 import { DeckZoneRenderer } from '../zones/DeckZoneRenderer';
 import { HandZoneRenderer } from '../zones/HandZoneRenderer';
@@ -48,6 +50,10 @@ const ZONE_SUPPORTING = 'SUPPORTING' as Zone;
 const ZONE_ATTACKING = 'ATTACKING' as Zone;
 const ZONE_GRAVEYARD = 'GRAVEYARD' as Zone;
 
+const ASSOCIATION_BULGE = 35;
+const ASSOCIATION_STACK = 18;
+const ASSOCIATION_DROP = 0.5;
+
 export default class AnimationManager implements IScript {
 	static instance: AnimationManager | null = null;
 
@@ -60,6 +66,7 @@ export default class AnimationManager implements IScript {
 	private _pendingCardMoves: CardMovedData[] = [];
 	private _swapInProgress = new Set<string>();
 	private _destroyInProgress = new Set<string>();
+	private _associations = new Map<string, string[]>();
 
 	private _myPlayerId = '';
 	private _opponentId = '';
@@ -102,6 +109,7 @@ export default class AnimationManager implements IScript {
 		this._board.on('stateReplaced', this._onStateReplaced);
 		this._board.on('cardsSwapped', this._onCardsSwapped);
 		this._board.on('cardMoved', this._onCardMoved);
+		this._board.on('cardAssociated', this._onCardAssociated);
 		this._board.on('attackDeclared', this._onAttackDeclared);
 		this._board.on('cardHealthChanged', this._onCardHealthChanged);
 		this._board.on('cardDestroyed', this._onCardDestroyed);
@@ -115,6 +123,7 @@ export default class AnimationManager implements IScript {
 		this._board.off('stateReplaced', this._onStateReplaced);
 		this._board.off('cardsSwapped', this._onCardsSwapped);
 		this._board.off('cardMoved', this._onCardMoved);
+		this._board.off('cardAssociated', this._onCardAssociated);
 		this._board.off('attackDeclared', this._onAttackDeclared);
 		this._board.off('cardHealthChanged', this._onCardHealthChanged);
 		this._board.off('cardDestroyed', this._onCardDestroyed);
@@ -180,6 +189,49 @@ export default class AnimationManager implements IScript {
 		this._animationPipeline.enqueueBatch(batch);
 	};
 
+	private _onCardAssociated = (data: CardAssociatedData): void => {
+		if (!this._boardReady) return;
+
+		const associationEntity = this._cardManager.getByInstanceId(data.associationCardId);
+		const targetEntity = this._cardManager.getByInstanceId(data.targetCardId);
+		if (!associationEntity || !targetEntity) return;
+
+		const sourceRenderer = this._findRendererContaining(data.associationCardId);
+		sourceRenderer?.removeCard(data.associationCardId);
+
+		associationEntity.mesh.setParent(null);
+
+		let stack = this._associations.get(data.targetCardId);
+		if (!stack) {
+			stack = [];
+			this._associations.set(data.targetCardId, stack);
+		}
+		if (!stack.includes(data.associationCardId)) stack.push(data.associationCardId);
+		const indexInStack = stack.indexOf(data.associationCardId);
+
+		const targetRenderer = this._findRendererContaining(data.targetCardId);
+		const below = this._belowDirectionFor(targetRenderer);
+		const distance = ASSOCIATION_BULGE + indexInStack * ASSOCIATION_STACK;
+
+		const fromPos = associationEntity.mesh.getAbsolutePosition().clone();
+		const toPos = this._associationWorldPos(targetEntity, below, distance);
+
+		const batch: GameAnimation[] = [cardMove(associationEntity, fromPos, toPos)];
+
+		if (data.sourceZone === ZONE_HAND && !this._isMine(data.playerId)) {
+			batch.push(cardFlip(associationEntity, true));
+		}
+
+		batch.push(this._callback(() => {
+			const finalPos = this._associationWorldPos(targetEntity, below, distance);
+			associationEntity.mesh.position.copyFrom(finalPos);
+			associationEntity.mesh.setParent(targetEntity.mesh);
+			if (sourceRenderer) void sourceRenderer.repositionAll(true);
+		}));
+
+		this._animationPipeline.enqueueBatch(batch);
+	};
+
 	private _onCardsSwapped = (data: CardsSwappedData): void => {
 		if (!this._boardReady) return;
 
@@ -237,6 +289,7 @@ export default class AnimationManager implements IScript {
 		if (!this._boardReady) return;
 
 		this._destroyInProgress.add(data.instanceId);
+		this._detachAssociations(data.instanceId);
 
 		const entity = this._cardManager.getByInstanceId(data.instanceId);
 		if (!entity) return;
@@ -340,6 +393,7 @@ export default class AnimationManager implements IScript {
 			}
 		}
 		await Promise.all(allPromises);
+		this._rebuildAssociations(data.state);
 	}
 
 	private _gatherInitialCardsInDeck(state: ClientGameState, ownerId: string): ClientCard[] {
@@ -357,7 +411,85 @@ export default class AnimationManager implements IScript {
 		this._zones.clear();
 		this._swapInProgress.clear();
 		this._destroyInProgress.clear();
+		this._associations.clear();
 		this._initZoneRenderers();
+	}
+
+	// ====================================================================
+	// Associations
+	// ====================================================================
+
+	private _rebuildAssociations(state: ClientGameState): void {
+		this._associations.clear();
+		for (const card of Object.values(state.cards)) {
+			const children = card.associations ?? [];
+			if (children.length === 0) continue;
+
+			const targetEntity = this._cardManager.getByInstanceId(card.instance_id);
+			if (!targetEntity) continue;
+
+			const targetRenderer = this._findRendererContaining(card.instance_id);
+			const below = this._belowDirectionFor(targetRenderer);
+			const stack: string[] = [];
+			this._associations.set(card.instance_id, stack);
+
+			for (let i = 0; i < children.length; i++) {
+				const childId = children[i];
+				const childEntity = this._cardManager.getByInstanceId(childId);
+				if (!childEntity) continue;
+
+				const sourceRenderer = this._findRendererContaining(childId);
+				sourceRenderer?.removeCard(childId);
+				stack.push(childId);
+
+				const distance = ASSOCIATION_BULGE + i * ASSOCIATION_STACK;
+				const pos = this._associationWorldPos(targetEntity, below, distance);
+				childEntity.mesh.setParent(null);
+				childEntity.mesh.position.copyFrom(pos);
+				childEntity.mesh.setParent(targetEntity.mesh);
+			}
+		}
+	}
+
+	private _detachAssociations(parentId: string): void {
+		const children = this._associations.get(parentId);
+		if (children) {
+			for (const childId of children) {
+				const childEntity = this._cardManager.getByInstanceId(childId);
+				childEntity?.mesh.setParent(null);
+			}
+			this._associations.delete(parentId);
+		}
+		// If the destroyed card was itself an association, drop it from its parent's stack.
+		for (const [pId, stack] of this._associations) {
+			const idx = stack.indexOf(parentId);
+			if (idx !== -1) {
+				stack.splice(idx, 1);
+				const childEntity = this._cardManager.getByInstanceId(parentId);
+				childEntity?.mesh.setParent(null);
+				if (stack.length === 0) this._associations.delete(pId);
+				break;
+			}
+		}
+	}
+
+	private _belowDirectionFor(renderer: ZoneRenderer | undefined): Vector3 {
+		if (
+			renderer
+			&& 'getBelowDirection' in renderer
+			&& typeof (renderer as { getBelowDirection?: unknown }).getBelowDirection === 'function'
+		) {
+			return (renderer as FieldZoneRenderer).getBelowDirection();
+		}
+		return new Vector3(0, 0, 1);
+	}
+
+	private _associationWorldPos(target: CardEntity, below: Vector3, distance: number): Vector3 {
+		const pos = target.mesh.getAbsolutePosition().clone();
+		pos.x += below.x * distance;
+		pos.z += below.z * distance;
+		pos.y -= ASSOCIATION_DROP;
+		return pos;
 	}
 
 	// ====================================================================

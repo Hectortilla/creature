@@ -92,4 +92,21 @@ export class FieldZoneRenderer extends ZoneRendererBase {
 			base.z,
 		);
 	}
+
+	/**
+	 * World-space "below the card" direction for this zone — i.e. the axis
+	 * along which an associated card should peek out from under its target.
+	 *
+	 * Derived from the anchor's local forward vector: My_*_Anchor and
+	 * Opp_*_Anchor are oriented 180° apart in the scene, so this returns the
+	 * correct screen-space "down" for whichever side the zone belongs to.
+	 */
+	getBelowDirection(): Vector3 {
+		const fwd = Vector3.TransformNormal(
+			new Vector3(0, 0, 1),
+			this._anchor.getWorldMatrix(),
+		);
+		fwd.y = 0;
+		return fwd.normalize();
+	}
 }

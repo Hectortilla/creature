@@ -253,16 +253,6 @@ export default class BoardController implements IScript {
 	private _handleCardAssociated(raw: Record<string, unknown>): void {
 		const sourceZone = (raw.source_zone as Zone) ?? null;
 
-		if (sourceZone) {
-			const associationCardId = raw.association_card_id as string;
-			this._emit('cardMoved', {
-				instanceId: associationCardId,
-				ownerId: raw.player_id as string,
-				fromZone: sourceZone,
-				toZone: 'SUPPORTING' as Zone,
-			});
-		}
-
 		this._emit('cardAssociated', {
 			playerId: raw.player_id as string,
 			associationCardId: raw.association_card_id as string,
