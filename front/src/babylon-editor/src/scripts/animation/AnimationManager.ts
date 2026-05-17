@@ -25,6 +25,7 @@ import type {
 	AttackDeclaredData,
 	CardsSwappedData,
 	CardAssociatedData,
+	CardEvolvedData,
 	GameStartedEventData,
 } from '../state/events';
 
@@ -54,6 +55,9 @@ const ASSOCIATION_BULGE = 35;
 const ASSOCIATION_STACK = 18;
 const ASSOCIATION_DROP = 0.5;
 
+const EVOLUTION_BULGE = 35;
+const EVOLUTION_LIFT = 0.5;
+
 export default class AnimationManager implements IScript {
 	static instance: AnimationManager | null = null;
 
@@ -67,6 +71,7 @@ export default class AnimationManager implements IScript {
 	private _swapInProgress = new Set<string>();
 	private _destroyInProgress = new Set<string>();
 	private _associations = new Map<string, string[]>();
+	private _evolutions = new Map<string, string>();
 
 	private _myPlayerId = '';
 	private _opponentId = '';
@@ -110,6 +115,7 @@ export default class AnimationManager implements IScript {
 		this._board.on('cardsSwapped', this._onCardsSwapped);
 		this._board.on('cardMoved', this._onCardMoved);
 		this._board.on('cardAssociated', this._onCardAssociated);
+		this._board.on('cardEvolved', this._onCardEvolved);
 		this._board.on('attackDeclared', this._onAttackDeclared);
 		this._board.on('cardHealthChanged', this._onCardHealthChanged);
 		this._board.on('cardDestroyed', this._onCardDestroyed);
@@ -124,6 +130,7 @@ export default class AnimationManager implements IScript {
 		this._board.off('cardsSwapped', this._onCardsSwapped);
 		this._board.off('cardMoved', this._onCardMoved);
 		this._board.off('cardAssociated', this._onCardAssociated);
+		this._board.off('cardEvolved', this._onCardEvolved);
 		this._board.off('attackDeclared', this._onAttackDeclared);
 		this._board.off('cardHealthChanged', this._onCardHealthChanged);
 		this._board.off('cardDestroyed', this._onCardDestroyed);
@@ -232,6 +239,47 @@ export default class AnimationManager implements IScript {
 		this._animationPipeline.enqueueBatch(batch);
 	};
 
+	private _onCardEvolved = (data: CardEvolvedData): void => {
+		if (!this._boardReady) return;
+
+		const evolutionEntity = this._cardManager.getByInstanceId(data.evolutionCardId);
+		const baseEntity = this._cardManager.getByInstanceId(data.baseCardId);
+		if (!evolutionEntity || !baseEntity) return;
+
+		const sourceRenderer = this._findRendererContaining(data.evolutionCardId);
+		sourceRenderer?.removeCard(data.evolutionCardId);
+
+		evolutionEntity.mesh.setParent(null);
+
+		const prior = this._evolutions.get(data.baseCardId);
+		if (prior && prior !== data.evolutionCardId) {
+			const priorEntity = this._cardManager.getByInstanceId(prior);
+			priorEntity?.mesh.setParent(null);
+		}
+		this._evolutions.set(data.baseCardId, data.evolutionCardId);
+
+		const baseRenderer = this._findRendererContaining(data.baseCardId);
+		const above = this._belowDirectionFor(baseRenderer).scale(-1);
+
+		const fromPos = evolutionEntity.mesh.getAbsolutePosition().clone();
+		const toPos = this._evolutionWorldPos(baseEntity, above);
+
+		const batch: GameAnimation[] = [cardMove(evolutionEntity, fromPos, toPos)];
+
+		if (!this._isMine(data.playerId)) {
+			batch.push(cardFlip(evolutionEntity, true));
+		}
+
+		batch.push(this._callback(() => {
+			const finalPos = this._evolutionWorldPos(baseEntity, above);
+			evolutionEntity.mesh.position.copyFrom(finalPos);
+			evolutionEntity.mesh.setParent(baseEntity.mesh);
+			if (sourceRenderer) void sourceRenderer.repositionAll(true);
+		}));
+
+		this._animationPipeline.enqueueBatch(batch);
+	};
+
 	private _onCardsSwapped = (data: CardsSwappedData): void => {
 		if (!this._boardReady) return;
 
@@ -290,6 +338,7 @@ export default class AnimationManager implements IScript {
 
 		this._destroyInProgress.add(data.instanceId);
 		this._detachAssociations(data.instanceId);
+		this._detachEvolution(data.instanceId);
 
 		const entity = this._cardManager.getByInstanceId(data.instanceId);
 		if (!entity) return;
@@ -412,6 +461,7 @@ export default class AnimationManager implements IScript {
 		this._swapInProgress.clear();
 		this._destroyInProgress.clear();
 		this._associations.clear();
+		this._evolutions.clear();
 		this._initZoneRenderers();
 	}
 
@@ -490,6 +540,32 @@ export default class AnimationManager implements IScript {
 		pos.z += below.z * distance;
 		pos.y -= ASSOCIATION_DROP;
 		return pos;
+	}
+
+	private _evolutionWorldPos(base: CardEntity, above: Vector3): Vector3 {
+		const pos = base.mesh.getAbsolutePosition().clone();
+		pos.x += above.x * EVOLUTION_BULGE;
+		pos.z += above.z * EVOLUTION_BULGE;
+		pos.y += EVOLUTION_LIFT;
+		return pos;
+	}
+
+	private _detachEvolution(instanceId: string): void {
+		const evolutionId = this._evolutions.get(instanceId);
+		if (evolutionId) {
+			const evoEntity = this._cardManager.getByInstanceId(evolutionId);
+			evoEntity?.mesh.setParent(null);
+			this._evolutions.delete(instanceId);
+			return;
+		}
+		for (const [baseId, evoId] of this._evolutions) {
+			if (evoId === instanceId) {
+				const evoEntity = this._cardManager.getByInstanceId(instanceId);
+				evoEntity?.mesh.setParent(null);
+				this._evolutions.delete(baseId);
+				break;
+			}
+		}
 	}
 
 	// ====================================================================
