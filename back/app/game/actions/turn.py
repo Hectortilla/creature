@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from app.models.game.enums import Zone, TurnPhase
+from app.models.game.enums import Zone, TurnPhase, CardStatus
 from app.models.game.events import (
     GameEvent,
     CardDrawnEvent,
@@ -119,7 +119,16 @@ def _should_skip_phase(state: "GameState", phase: TurnPhase, player_id: str) -> 
     if phase == TurnPhase.SWAP:
         return len(player.zones[Zone.SUPPORTING.name].card_ids) == 0 or len(player.zones[Zone.ATTACKING.name].card_ids) == 0
     if phase == TurnPhase.ASSOCIATION:
-        return state.is_first_turn(player_id)
+        if state.is_first_turn(player_id):
+            return True
+        sources = player.zones[Zone.HAND.name].card_ids + player.zones[Zone.SUPPORTING.name].card_ids
+        has_source = any(
+            (c := state.get_card(cid)) and c.association_ids and c.status != CardStatus.ASSOCIATED
+            for cid in sources
+        )
+        if not has_source:
+            return True
+        return not player.get_active_cards()
     if phase == TurnPhase.EVOLUTION:
         if state.is_first_turn(player_id) or state.is_second_turn(player_id):
             return True
@@ -130,7 +139,10 @@ def _should_skip_phase(state: "GameState", phase: TurnPhase, player_id: str) -> 
     if phase == TurnPhase.ATTACK:
         if state.is_first_turn(player_id):
             return True
-        return len(player.zones[Zone.ATTACKING.name].card_ids) == 0
+        return not any(
+            (c := state.get_card(cid)) and c.can_attack
+            for cid in player.zones[Zone.ATTACKING.name].card_ids
+        )
     return False
 
 
