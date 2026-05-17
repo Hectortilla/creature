@@ -9,7 +9,7 @@ import { CardEntityManager } from '../entities/CardEntityManager';
 import { PhaseIndicator } from './PhaseIndicator';
 import { TurnBanner } from './TurnBanner';
 import { ElementPoolDisplay } from './ElementPoolDisplay';
-import { CardDetailPanel } from './CardDetailPanel';
+import { HoveredCardBridge } from './HoveredCardBridge';
 import { HealthBarManager } from './HealthBar';
 import { ActionButtonPanel } from './ActionButtonPanel';
 import { AttackPickerPanel } from './AttackPickerPanel';
@@ -17,6 +17,7 @@ import { ForceDefendPanel } from './ForceDefendPanel';
 import { ToastPanel } from './ToastPanel';
 import InteractionManager from '../interaction/InteractionManager';
 import { getScriptByClassForObject } from 'babylonjs-editor-tools';
+import type { HoveredCardSetter } from '$lib/stores/hoveredCard';
 
 export default class HudController implements IScript {
 	private _scene: Scene;
@@ -25,7 +26,8 @@ export default class HudController implements IScript {
 	private _phaseIndicator!: PhaseIndicator;
 	private _turnBanner!: TurnBanner;
 	private _elementPoolDisplay!: ElementPoolDisplay;
-	private _cardDetailPanel!: CardDetailPanel;
+	private _hoveredCardBridge: HoveredCardBridge | null = null;
+	private _pendingHoveredCardSetter: HoveredCardSetter | null = null;
 	private _healthBars!: HealthBarManager;
 	private _actionButtons!: ActionButtonPanel;
 	private _attackPicker!: AttackPickerPanel;
@@ -54,7 +56,11 @@ export default class HudController implements IScript {
 		// Reuse the InteractionManager's ActionBuilder — single source of truth
 		if (interactionManager) {
 			this._actionButtons = new ActionButtonPanel(this._guiTexture, board, interactionManager.actionBuilder);
-			this._cardDetailPanel = new CardDetailPanel(this._guiTexture, interactionManager);
+			this._hoveredCardBridge = new HoveredCardBridge(interactionManager);
+			if (this._pendingHoveredCardSetter) {
+				this._hoveredCardBridge.setSetter(this._pendingHoveredCardSetter);
+				this._pendingHoveredCardSetter = null;
+			}
 			this._attackPicker = new AttackPickerPanel(this._guiTexture);
 			interactionManager.setAttackPicker(this._attackPicker);
 		}
@@ -66,14 +72,21 @@ export default class HudController implements IScript {
 	}
 
 	public onUpdate(): void {
-		this._cardDetailPanel?.update();
+		this._hoveredCardBridge?.update();
+	}
+
+	public setHoveredCardSetter(fn: HoveredCardSetter): void {
+		if (this._hoveredCardBridge) {
+			this._hoveredCardBridge.setSetter(fn);
+		} else {
+			this._pendingHoveredCardSetter = fn;
+		}
 	}
 
 	public onStop(): void {
 		this._phaseIndicator?.dispose();
 		this._turnBanner?.dispose();
 		this._elementPoolDisplay?.dispose();
-		this._cardDetailPanel?.dispose();
 		this._healthBars?.dispose();
 		this._actionButtons?.dispose();
 		this._attackPicker?.dispose();

@@ -5,7 +5,11 @@
 	import type { Scene } from '@babylonjs/core/scene';
 	import { getScriptByClassForObject } from 'babylonjs-editor-tools';
 	import GameConnection from '../../babylon-editor/src/scripts/game/GameConnection';
+	import HudController from '../../babylon-editor/src/scripts/hud/HudController';
 	import { DevToolPanel } from '../../babylon-editor/src/scripts/devtools/DevToolPanel';
+	import { setHoveredCard } from '$lib/stores/hoveredCard';
+	import HoveredCardOverlay from '$lib/components/babylon/HoveredCardOverlay.svelte';
+	import type { Creature, Element } from '$lib/types';
 
 	interface Props {
 		scenePath?: string;
@@ -18,6 +22,8 @@
 		deckId?: number | null;
 		roomId?: string | null;
 		createRoom?: boolean;
+		cards?: Creature[];
+		elements?: Element[];
 	}
 
 	let {
@@ -30,7 +36,9 @@
 		playerId = '',
 		deckId = null,
 		roomId = null,
-		createRoom = false
+		createRoom = false,
+		cards = [],
+		elements = []
 	}: Props = $props();
 
 	let canvas: HTMLCanvasElement;
@@ -91,6 +99,9 @@
 			scriptInstance.roomId = roomId ?? '';
 			scriptInstance.createRoom = createRoom;
 
+			const hud = getScriptByClassForObject(scene, HudController);
+			hud?.setHoveredCardSetter(setHoveredCard);
+
 			if (scene.activeCamera) {
 				scene.activeCamera.attachControl();
 			}
@@ -137,6 +148,7 @@
 		devToolPanel = null;
 		scene?.dispose();
 		engine?.dispose();
+		setHoveredCard(null);
 	});
 </script>
 
@@ -147,6 +159,7 @@
 		<div class="error">{error}</div>
 	{/if}
 	<canvas bind:this={canvas}></canvas>
+	<HoveredCardOverlay {cards} {elements} />
 </div>
 
 <style lang="scss">

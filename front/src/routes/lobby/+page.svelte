@@ -244,6 +244,8 @@
 					deckId={selectedDeckId}
 					roomId={createNewRoom ? null : selectedRoomId}
 					createRoom={createNewRoom}
+					cards={data.cards}
+					elements={data.elements}
 				/>
 			</div>
 		</div>
