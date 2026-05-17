@@ -62,6 +62,9 @@
 	}
 
 	const creature = $derived(displayed ? (cardsById.get(displayed.cardId) ?? null) : null);
+	const variants = $derived(
+		creature ? cards.filter((c) => c.handle && c.handle === creature.handle) : []
+	);
 
 	onDestroy(cancelHide);
 </script>
@@ -82,6 +85,7 @@
 			<CardStaticDetails
 				card={creature}
 				{elements}
+				{variants}
 				ingame={displayed.ingame}
 				allowLinks={false}
 			/>

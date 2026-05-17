@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { Creature, Element, Attack } from '$lib/types';
 	import type { IngameCardState } from '$lib/stores/hoveredCard';
 	import { formatHandle } from '$lib/utils/formatHandle';
 
 	// Components
+	import CreatureCard360 from '$lib/components/creature/Card360.svelte';
 	import Icon from '$lib/components/creature/Icon.svelte';
 	import Divider from '$lib/components/Divider.svelte';
 	import CardAttack from '$lib/components/cards/Attack.svelte';
@@ -20,11 +22,12 @@
 	interface Props {
 		card: Creature;
 		elements: Element[];
+		variants?: Creature[];
 		ingame?: IngameCardState;
 		allowLinks?: boolean;
 	}
 
-	let { card, elements, ingame, allowLinks = true }: Props = $props();
+	let { card, elements, variants = [], ingame, allowLinks = true }: Props = $props();
 
 	const forces = $derived(
 		card.forces && Array.isArray(card.forces)
@@ -41,6 +44,53 @@
 		if (!ingame || !attack) return false;
 		return !ingame.affordableAttackIds.has(attack.id);
 	}
+
+	// Evolution chain expansion (lifted from the page so the overlay gets it too).
+	function getAllEvolutionLines(root: Creature): Creature[][] {
+		const getPreChains = (c: Creature): Creature[][] => {
+			if (!c.is_evolution) return [[c]];
+			const prev = c.is_evolution;
+			const chains: Creature[][] = [];
+			if (Array.isArray(prev)) {
+				for (const p of prev) {
+					for (const chain of getPreChains(p as Creature)) chains.push([...chain, c]);
+				}
+			} else {
+				for (const chain of getPreChains(prev as Creature)) chains.push([...chain, c]);
+			}
+			return chains;
+		};
+		const getNextChains = (c: Creature): Creature[][] => {
+			if (!c.next_evolutions || c.next_evolutions.length === 0) return [[c]];
+			const chains: Creature[][] = [];
+			for (const n of c.next_evolutions) {
+				for (const chain of getNextChains(n as Creature)) chains.push([c, ...chain]);
+			}
+			return chains;
+		};
+		const preChains = getPreChains(root);
+		const allLines: Creature[][] = [];
+		for (const preChain of preChains) {
+			const last = preChain[preChain.length - 1];
+			for (const nextChain of getNextChains(last)) {
+				allLines.push([...preChain.slice(0, -1), ...nextChain]);
+			}
+		}
+		return allLines;
+	}
+
+	const evoLines = $derived(getAllEvolutionLines(card));
+	const otherVariants = $derived(variants.filter((v) => v.code !== card.code));
+
+	let evoContainer = $state<HTMLElement>();
+	let evoContainerPos = $state(0);
+	let variantsContainer = $state<HTMLElement>();
+	let variantsContainerPos = $state(0);
+
+	onMount(() => {
+		evoContainerPos = evoContainer?.getBoundingClientRect().top ?? 0;
+		variantsContainerPos = variantsContainer?.getBoundingClientRect().top ?? 0;
+	});
 </script>
 
 <div class="pre-info">
@@ -176,6 +226,57 @@
 
 {#if ingame}
 	<IngameDetails state={ingame} />
+{/if}
+
+{#if evoLines.length > 0 && evoLines[0].length > 1}
+	<Divider
+		title={evoLines.length > 1 ? 'Líneas evolutivas' : 'Línea evolutiva'}
+		hasMargins={false}
+	/>
+	<div class="evo-line-container" bind:this={evoContainer}>
+		{#each evoLines as line, lineI}
+			<div class="evo-line-wrapper">
+				{#each line as item, i}
+					<div class="card-item" class:selected={item.code === card.code}>
+						<CreatureCard360
+							data={item}
+							key={lineI * 10 + i}
+							showCode={item.code !== card.code}
+							showInfo={false}
+							showEvolutionCode={false}
+							allowLink={allowLinks && item.code !== card.code}
+							allowHoverEffect={item.code !== card.code}
+							containerPos={evoContainerPos}
+						/>
+						<svg xmlns="http://www.w3.org/2000/svg" width="334" height="378" viewBox="0 0 334 378" fill="none">
+							<path d="M323.111 171.679C336.445 179.377 336.445 198.622 323.111 206.32L30.6919 375.149C17.3586 382.847 0.691878 373.224 0.691879 357.828L0.691894 20.1715C0.691894 4.77545 17.3586 -4.84709 30.6919 2.85091L323.111 171.679Z" fill="currentColor" />
+						</svg>
+					</div>
+				{/each}
+			</div>
+		{/each}
+	</div>
+{/if}
+
+{#if otherVariants.length > 0}
+	<Divider
+		title={otherVariants.length > 1 ? 'Variantes' : 'Variante'}
+		hasMargins={false}
+	/>
+	<div class="gallery-cards" bind:this={variantsContainer}>
+		{#each otherVariants as variant, i}
+			<CreatureCard360
+				data={variant}
+				key={i}
+				showCode={true}
+				showInfo={true}
+				showEvolutionCode={true}
+				allowLink={allowLinks}
+				allowHoverEffect={true}
+				containerPos={variantsContainerPos}
+			/>
+		{/each}
+	</div>
 {/if}
 
 <style lang="scss">
@@ -314,5 +415,51 @@
 				filter: grayscale(0.5);
 			}
 		}
+	}
+
+	.evo-line-container {
+		width: 100%;
+		@include mixins.displayFlex(column, 60, flex-start, flex-start, nowrap);
+
+		.evo-line-wrapper {
+			@include mixins.displayFlex(row, 60, flex-start, center, nowrap);
+
+			.card-item {
+				perspective: 1000px;
+				position: relative;
+				flex: 1;
+				max-width: functions.rem(160);
+
+				&.selected {
+					flex: 0.8;
+					max-width: functions.rem(120);
+				}
+
+				svg {
+					position: absolute;
+					top: 50%;
+					right: 0;
+					transform: translateY(-50%) translateX(150%);
+					width: functions.rem(30);
+					height: functions.rem(30);
+					color: var(--color-divider-bar);
+					z-index: -1;
+					pointer-events: none;
+					fill-opacity: 0.6;
+				}
+
+				&:last-child svg {
+					display: none;
+				}
+			}
+		}
+	}
+
+	.gallery-cards {
+		width: 100%;
+		perspective: 1000px;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: functions.rem(20);
 	}
 </style>
