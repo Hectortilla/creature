@@ -15,7 +15,7 @@ export const NAV_LINKS:NavLink[] = [
     { href: '/cards-and-sets', label: 'Cards & Sets'},
     { href: '#', label: 'Rewards' },
     { href: '#', label: 'How to play' },
-    { href: '/lobby', label: 'Jugar' },
+    { href: '/game', label: 'Jugar' },
     {
         label: 'Dev',
         subMenu: [
