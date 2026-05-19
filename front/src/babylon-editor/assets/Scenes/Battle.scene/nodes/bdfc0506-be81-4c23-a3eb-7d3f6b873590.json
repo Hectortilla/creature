@@ -1,0 +1,50 @@
+{
+    "tags": null,
+    "position": [
+        400.005608732147,
+        0,
+        -394.8017711671894
+    ],
+    "rotation": [
+        0,
+        0,
+        0
+    ],
+    "scaling": [
+        1,
+        1,
+        1
+    ],
+    "billboardMode": 0,
+    "scalingDeterminant": 1,
+    "infiniteDistance": false,
+    "ignoreNonUniformScaling": false,
+    "reIntegrateRotationIntoRotationQuaternion": false,
+    "name": "My_Deck_Anchor",
+    "id": "bdfc0506-be81-4c23-a3eb-7d3f6b873590",
+    "state": "",
+    "metadata": {},
+    "type": "TransformNode",
+    "uniqueId": 1772972480637,
+    "localMatrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+    ],
+    "isEnabled": true,
+    "animations": [],
+    "ranges": []
+}

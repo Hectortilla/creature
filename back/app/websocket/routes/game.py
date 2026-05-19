@@ -58,7 +58,7 @@ async def game_websocket_handler(
         room_id = room_manager.get_player_room(player.player_id)
         if room_id:
             await room_manager.leave_room(player.player_id, room_id)
-        await connection_manager.disconnect(player.player_id)
+        await connection_manager.disconnect(player.player_id, websocket)
 
         if websocket.client_state == WebSocketState.CONNECTED:
             await websocket.close()

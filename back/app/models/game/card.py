@@ -7,15 +7,19 @@ Represents a card instance during gameplay with runtime state.
 from __future__ import annotations
 
 import uuid
-from typing import Optional, Any
+from typing import TYPE_CHECKING, Optional, Any
 
-from pydantic import field_serializer, computed_field, model_validator
+from pydantic import computed_field, model_validator
 
 from app.models.core.card import CardIdentityFields, CardCombatFields
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone, CardStatus
 from app.models.game.element import ElementContribution
 from app.models.game.attack import AttackDefinition
+
+if TYPE_CHECKING:
+    from app.models.schemas.attack import AttackReadWithElement
+    from app.models.schemas.card import CardReadWithRelations
 
 
 class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
@@ -53,7 +57,6 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     association_ids: list[int] = []
     
     # Evolution
-    is_evolution: bool = False
     evolves_from_id: Optional[int] = None
     
     # Runtime state
@@ -63,14 +66,6 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     associations: list[str] = []  # instance_ids
     has_attacked_this_turn: bool = False
     swapped_this_turn: bool = False
-    
-    @field_serializer('zone')
-    def serialize_zone(self, value: Zone) -> str:
-        return value.name
-    
-    @field_serializer('status')
-    def serialize_status(self, value: CardStatus) -> str:
-        return value.name
     
     # Computed fields - included in model_dump() automatically
     @computed_field
@@ -82,7 +77,13 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     @computed_field
     @property
     def can_attack(self) -> bool:
-        """Check if the card can attack."""
+        """Check if the card can attack.
+
+        Note: Swapped cards CAN attack if they can afford it with other cards'
+        elements. This matches the rule: "The attacking card may still attack."
+        Element affordability naturally limits this since swapped cards don't
+        contribute elements on the turn they're swapped.
+        """
         return (
             self.zone == Zone.ATTACKING
             and not self.has_attacked_this_turn
@@ -156,10 +157,29 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
         self.turns_in_zone += 1
 
 
+class AttackInput(GameBaseModel):
+    """
+    Input format for a single attack when creating a game.
+
+    Mirrors the dict shape produced by enrichment/serialization; `type` stays
+    a string at this boundary and is mapped to DamageType when the attack is
+    materialized into an AttackDefinition in _create_game_card.
+    """
+    id: int
+    name: str
+    damage: int = 0
+    type: str = "physical"
+    element_id: int = 0
+    necessary_force: list[ElementContribution] = []
+    effect: Optional[str] = None
+    description: Optional[str] = None
+    dice_rolls: Optional[int] = None
+
+
 class GameCardInput(GameBaseModel):
     """
     Input format for card data when creating a game.
-    
+
     This is the format expected by the game engine's create_game method.
     Represents card data as it comes from the deck before being instantiated.
     """
@@ -169,15 +189,14 @@ class GameCardInput(GameBaseModel):
     physical_defence: int = 0
     magic_defence: int = 0
     element_ids: list[int] = []
-    element_contribution: list[dict[str, int]] = []
-    attacks: list[dict[str, Any]] = []
+    element_contribution: list[ElementContribution] = []
+    attacks: list[AttackInput] = []
     skill_ids: list[int] = []
     association_ids: list[int] = []
-    is_evolution: bool = False
     evolves_from_id: Optional[int] = None
     
     @classmethod
-    def _normalize_necessary_force(cls, necessary_force: list[dict] | None) -> list[dict]:
+    def _normalize_necessary_force(cls, necessary_force: list[dict[str, Any]] | None) -> list[dict]:
         """
         Normalize necessary_force structure: convert from {value, elementData} to {element_id, amount}.
         
@@ -205,22 +224,22 @@ class GameCardInput(GameBaseModel):
         return normalized
     
     @classmethod
-    def _build_attack_dict(cls, attack: Any) -> dict[str, Any]:
-        """Build attack dictionary from attack object."""
-        return {
-            "id": attack.id,
-            "name": attack.name,
-            "damage": attack.damage or 0,
-            "type": attack.type or "physical",
-            "element_id": attack.element_id or 0,
-            "necessary_force": cls._normalize_necessary_force(attack.necessary_force),
-            "effect": attack.effect,
-            "description": attack.description,
-            "dice_rolls": attack.dice_rolls,
-        }
+    def _build_attack_input(cls, attack: AttackReadWithElement) -> AttackInput:
+        """Build AttackInput from an enriched attack object."""
+        return AttackInput(
+            id=attack.id,
+            name=attack.name,
+            damage=attack.damage or 0,
+            type=attack.type or "physical",
+            element_id=attack.element_id or 0,
+            necessary_force=cls._normalize_necessary_force(attack.necessary_force),
+            effect=attack.effect,
+            description=attack.description,
+            dice_rolls=attack.dice_rolls,
+        )
     
     @classmethod
-    def from_card_read(cls, card: Any) -> "GameCardInput":
+    def from_card_read(cls, card: CardReadWithRelations) -> "GameCardInput":
         """
         Create GameCardInput from CardReadWithRelations.
         
@@ -247,9 +266,9 @@ class GameCardInput(GameBaseModel):
         # Build attacks list
         attacks = []
         if card.first_attack:
-            attacks.append(cls._build_attack_dict(card.first_attack))
+            attacks.append(cls._build_attack_input(card.first_attack))
         if card.second_attack:
-            attacks.append(cls._build_attack_dict(card.second_attack))
+            attacks.append(cls._build_attack_input(card.second_attack))
         
         # Build skill_ids and association_ids
         skill_ids = []
@@ -271,10 +290,9 @@ class GameCardInput(GameBaseModel):
             attacks=attacks,
             skill_ids=skill_ids,
             association_ids=association_ids,
-            is_evolution=card.is_evolution_id is not None,
             evolves_from_id=card.is_evolution_id,
         )
 
 
-__all__ = ["GameCard", "GameCardInput"]
+__all__ = ["GameCard", "GameCardInput", "AttackInput"]
 

@@ -17,7 +17,6 @@ from app.models.game.enums import (
     DamageType,
     GameStatus,
     CardStatus,
-    EffectTiming,
 )
 
 # Base

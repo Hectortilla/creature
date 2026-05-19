@@ -1,0 +1,50 @@
+{
+    "tags": null,
+    "position": [
+        0,
+        153.98135653808896,
+        -490.68971350161485
+    ],
+    "rotation": [
+        -1.0471975511965976,
+        0,
+        0
+    ],
+    "scaling": [
+        1.0000000000000908,
+        1.0000000000000024,
+        1.0000000000000544
+    ],
+    "billboardMode": 0,
+    "scalingDeterminant": 1,
+    "infiniteDistance": false,
+    "ignoreNonUniformScaling": false,
+    "reIntegrateRotationIntoRotationQuaternion": false,
+    "name": "My_Hand_Anchor",
+    "id": "a5d6b324-d78c-40d1-9fd3-19efefed5639",
+    "state": "",
+    "metadata": {},
+    "type": "TransformNode",
+    "uniqueId": 1772985650107,
+    "localMatrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+    ],
+    "isEnabled": true,
+    "animations": [],
+    "ranges": []
+}

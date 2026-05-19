@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from app.models.game.enums import Zone, EffectTiming
+from app.models.game.enums import Zone
 from app.models.game.events import (
     GameEvent,
     CardDrawnEvent,
@@ -236,7 +236,7 @@ class OnPlayEffect(Effect):
             return False
         # Check if the triggering event is for this card
         if isinstance(context.trigger_event, CardPlayedEvent):
-            return context.trigger_event.card_id == context.source_card.instance_id
+            return context.trigger_event.instance_id == context.source_card.instance_id
         return False
     
     def execute(self, context: EffectContext) -> EffectResult:
@@ -272,7 +272,7 @@ class OnDestroyEffect(Effect):
     
     def should_trigger(self, context: EffectContext) -> bool:
         if isinstance(context.trigger_event, CardDestroyedEvent):
-            return context.trigger_event.card_id == context.source_card.instance_id
+            return context.trigger_event.instance_id == context.source_card.instance_id
         return False
     
     def execute(self, context: EffectContext) -> EffectResult:
@@ -402,55 +402,83 @@ class OnTurnStartEffect(Effect):
         return EffectResult(state_modifications=modifications)
 
 
+# ── Effect registry ─────────────────────────────────────────────────────
+# Plain dict: effect_id (str) → Effect instance.
+# Looked up by skill_id from card data. Register instances at module level.
+
+_EFFECT_INSTANCES: dict[str, Effect] = {}
+
+
+def register_effect(effect: Effect) -> None:
+    """Register a pre-configured effect instance."""
+    _EFFECT_INSTANCES[effect.effect_id] = effect
+
+
+def get_effect(effect_id: str) -> Optional[Effect]:
+    """Get a registered effect instance by ID."""
+    return _EFFECT_INSTANCES.get(effect_id)
+
+
 # ============================================================================
-# Effect Registry
+# Passive Effect Query Helpers
 # ============================================================================
 
-class EffectRegistry:
+def get_passive_stat_modifiers(state: "GameState", target_card: "GameCard") -> dict:
     """
-    Registry for all available effects.
-    
-    Effects are registered by ID and can be looked up to create instances.
+    Collect passive stat modifiers affecting a target card.
+
+    Iterates all active cards across both players, checks their skills for
+    StatModifierEffect instances, and sums bonuses for the target card.
+
+    Returns:
+        Dict with keys: attack_bonus, defense_bonus, health_bonus
     """
-    
-    _effects: dict[str, type[Effect]] = {}
-    _instances: dict[str, Effect] = {}
-    
-    @classmethod
-    def register(cls, effect_class: type[Effect], effect_id: str) -> None:
-        """Register an effect class."""
-        cls._effects[effect_id] = effect_class
-    
-    @classmethod
-    def get_effect_class(cls, effect_id: str) -> Optional[type[Effect]]:
-        """Get an effect class by ID."""
-        return cls._effects.get(effect_id)
-    
-    @classmethod
-    def create_effect(cls, effect_id: str, **kwargs) -> Optional[Effect]:
-        """Create an effect instance by ID."""
-        effect_class = cls._effects.get(effect_id)
-        if effect_class:
-            return effect_class(effect_id=effect_id, **kwargs)
-        return None
-    
-    @classmethod
-    def register_instance(cls, effect: Effect) -> None:
-        """Register a pre-configured effect instance."""
-        cls._instances[effect.effect_id] = effect
-    
-    @classmethod
-    def get_effect(cls, effect_id: str) -> Optional[Effect]:
-        """Get a registered effect instance."""
-        return cls._instances.get(effect_id)
+    modifiers = {"attack_bonus": 0, "defense_bonus": 0, "health_bonus": 0}
+
+    for player in state.room.players.values():
+        for card_id in player.get_active_cards():
+            card = state.cards.get(card_id)
+            if not card:
+                continue
+            for skill_id in card.skill_ids:
+                effect = get_effect(str(skill_id))
+                if not effect or not isinstance(effect, StatModifierEffect):
+                    continue
+                context = EffectContext(state=state, source_card=card)
+                affected = effect.get_affected_cards(context)
+                if target_card in affected:
+                    modifiers["attack_bonus"] += effect.attack_bonus
+                    modifiers["defense_bonus"] += effect.defense_bonus
+                    modifiers["health_bonus"] += effect.health_bonus
+
+    return modifiers
 
 
-# Register built-in effects
-EffectRegistry.register(StatModifierEffect, "stat_modifier")
-EffectRegistry.register(ElementBonusEffect, "element_bonus")
-EffectRegistry.register(OnPlayEffect, "on_play")
-EffectRegistry.register(OnDestroyEffect, "on_destroy")
-EffectRegistry.register(OnAttackEffect, "on_attack")
-EffectRegistry.register(OnDefendEffect, "on_defend")
-EffectRegistry.register(OnTurnStartEffect, "on_turn_start")
+def get_passive_element_bonus(state: "GameState", player_id: str) -> dict[int, int]:
+    """
+    Collect passive element bonuses for a player.
+
+    Iterates that player's active cards, checks their skills for
+    ElementBonusEffect instances, and sums the bonus contributions.
+
+    Returns:
+        Dict of element_id -> bonus_amount
+    """
+    bonuses: dict[int, int] = {}
+    player = state.room.players[player_id]
+
+    for card_id in player.get_active_cards():
+        card = state.cards.get(card_id)
+        if not card:
+            continue
+        for skill_id in card.skill_ids:
+            effect = get_effect(str(skill_id))
+            if not effect or not isinstance(effect, ElementBonusEffect):
+                continue
+            context = EffectContext(state=state, source_card=card)
+            if effect.should_trigger(context):
+                current = bonuses.get(effect.element_id, 0)
+                bonuses[effect.element_id] = current + effect.bonus_amount
+
+    return bonuses
 

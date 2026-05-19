@@ -15,7 +15,8 @@ export const NAV_LINKS:NavLink[] = [
     { href: '/cards-and-sets', label: 'Cards & Sets'},
     { href: '#', label: 'Rewards' },
     { href: '#', label: 'How to play' },
-    { 
+    { href: '/lobby', label: 'Jugar' },
+    {
         label: 'Dev',
         subMenu: [
             { href: '/old/cards/create', label: 'Crear Carta' },
@@ -28,7 +29,6 @@ export const NAV_LINKS:NavLink[] = [
             { href: '/old/abilities', label: 'Habilidades' },
             { href: '/old/associations', label: 'Asociaciones' },
             { href: '/old/decks', label: 'Mazos' },
-            { href: '/debug', label: 'Debug' },
         ]
     },
 ] as const;

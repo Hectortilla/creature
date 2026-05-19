@@ -4,11 +4,15 @@ Server → Client WebSocket Message Schemas
 These schemas define messages sent from server to client.
 """
 
-from typing import Any, ClassVar, Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Annotated, ClassVar, Literal, Optional
+from pydantic import BaseModel, Field, SkipValidation
 
 # Import WebSocketMessage - defined in __init__.py
 from app.models.schemas.websocket import WebSocketMessage
+from app.models.game.state import GameState, GameStateForPlayer
+from app.models.game.events import GameEventUnion
+from app.models.schemas.websocket.game_schemas import ValidActionSchema
+from app.websocket.models import GameRoom
 
 
 # ============================================================================
@@ -24,59 +28,59 @@ class ConnectedData(BaseModel):
 
 class GameCreatedData(BaseModel):
     """Data for game_created message."""
-    room: dict[str, Any]  # GameRoom serialized
+    room: Annotated[GameRoom, SkipValidation]
 
 
 class GameJoinedData(BaseModel):
     """Data for game_joined message."""
-    room: dict[str, Any]  # GameRoom serialized
+    room: Annotated[GameRoom, SkipValidation]
 
 
 class PlayerJoinedData(BaseModel):
     """Data for player_joined message."""
     player_id: str
     name: str
-    room: dict[str, Any]  # GameRoom serialized
+    room: Annotated[GameRoom, SkipValidation]
 
 
 class PlayerLeftData(BaseModel):
     """Data for player_left message."""
     player_id: str
-    room: dict[str, Any]  # GameRoom serialized
+    room: Annotated[GameRoom, SkipValidation]
 
 
 class GameStartedData(BaseModel):
     """Data for game_started message."""
     success: bool
-    game_state: dict[str, Any]  # GameState serialized
-    events: list[dict[str, Any]]  # List of serialized events
-    valid_actions: list[dict[str, Any]] = Field(default_factory=list)  # Valid actions for the active player
+    game_state: GameStateForPlayer
+    events: list[GameEventUnion]
+    valid_actions: list[ValidActionSchema] = Field(default_factory=list)
 
 
 class GameStateData(BaseModel):
     """Data for game_state message."""
-    state: Optional[dict[str, Any]] = None  # GameState serialized or None
+    state: Optional[GameState] = None
 
 
 class ActionResultData(BaseModel):
     """Data for action_result message."""
     success: bool
     error: Optional[str] = None
-    events: list[dict[str, Any]]  # List of serialized events
+    events: list[GameEventUnion]
     game_over: bool
     winner_id: Optional[str] = None
-    game_state: Optional[dict[str, Any]] = None  # GameState serialized or None
-    valid_actions: list[dict[str, Any]] = Field(default_factory=list)  # Valid actions for the acting player
+    game_state: Optional[GameStateForPlayer] = None
+    valid_actions: list[ValidActionSchema] = Field(default_factory=list)
 
 
 class ValidActionsData(BaseModel):
     """Data for valid_actions message."""
-    actions: list[dict[str, Any]]  # List of valid action dictionaries
+    actions: list[ValidActionSchema]
 
 
 class RoomsListData(BaseModel):
     """Data for rooms_list message."""
-    rooms: list[dict[str, Any]]  # List of GameRoom serialized
+    rooms: Annotated[list[GameRoom], SkipValidation]
 
 
 class GameLeftData(BaseModel):

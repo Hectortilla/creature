@@ -1,0 +1,204 @@
+{
+    "meshes": [
+        {
+            "name": "Ground",
+            "id": "ca152a4e-568f-40d9-82ad-949368a5eb0c",
+            "uniqueId": 1772380568646,
+            "type": "GroundMesh",
+            "position": [
+                0,
+                0,
+                345.204260506453
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scaling": [
+                1,
+                1,
+                2
+            ],
+            "localMatrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "isEnabled": true,
+            "isVisible": true,
+            "infiniteDistance": false,
+            "pickable": true,
+            "receiveShadows": true,
+            "billboardMode": 0,
+            "visibility": 1,
+            "alwaysSelectAsActiveMesh": false,
+            "checkCollisions": false,
+            "ellipsoid": [
+                0.5,
+                1,
+                0.5
+            ],
+            "ellipsoidOffset": [
+                0,
+                0,
+                0
+            ],
+            "doNotSyncBoundingInfo": false,
+            "isBlocker": false,
+            "sideOrientation": 1,
+            "isUnIndexed": false,
+            "geometryUniqueId": 1772380568647,
+            "geometryId": "a4503513-a4de-4de4-a3c4-cc2c5db99785",
+            "subMeshes": null,
+            "materialId": "default material",
+            "metadata": {
+                "type": "Ground",
+                "width": 1024,
+                "height": 1024,
+                "subdivisions": 32,
+                "heightMapTexturePath": null,
+                "minHeight": 0,
+                "maxHeight": 150,
+                "smoothFactor": 0,
+                "alphaFilter": 0,
+                "colorFilter": [
+                    1,
+                    1,
+                    1
+                ]
+            },
+            "instances": [],
+            "animations": [],
+            "ranges": [],
+            "layerMask": 268435455,
+            "alphaIndex": 1.7976931348623157e+308,
+            "hasVertexAlpha": false,
+            "overlayAlpha": 1,
+            "overlayColor": [
+                0,
+                0,
+                0
+            ],
+            "renderOverlay": false,
+            "applyFog": true,
+            "subdivisionsX": 32,
+            "subdivisionsY": 32,
+            "minX": -512,
+            "maxX": 512,
+            "minZ": -512,
+            "maxZ": 512,
+            "width": 1024,
+            "height": 1024,
+            "delayLoadingFile": "assets/Scenes/Battle.scene/geometries/a4503513-a4de-4de4-a3c4-cc2c5db99785.babylonbinarymeshdata",
+            "boundingBoxMaximum": [
+                512,
+                0,
+                512
+            ],
+            "boundingBoxMinimum": [
+                -512,
+                0,
+                -512
+            ],
+            "_binaryInfo": {
+                "positionsAttrDesc": {
+                    "count": 3267,
+                    "stride": 3,
+                    "offset": 0,
+                    "dataType": 1
+                },
+                "normalsAttrDesc": {
+                    "count": 3267,
+                    "stride": 3,
+                    "offset": 13068,
+                    "dataType": 1
+                },
+                "uvsAttrDesc": {
+                    "count": 2178,
+                    "stride": 2,
+                    "offset": 26136,
+                    "dataType": 1
+                },
+                "indicesAttrDesc": {
+                    "count": 6144,
+                    "stride": 1,
+                    "offset": 34848,
+                    "dataType": 0
+                },
+                "subMeshesAttrDesc": {
+                    "count": 1,
+                    "stride": 5,
+                    "offset": 59424,
+                    "dataType": 0
+                }
+            },
+            "positions": null,
+            "normals": null,
+            "uvs": null,
+            "hasUVs": true,
+            "indices": null
+        }
+    ],
+    "transformNodes": [],
+    "cameras": [],
+    "lights": [],
+    "materials": [],
+    "geometries": {
+        "boxes": [],
+        "spheres": [],
+        "cylinders": [],
+        "toruses": [],
+        "grounds": [],
+        "planes": [],
+        "torusKnots": [],
+        "vertexData": []
+    },
+    "metadata": {
+        "type": "Ground",
+        "width": 1024,
+        "height": 1024,
+        "subdivisions": 32,
+        "heightMapTexturePath": null,
+        "minHeight": 0,
+        "maxHeight": 150,
+        "smoothFactor": 0,
+        "alphaFilter": 0,
+        "colorFilter": [
+            1,
+            1,
+            1
+        ]
+    },
+    "basePoseMatrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+    ]
+}

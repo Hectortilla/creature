@@ -76,17 +76,17 @@ export type ActionData = {
    */
   action_type: string;
   /**
-   * Card Id
+   * Instance Id
    *
-   * Card instance ID (used by: play_card, promote, force_defend)
+   * Card instance ID (used by: promote, force_defend)
    */
-  card_id?: string | null;
+  instance_id?: string | null;
   /**
-   * Card Ids
+   * Instance Ids
    *
-   * List of card instance IDs (used by: multi_play_card)
+   * List of card instance IDs (used by: play_card)
    */
-  card_ids?: Array<string>;
+  instance_ids?: Array<string>;
   /**
    * Count
    *
@@ -110,7 +110,7 @@ export type ActionData = {
    *
    * Attack ID to use (used by: attack)
    */
-  attack_id?: string | null;
+  attack_id?: number | null;
   /**
    * Supporting Card Id
    *
@@ -171,9 +171,65 @@ export type ActionResultData = {
   /**
    * Events
    */
-  events: Array<{
-    [key: string]: unknown;
-  }>;
+  events: Array<
+    | ({
+        event_type: "CardDrawnEvent";
+      } & CardDrawnEvent)
+    | ({
+        event_type: "CardPlayedEvent";
+      } & CardPlayedEvent)
+    | ({
+        event_type: "CardPromotedEvent";
+      } & CardPromotedEvent)
+    | ({
+        event_type: "CardSwappedEvent";
+      } & CardSwappedEvent)
+    | ({
+        event_type: "CardAssociatedEvent";
+      } & CardAssociatedEvent)
+    | ({
+        event_type: "CardEvolvedEvent";
+      } & CardEvolvedEvent)
+    | ({
+        event_type: "AttackDeclaredEvent";
+      } & AttackDeclaredEvent)
+    | ({
+        event_type: "DamageDealtEvent";
+      } & DamageDealtEvent)
+    | ({
+        event_type: "CardDestroyedEvent";
+      } & CardDestroyedEvent)
+    | ({
+        event_type: "ElementsConsumedEvent";
+      } & ElementsConsumedEvent)
+    | ({
+        event_type: "ElementsRestoredEvent";
+      } & ElementsRestoredEvent)
+    | ({
+        event_type: "TurnStartedEvent";
+      } & TurnStartedEvent)
+    | ({
+        event_type: "TurnEndedEvent";
+      } & TurnEndedEvent)
+    | ({
+        event_type: "PhaseChangedEvent";
+      } & PhaseChangedEvent)
+    | ({
+        event_type: "GameStartedEvent";
+      } & GameStartedEvent)
+    | ({
+        event_type: "GameEndedEvent";
+      } & GameEndedEvent)
+    | ({
+        event_type: "NoDefenderEvent";
+      } & NoDefenderEvent)
+    | ({
+        event_type: "EffectTriggeredEvent";
+      } & EffectTriggeredEvent)
+    | ({
+        event_type: "EffectAppliedEvent";
+      } & EffectAppliedEvent)
+  >;
   /**
    * Game Over
    */
@@ -186,14 +242,64 @@ export type ActionResultData = {
    * Game State
    */
   game_state?: {
-    [key: string]: unknown;
+    /**
+     * Game Id
+     */
+    game_id: string;
+    /**
+     * Active Player Id
+     */
+    active_player_id?: string | null;
+    /**
+     * Turn Number
+     */
+    turn_number?: number;
+    current_phase?: TurnPhase;
+    status?: GameStatus;
+    /**
+     * Winner Id
+     */
+    winner_id?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Pending Action
+     */
+    pending_action?: string | null;
+    /**
+     * Pending Defender Id
+     */
+    pending_defender_id?: string | null;
+    /**
+     * Pending Attack
+     */
+    pending_attack?: {
+      [key: string]: unknown;
+    } | null;
+    config?: GameConfiguration | null;
+    /**
+     * Total Cards
+     */
+    total_cards?: number;
+    /**
+     * Players
+     */
+    players?: {
+      [key: string]: PlayerState;
+    };
+    /**
+     * Cards
+     */
+    cards?: {
+      [key: string]: GameCard;
+    };
   } | null;
   /**
    * Valid Actions
    */
-  valid_actions?: Array<{
-    [key: string]: unknown;
-  }>;
+  valid_actions?: Array<ValidActionSchema>;
 };
 
 /**
@@ -298,6 +404,92 @@ export type AttackCreate = {
 };
 
 /**
+ * AttackDeclaredEvent
+ *
+ * Event fired when an attack is declared.
+ */
+export type AttackDeclaredEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "AttackDeclaredEvent";
+  /**
+   * Attacker Owner Id
+   */
+  attacker_owner_id?: string;
+  /**
+   * Attacker Id
+   */
+  attacker_id?: string;
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  /**
+   * Attack Id
+   */
+  attack_id?: number;
+  /**
+   * Attack Name
+   */
+  attack_name?: string;
+};
+
+/**
+ * AttackDefinition
+ *
+ * Represents an attack that a creature can perform.
+ *
+ * Inherits shared fields from AttackCoreFields:
+ * - name, description, damage, effect, dice_rolls
+ *
+ * Adds game-specific fields: attack_id, type (enum), element_id, necessary_force (typed)
+ */
+export type AttackDefinition = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Damage
+   */
+  damage: number;
+  /**
+   * Effect
+   */
+  effect?: string | null;
+  /**
+   * Dice Rolls
+   */
+  dice_rolls?: number | null;
+  /**
+   * Attack Id
+   */
+  attack_id: number;
+  type: DamageType;
+  /**
+   * Element Id
+   */
+  element_id: number;
+  /**
+   * Necessary Force
+   */
+  necessary_force?: Array<ElementContribution>;
+};
+
+/**
  * AttackReadWithElement
  */
 export type AttackReadWithElement = {
@@ -393,6 +585,43 @@ export type BodyLoginForAccessTokenAuthTokenPost = {
 };
 
 /**
+ * CardAssociatedEvent
+ *
+ * Event fired when a card is associated with another card.
+ */
+export type CardAssociatedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardAssociatedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Association Card Id
+   */
+  association_card_id?: string;
+  /**
+   * Card Id
+   */
+  card_id?: number;
+  /**
+   * Target Card Id
+   */
+  target_card_id?: string;
+  source_zone?: Zone | null;
+};
+
+/**
  * CardCreate
  */
 export type CardCreate = {
@@ -470,6 +699,194 @@ export type CardCreate = {
   forces?: {
     [key: string]: unknown;
   } | null;
+};
+
+/**
+ * CardDestroyedEvent
+ *
+ * Event fired when a card is destroyed (health <= 0).
+ */
+export type CardDestroyedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardDestroyedEvent";
+  /**
+   * Instance Id
+   */
+  instance_id?: string;
+  /**
+   * Owner Id
+   */
+  owner_id?: string;
+  /**
+   * Card Name
+   */
+  card_name?: string;
+  /**
+   * Destroyed By
+   */
+  destroyed_by?: string | null;
+};
+
+/**
+ * CardDrawnEvent
+ *
+ * Event fired when a card is drawn from deck to hand.
+ */
+export type CardDrawnEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardDrawnEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Instance Id
+   */
+  instance_id?: string;
+  /**
+   * Card Id
+   */
+  card_id?: number;
+  /**
+   * Cards Remaining
+   */
+  cards_remaining?: number;
+};
+
+/**
+ * CardEvolvedEvent
+ *
+ * Event fired when a card evolves.
+ */
+export type CardEvolvedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardEvolvedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Base Card Id
+   */
+  base_card_id?: string;
+  /**
+   * Evolution Card Id
+   */
+  evolution_card_id?: string;
+  /**
+   * Card Id
+   */
+  card_id?: number;
+  /**
+   * Base Card Name
+   */
+  base_card_name?: string;
+  /**
+   * Evolution Card Name
+   */
+  evolution_card_name?: string;
+};
+
+/**
+ * CardPlayedEvent
+ *
+ * Event fired when a card is played from hand to supporting zone.
+ */
+export type CardPlayedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardPlayedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Instance Id
+   */
+  instance_id?: string;
+  /**
+   * Card Id
+   */
+  card_id?: number;
+  /**
+   * Card Name
+   */
+  card_name?: string;
+};
+
+/**
+ * CardPromotedEvent
+ *
+ * Event fired when a card is promoted from supporting to attacking zone.
+ */
+export type CardPromotedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardPromotedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Instance Id
+   */
+  instance_id?: string;
+  /**
+   * Card Id
+   */
+  card_id?: number;
+  /**
+   * Card Name
+   */
+  card_name?: string;
 };
 
 /**
@@ -678,6 +1095,49 @@ export type CardReadWithRelations = {
 };
 
 /**
+ * CardStatus
+ *
+ * Status flags for cards in active zones.
+ *
+ * - READY: Card is ready and contributing normally
+ * - SWAPPED: Card was swapped this turn, no element contribution
+ * - ASSOCIATED: Card is being used as an association
+ */
+export type CardStatus = "READY" | "SWAPPED" | "ASSOCIATED";
+
+/**
+ * CardSwappedEvent
+ *
+ * Event fired when two cards are swapped between zones.
+ */
+export type CardSwappedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardSwappedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Supporting Card Id
+   */
+  supporting_card_id?: string;
+  /**
+   * Attacking Card Id
+   */
+  attacking_card_id?: string;
+};
+
+/**
  * CharacterCreate
  */
 export type CharacterCreate = {
@@ -739,6 +1199,65 @@ export type ConnectedMessage = {
 };
 
 /**
+ * DamageDealtEvent
+ *
+ * Event fired when damage is dealt to a card.
+ */
+export type DamageDealtEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "DamageDealtEvent";
+  /**
+   * Source Id
+   */
+  source_id?: string;
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  damage_type?: DamageType | null;
+  /**
+   * Base Damage
+   */
+  base_damage?: number;
+  /**
+   * Element Bonus
+   */
+  element_bonus?: number;
+  /**
+   * Defense Reduction
+   */
+  defense_reduction?: number;
+  /**
+   * Final Damage
+   */
+  final_damage?: number;
+  /**
+   * Remaining Health
+   */
+  remaining_health?: number;
+};
+
+/**
+ * DamageType
+ *
+ * Types of damage in the game.
+ *
+ * - PHYSICAL: Reduced by physical defense
+ * - MAGICAL: Reduced by magical defense
+ */
+export type DamageType = "PHYSICAL" | "MAGICAL";
+
+/**
  * DeckCreate
  *
  * Schema for creating a deck.
@@ -791,7 +1310,7 @@ export type DeckReadSummary = {
   /**
    * Is Valid For Playing
    */
-  is_valid_for_playing?: boolean;
+  readonly is_valid_for_playing: boolean;
 };
 
 /**
@@ -831,7 +1350,7 @@ export type DeckReadWithCards = {
   /**
    * Is Valid For Playing
    */
-  is_valid_for_playing?: boolean;
+  readonly is_valid_for_playing: boolean;
 };
 
 /**
@@ -848,6 +1367,91 @@ export type DeckUpdate = {
    * Description
    */
   description?: string | null;
+};
+
+/**
+ * EffectAppliedEvent
+ *
+ * Event fired when an effect's result is applied.
+ */
+export type EffectAppliedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "EffectAppliedEvent";
+  /**
+   * Effect Id
+   */
+  effect_id?: string;
+  /**
+   * Affected Card Ids
+   */
+  affected_card_ids?: Array<string>;
+  /**
+   * Description
+   */
+  description?: string;
+};
+
+/**
+ * EffectTriggeredEvent
+ *
+ * Event fired when an effect is triggered.
+ */
+export type EffectTriggeredEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "EffectTriggeredEvent";
+  /**
+   * Source Card Id
+   */
+  source_card_id?: string;
+  /**
+   * Effect Id
+   */
+  effect_id?: string;
+  /**
+   * Effect Name
+   */
+  effect_name?: string;
+  /**
+   * Trigger Reason
+   */
+  trigger_reason?: string;
+};
+
+/**
+ * ElementContribution
+ *
+ * Represents element contribution from a card.
+ * Used for element costs, contributions, and any element+amount pair.
+ */
+export type ElementContribution = {
+  /**
+   * Element Id
+   */
+  element_id: number;
+  /**
+   * Amount
+   */
+  amount: number;
 };
 
 /**
@@ -874,6 +1478,26 @@ export type ElementCreate = {
    * Weaknesses
    */
   weaknesses?: Array<number> | null;
+};
+
+/**
+ * ElementPool
+ *
+ * Tracks available elements for a player.
+ */
+export type ElementPool = {
+  /**
+   * Elements
+   */
+  elements?: {
+    [key: string]: number;
+  };
+  /**
+   * Max Elements
+   */
+  max_elements?: {
+    [key: string]: number;
+  };
 };
 
 /**
@@ -907,6 +1531,70 @@ export type ElementRead = {
 };
 
 /**
+ * ElementsConsumedEvent
+ *
+ * Event fired when elements are consumed for an attack.
+ */
+export type ElementsConsumedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "ElementsConsumedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Elements
+   */
+  elements?: {
+    [key: string]: number;
+  };
+  /**
+   * For Attack Id
+   */
+  for_attack_id?: number;
+};
+
+/**
+ * ElementsRestoredEvent
+ *
+ * Event fired when elements are restored at turn start.
+ */
+export type ElementsRestoredEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "ElementsRestoredEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Elements
+   */
+  elements?: {
+    [key: string]: number;
+  };
+};
+
+/**
  * ErrorData
  *
  * Data for error message.
@@ -928,6 +1616,158 @@ export type ErrorMessage = {
 };
 
 /**
+ * GameCard
+ *
+ * Represents a card instance in the game.
+ *
+ * This is distinct from the database Card model - this represents
+ * a specific instance of a card during gameplay with runtime state.
+ *
+ * Inherits shared fields from:
+ * - CardIdentityFields: name, description
+ * - CardCombatFields: health, physical_defence, magic_defence
+ *
+ * Adds game-specific fields for runtime state.
+ */
+export type GameCard = {
+  /**
+   * Health
+   */
+  health: number;
+  /**
+   * Physical Defence
+   */
+  physical_defence: number;
+  /**
+   * Magic Defence
+   */
+  magic_defence: number;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Instance Id
+   */
+  instance_id: string;
+  /**
+   * Card Id
+   */
+  card_id: number;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Current Health
+   */
+  current_health: number;
+  /**
+   * Element Ids
+   */
+  element_ids?: Array<number>;
+  /**
+   * Element Contribution
+   */
+  element_contribution?: Array<ElementContribution>;
+  /**
+   * Attacks
+   */
+  attacks?: Array<AttackDefinition>;
+  /**
+   * Skill Ids
+   */
+  skill_ids?: Array<number>;
+  /**
+   * Association Ids
+   */
+  association_ids?: Array<number>;
+  /**
+   * Evolves From Id
+   */
+  evolves_from_id?: number | null;
+  zone?: Zone;
+  status?: CardStatus;
+  /**
+   * Turns In Zone
+   */
+  turns_in_zone?: number;
+  /**
+   * Associations
+   */
+  associations?: Array<string>;
+  /**
+   * Has Attacked This Turn
+   */
+  has_attacked_this_turn?: boolean;
+  /**
+   * Swapped This Turn
+   */
+  swapped_this_turn?: boolean;
+  /**
+   * Is Alive
+   *
+   * Check if the card is still alive.
+   */
+  readonly is_alive: boolean;
+  /**
+   * Can Attack
+   *
+   * Check if the card can attack.
+   *
+   * Note: Swapped cards CAN attack if they can afford it with other cards'
+   * elements. This matches the rule: "The attacking card may still attack."
+   * Element affordability naturally limits this since swapped cards don't
+   * contribute elements on the turn they're swapped.
+   */
+  readonly can_attack: boolean;
+  /**
+   * Can Promote
+   *
+   * Check if the card can be promoted to attacking zone.
+   */
+  readonly can_promote: boolean;
+  /**
+   * Can Evolve
+   *
+   * Check if the card can be evolved.
+   */
+  readonly can_evolve: boolean;
+};
+
+/**
+ * GameConfiguration
+ *
+ * Configuration options for a game.
+ */
+export type GameConfiguration = {
+  /**
+   * Deck Size
+   */
+  deck_size?: number;
+  /**
+   * Initial Draw
+   */
+  initial_draw?: number;
+  /**
+   * Normal Draw
+   */
+  normal_draw?: number;
+  /**
+   * Supporting Zone Size
+   */
+  supporting_zone_size?: number;
+  /**
+   * Attacking Zone Size
+   */
+  attacking_zone_size?: number;
+};
+
+/**
  * GameCreatedData
  *
  * Data for game_created message.
@@ -936,9 +1776,7 @@ export type GameCreatedData = {
   /**
    * Room
    */
-  room: {
-    [key: string]: unknown;
-  };
+  room: GameRoom;
 };
 
 /**
@@ -951,6 +1789,38 @@ export type GameCreatedMessage = {
 };
 
 /**
+ * GameEndedEvent
+ *
+ * Event fired when the game ends.
+ */
+export type GameEndedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "GameEndedEvent";
+  /**
+   * Winner Id
+   */
+  winner_id?: string;
+  /**
+   * Loser Id
+   */
+  loser_id?: string;
+  /**
+   * Reason
+   */
+  reason?: string;
+};
+
+/**
  * GameJoinedData
  *
  * Data for game_joined message.
@@ -959,9 +1829,7 @@ export type GameJoinedData = {
   /**
    * Room
    */
-  room: {
-    [key: string]: unknown;
-  };
+  room: GameRoom;
 };
 
 /**
@@ -992,6 +1860,46 @@ export type GameLeftMessage = {
 };
 
 /**
+ * GameRoom
+ *
+ * Represents a game room/lobby.
+ *
+ * Uses Pydantic for automatic serialization via model_dump().
+ */
+export type GameRoom = {
+  /**
+   * Room Id
+   */
+  room_id: string;
+  /**
+   * Host Id
+   */
+  host_id: string;
+  /**
+   * Players
+   */
+  players?: {
+    [key: string]: PlayerState;
+  };
+  /**
+   * Created At
+   */
+  created_at?: string;
+  /**
+   * Is Full
+   */
+  readonly is_full: boolean;
+  /**
+   * Is Started
+   */
+  readonly is_started: boolean;
+  /**
+   * Can Join
+   */
+  readonly can_join: boolean;
+};
+
+/**
  * GameStartedData
  *
  * Data for game_started message.
@@ -1002,23 +1910,162 @@ export type GameStartedData = {
    */
   success: boolean;
   /**
-   * Game State
+   * GameStateForPlayer
+   *
+   * Read schema representing the game state payload sent to a player.
+   *
+   * This matches the output of GameState.serialize_for_player() and includes
+   * the cards and players maps that are excluded from the base GameState schema.
    */
   game_state: {
-    [key: string]: unknown;
+    /**
+     * Game Id
+     */
+    game_id: string;
+    /**
+     * Active Player Id
+     */
+    active_player_id?: string | null;
+    /**
+     * Turn Number
+     */
+    turn_number?: number;
+    current_phase?: TurnPhase;
+    status?: GameStatus;
+    /**
+     * Winner Id
+     */
+    winner_id?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Pending Action
+     */
+    pending_action?: string | null;
+    /**
+     * Pending Defender Id
+     */
+    pending_defender_id?: string | null;
+    /**
+     * Pending Attack
+     */
+    pending_attack?: {
+      [key: string]: unknown;
+    } | null;
+    config?: GameConfiguration | null;
+    /**
+     * Total Cards
+     */
+    total_cards?: number;
+    /**
+     * Players
+     */
+    players?: {
+      [key: string]: PlayerState;
+    };
+    /**
+     * Cards
+     */
+    cards?: {
+      [key: string]: GameCard;
+    };
   };
   /**
    * Events
    */
-  events: Array<{
-    [key: string]: unknown;
-  }>;
+  events: Array<
+    | ({
+        event_type: "CardDrawnEvent";
+      } & CardDrawnEvent)
+    | ({
+        event_type: "CardPlayedEvent";
+      } & CardPlayedEvent)
+    | ({
+        event_type: "CardPromotedEvent";
+      } & CardPromotedEvent)
+    | ({
+        event_type: "CardSwappedEvent";
+      } & CardSwappedEvent)
+    | ({
+        event_type: "CardAssociatedEvent";
+      } & CardAssociatedEvent)
+    | ({
+        event_type: "CardEvolvedEvent";
+      } & CardEvolvedEvent)
+    | ({
+        event_type: "AttackDeclaredEvent";
+      } & AttackDeclaredEvent)
+    | ({
+        event_type: "DamageDealtEvent";
+      } & DamageDealtEvent)
+    | ({
+        event_type: "CardDestroyedEvent";
+      } & CardDestroyedEvent)
+    | ({
+        event_type: "ElementsConsumedEvent";
+      } & ElementsConsumedEvent)
+    | ({
+        event_type: "ElementsRestoredEvent";
+      } & ElementsRestoredEvent)
+    | ({
+        event_type: "TurnStartedEvent";
+      } & TurnStartedEvent)
+    | ({
+        event_type: "TurnEndedEvent";
+      } & TurnEndedEvent)
+    | ({
+        event_type: "PhaseChangedEvent";
+      } & PhaseChangedEvent)
+    | ({
+        event_type: "GameStartedEvent";
+      } & GameStartedEvent)
+    | ({
+        event_type: "GameEndedEvent";
+      } & GameEndedEvent)
+    | ({
+        event_type: "NoDefenderEvent";
+      } & NoDefenderEvent)
+    | ({
+        event_type: "EffectTriggeredEvent";
+      } & EffectTriggeredEvent)
+    | ({
+        event_type: "EffectAppliedEvent";
+      } & EffectAppliedEvent)
+  >;
   /**
    * Valid Actions
    */
-  valid_actions?: Array<{
-    [key: string]: unknown;
-  }>;
+  valid_actions?: Array<ValidActionSchema>;
+};
+
+/**
+ * GameStartedEvent
+ *
+ * Event fired when a game starts.
+ */
+export type GameStartedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "GameStartedEvent";
+  /**
+   * Player Ids
+   */
+  player_ids?: Array<string>;
+  /**
+   * First Player Id
+   */
+  first_player_id?: string;
 };
 
 /**
@@ -1031,17 +2078,125 @@ export type GameStartedMessage = {
 };
 
 /**
+ * GameState
+ *
+ * Complete state of a game.
+ */
+export type GameState = {
+  /**
+   * Game Id
+   */
+  game_id: string;
+  /**
+   * Active Player Id
+   */
+  active_player_id?: string | null;
+  /**
+   * Turn Number
+   */
+  turn_number?: number;
+  current_phase?: TurnPhase;
+  status?: GameStatus;
+  /**
+   * Winner Id
+   */
+  winner_id?: string | null;
+  /**
+   * Created At
+   */
+  created_at?: string;
+  /**
+   * Pending Action
+   */
+  pending_action?: string | null;
+  /**
+   * Pending Defender Id
+   */
+  pending_defender_id?: string | null;
+  /**
+   * Pending Attack
+   */
+  pending_attack?: {
+    [key: string]: unknown;
+  } | null;
+  config?: GameConfiguration;
+  /**
+   * Total Cards
+   */
+  readonly total_cards: number;
+};
+
+/**
  * GameStateData
  *
  * Data for game_state message.
  */
 export type GameStateData = {
+  state?: GameState | null;
+};
+
+/**
+ * GameStateForPlayer
+ *
+ * Read schema representing the game state payload sent to a player.
+ *
+ * This matches the output of GameState.serialize_for_player() and includes
+ * the cards and players maps that are excluded from the base GameState schema.
+ */
+export type GameStateForPlayer = {
   /**
-   * State
+   * Game Id
    */
-  state?: {
+  game_id: string;
+  /**
+   * Active Player Id
+   */
+  active_player_id?: string | null;
+  /**
+   * Turn Number
+   */
+  turn_number?: number;
+  current_phase?: TurnPhase;
+  status?: GameStatus;
+  /**
+   * Winner Id
+   */
+  winner_id?: string | null;
+  /**
+   * Created At
+   */
+  created_at?: string | null;
+  /**
+   * Pending Action
+   */
+  pending_action?: string | null;
+  /**
+   * Pending Defender Id
+   */
+  pending_defender_id?: string | null;
+  /**
+   * Pending Attack
+   */
+  pending_attack?: {
     [key: string]: unknown;
   } | null;
+  config?: GameConfiguration | null;
+  /**
+   * Total Cards
+   */
+  total_cards?: number;
+  /**
+   * Players
+   */
+  players?: {
+    [key: string]: PlayerState;
+  };
+  /**
+   * Cards
+   */
+  cards?: {
+    [key: string]: GameCard;
+  };
 };
 
 /**
@@ -1052,6 +2207,24 @@ export type GameStateData = {
 export type GameStateMessage = {
   data?: GameStateData;
 };
+
+/**
+ * GameStatus
+ *
+ * Overall game status.
+ *
+ * - WAITING: Game created, waiting for players
+ * - STARTING: Game is initializing
+ * - IN_PROGRESS: Game is actively being played
+ * - PAUSED: Game is paused (e.g., waiting for forced defend)
+ * - FINISHED: Game has ended
+ */
+export type GameStatus =
+  | "WAITING"
+  | "STARTING"
+  | "IN_PROGRESS"
+  | "PAUSED"
+  | "FINISHED";
 
 /**
  * GetStateData
@@ -1157,6 +2330,81 @@ export type ListRoomsMessage = {
 };
 
 /**
+ * NoDefenderEvent
+ *
+ * Event fired when a player has no defending creatures and is attacked.
+ * Triggers the forced defend mechanic.
+ */
+export type NoDefenderEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "NoDefenderEvent";
+  /**
+   * Defender Id
+   */
+  defender_id?: string;
+  /**
+   * Attacker Id
+   */
+  attacker_id?: string;
+  /**
+   * Must Defend
+   */
+  must_defend?: boolean;
+  /**
+   * Game Lost
+   */
+  game_lost?: boolean;
+  /**
+   * Pending Attacker Card Id
+   */
+  pending_attacker_card_id?: string;
+  /**
+   * Pending Attack Id
+   */
+  pending_attack_id?: number;
+  /**
+   * Pending Attacker Owner Id
+   */
+  pending_attacker_owner_id?: string;
+};
+
+/**
+ * PhaseChangedEvent
+ *
+ * Event fired when the turn phase changes.
+ */
+export type PhaseChangedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "PhaseChangedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  from_phase?: TurnPhase | null;
+  to_phase?: TurnPhase | null;
+};
+
+/**
  * PingData
  *
  * Data for ping message.
@@ -1191,9 +2439,7 @@ export type PlayerJoinedData = {
   /**
    * Room
    */
-  room: {
-    [key: string]: unknown;
-  };
+  room: GameRoom;
 };
 
 /**
@@ -1218,9 +2464,7 @@ export type PlayerLeftData = {
   /**
    * Room
    */
-  room: {
-    [key: string]: unknown;
-  };
+  room: GameRoom;
 };
 
 /**
@@ -1230,6 +2474,37 @@ export type PlayerLeftData = {
  */
 export type PlayerLeftMessage = {
   data: PlayerLeftData;
+};
+
+/**
+ * PlayerState
+ *
+ * Represents a player's state in the game.
+ */
+export type PlayerState = {
+  /**
+   * Player Id
+   */
+  player_id: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Turn Count
+   */
+  turn_count?: number;
+  element_pool?: ElementPool;
+  /**
+   * Zones
+   */
+  zones?: {
+    [key: string]: ZoneState;
+  };
+  /**
+   * Has Passed Phase
+   */
+  has_passed_phase?: boolean;
 };
 
 /**
@@ -1259,9 +2534,7 @@ export type RoomsListData = {
   /**
    * Rooms
    */
-  rooms: Array<{
-    [key: string]: unknown;
-  }>;
+  rooms: Array<GameRoom>;
 };
 
 /**
@@ -1287,6 +2560,89 @@ export type Token = {
    * Token Type
    */
   token_type: string;
+};
+
+/**
+ * TurnEndedEvent
+ *
+ * Event fired at the end of a player's turn.
+ */
+export type TurnEndedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "TurnEndedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Turn Number
+   */
+  turn_number?: number;
+};
+
+/**
+ * TurnPhase
+ *
+ * Turn phases in order of execution.
+ *
+ * Each player's turn follows this sequence:
+ * 1. DRAW - Draw cards from deck
+ * 2. PLACEMENT - Place cards from hand to supporting zone
+ * 3. PROMOTION - Move cards from supporting to attacking zone
+ * 4. SWAP - Swap supporting and attacking cards
+ * 5. ASSOCIATION - Apply association cards
+ * 6. EVOLUTION - Evolve eligible creatures
+ * 7. ATTACK - Perform attacks with attacking creatures
+ */
+export type TurnPhase =
+  | "DRAW"
+  | "PLACEMENT"
+  | "PROMOTION"
+  | "SWAP"
+  | "ASSOCIATION"
+  | "EVOLUTION"
+  | "ATTACK";
+
+/**
+ * TurnStartedEvent
+ *
+ * Event fired at the start of a player's turn.
+ */
+export type TurnStartedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "TurnStartedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Turn Number
+   */
+  turn_number?: number;
+  /**
+   * Is First Turn
+   */
+  is_first_turn?: boolean;
 };
 
 /**
@@ -1378,6 +2734,142 @@ export type UserRead = {
 };
 
 /**
+ * ValidActionSchema
+ *
+ * Action.to_dict() output = ActionData fields + server enrichments.
+ */
+export type ValidActionSchema = {
+  /**
+   * Action Type
+   *
+   * The type of action to perform
+   */
+  action_type: string;
+  /**
+   * Instance Id
+   *
+   * Card instance ID (used by: promote, force_defend)
+   */
+  instance_id?: string | null;
+  /**
+   * Instance Ids
+   *
+   * List of card instance IDs (used by: play_card)
+   */
+  instance_ids?: Array<string>;
+  /**
+   * Count
+   *
+   * Number of cards to draw (used by: draw)
+   */
+  count?: number;
+  /**
+   * Target Card Id
+   *
+   * Target card instance ID (used by: associate, evolve, attack)
+   */
+  target_card_id?: string | null;
+  /**
+   * Attacker Id
+   *
+   * Attacker card instance ID (used by: attack)
+   */
+  attacker_id?: string | null;
+  /**
+   * Attack Id
+   *
+   * Attack ID to use (used by: attack)
+   */
+  attack_id?: number | null;
+  /**
+   * Supporting Card Id
+   *
+   * Supporting card instance ID (used by: swap)
+   */
+  supporting_card_id?: string | null;
+  /**
+   * Attacking Card Id
+   *
+   * Attacking card instance ID (used by: swap)
+   */
+  attacking_card_id?: string | null;
+  /**
+   * Swaps
+   *
+   * List of swap pairs (used by: multi_swap). Each swap is {supporting_card_id: str, attacking_card_id: str}
+   */
+  swaps?: Array<{
+    [key: string]: unknown;
+  }>;
+  /**
+   * Association Card Id
+   *
+   * Association card instance ID (used by: associate)
+   */
+  association_card_id?: string | null;
+  /**
+   * Evolution Card Id
+   *
+   * Evolution card instance ID (used by: evolve)
+   */
+  evolution_card_id?: string | null;
+  /**
+   * Player Id
+   */
+  player_id: string;
+  /**
+   * Action
+   */
+  action: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Card Name
+   */
+  card_name?: string | null;
+  /**
+   * Attack Name
+   */
+  attack_name?: string | null;
+  /**
+   * Target Name
+   */
+  target_name?: string | null;
+  /**
+   * Attacker Name
+   */
+  attacker_name?: string | null;
+  /**
+   * Supporting Card Name
+   */
+  supporting_card_name?: string | null;
+  /**
+   * Attacking Card Name
+   */
+  attacking_card_name?: string | null;
+  /**
+   * Association Card Name
+   */
+  association_card_name?: string | null;
+  /**
+   * Target Card Name
+   */
+  target_card_name?: string | null;
+  /**
+   * Evolution Card Name
+   */
+  evolution_card_name?: string | null;
+  /**
+   * Cards
+   */
+  cards?: Array<{
+    [key: string]: unknown;
+  }> | null;
+};
+
+/**
  * ValidActionsData
  *
  * Data for valid_actions message.
@@ -1386,9 +2878,7 @@ export type ValidActionsData = {
   /**
    * Actions
    */
-  actions: Array<{
-    [key: string]: unknown;
-  }>;
+  actions: Array<ValidActionSchema>;
 };
 
 /**
@@ -1416,6 +2906,907 @@ export type ValidationError = {
    * Error Type
    */
   type: string;
+};
+
+/**
+ * Zone
+ *
+ * Zones in the game. Each player has their own instance of each zone.
+ *
+ * - DECK: Contains 22 cards at game start, cards are drawn from here
+ * - HAND: Cards held by player, can be played from here
+ * - SUPPORTING: Max 3 cards, cannot attack but contribute elements/skills
+ * - ATTACKING: Max 2 cards, can attack and contribute elements/skills
+ * - GRAVEYARD: Destroyed cards go here, no effect
+ */
+export type Zone = "DECK" | "HAND" | "SUPPORTING" | "ATTACKING" | "GRAVEYARD";
+
+/**
+ * ZoneState
+ *
+ * Represents the state of a single zone for a player.
+ */
+export type ZoneState = {
+  zone: Zone;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Card Ids
+   */
+  card_ids?: Array<string>;
+  /**
+   * Max Capacity
+   */
+  max_capacity?: number | null;
+  /**
+   * Is Full
+   *
+   * Check if the zone is at capacity.
+   */
+  readonly is_full: boolean;
+};
+
+/**
+ * ActionResultData
+ *
+ * Data for action_result message.
+ */
+export type ActionResultDataWritable = {
+  /**
+   * Success
+   */
+  success: boolean;
+  /**
+   * Error
+   */
+  error?: string | null;
+  /**
+   * Events
+   */
+  events: Array<
+    | ({
+        event_type: "CardDrawnEvent";
+      } & CardDrawnEvent)
+    | ({
+        event_type: "CardPlayedEvent";
+      } & CardPlayedEvent)
+    | ({
+        event_type: "CardPromotedEvent";
+      } & CardPromotedEvent)
+    | ({
+        event_type: "CardSwappedEvent";
+      } & CardSwappedEvent)
+    | ({
+        event_type: "CardAssociatedEvent";
+      } & CardAssociatedEvent)
+    | ({
+        event_type: "CardEvolvedEvent";
+      } & CardEvolvedEvent)
+    | ({
+        event_type: "AttackDeclaredEvent";
+      } & AttackDeclaredEvent)
+    | ({
+        event_type: "DamageDealtEvent";
+      } & DamageDealtEvent)
+    | ({
+        event_type: "CardDestroyedEvent";
+      } & CardDestroyedEvent)
+    | ({
+        event_type: "ElementsConsumedEvent";
+      } & ElementsConsumedEvent)
+    | ({
+        event_type: "ElementsRestoredEvent";
+      } & ElementsRestoredEvent)
+    | ({
+        event_type: "TurnStartedEvent";
+      } & TurnStartedEvent)
+    | ({
+        event_type: "TurnEndedEvent";
+      } & TurnEndedEvent)
+    | ({
+        event_type: "PhaseChangedEvent";
+      } & PhaseChangedEvent)
+    | ({
+        event_type: "GameStartedEvent";
+      } & GameStartedEvent)
+    | ({
+        event_type: "GameEndedEvent";
+      } & GameEndedEvent)
+    | ({
+        event_type: "NoDefenderEvent";
+      } & NoDefenderEvent)
+    | ({
+        event_type: "EffectTriggeredEvent";
+      } & EffectTriggeredEvent)
+    | ({
+        event_type: "EffectAppliedEvent";
+      } & EffectAppliedEvent)
+  >;
+  /**
+   * Game Over
+   */
+  game_over: boolean;
+  /**
+   * Winner Id
+   */
+  winner_id?: string | null;
+  /**
+   * Game State
+   */
+  game_state?: {
+    /**
+     * Game Id
+     */
+    game_id: string;
+    /**
+     * Active Player Id
+     */
+    active_player_id?: string | null;
+    /**
+     * Turn Number
+     */
+    turn_number?: number;
+    current_phase?: TurnPhase;
+    status?: GameStatus;
+    /**
+     * Winner Id
+     */
+    winner_id?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Pending Action
+     */
+    pending_action?: string | null;
+    /**
+     * Pending Defender Id
+     */
+    pending_defender_id?: string | null;
+    /**
+     * Pending Attack
+     */
+    pending_attack?: {
+      [key: string]: unknown;
+    } | null;
+    config?: GameConfiguration | null;
+    /**
+     * Total Cards
+     */
+    total_cards?: number;
+    /**
+     * Players
+     */
+    players?: {
+      [key: string]: PlayerStateWritable;
+    };
+    /**
+     * Cards
+     */
+    cards?: {
+      [key: string]: GameCardWritable;
+    };
+  } | null;
+  /**
+   * Valid Actions
+   */
+  valid_actions?: Array<ValidActionSchema>;
+};
+
+/**
+ * ActionResultMessage
+ *
+ * Result of an action.
+ */
+export type ActionResultMessageWritable = {
+  data: ActionResultDataWritable;
+};
+
+/**
+ * DeckReadSummary
+ *
+ * Lightweight schema for deck listing (without full card data).
+ */
+export type DeckReadSummaryWritable = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * User Id
+   */
+  user_id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Updated At
+   */
+  updated_at: string;
+  /**
+   * Card Count
+   */
+  card_count?: number;
+};
+
+/**
+ * DeckReadWithCards
+ *
+ * Schema for reading a deck with its cards.
+ */
+export type DeckReadWithCardsWritable = {
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Id
+   */
+  id: number;
+  /**
+   * User Id
+   */
+  user_id: number;
+  /**
+   * Created At
+   */
+  created_at: string;
+  /**
+   * Updated At
+   */
+  updated_at: string;
+  /**
+   * Cards
+   */
+  cards?: Array<CardReadWithRelations>;
+};
+
+/**
+ * GameCard
+ *
+ * Represents a card instance in the game.
+ *
+ * This is distinct from the database Card model - this represents
+ * a specific instance of a card during gameplay with runtime state.
+ *
+ * Inherits shared fields from:
+ * - CardIdentityFields: name, description
+ * - CardCombatFields: health, physical_defence, magic_defence
+ *
+ * Adds game-specific fields for runtime state.
+ */
+export type GameCardWritable = {
+  /**
+   * Health
+   */
+  health: number;
+  /**
+   * Physical Defence
+   */
+  physical_defence: number;
+  /**
+   * Magic Defence
+   */
+  magic_defence: number;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Description
+   */
+  description?: string | null;
+  /**
+   * Instance Id
+   */
+  instance_id: string;
+  /**
+   * Card Id
+   */
+  card_id: number;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Current Health
+   */
+  current_health: number;
+  /**
+   * Element Ids
+   */
+  element_ids?: Array<number>;
+  /**
+   * Element Contribution
+   */
+  element_contribution?: Array<ElementContribution>;
+  /**
+   * Attacks
+   */
+  attacks?: Array<AttackDefinition>;
+  /**
+   * Skill Ids
+   */
+  skill_ids?: Array<number>;
+  /**
+   * Association Ids
+   */
+  association_ids?: Array<number>;
+  /**
+   * Evolves From Id
+   */
+  evolves_from_id?: number | null;
+  zone?: Zone;
+  status?: CardStatus;
+  /**
+   * Turns In Zone
+   */
+  turns_in_zone?: number;
+  /**
+   * Associations
+   */
+  associations?: Array<string>;
+  /**
+   * Has Attacked This Turn
+   */
+  has_attacked_this_turn?: boolean;
+  /**
+   * Swapped This Turn
+   */
+  swapped_this_turn?: boolean;
+};
+
+/**
+ * GameCreatedData
+ *
+ * Data for game_created message.
+ */
+export type GameCreatedDataWritable = {
+  /**
+   * Room
+   */
+  room: GameRoomWritable;
+};
+
+/**
+ * GameCreatedMessage
+ *
+ * Game room created successfully.
+ */
+export type GameCreatedMessageWritable = {
+  data: GameCreatedDataWritable;
+};
+
+/**
+ * GameJoinedData
+ *
+ * Data for game_joined message.
+ */
+export type GameJoinedDataWritable = {
+  /**
+   * Room
+   */
+  room: GameRoomWritable;
+};
+
+/**
+ * GameJoinedMessage
+ *
+ * Successfully joined a game.
+ */
+export type GameJoinedMessageWritable = {
+  data: GameJoinedDataWritable;
+};
+
+/**
+ * GameLeftData
+ *
+ * Data for game_left message.
+ */
+export type GameLeftDataWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * GameRoom
+ *
+ * Represents a game room/lobby.
+ *
+ * Uses Pydantic for automatic serialization via model_dump().
+ */
+export type GameRoomWritable = {
+  /**
+   * Room Id
+   */
+  room_id: string;
+  /**
+   * Host Id
+   */
+  host_id: string;
+  /**
+   * Players
+   */
+  players?: {
+    [key: string]: PlayerStateWritable;
+  };
+  /**
+   * Created At
+   */
+  created_at?: string;
+};
+
+/**
+ * GameStartedData
+ *
+ * Data for game_started message.
+ */
+export type GameStartedDataWritable = {
+  /**
+   * Success
+   */
+  success: boolean;
+  /**
+   * GameStateForPlayer
+   *
+   * Read schema representing the game state payload sent to a player.
+   *
+   * This matches the output of GameState.serialize_for_player() and includes
+   * the cards and players maps that are excluded from the base GameState schema.
+   */
+  game_state: {
+    /**
+     * Game Id
+     */
+    game_id: string;
+    /**
+     * Active Player Id
+     */
+    active_player_id?: string | null;
+    /**
+     * Turn Number
+     */
+    turn_number?: number;
+    current_phase?: TurnPhase;
+    status?: GameStatus;
+    /**
+     * Winner Id
+     */
+    winner_id?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Pending Action
+     */
+    pending_action?: string | null;
+    /**
+     * Pending Defender Id
+     */
+    pending_defender_id?: string | null;
+    /**
+     * Pending Attack
+     */
+    pending_attack?: {
+      [key: string]: unknown;
+    } | null;
+    config?: GameConfiguration | null;
+    /**
+     * Total Cards
+     */
+    total_cards?: number;
+    /**
+     * Players
+     */
+    players?: {
+      [key: string]: PlayerStateWritable;
+    };
+    /**
+     * Cards
+     */
+    cards?: {
+      [key: string]: GameCardWritable;
+    };
+  };
+  /**
+   * Events
+   */
+  events: Array<
+    | ({
+        event_type: "CardDrawnEvent";
+      } & CardDrawnEvent)
+    | ({
+        event_type: "CardPlayedEvent";
+      } & CardPlayedEvent)
+    | ({
+        event_type: "CardPromotedEvent";
+      } & CardPromotedEvent)
+    | ({
+        event_type: "CardSwappedEvent";
+      } & CardSwappedEvent)
+    | ({
+        event_type: "CardAssociatedEvent";
+      } & CardAssociatedEvent)
+    | ({
+        event_type: "CardEvolvedEvent";
+      } & CardEvolvedEvent)
+    | ({
+        event_type: "AttackDeclaredEvent";
+      } & AttackDeclaredEvent)
+    | ({
+        event_type: "DamageDealtEvent";
+      } & DamageDealtEvent)
+    | ({
+        event_type: "CardDestroyedEvent";
+      } & CardDestroyedEvent)
+    | ({
+        event_type: "ElementsConsumedEvent";
+      } & ElementsConsumedEvent)
+    | ({
+        event_type: "ElementsRestoredEvent";
+      } & ElementsRestoredEvent)
+    | ({
+        event_type: "TurnStartedEvent";
+      } & TurnStartedEvent)
+    | ({
+        event_type: "TurnEndedEvent";
+      } & TurnEndedEvent)
+    | ({
+        event_type: "PhaseChangedEvent";
+      } & PhaseChangedEvent)
+    | ({
+        event_type: "GameStartedEvent";
+      } & GameStartedEvent)
+    | ({
+        event_type: "GameEndedEvent";
+      } & GameEndedEvent)
+    | ({
+        event_type: "NoDefenderEvent";
+      } & NoDefenderEvent)
+    | ({
+        event_type: "EffectTriggeredEvent";
+      } & EffectTriggeredEvent)
+    | ({
+        event_type: "EffectAppliedEvent";
+      } & EffectAppliedEvent)
+  >;
+  /**
+   * Valid Actions
+   */
+  valid_actions?: Array<ValidActionSchema>;
+};
+
+/**
+ * GameStartedMessage
+ *
+ * Game has started.
+ */
+export type GameStartedMessageWritable = {
+  data: GameStartedDataWritable;
+};
+
+/**
+ * GameState
+ *
+ * Complete state of a game.
+ */
+export type GameStateWritable = {
+  /**
+   * Game Id
+   */
+  game_id: string;
+  /**
+   * Active Player Id
+   */
+  active_player_id?: string | null;
+  /**
+   * Turn Number
+   */
+  turn_number?: number;
+  current_phase?: TurnPhase;
+  status?: GameStatus;
+  /**
+   * Winner Id
+   */
+  winner_id?: string | null;
+  /**
+   * Created At
+   */
+  created_at?: string;
+  /**
+   * Pending Action
+   */
+  pending_action?: string | null;
+  /**
+   * Pending Defender Id
+   */
+  pending_defender_id?: string | null;
+  /**
+   * Pending Attack
+   */
+  pending_attack?: {
+    [key: string]: unknown;
+  } | null;
+  config?: GameConfiguration;
+};
+
+/**
+ * GameStateData
+ *
+ * Data for game_state message.
+ */
+export type GameStateDataWritable = {
+  state?: GameStateWritable | null;
+};
+
+/**
+ * GameStateForPlayer
+ *
+ * Read schema representing the game state payload sent to a player.
+ *
+ * This matches the output of GameState.serialize_for_player() and includes
+ * the cards and players maps that are excluded from the base GameState schema.
+ */
+export type GameStateForPlayerWritable = {
+  /**
+   * Game Id
+   */
+  game_id: string;
+  /**
+   * Active Player Id
+   */
+  active_player_id?: string | null;
+  /**
+   * Turn Number
+   */
+  turn_number?: number;
+  current_phase?: TurnPhase;
+  status?: GameStatus;
+  /**
+   * Winner Id
+   */
+  winner_id?: string | null;
+  /**
+   * Created At
+   */
+  created_at?: string | null;
+  /**
+   * Pending Action
+   */
+  pending_action?: string | null;
+  /**
+   * Pending Defender Id
+   */
+  pending_defender_id?: string | null;
+  /**
+   * Pending Attack
+   */
+  pending_attack?: {
+    [key: string]: unknown;
+  } | null;
+  config?: GameConfiguration | null;
+  /**
+   * Total Cards
+   */
+  total_cards?: number;
+  /**
+   * Players
+   */
+  players?: {
+    [key: string]: PlayerStateWritable;
+  };
+  /**
+   * Cards
+   */
+  cards?: {
+    [key: string]: GameCardWritable;
+  };
+};
+
+/**
+ * GameStateMessage
+ *
+ * Full game state update.
+ */
+export type GameStateMessageWritable = {
+  data?: GameStateDataWritable;
+};
+
+/**
+ * GetStateData
+ *
+ * Data for get_state message.
+ */
+export type GetStateDataWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * GetValidActionsData
+ *
+ * Data for get_valid_actions message.
+ */
+export type GetValidActionsDataWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * LeaveGameData
+ *
+ * Data for leave_game message.
+ */
+export type LeaveGameDataWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * ListRoomsData
+ *
+ * Data for list_rooms message.
+ */
+export type ListRoomsDataWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * PingData
+ *
+ * Data for ping message.
+ */
+export type PingDataWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * PlayerJoinedData
+ *
+ * Data for player_joined message.
+ */
+export type PlayerJoinedDataWritable = {
+  /**
+   * Player Id
+   */
+  player_id: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Room
+   */
+  room: GameRoomWritable;
+};
+
+/**
+ * PlayerJoinedMessage
+ *
+ * Another player joined.
+ */
+export type PlayerJoinedMessageWritable = {
+  data: PlayerJoinedDataWritable;
+};
+
+/**
+ * PlayerLeftData
+ *
+ * Data for player_left message.
+ */
+export type PlayerLeftDataWritable = {
+  /**
+   * Player Id
+   */
+  player_id: string;
+  /**
+   * Room
+   */
+  room: GameRoomWritable;
+};
+
+/**
+ * PlayerLeftMessage
+ *
+ * A player left.
+ */
+export type PlayerLeftMessageWritable = {
+  data: PlayerLeftDataWritable;
+};
+
+/**
+ * PlayerState
+ *
+ * Represents a player's state in the game.
+ */
+export type PlayerStateWritable = {
+  /**
+   * Player Id
+   */
+  player_id: string;
+  /**
+   * Name
+   */
+  name: string;
+  /**
+   * Turn Count
+   */
+  turn_count?: number;
+  element_pool?: ElementPool;
+  /**
+   * Zones
+   */
+  zones?: {
+    [key: string]: ZoneStateWritable;
+  };
+  /**
+   * Has Passed Phase
+   */
+  has_passed_phase?: boolean;
+};
+
+/**
+ * PongData
+ *
+ * Data for pong message.
+ */
+export type PongDataWritable = {
+  [key: string]: unknown;
+};
+
+/**
+ * RoomsListData
+ *
+ * Data for rooms_list message.
+ */
+export type RoomsListDataWritable = {
+  /**
+   * Rooms
+   */
+  rooms: Array<GameRoomWritable>;
+};
+
+/**
+ * RoomsListMessage
+ *
+ * List of available rooms.
+ */
+export type RoomsListMessageWritable = {
+  data?: RoomsListDataWritable;
+};
+
+/**
+ * ZoneState
+ *
+ * Represents the state of a single zone for a player.
+ */
+export type ZoneStateWritable = {
+  zone: Zone;
+  /**
+   * Owner Id
+   */
+  owner_id: string;
+  /**
+   * Card Ids
+   */
+  card_ids?: Array<string>;
+  /**
+   * Max Capacity
+   */
+  max_capacity?: number | null;
 };
 
 export type LoginForAccessTokenAuthTokenPostData = {
@@ -3002,6 +5393,155 @@ export type WsPongTypeGameWebsocketMessagesPongGetResponses = {
 
 export type WsPongTypeGameWebsocketMessagesPongGetResponse =
   WsPongTypeGameWebsocketMessagesPongGetResponses[keyof WsPongTypeGameWebsocketMessagesPongGetResponses];
+
+export type DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/element-contribution";
+  };
+
+export type DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: ElementContribution;
+  };
+
+export type DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponse =
+  DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses[keyof DomainElementContributionTypeGameWebsocketMessagesDomainElementContributionGetResponses];
+
+export type DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/element-pool";
+  };
+
+export type DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: ElementPool;
+  };
+
+export type DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponse =
+  DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses[keyof DomainElementPoolTypeGameWebsocketMessagesDomainElementPoolGetResponses];
+
+export type DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/attack-definition";
+  };
+
+export type DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: AttackDefinition;
+  };
+
+export type DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponse =
+  DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses[keyof DomainAttackDefinitionTypeGameWebsocketMessagesDomainAttackDefinitionGetResponses];
+
+export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/domain/zone-state";
+};
+
+export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: ZoneState;
+  };
+
+export type DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponse =
+  DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses[keyof DomainZoneStateTypeGameWebsocketMessagesDomainZoneStateGetResponses];
+
+export type DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/domain/game-card";
+};
+
+export type DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: GameCard;
+  };
+
+export type DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponse =
+  DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses[keyof DomainGameCardTypeGameWebsocketMessagesDomainGameCardGetResponses];
+
+export type DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/game/websocket-messages/domain/card-status";
+};
+
+export type DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: CardStatus;
+  };
+
+export type DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponse =
+  DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses[keyof DomainCardStatusTypeGameWebsocketMessagesDomainCardStatusGetResponses];
+
+export type DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/player-state";
+  };
+
+export type DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: PlayerState;
+  };
+
+export type DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponse =
+  DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses[keyof DomainPlayerStateTypeGameWebsocketMessagesDomainPlayerStateGetResponses];
+
+export type DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetData =
+  {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: "/game/websocket-messages/domain/game-state-for-player";
+  };
+
+export type DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetResponses =
+  {
+    /**
+     * Successful Response
+     */
+    200: GameStateForPlayer;
+  };
+
+export type DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetResponse =
+  DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetResponses[keyof DomainGameStateForPlayerTypeGameWebsocketMessagesDomainGameStateForPlayerGetResponses];
 
 export type RootGetData = {
   body?: never;

@@ -142,9 +142,8 @@
 			}
 
 			if (value) {
-				if (field.name === 'card_ids') {
-					// Parse comma-separated card IDs
-					data.card_ids = value.split(',').map((id) => id.trim()).filter(Boolean);
+				if (field.name === 'instance_ids') {
+					data.instance_ids = value.split(',').map((id: string) => id.trim()).filter(Boolean);
 				} else if (field.type === 'json' || field.name === 'swaps') {
 					// Parse JSON fields
 					try {

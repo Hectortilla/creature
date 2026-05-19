@@ -40,14 +40,14 @@ class ActionData(BaseModel):
         description="The type of action to perform",
         examples=["draw", "play_card", "promote", "swap", "associate", "evolve", "attack", "pass", "concede"]
     )
-    card_id: Optional[str] = Field(
+    instance_id: Optional[str] = Field(
         default=None,
-        description="Card instance ID (used by: play_card, promote, force_defend)",
+        description="Card instance ID (used by: promote, force_defend)",
         examples=["card_instance_123"]
     )
-    card_ids: list[str] = Field(
+    instance_ids: list[str] = Field(
         default_factory=list,
-        description="List of card instance IDs (used by: multi_play_card)",
+        description="List of card instance IDs (used by: play_card)",
         examples=[["card_instance_123", "card_instance_456"]]
     )
     count: int = Field(
@@ -65,10 +65,10 @@ class ActionData(BaseModel):
         description="Attacker card instance ID (used by: attack)",
         examples=["card_instance_123"]
     )
-    attack_id: Optional[str] = Field(
+    attack_id: Optional[int] = Field(
         default=None,
         description="Attack ID to use (used by: attack)",
-        examples=["1", "2"]
+        examples=[1, 2]
     )
     supporting_card_id: Optional[str] = Field(
         default=None,

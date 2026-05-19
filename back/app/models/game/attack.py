@@ -4,8 +4,6 @@ Attack Models
 Models for attack definitions and attack results.
 """
 
-from pydantic import field_serializer
-
 from app.models.core.attack import AttackCoreFields
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import DamageType
@@ -29,10 +27,6 @@ class AttackDefinition(AttackCoreFields, GameBaseModel):
     element_id: int
     # Use typed ElementContribution instead of dict
     necessary_force: list[ElementContribution] = []
-    
-    @field_serializer('type')
-    def serialize_type(self, value: DamageType) -> str:
-        return value.name
 
 
 class AttackResult(GameBaseModel):
@@ -51,8 +45,16 @@ class AttackResult(GameBaseModel):
     attacker_damage: int = 0
 
 
+class PendingAttack(GameBaseModel):
+    """An attack waiting on a forced defend resolution."""
+    attacker_id: str
+    attack_id: int
+    attacker_owner_id: str
+
+
 __all__ = [
     "AttackDefinition",
     "AttackResult",
+    "PendingAttack",
 ]
 

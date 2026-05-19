@@ -1,0 +1,214 @@
+{
+    "clearColor": [
+        0.2,
+        0.2,
+        0.3,
+        1
+    ],
+    "ambientColor": [
+        0,
+        0,
+        0
+    ],
+    "environment": {
+        "iblIntensity": 1,
+        "environmentIntensity": 1
+    },
+    "fog": {
+        "fogEnabled": false,
+        "fogMode": 0,
+        "fogStart": 10,
+        "fogEnd": 1000,
+        "fogDensity": 0.001,
+        "fogColor": [
+            0.640006735140596,
+            0.640006735140596,
+            0.640006735140596
+        ]
+    },
+    "physics": {
+        "gravity": [
+            0,
+            -981,
+            0
+        ]
+    },
+    "rendering": [
+        {
+            "cameraId": "3cc9ef80-8c60-43e0-bcc4-1b55ff36010d",
+            "ssao2RenderingPipeline": null,
+            "vlsPostProcess": null,
+            "ssrRenderingPipeline": null,
+            "motionBlurPostProcess": null,
+            "defaultRenderingPipeline": null,
+            "taaRenderingPipeline": null,
+            "iblShadowsRenderPipeline": null
+        },
+        {
+            "cameraId": "c0ddfe2d-f5b3-4103-9090-d6043b1bead2"
+        }
+    ],
+    "metadata": {
+        "rendering": [
+            {
+                "cameraId": "c0ddfe2d-f5b3-4103-9090-d6043b1bead2"
+            }
+        ],
+        "physicsGravity": [
+            0,
+            -981,
+            0
+        ],
+        "scripts": [
+            {
+                "enabled": true,
+                "key": "scripts/game/GameConnection.ts",
+                "_id": "a9c638f0-1886-4088-ae77-262f9566ebd1",
+                "values": {
+                    "wsUrl": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "token": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "playerId": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "deckId": {
+                        "type": "number",
+                        "value": 0
+                    },
+                    "roomId": {
+                        "type": "string",
+                        "value": ""
+                    },
+                    "createRoom": {
+                        "type": "boolean",
+                        "value": false
+                    }
+                }
+            },
+            {
+                "enabled": true,
+                "key": "scripts/BoardController.ts",
+                "_id": "9d86de5e-6862-428e-9afa-e20d8baa590c"
+            },
+            {
+                "enabled": true,
+                "key": "scripts/animation/AnimationManager.ts",
+                "_id": "b1f4a5c3-7e2d-4890-a1d6-3c8f9e0b2d4a"
+            },
+            {
+                "enabled": true,
+                "key": "scripts/interaction/InteractionManager.ts",
+                "_id": "902e5f14-a4c1-451a-b531-76a65d5e7997"
+            },
+            {
+                "enabled": true,
+                "key": "scripts/hud/HudController.ts",
+                "_id": "f131c371-7edd-415e-b4c9-faad2dc4f8f3"
+            }
+        ]
+    },
+    "editorCamera": {
+        "tags": null,
+        "ellipsoid": [
+            0.5,
+            1,
+            0.5
+        ],
+        "ellipsoidOffset": [
+            0,
+            0,
+            0
+        ],
+        "checkCollisions": false,
+        "applyGravity": false,
+        "updateUpVectorFromRotation": false,
+        "rotation": [
+            0.45618822973049517,
+            -0.26003784970074745,
+            0
+        ],
+        "speed": 20,
+        "position": [
+            368.9328268787679,
+            931.772596624178,
+            -1115.7831259735058
+        ],
+        "upVector": [
+            0,
+            1,
+            0
+        ],
+        "fov": 0.8,
+        "projectionPlaneTilt": 0,
+        "minZ": 1,
+        "maxZ": 1500000,
+        "inertia": 0.5,
+        "mode": 0,
+        "layerMask": 268435455,
+        "fovMode": 0,
+        "cameraRigMode": 0,
+        "ignoreCameraMaxZ": false,
+        "name": "Editor preview",
+        "id": "3cc9ef80-8c60-43e0-bcc4-1b55ff36010d",
+        "state": "",
+        "type": "EditorCamera",
+        "inputsmgr": {
+            "FreeCameraKeyboardMoveInput": {
+                "tags": null,
+                "keysUp": [
+                    87
+                ],
+                "keysUpward": [
+                    69
+                ],
+                "keysDown": [
+                    83
+                ],
+                "keysDownward": [
+                    81
+                ],
+                "keysLeft": [
+                    65
+                ],
+                "keysRight": [
+                    68
+                ],
+                "rotationSpeed": 0.5,
+                "keysRotateLeft": [],
+                "keysRotateRight": [],
+                "keysRotateUp": [],
+                "keysRotateDown": []
+            },
+            "FreeCameraMouseInput": {
+                "tags": null,
+                "buttons": [
+                    0,
+                    1,
+                    2
+                ],
+                "angularSensibility": 500
+            },
+            "FreeCameraMouseWheelInput": {
+                "tags": null,
+                "wheelXMoveRelative": 0,
+                "wheelYMoveRelative": 2,
+                "wheelPrecisionX": 3,
+                "wheelPrecisionY": 3,
+                "wheelPrecisionZ": 3
+            },
+            "EditorFreeCameraPanInput": {
+                "tags": null
+            }
+        },
+        "animations": [],
+        "ranges": [],
+        "isEnabled": true
+    },
+    "animations": []
+}

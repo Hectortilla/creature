@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from pydantic import field_serializer, computed_field
+from pydantic import computed_field
 
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import Zone
@@ -22,10 +22,6 @@ class ZoneState(GameBaseModel):
     owner_id: str
     card_ids: list[str] = []
     max_capacity: Optional[int] = None
-    
-    @field_serializer('zone')
-    def serialize_zone(self, value: Zone) -> str:
-        return value.name
     
     @computed_field
     @property
@@ -63,10 +59,5 @@ class ZoneState(GameBaseModel):
             return True
         return False
     
-    def has_card(self, card_id: str) -> bool:
-        """Check if a card is in this zone."""
-        return card_id in self.card_ids
-
-
 __all__ = ["ZoneState"]
 
