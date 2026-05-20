@@ -17,4 +17,7 @@ class AttackBase(AttackCoreFields, SQLModel):
     name: str = Field(max_length=255)
     type: str | None = Field(default=None, max_length=50)
     necessary_force: list[dict] | None = None
+    
+    def __str__(self) -> str:
+        return self.name
 

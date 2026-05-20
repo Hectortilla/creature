@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import type { PageProps } from "./$types";
     import { parallax } from '$lib/actions/parallax';
+    import { authStore } from '$lib/stores/auth.svelte';
 
     // Images
     import logoFill from "$lib/assets/logo/logo-fill.svg?raw"
@@ -9,6 +10,7 @@
 
     let { data }: PageProps = $props();
     $inspect(data);
+    $inspect(authStore);
 
     let isLoaded = $state(false);
 

@@ -8,3 +8,5 @@ class ElementBase(SQLModel):
     strengths: list[int] | None = None
     weaknesses: list[int] | None = None
 
+    def __str__(self) -> str:
+        return self.label

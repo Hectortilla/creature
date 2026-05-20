@@ -19,6 +19,9 @@ class CardBase(CardIdentityFields, CardCombatFields, SQLModel):
     image: str | None = Field(default=None, max_length=500)
     overlay_image: str | None = Field(default=None, max_length=500)
     forces: dict | None = None
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 class CardForeignKeys(SQLModel):
