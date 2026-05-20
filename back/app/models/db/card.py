@@ -67,3 +67,11 @@ class Card(CardBase, CardForeignKeys, table=True):
         link_model=DeckCard,
         sa_relationship_kwargs={"lazy": "selectin"}
     )
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    def __repr__(self) -> str:
+        return self.name
+    
+    

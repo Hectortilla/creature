@@ -6,6 +6,7 @@ Main FastAPI application entrypoint.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .settings.admin.index import setup_admin
 
 from app.routers import (
     elements_router,
@@ -47,6 +48,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Setup admin panel
+setup_admin(app)
 
 # Include routers
 app.include_router(auth_router)

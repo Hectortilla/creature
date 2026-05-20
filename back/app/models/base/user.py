@@ -7,4 +7,7 @@ class UserBase(SQLModel):
     email: str | None = None
     full_name: str | None = None
     disabled: bool = False
+    
+    def __str__(self) -> str:
+        return self.username
 
