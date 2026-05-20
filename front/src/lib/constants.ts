@@ -16,21 +16,6 @@ export const NAV_LINKS:NavLink[] = [
     { href: '#', label: 'Rewards' },
     { href: '#', label: 'How to play' },
     { href: '/game', label: 'Jugar' },
-    {
-        label: 'Dev',
-        subMenu: [
-            { href: '/old/cards/create', label: 'Crear Carta' },
-            { href: '/old/attacks/create', label: 'Crear Ataque' },
-            { href: '/old/abilities/create', label: 'Crear Habilidad' },
-            { href: '/old/associations/create', label: 'Crear Asociación' },
-            { href: '/old/cards', label: 'Cartas' },
-            { href: '/old/clasification', label: 'Clasificación' },
-            { href: '/old/attacks', label: 'Ataques' },
-            { href: '/old/abilities', label: 'Habilidades' },
-            { href: '/old/associations', label: 'Asociaciones' },
-            { href: '/old/decks', label: 'Mazos' },
-        ]
-    },
 ] as const;
 
 export const COLLECTION_MENU = [
