@@ -9,8 +9,6 @@
     import logoLine from "$lib/assets/logo/logo-line.svg?raw"
 
     let { data }: PageProps = $props();
-    $inspect(data);
-    $inspect(authStore);
 
     let isLoaded = $state(false);
 
