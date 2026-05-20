@@ -1,4 +1,7 @@
 from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Column
+from sqlalchemy.orm import validates
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.models.core.card import CardIdentityFields, CardCombatFields
 
@@ -18,7 +21,19 @@ class CardBase(CardIdentityFields, CardCombatFields, SQLModel):
     name: str = Field(max_length=255)
     image: str | None = Field(default=None, max_length=500)
     overlay_image: str | None = Field(default=None, max_length=500)
-    forces: dict | None = None
+    forces: list[dict] = Field(
+        default_factory=list, 
+        sa_column=Column(JSONB, nullable=False, server_default="[]")
+    )
+    
+    @validates("forces")
+    def validate_forces(self, key, value):
+        # Si el admin envía un diccionario vacío, o None, lo convertimos en []
+        if isinstance(value, dict) and len(value) == 0:
+            return []
+        if value is None:
+            return []
+        return value
     
     def __str__(self) -> str:
         return self.name

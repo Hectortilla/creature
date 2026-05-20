@@ -18,7 +18,7 @@ class AttackBase(AttackCoreFields, SQLModel):
     name: str = Field(max_length=255)
     type: ActionType | None = Field(default=ActionType.physical, max_length=50)
     necessary_force: list[dict] | None = None
-    dice_rolls: list[dict] | None = None
+    dice_rolls: int | None = None
     
     def __str__(self) -> str:
         return self.name

@@ -10,6 +10,7 @@ class CardAdmin(ModelView, model=Card):
     category = "Gestión de Cartas"
 
     searchable_columns = [Card.name]
+    column_searchable_list = [Card.name, Card.code]
     
     column_list = [
         Card.id,

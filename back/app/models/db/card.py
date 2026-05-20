@@ -25,7 +25,10 @@ class Card(CardBase, CardForeignKeys, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     code: int = Field(unique=True)
     handle: str = Field(default="", max_length=255)
-    forces: dict | None = Field(default=None, sa_column=Column(JSONB))
+    forces: list[dict] = Field(
+        default_factory=list, 
+        sa_column=Column(JSONB, nullable=False, server_default="[]")
+    )
     
     # Foreign keys with constraints
     is_evolution_id: int | None = Field(default=None, foreign_key="cards.id")
