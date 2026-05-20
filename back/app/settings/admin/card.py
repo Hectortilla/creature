@@ -30,6 +30,7 @@ class CardAdmin(ModelView, model=Card):
     column_details_list = [
         "id",
         "code",
+        "image",
         "name",
         "description",
         "character",
@@ -95,6 +96,7 @@ class CardAdmin(ModelView, model=Card):
     form_columns = [
         "id",
         "code",
+        "image",
         "name",
         "description",
         "character",
