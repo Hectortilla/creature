@@ -6,7 +6,7 @@ Main FastAPI application entrypoint.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.settings.admin import setup_admin
+from .settings.admin.index import setup_admin
 
 from app.routers import (
     elements_router,
