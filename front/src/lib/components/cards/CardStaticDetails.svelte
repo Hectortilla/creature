@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Creature, Element, Attack } from '$lib/types';
-	import type { IngameCardState } from '$lib/stores/hoveredCard';
+	import type { IngameCardState } from '$lib/stores/babylon/hoveredCard';
 	import { formatHandle } from '$lib/utils/formatHandle';
 
 	// Components

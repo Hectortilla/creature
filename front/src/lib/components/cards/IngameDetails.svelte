@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { IngameCardState } from '$lib/stores/hoveredCard';
+	import type { IngameCardState } from '$lib/stores/babylon/hoveredCard';
 	import Divider from '$lib/components/Divider.svelte';
 	import healthIcon from '$lib/assets/icons/health.svg?raw';
 

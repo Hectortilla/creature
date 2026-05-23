@@ -1,10 +1,10 @@
-import type InteractionManager from '../interaction/InteractionManager';
-import type { ClientCard } from '../game/models';
+import type InteractionManager from '../../interaction/InteractionManager';
+import type { ClientCard } from '../../game/models';
 import type {
 	HoveredCardPayload,
-	HoveredCardSetter,
 	IngameCardState,
-} from '$lib/stores/hoveredCard';
+} from '$lib/stores/babylon/hoveredCard';
+import { HudBridge } from './HudBridge';
 
 /**
  * Per-frame bridge between Babylon hover state and the Svelte overlay store.
@@ -12,17 +12,13 @@ import type {
  * Diffs on a signature that captures live-state fields so HP drops and
  * affordability changes propagate mid-hover, not only on hover transitions.
  */
-export class HoveredCardBridge {
+export class HoveredCardBridge extends HudBridge<HoveredCardPayload> {
 	private _interactionManager: InteractionManager;
-	private _setter: HoveredCardSetter | null = null;
 	private _lastSignature: string | null = null;
 
 	constructor(interactionManager: InteractionManager) {
+		super();
 		this._interactionManager = interactionManager;
-	}
-
-	setSetter(fn: HoveredCardSetter): void {
-		this._setter = fn;
 	}
 
 	update(): void {
@@ -55,7 +51,7 @@ export class HoveredCardBridge {
 	private _emitIfChanged(payload: HoveredCardPayload | null, signature: string | null): void {
 		if (signature === this._lastSignature) return;
 		this._lastSignature = signature;
-		this._setter?.(payload);
+		this._emit(payload);
 	}
 
 	private _buildIngameState(card: ClientCard, affordable: Set<number>): IngameCardState {
@@ -98,5 +94,10 @@ export class HoveredCardBridge {
 			if (typeof a.attack_id === 'number') ids.add(a.attack_id);
 		}
 		return ids;
+	}
+
+	override dispose(): void {
+		this._lastSignature = null;
+		super.dispose();
 	}
 }

@@ -1,5 +1,5 @@
-import { writable, type Writable } from 'svelte/store';
 import type { AttackDefinition } from '$lib/api/types.gen';
+import { createHudStore, type HudStoreSetter } from './createHudStore';
 
 export interface IngameCardState {
 	instanceId: string;
@@ -24,8 +24,6 @@ export interface HoveredCardPayload {
 	ingame: IngameCardState;
 }
 
-export type HoveredCardSetter = (payload: HoveredCardPayload | null) => void;
+export type HoveredCardSetter = HudStoreSetter<HoveredCardPayload>;
 
-export const hoveredCard: Writable<HoveredCardPayload | null> = writable(null);
-
-export const setHoveredCard: HoveredCardSetter = (payload) => hoveredCard.set(payload);
+export const [hoveredCard, setHoveredCard] = createHudStore<HoveredCardPayload>();
