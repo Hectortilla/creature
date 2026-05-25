@@ -7,8 +7,10 @@
 	import GameConnection from '../../babylon-editor/src/scripts/game/GameConnection';
 	import HudController from '../../babylon-editor/src/scripts/hud/HudController';
 	import { DevToolPanel } from '../../babylon-editor/src/scripts/devtools/DevToolPanel';
-	import { setHoveredCard } from '$lib/stores/hoveredCard';
+	import { setHoveredCard } from '$lib/stores/babylon/hoveredCard';
+	import { setElementPools } from '$lib/stores/babylon/elementPools';
 	import HoveredCardOverlay from '$lib/components/babylon/HoveredCardOverlay.svelte';
+	import ElementPoolsOverlay from '$lib/components/babylon/ElementPoolsOverlay.svelte';
 	import type { Creature, Element } from '$lib/types';
 
 	interface Props {
@@ -101,6 +103,7 @@
 
 			const hud = getScriptByClassForObject(scene, HudController);
 			hud?.setHoveredCardSetter(setHoveredCard);
+			hud?.setElementPoolsSetter(setElementPools);
 
 			if (scene.activeCamera) {
 				scene.activeCamera.attachControl();
@@ -149,6 +152,7 @@
 		scene?.dispose();
 		engine?.dispose();
 		setHoveredCard(null);
+		setElementPools(null);
 	});
 </script>
 
@@ -160,6 +164,7 @@
 	{/if}
 	<canvas bind:this={canvas}></canvas>
 	<HoveredCardOverlay {cards} {elements} />
+	<ElementPoolsOverlay {elements} />
 </div>
 
 <style lang="scss">

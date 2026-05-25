@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import type { Creature, Element } from '$lib/types';
-	import { hoveredCard, type HoveredCardPayload } from '$lib/stores/hoveredCard';
+	import { hoveredCard, type HoveredCardPayload } from '$lib/stores/babylon/hoveredCard';
 	import CardStaticDetails from '$lib/components/cards/CardStaticDetails.svelte';
 
 	interface Props {
