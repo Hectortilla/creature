@@ -1,12 +1,24 @@
-from sqlmodel import Field, Relationship, Session
+from sqlmodel import Field, Relationship, SQLModel, Session
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from app.models.base.user import UserBase
 
 if TYPE_CHECKING:
+    from app.models.db.card import Card
     from app.models.db.deck import Deck
     from app.models.game.player import PlayerState
+    
+    
+class UserCard(SQLModel, table=True):
+    __tablename__ = "user_cards"
+    
+    user_id: int | None = Field(default=None, foreign_key="users.id", primary_key=True)
+    card_id: int | None = Field(default=None, foreign_key="cards.id", primary_key=True)
+    
+    # Campos adicionales en el futuro:
+    # como 'quantity' (si puede tener copias de la misma carta), 'foil' (si es brillante), etc.
+    quantity: int = Field(default=1)
 
 
 class User(UserBase, table=True):
@@ -21,6 +33,11 @@ class User(UserBase, table=True):
     
     # Relationships
     decks: list["Deck"] = Relationship(back_populates="user")
+    cards: list["Card"] = Relationship(
+        back_populates="users", 
+        link_model=UserCard,  
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
     
     def to_player_state(self, deck_id: int, db: Session) -> "PlayerState":
         """
