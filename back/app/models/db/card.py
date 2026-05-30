@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from app.models.base.card import CardBase, CardForeignKeys
+from app.models.db.user import UserCard
 
 if TYPE_CHECKING:
     from app.models.db.element import Element
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.db.association import Association
     from app.models.db.deck import Deck
     from app.models.db import DeckCard
+    from app.models.db.user import User
 else:
     from app.models.db.deck_card import DeckCard
 
@@ -42,6 +44,10 @@ class Card(CardBase, CardForeignKeys, table=True):
     association_id: int | None = Field(default=None, foreign_key="associations.id")
     
     # Relationships
+    users: list["User"] = Relationship(
+        back_populates="cards",
+        link_model=UserCard
+    )
     first_element: Optional["Element"] = Relationship(
         sa_relationship_kwargs={"foreign_keys": "[Card.first_element_id]"}
     )

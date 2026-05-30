@@ -24,7 +24,9 @@ class UserAdmin(ModelView, model=User):
     form_labels = {
         "username": "Nombre de Usuario",
         "email": "Correo Electrónico",
-        "disabled": "¿Cuenta Activa?"
+        "disabled": "¿Cuenta Activa?",
+        "cards": "Cartas del Usuario",
+        "decks": "Mazos del Usuario",
     }
     
     column_details_list = [
@@ -32,6 +34,8 @@ class UserAdmin(ModelView, model=User):
         "username",
         "email",
         "disabled",
+        "cards",
+        "decks",
         "created_at"
     ]
     
@@ -40,7 +44,9 @@ class UserAdmin(ModelView, model=User):
         "username": "Nombre de Usuario",
         "email": "Correo Electrónico",
         "disabled": "¿Cuenta Desactivada?",
-        "created_at": "Creado el"
+        "created_at": "Creado el",
+        "cards": "Cartas del Usuario",
+        "decks": "Mazos del Usuario",
     }
     
     form_columns = [
@@ -48,6 +54,8 @@ class UserAdmin(ModelView, model=User):
         "username",
         "email",
         "disabled",
+        "cards",
+        "decks",
         "created_at"
     ]
     
