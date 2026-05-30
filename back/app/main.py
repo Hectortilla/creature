@@ -33,6 +33,7 @@ from app.models.db.card import Card
 from app.models.db.user import User
 from app.models.db.deck import Deck
 from app.models.db.deck_card import DeckCard
+from app.models.db.effect import Effect
 
 app = FastAPI(
     title="Creature Card Game API",

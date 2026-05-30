@@ -7,6 +7,7 @@ from app.models.db import (
     Association,
     Attack,
     Card,
+    Effect,
 )
 
 # Request/Response schemas
@@ -18,6 +19,7 @@ from app.models.schemas import (
     AssociationCreate, AssociationRead,
     AttackCreate, AttackRead, AttackReadWithElement,
     CardCreate, CardRead, CardReadWithRelations,
+    EffectRead,
 )
 
 # Base models (for inheritance - used by db and schema models)

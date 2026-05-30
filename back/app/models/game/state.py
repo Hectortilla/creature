@@ -7,6 +7,7 @@ Core game state models including configuration and full game state.
 from __future__ import annotations
 
 import uuid
+
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 from datetime import datetime
 
@@ -46,6 +47,8 @@ class GameStateForPlayer(GameBaseModel):
     pending_action: Optional[str] = None
     pending_defender_id: Optional[str] = None
     pending_attack: Optional[PendingAttack] = None
+    pending_forced_swap_target_id: Optional[str] = None
+    pending_forced_swap_source_id: Optional[str] = None
     config: Optional["GameConfiguration"] = None
     total_cards: int = 0
     players: dict[str, dict[str, Any]] = {}
@@ -79,6 +82,8 @@ class GameState(GameBaseModel):
     pending_action: Optional[str] = None
     pending_defender_id: Optional[str] = None
     pending_attack: Optional[PendingAttack] = None
+    pending_forced_swap_target_id: Optional[str] = None
+    pending_forced_swap_source_id: Optional[str] = None
     config: GameConfiguration = Field(default_factory=GameConfiguration)
 
     @computed_field
@@ -209,6 +214,10 @@ class GameState(GameBaseModel):
     @staticmethod
     def _create_game_card(card_data: GameCardInput, owner_id: str) -> GameCard:
         """Create a GameCard from card data."""
+        # Imported lazily: app.game.effects imports app.models.game, so importing
+        # it at module load would create a circular import through this package.
+        from app.game.effects import build_effect_atoms
+
         attacks = []
         for attack_data in card_data.attacks:
             attack_type = DamageType.PHYSICAL
@@ -234,7 +243,7 @@ class GameState(GameBaseModel):
             for elem_id in card_data.element_ids:
                 element_contribution.append(ElementContribution(element_id=elem_id, amount=1))
 
-        return GameCard.create(
+        game_card = GameCard.create(
             card_id=card_data.id,
             owner_id=owner_id,
             name=card_data.name,
@@ -243,15 +252,20 @@ class GameState(GameBaseModel):
             magic_defence=card_data.magic_defence,
             element_ids=card_data.element_ids,
             element_contribution=element_contribution,
+            type_id=card_data.type_id,
+            character_id=card_data.character_id,
+            character_name=card_data.character_name,
             attacks=attacks,
-            skill_ids=card_data.skill_ids,
+            ability_ids=card_data.ability_ids,
             association_ids=card_data.association_ids,
+            effect_specs=card_data.effect_specs,
             evolves_from_id=card_data.evolves_from_id,
+            effect_atoms=build_effect_atoms(card_data.effect_specs)
         )
+        return game_card
 
 __all__ = [
     "GameConfiguration",
     "GameState",
     "GameStateForPlayer",
 ]
-

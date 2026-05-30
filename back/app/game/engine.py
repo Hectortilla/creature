@@ -31,6 +31,7 @@ from app.game.actions import (
     PassPhaseAction,
     ConcedeAction,
     ForceDefendAction,
+    ResolveForcedSwapAction,
     ACTION_TYPES,
     create_action,
 )
@@ -163,6 +164,10 @@ class GameEngine:
         if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
             if state.pending_defender_id:
                 actions.extend(ForceDefendAction.get_valid(state, state.pending_defender_id))
+            return [a.to_dict(state) for a in actions]
+        if state.status == GameStatus.PAUSED and state.pending_action == "forced_swap":
+            if state.pending_defender_id:
+                actions.extend(ResolveForcedSwapAction.get_valid(state, state.pending_defender_id))
             return [a.to_dict(state) for a in actions]
 
         # Enumerate valid actions for current phase from each action type

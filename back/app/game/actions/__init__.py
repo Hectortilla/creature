@@ -11,7 +11,7 @@ from app.game.actions.promotion import PromoteAction
 from app.game.actions.swap import SwapAction, MultiSwapAction
 from app.game.actions.association import AssociationAction
 from app.game.actions.evolution import EvolutionAction
-from app.game.actions.combat import AttackAction, ForceDefendAction, build_combat_events
+from app.game.actions.combat import AttackAction, ForceDefendAction, ResolveForcedSwapAction, ReviveFromGraveyardAction, build_combat_events
 from app.game.actions.turn import DrawAction, PassPhaseAction, ConcedeAction
 
 
@@ -25,6 +25,8 @@ ACTION_TYPES: dict[str, type[Action]] = {
     "attack": AttackAction,
     "pass": PassPhaseAction,
     "force_defend": ForceDefendAction,
+    "resolve_forced_swap": ResolveForcedSwapAction,
+    "revive_from_graveyard": ReviveFromGraveyardAction,
     "concede": ConcedeAction,
     "multi_swap": MultiSwapAction,
 }

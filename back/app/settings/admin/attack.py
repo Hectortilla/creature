@@ -2,6 +2,7 @@ from sqladmin import ModelView
 
 # Models
 from app.models.db.attack import Attack
+from app.settings.admin.effect_display import effect_summary
 
 
 class AttackAdmin(ModelView, model=Attack):
@@ -34,6 +35,7 @@ class AttackAdmin(ModelView, model=Attack):
         "handle": "Handle",
         "necessary_force": "Fuerza Necesaria",
         "created_at": "Creado el",
+        "effect_summary": "Efectos",
     }
     
     column_details_list = [
@@ -49,8 +51,12 @@ class AttackAdmin(ModelView, model=Attack):
         "code",
         "handle",
         "necessary_force",
+        "effect_summary",
         "created_at",
     ]
+    column_formatters_detail = {
+        "effect_summary": lambda model, a: effect_summary("attack", model.id),
+    }
     
     form_columns = [
         "id",

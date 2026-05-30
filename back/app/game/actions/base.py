@@ -43,7 +43,9 @@ _CARD_ID_TO_NAME = {
     "instance_id": "card_name", "attacker_id": "attacker_name",
     "target_card_id": "target_name", "supporting_card_id": "supporting_card_name",
     "attacking_card_id": "attacking_card_name", "association_card_id": "association_card_name",
-    "evolution_card_id": "evolution_card_name",
+    "evolution_card_id": "evolution_card_name", "secondary_target_card_id": "secondary_target_name",
+    "cost_card_id": "cost_card_name", "swap_with_supporting_card_id": "swap_with_supporting_card_name",
+    "graveyard_card_id": "graveyard_card_name", "source_card_id": "source_card_name",
 }
 
 

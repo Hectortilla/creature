@@ -19,6 +19,7 @@ from app.models.db import (
     User,
     Deck,
     DeckCard,
+    Effect,
 )
 
 # Import settings to get database URL

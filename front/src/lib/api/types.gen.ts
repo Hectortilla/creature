@@ -20,10 +20,7 @@ export type AbilityCreate = {
    * Description
    */
   description?: string | null;
-  /**
-   * Type
-   */
-  type?: string | null;
+  type?: ActionType | null;
 };
 
 /**
@@ -42,10 +39,7 @@ export type AbilityRead = {
    * Description
    */
   description?: string | null;
-  /**
-   * Type
-   */
-  type?: string | null;
+  type?: ActionType | null;
   /**
    * Id
    */
@@ -112,6 +106,18 @@ export type ActionData = {
    */
   attack_id?: number | null;
   /**
+   * Secondary Target Card Id
+   *
+   * Secondary target card instance ID (used by: splash attack effects)
+   */
+  secondary_target_card_id?: string | null;
+  /**
+   * Cost Card Id
+   *
+   * Card instance ID paid as a special attack cost
+   */
+  cost_card_id?: string | null;
+  /**
    * Supporting Card Id
    *
    * Supporting card instance ID (used by: swap)
@@ -137,6 +143,12 @@ export type ActionData = {
    * Association card instance ID (used by: associate)
    */
   association_card_id?: string | null;
+  /**
+   * Swap With Supporting Card Id
+   *
+   * Supporting card selected for association-driven free swap
+   */
+  swap_with_supporting_card_id?: string | null;
   /**
    * Evolution Card Id
    *
@@ -197,8 +209,38 @@ export type ActionResultData = {
         event_type: "DamageDealtEvent";
       } & DamageDealtEvent)
     | ({
+        event_type: "AttackResolvedEvent";
+      } & AttackResolvedEvent)
+    | ({
         event_type: "CardDestroyedEvent";
       } & CardDestroyedEvent)
+    | ({
+        event_type: "CardExiledEvent";
+      } & CardExiledEvent)
+    | ({
+        event_type: "CardHealthChangedEvent";
+      } & CardHealthChangedEvent)
+    | ({
+        event_type: "HealingAppliedEvent";
+      } & HealingAppliedEvent)
+    | ({
+        event_type: "StatusAppliedEvent";
+      } & StatusAppliedEvent)
+    | ({
+        event_type: "StatusTickedEvent";
+      } & StatusTickedEvent)
+    | ({
+        event_type: "StatusExpiredEvent";
+      } & StatusExpiredEvent)
+    | ({
+        event_type: "ForcedSwapRequestedEvent";
+      } & ForcedSwapRequestedEvent)
+    | ({
+        event_type: "DiceRolledEvent";
+      } & DiceRolledEvent)
+    | ({
+        event_type: "CardRevivedEvent";
+      } & CardRevivedEvent)
     | ({
         event_type: "ElementsConsumedEvent";
       } & ElementsConsumedEvent)
@@ -223,12 +265,6 @@ export type ActionResultData = {
     | ({
         event_type: "NoDefenderEvent";
       } & NoDefenderEvent)
-    | ({
-        event_type: "EffectTriggeredEvent";
-      } & EffectTriggeredEvent)
-    | ({
-        event_type: "EffectAppliedEvent";
-      } & EffectAppliedEvent)
   >;
   /**
    * Game Over
@@ -238,64 +274,7 @@ export type ActionResultData = {
    * Winner Id
    */
   winner_id?: string | null;
-  /**
-   * Game State
-   */
-  game_state?: {
-    /**
-     * Game Id
-     */
-    game_id: string;
-    /**
-     * Active Player Id
-     */
-    active_player_id?: string | null;
-    /**
-     * Turn Number
-     */
-    turn_number?: number;
-    current_phase?: TurnPhase;
-    status?: GameStatus;
-    /**
-     * Winner Id
-     */
-    winner_id?: string | null;
-    /**
-     * Created At
-     */
-    created_at?: string | null;
-    /**
-     * Pending Action
-     */
-    pending_action?: string | null;
-    /**
-     * Pending Defender Id
-     */
-    pending_defender_id?: string | null;
-    /**
-     * Pending Attack
-     */
-    pending_attack?: {
-      [key: string]: unknown;
-    } | null;
-    config?: GameConfiguration | null;
-    /**
-     * Total Cards
-     */
-    total_cards?: number;
-    /**
-     * Players
-     */
-    players?: {
-      [key: string]: PlayerState;
-    };
-    /**
-     * Cards
-     */
-    cards?: {
-      [key: string]: GameCard;
-    };
-  } | null;
+  game_state?: GameStateForPlayer | null;
   /**
    * Valid Actions
    */
@@ -309,6 +288,50 @@ export type ActionResultData = {
  */
 export type ActionResultMessage = {
   data: ActionResultData;
+};
+
+/**
+ * ActionType
+ */
+export type ActionType = "Physical" | "Magical";
+
+/**
+ * ActiveStatus
+ *
+ * Runtime status applied by an effect atom.
+ */
+export type ActiveStatus = {
+  /**
+   * Status Id
+   */
+  status_id?: string;
+  status_type: StatusType;
+  /**
+   * Source Card Id
+   */
+  source_card_id?: string;
+  /**
+   * Source Atom Id
+   */
+  source_atom_id?: number | null;
+  /**
+   * Remaining Turns
+   */
+  remaining_turns?: number;
+  /**
+   * Tick On
+   */
+  tick_on?: string;
+  /**
+   * Expires On
+   */
+  expires_on?: string;
+  /**
+   * Payload
+   */
+  payload?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -387,10 +410,7 @@ export type AttackCreate = {
    * Code
    */
   code: number;
-  /**
-   * Type
-   */
-  type?: string | null;
+  type?: ActionType | null;
   /**
    * Necessary Force
    */
@@ -441,6 +461,10 @@ export type AttackDeclaredEvent = {
    * Attack Name
    */
   attack_name?: string;
+  /**
+   * Secondary Target Id
+   */
+  secondary_target_id?: string;
 };
 
 /**
@@ -517,10 +541,7 @@ export type AttackReadWithElement = {
    * Code
    */
   code: number;
-  /**
-   * Type
-   */
-  type?: string | null;
+  type?: ActionType | null;
   /**
    * Necessary Force
    */
@@ -552,6 +573,58 @@ export type AttackReadWithElement = {
    * Weaknesses
    */
   weaknesses?: Array<number> | null;
+};
+
+/**
+ * AttackResolvedEvent
+ *
+ * Event fired after base combat damage for one attack/target has resolved.
+ */
+export type AttackResolvedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "AttackResolvedEvent";
+  /**
+   * Attacker Owner Id
+   */
+  attacker_owner_id?: string;
+  /**
+   * Attacker Id
+   */
+  attacker_id?: string;
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  /**
+   * Attack Id
+   */
+  attack_id?: number;
+  /**
+   * Attack Name
+   */
+  attack_name?: string;
+  /**
+   * Final Damage
+   */
+  final_damage?: number;
+  /**
+   * Target Destroyed
+   */
+  target_destroyed?: boolean;
+  /**
+   * Secondary Target Id
+   */
+  secondary_target_id?: string;
 };
 
 /**
@@ -619,6 +692,10 @@ export type CardAssociatedEvent = {
    */
   target_card_id?: string;
   source_zone?: Zone | null;
+  /**
+   * Swap With Supporting Card Id
+   */
+  swap_with_supporting_card_id?: string;
 };
 
 /**
@@ -696,9 +773,9 @@ export type CardCreate = {
   /**
    * Forces
    */
-  forces?: {
+  forces?: Array<{
     [key: string]: unknown;
-  } | null;
+  }>;
 };
 
 /**
@@ -815,6 +892,78 @@ export type CardEvolvedEvent = {
    * Evolution Card Name
    */
   evolution_card_name?: string;
+};
+
+/**
+ * CardExiledEvent
+ *
+ * Event fired when a card is removed from the game instead of sent to graveyard.
+ */
+export type CardExiledEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardExiledEvent";
+  /**
+   * Instance Id
+   */
+  instance_id?: string;
+  /**
+   * Owner Id
+   */
+  owner_id?: string;
+  /**
+   * Reason
+   */
+  reason?: string;
+};
+
+/**
+ * CardHealthChangedEvent
+ *
+ * Event fired for non-combat health changes such as DoT or effect damage.
+ */
+export type CardHealthChangedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardHealthChangedEvent";
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  /**
+   * Source Id
+   */
+  source_id?: string;
+  /**
+   * Delta
+   */
+  delta?: number;
+  /**
+   * New Health
+   */
+  new_health?: number;
+  /**
+   * Reason
+   */
+  reason?: string;
 };
 
 /**
@@ -1092,6 +1241,43 @@ export type CardReadWithRelations = {
    * Weaknesses
    */
   weaknesses?: Array<number> | null;
+  /**
+   * Effects
+   */
+  effects?: Array<EffectRead>;
+};
+
+/**
+ * CardRevivedEvent
+ *
+ * Event fired when a graveyard card swaps back into an active zone.
+ */
+export type CardRevivedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "CardRevivedEvent";
+  /**
+   * Player Id
+   */
+  player_id?: string;
+  /**
+   * Source Card Id
+   */
+  source_card_id?: string;
+  /**
+   * Revived Card Id
+   */
+  revived_card_id?: string;
+  target_zone?: Zone;
 };
 
 /**
@@ -1370,11 +1556,11 @@ export type DeckUpdate = {
 };
 
 /**
- * EffectAppliedEvent
+ * DiceRolledEvent
  *
- * Event fired when an effect's result is applied.
+ * Event fired when an effect rolls a die.
  */
-export type EffectAppliedEvent = {
+export type DiceRolledEvent = {
   /**
    * Timestamp
    */
@@ -1386,55 +1572,75 @@ export type EffectAppliedEvent = {
   /**
    * Event Type
    */
-  event_type?: "EffectAppliedEvent";
+  event_type?: "DiceRolledEvent";
   /**
-   * Effect Id
+   * Roller Id
    */
-  effect_id?: string;
+  roller_id?: string;
   /**
-   * Affected Card Ids
+   * Faces
    */
-  affected_card_ids?: Array<string>;
+  faces?: number;
   /**
-   * Description
+   * Result
    */
-  description?: string;
+  result?: number;
+  /**
+   * Purpose
+   */
+  purpose?: string;
 };
 
 /**
- * EffectTriggeredEvent
- *
- * Event fired when an effect is triggered.
+ * EffectRead
  */
-export type EffectTriggeredEvent = {
+export type EffectRead = {
   /**
-   * Timestamp
+   * Id
    */
-  timestamp?: string;
+  id: number;
   /**
-   * Game Id
+   * Owner Kind
    */
-  game_id?: string | null;
+  owner_kind: string;
   /**
-   * Event Type
+   * Owner Id
    */
-  event_type?: "EffectTriggeredEvent";
+  owner_id: number;
   /**
-   * Source Card Id
+   * Atom Type
    */
-  source_card_id?: string;
+  atom_type: string;
   /**
-   * Effect Id
+   * Trigger
    */
-  effect_id?: string;
+  trigger?: string | null;
   /**
-   * Effect Name
+   * Params
    */
-  effect_name?: string;
+  params?: {
+    [key: string]: unknown;
+  };
   /**
-   * Trigger Reason
+   * Sort Order
    */
-  trigger_reason?: string;
+  sort_order?: number;
+  /**
+   * Script Id
+   */
+  script_id?: string | null;
+  /**
+   * Enabled
+   */
+  enabled?: boolean;
+  /**
+   * Notes
+   */
+  notes?: string | null;
+  /**
+   * Created At
+   */
+  created_at?: string | null;
 };
 
 /**
@@ -1616,6 +1822,38 @@ export type ErrorMessage = {
 };
 
 /**
+ * ForcedSwapRequestedEvent
+ *
+ * Event fired when a defending player must swap a damaged card.
+ */
+export type ForcedSwapRequestedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "ForcedSwapRequestedEvent";
+  /**
+   * Owner Id
+   */
+  owner_id?: string;
+  /**
+   * Target Card Id
+   */
+  target_card_id?: string;
+  /**
+   * Source Card Id
+   */
+  source_card_id?: string;
+};
+
+/**
  * GameCard
  *
  * Represents a card instance in the game.
@@ -1675,13 +1913,25 @@ export type GameCard = {
    */
   element_contribution?: Array<ElementContribution>;
   /**
+   * Type Id
+   */
+  type_id?: number | null;
+  /**
+   * Character Id
+   */
+  character_id?: number | null;
+  /**
+   * Character Name
+   */
+  character_name?: string | null;
+  /**
    * Attacks
    */
   attacks?: Array<AttackDefinition>;
   /**
-   * Skill Ids
+   * Ability Ids
    */
-  skill_ids?: Array<number>;
+  ability_ids?: Array<number>;
   /**
    * Association Ids
    */
@@ -1700,6 +1950,20 @@ export type GameCard = {
    * Associations
    */
   associations?: Array<string>;
+  /**
+   * Association Target Id
+   */
+  association_target_id?: string | null;
+  /**
+   * Active Statuses
+   */
+  active_statuses?: Array<ActiveStatus>;
+  /**
+   * Attack Last Used
+   */
+  attack_last_used?: {
+    [key: string]: number;
+  };
   /**
    * Has Attacked This Turn
    */
@@ -1909,69 +2173,7 @@ export type GameStartedData = {
    * Success
    */
   success: boolean;
-  /**
-   * GameStateForPlayer
-   *
-   * Read schema representing the game state payload sent to a player.
-   *
-   * This matches the output of GameState.serialize_for_player() and includes
-   * the cards and players maps that are excluded from the base GameState schema.
-   */
-  game_state: {
-    /**
-     * Game Id
-     */
-    game_id: string;
-    /**
-     * Active Player Id
-     */
-    active_player_id?: string | null;
-    /**
-     * Turn Number
-     */
-    turn_number?: number;
-    current_phase?: TurnPhase;
-    status?: GameStatus;
-    /**
-     * Winner Id
-     */
-    winner_id?: string | null;
-    /**
-     * Created At
-     */
-    created_at?: string | null;
-    /**
-     * Pending Action
-     */
-    pending_action?: string | null;
-    /**
-     * Pending Defender Id
-     */
-    pending_defender_id?: string | null;
-    /**
-     * Pending Attack
-     */
-    pending_attack?: {
-      [key: string]: unknown;
-    } | null;
-    config?: GameConfiguration | null;
-    /**
-     * Total Cards
-     */
-    total_cards?: number;
-    /**
-     * Players
-     */
-    players?: {
-      [key: string]: PlayerState;
-    };
-    /**
-     * Cards
-     */
-    cards?: {
-      [key: string]: GameCard;
-    };
-  };
+  game_state: GameStateForPlayer;
   /**
    * Events
    */
@@ -2001,8 +2203,38 @@ export type GameStartedData = {
         event_type: "DamageDealtEvent";
       } & DamageDealtEvent)
     | ({
+        event_type: "AttackResolvedEvent";
+      } & AttackResolvedEvent)
+    | ({
         event_type: "CardDestroyedEvent";
       } & CardDestroyedEvent)
+    | ({
+        event_type: "CardExiledEvent";
+      } & CardExiledEvent)
+    | ({
+        event_type: "CardHealthChangedEvent";
+      } & CardHealthChangedEvent)
+    | ({
+        event_type: "HealingAppliedEvent";
+      } & HealingAppliedEvent)
+    | ({
+        event_type: "StatusAppliedEvent";
+      } & StatusAppliedEvent)
+    | ({
+        event_type: "StatusTickedEvent";
+      } & StatusTickedEvent)
+    | ({
+        event_type: "StatusExpiredEvent";
+      } & StatusExpiredEvent)
+    | ({
+        event_type: "ForcedSwapRequestedEvent";
+      } & ForcedSwapRequestedEvent)
+    | ({
+        event_type: "DiceRolledEvent";
+      } & DiceRolledEvent)
+    | ({
+        event_type: "CardRevivedEvent";
+      } & CardRevivedEvent)
     | ({
         event_type: "ElementsConsumedEvent";
       } & ElementsConsumedEvent)
@@ -2027,12 +2259,6 @@ export type GameStartedData = {
     | ({
         event_type: "NoDefenderEvent";
       } & NoDefenderEvent)
-    | ({
-        event_type: "EffectTriggeredEvent";
-      } & EffectTriggeredEvent)
-    | ({
-        event_type: "EffectAppliedEvent";
-      } & EffectAppliedEvent)
   >;
   /**
    * Valid Actions
@@ -2113,12 +2339,15 @@ export type GameState = {
    * Pending Defender Id
    */
   pending_defender_id?: string | null;
+  pending_attack?: PendingAttack | null;
   /**
-   * Pending Attack
+   * Pending Forced Swap Target Id
    */
-  pending_attack?: {
-    [key: string]: unknown;
-  } | null;
+  pending_forced_swap_target_id?: string | null;
+  /**
+   * Pending Forced Swap Source Id
+   */
+  pending_forced_swap_source_id?: string | null;
   config?: GameConfiguration;
   /**
    * Total Cards
@@ -2174,12 +2403,15 @@ export type GameStateForPlayer = {
    * Pending Defender Id
    */
   pending_defender_id?: string | null;
+  pending_attack?: PendingAttack | null;
   /**
-   * Pending Attack
+   * Pending Forced Swap Target Id
    */
-  pending_attack?: {
-    [key: string]: unknown;
-  } | null;
+  pending_forced_swap_target_id?: string | null;
+  /**
+   * Pending Forced Swap Source Id
+   */
+  pending_forced_swap_source_id?: string | null;
   config?: GameConfiguration | null;
   /**
    * Total Cards
@@ -2189,13 +2421,17 @@ export type GameStateForPlayer = {
    * Players
    */
   players?: {
-    [key: string]: PlayerState;
+    [key: string]: {
+      [key: string]: unknown;
+    };
   };
   /**
    * Cards
    */
   cards?: {
-    [key: string]: GameCard;
+    [key: string]: {
+      [key: string]: unknown;
+    };
   };
 };
 
@@ -2270,6 +2506,42 @@ export type HttpValidationError = {
    * Detail
    */
   detail?: Array<ValidationError>;
+};
+
+/**
+ * HealingAppliedEvent
+ *
+ * Event fired when an effect heals a card.
+ */
+export type HealingAppliedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "HealingAppliedEvent";
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  /**
+   * Source Id
+   */
+  source_id?: string;
+  /**
+   * Amount
+   */
+  amount?: number;
+  /**
+   * New Health
+   */
+  new_health?: number;
 };
 
 /**
@@ -2376,6 +2648,26 @@ export type NoDefenderEvent = {
    * Pending Attacker Owner Id
    */
   pending_attacker_owner_id?: string;
+};
+
+/**
+ * PendingAttack
+ *
+ * An attack waiting on a forced defend resolution.
+ */
+export type PendingAttack = {
+  /**
+   * Attacker Id
+   */
+  attacker_id: string;
+  /**
+   * Attack Id
+   */
+  attack_id: number;
+  /**
+   * Attacker Owner Id
+   */
+  attacker_owner_id: string;
 };
 
 /**
@@ -2545,6 +2837,124 @@ export type RoomsListData = {
 export type RoomsListMessage = {
   data?: RoomsListData;
 };
+
+/**
+ * StatusAppliedEvent
+ *
+ * Event fired when an effect applies a temporary status.
+ */
+export type StatusAppliedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "StatusAppliedEvent";
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  /**
+   * Source Card Id
+   */
+  source_card_id?: string;
+  /**
+   * Source Atom Id
+   */
+  source_atom_id?: number | null;
+  status_type?: StatusType;
+  /**
+   * Duration Turns
+   */
+  duration_turns?: number;
+  /**
+   * Tick On
+   */
+  tick_on?: string;
+  /**
+   * Expires On
+   */
+  expires_on?: string;
+  /**
+   * Payload
+   */
+  payload?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * StatusExpiredEvent
+ *
+ * Event fired when a status expires or is consumed.
+ */
+export type StatusExpiredEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "StatusExpiredEvent";
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  /**
+   * Status Id
+   */
+  status_id?: string;
+};
+
+/**
+ * StatusTickedEvent
+ *
+ * Event fired when a status consumes one tick of duration.
+ */
+export type StatusTickedEvent = {
+  /**
+   * Timestamp
+   */
+  timestamp?: string;
+  /**
+   * Game Id
+   */
+  game_id?: string | null;
+  /**
+   * Event Type
+   */
+  event_type?: "StatusTickedEvent";
+  /**
+   * Target Id
+   */
+  target_id?: string;
+  /**
+   * Status Id
+   */
+  status_id?: string;
+};
+
+/**
+ * StatusType
+ *
+ * Temporary effect statuses applied by card effects.
+ */
+export type StatusType =
+  | "BLOCK_ATTACK"
+  | "DICE_LOCKED_ATTACK"
+  | "DAMAGE_OVER_TIME"
+  | "REVIVE_SWAPPABLE";
 
 /**
  * Token
@@ -2782,6 +3192,18 @@ export type ValidActionSchema = {
    */
   attack_id?: number | null;
   /**
+   * Secondary Target Card Id
+   *
+   * Secondary target card instance ID (used by: splash attack effects)
+   */
+  secondary_target_card_id?: string | null;
+  /**
+   * Cost Card Id
+   *
+   * Card instance ID paid as a special attack cost
+   */
+  cost_card_id?: string | null;
+  /**
    * Supporting Card Id
    *
    * Supporting card instance ID (used by: swap)
@@ -2807,6 +3229,12 @@ export type ValidActionSchema = {
    * Association card instance ID (used by: associate)
    */
   association_card_id?: string | null;
+  /**
+   * Swap With Supporting Card Id
+   *
+   * Supporting card selected for association-driven free swap
+   */
+  swap_with_supporting_card_id?: string | null;
   /**
    * Evolution Card Id
    *
@@ -2915,11 +3343,17 @@ export type ValidationError = {
  *
  * - DECK: Contains 22 cards at game start, cards are drawn from here
  * - HAND: Cards held by player, can be played from here
- * - SUPPORTING: Max 3 cards, cannot attack but contribute elements/skills
- * - ATTACKING: Max 2 cards, can attack and contribute elements/skills
+ * - SUPPORTING: Max 3 cards, cannot attack but contribute elements/effects
+ * - ATTACKING: Max 2 cards, can attack and contribute elements/effects
  * - GRAVEYARD: Destroyed cards go here, no effect
  */
-export type Zone = "DECK" | "HAND" | "SUPPORTING" | "ATTACKING" | "GRAVEYARD";
+export type Zone =
+  | "DECK"
+  | "HAND"
+  | "SUPPORTING"
+  | "ATTACKING"
+  | "GRAVEYARD"
+  | "EXILED";
 
 /**
  * ZoneState
@@ -2946,163 +3380,6 @@ export type ZoneState = {
    * Check if the zone is at capacity.
    */
   readonly is_full: boolean;
-};
-
-/**
- * ActionResultData
- *
- * Data for action_result message.
- */
-export type ActionResultDataWritable = {
-  /**
-   * Success
-   */
-  success: boolean;
-  /**
-   * Error
-   */
-  error?: string | null;
-  /**
-   * Events
-   */
-  events: Array<
-    | ({
-        event_type: "CardDrawnEvent";
-      } & CardDrawnEvent)
-    | ({
-        event_type: "CardPlayedEvent";
-      } & CardPlayedEvent)
-    | ({
-        event_type: "CardPromotedEvent";
-      } & CardPromotedEvent)
-    | ({
-        event_type: "CardSwappedEvent";
-      } & CardSwappedEvent)
-    | ({
-        event_type: "CardAssociatedEvent";
-      } & CardAssociatedEvent)
-    | ({
-        event_type: "CardEvolvedEvent";
-      } & CardEvolvedEvent)
-    | ({
-        event_type: "AttackDeclaredEvent";
-      } & AttackDeclaredEvent)
-    | ({
-        event_type: "DamageDealtEvent";
-      } & DamageDealtEvent)
-    | ({
-        event_type: "CardDestroyedEvent";
-      } & CardDestroyedEvent)
-    | ({
-        event_type: "ElementsConsumedEvent";
-      } & ElementsConsumedEvent)
-    | ({
-        event_type: "ElementsRestoredEvent";
-      } & ElementsRestoredEvent)
-    | ({
-        event_type: "TurnStartedEvent";
-      } & TurnStartedEvent)
-    | ({
-        event_type: "TurnEndedEvent";
-      } & TurnEndedEvent)
-    | ({
-        event_type: "PhaseChangedEvent";
-      } & PhaseChangedEvent)
-    | ({
-        event_type: "GameStartedEvent";
-      } & GameStartedEvent)
-    | ({
-        event_type: "GameEndedEvent";
-      } & GameEndedEvent)
-    | ({
-        event_type: "NoDefenderEvent";
-      } & NoDefenderEvent)
-    | ({
-        event_type: "EffectTriggeredEvent";
-      } & EffectTriggeredEvent)
-    | ({
-        event_type: "EffectAppliedEvent";
-      } & EffectAppliedEvent)
-  >;
-  /**
-   * Game Over
-   */
-  game_over: boolean;
-  /**
-   * Winner Id
-   */
-  winner_id?: string | null;
-  /**
-   * Game State
-   */
-  game_state?: {
-    /**
-     * Game Id
-     */
-    game_id: string;
-    /**
-     * Active Player Id
-     */
-    active_player_id?: string | null;
-    /**
-     * Turn Number
-     */
-    turn_number?: number;
-    current_phase?: TurnPhase;
-    status?: GameStatus;
-    /**
-     * Winner Id
-     */
-    winner_id?: string | null;
-    /**
-     * Created At
-     */
-    created_at?: string | null;
-    /**
-     * Pending Action
-     */
-    pending_action?: string | null;
-    /**
-     * Pending Defender Id
-     */
-    pending_defender_id?: string | null;
-    /**
-     * Pending Attack
-     */
-    pending_attack?: {
-      [key: string]: unknown;
-    } | null;
-    config?: GameConfiguration | null;
-    /**
-     * Total Cards
-     */
-    total_cards?: number;
-    /**
-     * Players
-     */
-    players?: {
-      [key: string]: PlayerStateWritable;
-    };
-    /**
-     * Cards
-     */
-    cards?: {
-      [key: string]: GameCardWritable;
-    };
-  } | null;
-  /**
-   * Valid Actions
-   */
-  valid_actions?: Array<ValidActionSchema>;
-};
-
-/**
- * ActionResultMessage
- *
- * Result of an action.
- */
-export type ActionResultMessageWritable = {
-  data: ActionResultDataWritable;
 };
 
 /**
@@ -3237,13 +3514,25 @@ export type GameCardWritable = {
    */
   element_contribution?: Array<ElementContribution>;
   /**
+   * Type Id
+   */
+  type_id?: number | null;
+  /**
+   * Character Id
+   */
+  character_id?: number | null;
+  /**
+   * Character Name
+   */
+  character_name?: string | null;
+  /**
    * Attacks
    */
   attacks?: Array<AttackDefinition>;
   /**
-   * Skill Ids
+   * Ability Ids
    */
-  skill_ids?: Array<number>;
+  ability_ids?: Array<number>;
   /**
    * Association Ids
    */
@@ -3262,6 +3551,20 @@ export type GameCardWritable = {
    * Associations
    */
   associations?: Array<string>;
+  /**
+   * Association Target Id
+   */
+  association_target_id?: string | null;
+  /**
+   * Active Statuses
+   */
+  active_statuses?: Array<ActiveStatus>;
+  /**
+   * Attack Last Used
+   */
+  attack_last_used?: {
+    [key: string]: number;
+  };
   /**
    * Has Attacked This Turn
    */
@@ -3352,156 +3655,6 @@ export type GameRoomWritable = {
 };
 
 /**
- * GameStartedData
- *
- * Data for game_started message.
- */
-export type GameStartedDataWritable = {
-  /**
-   * Success
-   */
-  success: boolean;
-  /**
-   * GameStateForPlayer
-   *
-   * Read schema representing the game state payload sent to a player.
-   *
-   * This matches the output of GameState.serialize_for_player() and includes
-   * the cards and players maps that are excluded from the base GameState schema.
-   */
-  game_state: {
-    /**
-     * Game Id
-     */
-    game_id: string;
-    /**
-     * Active Player Id
-     */
-    active_player_id?: string | null;
-    /**
-     * Turn Number
-     */
-    turn_number?: number;
-    current_phase?: TurnPhase;
-    status?: GameStatus;
-    /**
-     * Winner Id
-     */
-    winner_id?: string | null;
-    /**
-     * Created At
-     */
-    created_at?: string | null;
-    /**
-     * Pending Action
-     */
-    pending_action?: string | null;
-    /**
-     * Pending Defender Id
-     */
-    pending_defender_id?: string | null;
-    /**
-     * Pending Attack
-     */
-    pending_attack?: {
-      [key: string]: unknown;
-    } | null;
-    config?: GameConfiguration | null;
-    /**
-     * Total Cards
-     */
-    total_cards?: number;
-    /**
-     * Players
-     */
-    players?: {
-      [key: string]: PlayerStateWritable;
-    };
-    /**
-     * Cards
-     */
-    cards?: {
-      [key: string]: GameCardWritable;
-    };
-  };
-  /**
-   * Events
-   */
-  events: Array<
-    | ({
-        event_type: "CardDrawnEvent";
-      } & CardDrawnEvent)
-    | ({
-        event_type: "CardPlayedEvent";
-      } & CardPlayedEvent)
-    | ({
-        event_type: "CardPromotedEvent";
-      } & CardPromotedEvent)
-    | ({
-        event_type: "CardSwappedEvent";
-      } & CardSwappedEvent)
-    | ({
-        event_type: "CardAssociatedEvent";
-      } & CardAssociatedEvent)
-    | ({
-        event_type: "CardEvolvedEvent";
-      } & CardEvolvedEvent)
-    | ({
-        event_type: "AttackDeclaredEvent";
-      } & AttackDeclaredEvent)
-    | ({
-        event_type: "DamageDealtEvent";
-      } & DamageDealtEvent)
-    | ({
-        event_type: "CardDestroyedEvent";
-      } & CardDestroyedEvent)
-    | ({
-        event_type: "ElementsConsumedEvent";
-      } & ElementsConsumedEvent)
-    | ({
-        event_type: "ElementsRestoredEvent";
-      } & ElementsRestoredEvent)
-    | ({
-        event_type: "TurnStartedEvent";
-      } & TurnStartedEvent)
-    | ({
-        event_type: "TurnEndedEvent";
-      } & TurnEndedEvent)
-    | ({
-        event_type: "PhaseChangedEvent";
-      } & PhaseChangedEvent)
-    | ({
-        event_type: "GameStartedEvent";
-      } & GameStartedEvent)
-    | ({
-        event_type: "GameEndedEvent";
-      } & GameEndedEvent)
-    | ({
-        event_type: "NoDefenderEvent";
-      } & NoDefenderEvent)
-    | ({
-        event_type: "EffectTriggeredEvent";
-      } & EffectTriggeredEvent)
-    | ({
-        event_type: "EffectAppliedEvent";
-      } & EffectAppliedEvent)
-  >;
-  /**
-   * Valid Actions
-   */
-  valid_actions?: Array<ValidActionSchema>;
-};
-
-/**
- * GameStartedMessage
- *
- * Game has started.
- */
-export type GameStartedMessageWritable = {
-  data: GameStartedDataWritable;
-};
-
-/**
  * GameState
  *
  * Complete state of a game.
@@ -3537,12 +3690,15 @@ export type GameStateWritable = {
    * Pending Defender Id
    */
   pending_defender_id?: string | null;
+  pending_attack?: PendingAttack | null;
   /**
-   * Pending Attack
+   * Pending Forced Swap Target Id
    */
-  pending_attack?: {
-    [key: string]: unknown;
-  } | null;
+  pending_forced_swap_target_id?: string | null;
+  /**
+   * Pending Forced Swap Source Id
+   */
+  pending_forced_swap_source_id?: string | null;
   config?: GameConfiguration;
 };
 
@@ -3553,70 +3709,6 @@ export type GameStateWritable = {
  */
 export type GameStateDataWritable = {
   state?: GameStateWritable | null;
-};
-
-/**
- * GameStateForPlayer
- *
- * Read schema representing the game state payload sent to a player.
- *
- * This matches the output of GameState.serialize_for_player() and includes
- * the cards and players maps that are excluded from the base GameState schema.
- */
-export type GameStateForPlayerWritable = {
-  /**
-   * Game Id
-   */
-  game_id: string;
-  /**
-   * Active Player Id
-   */
-  active_player_id?: string | null;
-  /**
-   * Turn Number
-   */
-  turn_number?: number;
-  current_phase?: TurnPhase;
-  status?: GameStatus;
-  /**
-   * Winner Id
-   */
-  winner_id?: string | null;
-  /**
-   * Created At
-   */
-  created_at?: string | null;
-  /**
-   * Pending Action
-   */
-  pending_action?: string | null;
-  /**
-   * Pending Defender Id
-   */
-  pending_defender_id?: string | null;
-  /**
-   * Pending Attack
-   */
-  pending_attack?: {
-    [key: string]: unknown;
-  } | null;
-  config?: GameConfiguration | null;
-  /**
-   * Total Cards
-   */
-  total_cards?: number;
-  /**
-   * Players
-   */
-  players?: {
-    [key: string]: PlayerStateWritable;
-  };
-  /**
-   * Cards
-   */
-  cards?: {
-    [key: string]: GameCardWritable;
-  };
 };
 
 /**

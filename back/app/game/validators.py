@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 from app.models.game.enums import GameStatus
-from app.game.actions import Action, ForceDefendAction, ConcedeAction
+from app.game.actions import Action, ForceDefendAction, ResolveForcedSwapAction, ConcedeAction
 
 if TYPE_CHECKING:
     from app.models.game.state import GameState
@@ -30,13 +30,13 @@ class RuleValidator:
     def validate(self, state: "GameState", action: Action) -> ValidationResult:
         # Game must be in progress (or paused for force defend / concede)
         if state.status != GameStatus.IN_PROGRESS:
-            if state.status == GameStatus.PAUSED and not isinstance(action, (ForceDefendAction, ConcedeAction)):
+            if state.status == GameStatus.PAUSED and not isinstance(action, (ForceDefendAction, ResolveForcedSwapAction, ConcedeAction)):
                 return ValidationResult(valid=False, error="Game is paused, waiting for forced defend action", error_code="GAME_PAUSED")
             elif state.status != GameStatus.PAUSED:
                 return ValidationResult(valid=False, error=f"Game is not in progress (status: {state.status.name})", error_code="GAME_NOT_IN_PROGRESS")
 
         # Must be the player's turn (except force defend and concede)
-        if not isinstance(action, (ForceDefendAction, ConcedeAction)):
+        if not isinstance(action, (ForceDefendAction, ResolveForcedSwapAction, ConcedeAction)):
             if action.player_id != state.active_player_id:
                 return ValidationResult(valid=False, error="It is not your turn", error_code="NOT_YOUR_TURN")
 

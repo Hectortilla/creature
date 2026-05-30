@@ -2,6 +2,7 @@ from sqladmin import ModelView
 
 # Models
 from app.models.db.ability import Ability
+from app.settings.admin.effect_display import effect_summary
 
 
 class AbilityAdmin(ModelView, model=Ability):
@@ -25,6 +26,7 @@ class AbilityAdmin(ModelView, model=Ability):
         "handle": "Handle",
         "type": "Tipo",
         "created_at": "Creado el",
+        "effect_summary": "Efectos",
     }
     column_details_list = [
         "id",
@@ -33,8 +35,12 @@ class AbilityAdmin(ModelView, model=Ability):
         "code",
         "type",
         "handle",
+        "effect_summary",
         "created_at",
     ]
+    column_formatters_detail = {
+        "effect_summary": lambda model, a: effect_summary("ability", model.id),
+    }
     form_columns = [
         "name",
         "description",

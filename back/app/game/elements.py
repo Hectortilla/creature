@@ -15,19 +15,19 @@ if TYPE_CHECKING:
 
 
 class ElementId(IntEnum):
-    FIRE = 1
-    WATER = 2
-    EARTH = 3
+    ETHER = 1
+    EARTH = 2
+    WATER = 3
     AIR = 4
-    LIGHT = 5
-    DARK = 6
-    NATURE = 7
-    ELECTRIC = 8
-    ICE = 9
-    METAL = 10
-    POISON = 11
-    PSYCHIC = 12
-    NEUTRAL = 13
+    FIRE = 5
+    ICE = 6
+    THUNDER = 7
+    METAL = 8
+    NATURE = 9
+    TOXIC = 10
+    MENTAL = 11
+    LIGHT = 12
+    DARKNESS = 13
 
 
 # ── Element interaction matrix ──────────────────────────────────────────
@@ -41,19 +41,19 @@ ELEMENT_BONUS: dict[tuple[int, int], int] = {}
 
 _RELATIONSHIPS: dict[int, tuple[list[int], list[int]]] = {
     # element: (strengths, weaknesses)
-    ElementId.FIRE:     ([ElementId.NATURE, ElementId.ICE, ElementId.METAL],      [ElementId.WATER, ElementId.EARTH]),
-    ElementId.WATER:    ([ElementId.FIRE, ElementId.EARTH],                        [ElementId.ELECTRIC, ElementId.NATURE]),
-    ElementId.EARTH:    ([ElementId.FIRE, ElementId.ELECTRIC, ElementId.POISON],   [ElementId.WATER, ElementId.NATURE, ElementId.ICE]),
-    ElementId.AIR:      ([ElementId.EARTH, ElementId.NATURE],                      [ElementId.ELECTRIC, ElementId.ICE]),
-    ElementId.LIGHT:    ([ElementId.DARK, ElementId.PSYCHIC],                      [ElementId.DARK]),
-    ElementId.DARK:     ([ElementId.LIGHT, ElementId.PSYCHIC],                     [ElementId.LIGHT]),
-    ElementId.NATURE:   ([ElementId.WATER, ElementId.EARTH],                       [ElementId.FIRE, ElementId.AIR, ElementId.POISON]),
-    ElementId.ELECTRIC: ([ElementId.WATER, ElementId.AIR, ElementId.METAL],        [ElementId.EARTH]),
-    ElementId.ICE:      ([ElementId.EARTH, ElementId.AIR, ElementId.NATURE],       [ElementId.FIRE, ElementId.METAL]),
-    ElementId.METAL:    ([ElementId.ICE, ElementId.NATURE],                        [ElementId.FIRE, ElementId.ELECTRIC]),
-    ElementId.POISON:   ([ElementId.NATURE],                                       [ElementId.EARTH, ElementId.PSYCHIC]),
-    ElementId.PSYCHIC:  ([ElementId.POISON],                                       [ElementId.DARK]),
-    ElementId.NEUTRAL:  ([],                                                       []),
+    ElementId.ETHER:    ([ElementId.MENTAL],                                       [ElementId.LIGHT]),
+    ElementId.EARTH:    ([ElementId.THUNDER, ElementId.METAL],                     [ElementId.WATER, ElementId.NATURE]),
+    ElementId.WATER:    ([ElementId.EARTH, ElementId.FIRE],                        [ElementId.THUNDER, ElementId.NATURE]),
+    ElementId.AIR:      ([ElementId.FIRE, ElementId.NATURE],                       [ElementId.EARTH, ElementId.THUNDER]),
+    ElementId.FIRE:     ([ElementId.ICE, ElementId.NATURE],                        [ElementId.WATER, ElementId.AIR]),
+    ElementId.ICE:      ([ElementId.AIR, ElementId.NATURE],                        [ElementId.FIRE, ElementId.METAL]),
+    ElementId.THUNDER:  ([ElementId.WATER, ElementId.ICE],                         [ElementId.EARTH, ElementId.METAL]),
+    ElementId.METAL:    ([ElementId.ICE, ElementId.MENTAL],                        [ElementId.EARTH, ElementId.NATURE]),
+    ElementId.NATURE:   ([ElementId.METAL, ElementId.LIGHT],                       [ElementId.FIRE, ElementId.ICE]),
+    ElementId.TOXIC:    ([ElementId.NATURE, ElementId.TOXIC],                      [ElementId.EARTH, ElementId.MENTAL]),
+    ElementId.MENTAL:   ([ElementId.TOXIC, ElementId.MENTAL],                      [ElementId.DARKNESS, ElementId.MENTAL]),
+    ElementId.LIGHT:    ([ElementId.ETHER],                                        [ElementId.DARKNESS, ElementId.NATURE]),
+    ElementId.DARKNESS: ([ElementId.LIGHT],                                        [ElementId.ETHER, ElementId.METAL]),
 }
 
 for _atk, (_strengths, _weaknesses) in _RELATIONSHIPS.items():

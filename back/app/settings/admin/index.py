@@ -13,6 +13,7 @@ from .element import ElementAdmin
 from .attack import AttackAdmin
 from .ability import AbilityAdmin
 from .association import AssociationAdmin
+from .effect import EffectAdmin
 from .deck import DeckAdmin
 
 
@@ -36,4 +37,5 @@ def setup_admin(app: FastAPI) -> None:
     admin.add_view(AttackAdmin)
     admin.add_view(AbilityAdmin)
     admin.add_view(AssociationAdmin)
+    admin.add_view(EffectAdmin)
     admin.add_view(DeckAdmin)

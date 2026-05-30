@@ -2,7 +2,7 @@
 
 The game engine is an **event-driven, pipeline-based** rules engine for the Creature card game. It is intentionally split into small, single-responsibility modules so that game rules, state mutations, and reactive card effects can evolve independently.
 
-This document is meant for developers who need to **extend** (add an action, event, or skill), **refactor**, or **debug** the engine. If you only need to call into the engine, jump to [Public API](#public-api).
+This document is meant for developers who need to **extend** (add an action, event, or effect), **refactor**, or **debug** the engine. If you only need to call into the engine, jump to [Public API](#public-api).
 
 ---
 
@@ -17,7 +17,7 @@ This document is meant for developers who need to **extend** (add an action, eve
 7. [Extending the engine](#extending-the-engine)
    - [Adding an Action](#adding-an-action)
    - [Adding an Event](#adding-an-event)
-   - [Adding an Effect / Skill](#adding-an-effect--skill)
+   - [Adding an Effect](#adding-an-effect)
    - [Adding an Element](#adding-an-element)
 8. [Invariants and gotchas](#invariants-and-gotchas)
 9. [Testing notes](#testing-notes)
@@ -38,7 +38,7 @@ The engine rests on five ideas. If you internalize these, the code reads itself.
    Each action knows: its valid phases, how to validate itself, how to translate itself into events, and how to enumerate all its currently-valid forms. This makes adding a new action a single-file change.
 
 4. **Effects react to events.**
-   Card skills don't run inline with actions. They subscribe to event triggers (`ON_PLAY`, `ON_ATTACK`, …) and emit *new* events that flow back through the pipeline. This is what makes chains and counters expressible.
+   Card effects don't run inline with actions. Triggered effects subscribe to event triggers (`ON_PLAY`, `ON_ATTACK`, …) and emit *new* events that flow back through the pipeline; passive effects are queried synchronously during validation/damage math. Effects are **data** — rows in the `effects` table — instantiated into `EffectAtom` objects when a card is materialized. This is what makes chains and counters expressible without bespoke code per card.
 
 5. **The engine is stateless.**
    [GameEngine](engine.py) holds no game state. It is a coordinator. Game state lives in `GameState`/`PlayerState` objects passed in and out. This makes the engine trivially safe to share across games/threads/sessions.
@@ -94,7 +94,7 @@ Every action — drawing a card, attacking, conceding, even the initial game sta
 | [`validators.py`](validators.py) | `RuleValidator` — common pre-checks before delegating to `action.validate()` | Adding a cross-cutting precondition (e.g. a new global game status) |
 | [`event_loop.py`](event_loop.py) | `EventLoop` — drains the event queue, fires effects, auto-advances empty phases | Changing how triggers are routed or how chains resolve |
 | [`reducer.py`](reducer.py) | `apply_event` + `_handler`-decorated reducers, one per event type | Adding a new event type (you must register a handler) |
-| [`effects.py`](effects.py) | `Effect` base class + built-in effect types + `_EFFECT_INSTANCES` registry + passive-modifier helpers | Adding a new skill type, or new trigger kind |
+| [`effects.py`](effects.py) | `EffectAtom` base class + atom types + `EFFECT_REGISTRY` + the passive-query engine; atoms are built from `effects` DB rows by `build_effect_atoms` | Adding a new effect atom type or trigger kind |
 | [`elements.py`](elements.py) | Element interaction matrix, damage formula | Tuning the type chart, defense math, or attack cost rules |
 | [`actions/`](actions/) | One file per action family (placement, promotion, combat, …) | Adding a new player action |
 | [`actions/combat.py`](actions/combat.py) | `AttackAction`, `ForceDefendAction`, and `build_combat_events()` — shared combat event generation | Changing how attacks resolve into events |
@@ -139,7 +139,7 @@ The engine reads from and writes to types defined in [`app/models/game/`](../mod
 
 - **`GameState`** — top-level state. Owns `cards` (instance_id → `GameCard`), `room` (which owns `players`), `status`, `current_phase`, `active_player_id`, `turn_number`, plus paused-attack bookkeeping (`pending_action`, `pending_defender_id`, `pending_attack`).
 - **`PlayerState`** — per-player: `zones` (HAND/DECK/SUPPORTING/ATTACKING/GRAVEYARD), `element_pool`, `turn_count`.
-- **`GameCard`** — a card *instance* on the table. Holds runtime fields like `zone`, `current_health`, `turns_in_zone`, `swapped_this_turn`, `status` (READY/SWAPPED/ASSOCIATED), `associations`, plus static fields copied from the catalog card (`attacks`, `element_contribution`, `skill_ids`).
+- **`GameCard`** — a card *instance* on the table. Holds runtime fields like `zone`, `current_health`, `turns_in_zone`, `swapped_this_turn`, `status` (READY/SWAPPED/ASSOCIATED), `associations`, `active_statuses`, plus static fields copied from the catalog card (`attacks`, `element_contribution`, `ability_ids`) and the materialized `effect_atoms`.
 - **`Zone`** — enum: `HAND | DECK | SUPPORTING | ATTACKING | GRAVEYARD`. The two "active" zones — where cards interact with the game — are SUPPORTING and ATTACKING.
 - **`TurnPhase`** — enum: `DRAW → PLACEMENT → PROMOTION → SWAP → ASSOCIATION → EVOLUTION → ATTACK`. Each phase has its own action set; `PassPhaseAction` advances through them and rolls to the next player's turn at the end.
 - **`GameEvent`** subclasses — `CardDrawnEvent`, `CardPlayedEvent`, `AttackDeclaredEvent`, etc. These are immutable records of what changed.
@@ -159,7 +159,7 @@ The big picture: **`GameState` is the *what is*, the event log is the *what happ
 1. Push `initial_events` onto a FIFO queue.
 2. Pop the next event, call `reducer.apply_event` to mutate state.
 3. Determine which `(EffectTrigger, card_id)` pairs the event activates via [`_get_trigger_pairs`](event_loop.py).
-4. For each pair, look up the card's skills, find effects that subscribe to that trigger, call `effect.execute(...)`, and append the returned events to the queue.
+4. For each pair, scan the card's `effect_atoms`, keep those whose `triggers` include the trigger and whose `should_trigger(...)` passes, call `atom.execute(...)`, and append the returned events to the queue.
 5. Repeat until the queue is drained.
 
 This is what makes reactive sequences work: an `ON_DESTROY` effect that deals damage queues a `DamageDealtEvent`, which may itself be a `CardDestroyedEvent`, which may trigger another `ON_DESTROY`. The queue absorbs the chain naturally.
@@ -227,8 +227,8 @@ Events live in [`app/models/game/events.py`](../models/game/events.py) (outside 
    ```python
    @_handler(MyNewEvent)
    def _apply_my_new_event(state, players, event):
-       # mutate state and/or players in place
-       return state, players
+       # mutate state and/or players in place; no return needed
+       ...
    ```
 
    The reducer is the **only** place state mutates for this event. If you find yourself reaching for mutation elsewhere, stop and add a reducer.
@@ -239,40 +239,49 @@ Events live in [`app/models/game/events.py`](../models/game/events.py) (outside 
 
 4. **(Optional) Element recalculation.** If your event changes which cards are in active zones or their status, the relevant reducer probably needs to call `_recalculate_elements(state, players, player_id)`. Compare with existing reducers — `_apply_card_played`, `_apply_card_destroyed`, etc. all do this.
 
-### Adding an Effect / Skill
+### Adding an Effect
 
-Effects implement card skills. They are pre-configured at module load and looked up by `skill_id`.
+Effects are **data**, not code-per-card. Each row in the `effects` table names an `owner` (an ability, attack, or association), an `atom_type`, an optional `trigger`, and a JSON `params` blob. When a `GameCard` is materialized, `build_effect_atoms` looks each `atom_type` up in `EFFECT_REGISTRY` and instantiates an `EffectAtom`. So adding a new effect to a card is usually *seed a row*; adding a new **kind** of effect is *add an atom class*.
 
-1. **Subclass `Effect`** in [effects.py](effects.py) (or wherever your effects live):
+An `EffectAtom` runs in one of two modes:
+
+- **Triggered** — reacts to an event. Set `default_triggers` and implement `execute(context) -> EffectResult`; the returned `events` are appended to the queue.
+- **Passive** — queried synchronously during validation/damage math. Set `passive_categories` and implement `contribute_passive(result, ctx)`, mutating the shared `PassiveQueryResult`.
+
+To add a new atom type:
+
+1. **Subclass `EffectAtom`** in [effects.py](effects.py), set a unique `atom_type`, and implement the mode you need:
 
    ```python
-   class OnPlayDrawEffect(Effect):
-       def __init__(self, effect_id, name, draw_count):
-           super().__init__(effect_id, name, f"Draw {draw_count} on play")
-           self.draw_count = draw_count
-
-       @property
-       def triggers(self): return [EffectTrigger.ON_PLAY]
-
-       def should_trigger(self, context):
-           if not super().should_trigger(context): return False
-           return (isinstance(context.trigger_event, CardPlayedEvent)
-                   and context.trigger_event.instance_id == context.source_card.instance_id)
+   class SelfHealOnAttackAtom(EffectAtom):
+       atom_type = "self-heal-on-attack"
+       default_triggers = (EffectTrigger.ON_ATTACK_RESOLVE,)
 
        def execute(self, context):
-           # Build the events you want to queue
-           return EffectResult(events=[...])
+           event = context.trigger_event
+           if not isinstance(event, AttackResolvedEvent) or event.final_damage <= 0:
+               return EffectResult()
+           amount = int(self.params.get("amount", 0))
+           src = context.source_card
+           new_health = min(src.health, src.current_health + amount)
+           return EffectResult(events=[HealingAppliedEvent(
+               game_id=context.state.game_id, target_id=src.instance_id,
+               source_id=src.instance_id, amount=new_health - src.current_health,
+               new_health=new_health,
+           )])
    ```
 
-2. **`triggers`** is the list of `EffectTrigger`s this effect responds to. The event loop will only invoke the effect when the event maps to one of these.
+2. **Read inputs from `self.params`** (a plain dict from the row's JSONB). Don't mutate state in `execute`/`contribute_passive` — emit an event and let the reducer mutate.
 
-3. **`should_trigger(context)`** is your conditional filter. The default checks that the source card is in an active zone — call `super().should_trigger(context)` and add your own conditions. For "this card only" effects, compare `context.trigger_event` to `context.source_card.instance_id`.
+3. **`should_trigger(context)`** is handled by the base class: it scopes the atom to its owner (the attack that fired, an association on the source card, or an ability the card holds). Override only for extra conditions.
 
-4. **`execute(context)`** returns an `EffectResult`. The interesting field is `events` — those are appended to the event queue and processed in turn. Don't mutate state directly here; emit an event and let the reducer do it.
+4. **Register the class** in `EFFECT_REGISTRY` (keyed by `atom_type`) — the registry is derived from the class list at the bottom of [effects.py](effects.py), so just add it there.
 
-5. **Register instances** at module load. `register_effect(effect_instance)` stores it in `_EFFECT_INSTANCES` keyed by `effect_id`. Card data references skills by `skill_id` (which must equal the registered `effect_id`, as a string).
+5. **Seed a row** referencing the owner, via an Alembic migration (see [`003_effects.py`](../../alembic/versions/003_effects.py)) or the *Efectos* admin screen.
 
-6. **Passive effects** are a special case: they have a `PASSIVE` trigger but aren't event-driven. They are read by query helpers — `get_passive_stat_modifiers` (used in damage calculation) and `get_passive_element_bonus` (used in `_recalculate_elements`). If you add a new kind of passive, add a helper that walks active cards and sums up the modifier, and call it from wherever the stat is computed.
+For a **passive** atom that exposes a brand-new modifier, add a `PassiveCategory`, accumulate into `PassiveQueryResult` in `contribute_passive`, add a thin `get_*`/`is_*` wrapper over `query_passive`, and call it from the relevant validation/damage site.
+
+For a **bespoke** effect that doesn't decompose into params, use a `ScriptAtom`: register a plain Python function in `SCRIPT_REGISTRY` (e.g. `cambio_de_guardia`) and reference it from the row's `script_id`. Scripts are registered functions only — never dynamically evaluated code.
 
 ### Adding an Element
 

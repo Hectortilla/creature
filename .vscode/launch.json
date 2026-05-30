@@ -20,8 +20,15 @@
             "jinja": true
         },
         {
-            "name": "Alembic migration",
-            "command": "alembic revision --autogenerate -m \"${input:alemMsg}\" && alembic upgrade head",
+            "name": "Alembic miragte",
+            "command": "uv run alembic upgrade head",
+            "type": "node-terminal",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/back",
+        },
+        {
+            "name": "Alembic generate",
+            "command": "uv run alembic revision --autogenerate -m \"${input:alemMsg}\"",
             "type": "node-terminal",
             "request": "launch",
             "cwd": "${workspaceFolder}/back",

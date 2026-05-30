@@ -70,6 +70,16 @@ class ActionData(BaseModel):
         description="Attack ID to use (used by: attack)",
         examples=[1, 2]
     )
+    secondary_target_card_id: Optional[str] = Field(
+        default=None,
+        description="Secondary target card instance ID (used by: splash attack effects)",
+        examples=["card_instance_456"]
+    )
+    cost_card_id: Optional[str] = Field(
+        default=None,
+        description="Card instance ID paid as a special attack cost",
+        examples=["graveyard_card_123"]
+    )
     supporting_card_id: Optional[str] = Field(
         default=None,
         description="Supporting card instance ID (used by: swap)",
@@ -89,6 +99,11 @@ class ActionData(BaseModel):
         default=None,
         description="Association card instance ID (used by: associate)",
         examples=["card_instance_123"]
+    )
+    swap_with_supporting_card_id: Optional[str] = Field(
+        default=None,
+        description="Supporting card selected for association-driven free swap",
+        examples=["card_instance_456"]
     )
     evolution_card_id: Optional[str] = Field(
         default=None,
@@ -167,4 +182,3 @@ class PingMessage(WebSocketMessage):
     """Keep-alive ping."""
     type: ClassVar[Literal["ping"]] = "ping"
     data: PingData = Field(default_factory=PingData)
-

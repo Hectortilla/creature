@@ -2,6 +2,7 @@ from sqladmin import ModelView
 
 # Models
 from app.models.db.association import Association
+from app.settings.admin.effect_display import effect_summary
 
 
 class AssociationAdmin(ModelView, model=Association):
@@ -24,6 +25,7 @@ class AssociationAdmin(ModelView, model=Association):
         "code": "Código",
         "handle": "Handle",
         "created_at": "Creado el",
+        "effect_summary": "Efectos",
     }
     column_details_list = [
         "id",
@@ -31,8 +33,12 @@ class AssociationAdmin(ModelView, model=Association):
         "description",
         "code",
         "handle",
+        "effect_summary",
         "created_at",
     ]
+    column_formatters_detail = {
+        "effect_summary": lambda model, a: effect_summary("association", model.id),
+    }
     form_columns = [
         "name",
         "description",

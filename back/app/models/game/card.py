@@ -9,17 +9,43 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING, Optional, Any
 
-from pydantic import computed_field, model_validator
+from pydantic import Field, computed_field, model_validator
 
 from app.models.core.card import CardIdentityFields, CardCombatFields
 from app.models.game.base import GameBaseModel
-from app.models.game.enums import Zone, CardStatus
+from app.models.game.enums import Zone, CardStatus, StatusType
 from app.models.game.element import ElementContribution
 from app.models.game.attack import AttackDefinition
 
 if TYPE_CHECKING:
     from app.models.schemas.attack import AttackReadWithElement
     from app.models.schemas.card import CardReadWithRelations
+
+
+class EffectSpec(GameBaseModel):
+    """Serializable effect atom data copied from the catalog into runtime setup."""
+
+    id: int
+    owner_kind: str
+    owner_id: int
+    atom_type: str
+    trigger: Optional[str] = None
+    params: dict[str, Any] = Field(default_factory=dict)
+    sort_order: int = 0
+    script_id: Optional[str] = None
+
+
+class ActiveStatus(GameBaseModel):
+    """Runtime status applied by an effect atom."""
+
+    status_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    status_type: StatusType
+    source_card_id: str = ""
+    source_atom_id: Optional[int] = None
+    remaining_turns: int = 1
+    tick_on: str = "none"
+    expires_on: str = "own_turn_end"
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
@@ -50,10 +76,13 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     # Elements
     element_ids: list[int] = []
     element_contribution: list[ElementContribution] = []
+    type_id: Optional[int] = None
+    character_id: Optional[int] = None
+    character_name: Optional[str] = None
     
     # Abilities
     attacks: list[AttackDefinition] = []
-    skill_ids: list[int] = []
+    ability_ids: list[int] = []
     association_ids: list[int] = []
     
     # Evolution
@@ -64,6 +93,11 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
     status: CardStatus = CardStatus.READY
     turns_in_zone: int = 0
     associations: list[str] = []  # instance_ids
+    association_target_id: Optional[str] = None
+    active_statuses: list[ActiveStatus] = Field(default_factory=list)
+    effect_specs: list[EffectSpec] = Field(default_factory=list, exclude=True)
+    effect_atoms: list[Any] = Field(default_factory=list, exclude=True)
+    attack_last_used: dict[int, int] = Field(default_factory=dict)
     has_attacked_this_turn: bool = False
     swapped_this_turn: bool = False
     
@@ -88,6 +122,7 @@ class GameCard(CardIdentityFields, CardCombatFields, GameBaseModel):
             self.zone == Zone.ATTACKING
             and not self.has_attacked_this_turn
             and self.status != CardStatus.ASSOCIATED
+            and not any(status.status_type == StatusType.BLOCK_ATTACK for status in self.active_statuses)
         )
     
     @computed_field
@@ -190,9 +225,13 @@ class GameCardInput(GameBaseModel):
     magic_defence: int = 0
     element_ids: list[int] = []
     element_contribution: list[ElementContribution] = []
+    type_id: Optional[int] = None
+    character_id: Optional[int] = None
+    character_name: Optional[str] = None
     attacks: list[AttackInput] = []
-    skill_ids: list[int] = []
+    ability_ids: list[int] = []
     association_ids: list[int] = []
+    effect_specs: list[EffectSpec] = Field(default_factory=list)
     evolves_from_id: Optional[int] = None
     
     @classmethod
@@ -270,10 +309,10 @@ class GameCardInput(GameBaseModel):
         if card.second_attack:
             attacks.append(cls._build_attack_input(card.second_attack))
         
-        # Build skill_ids and association_ids
-        skill_ids = []
+        # Build ability_ids and association_ids
+        ability_ids = []
         if card.ability_id:
-            skill_ids.append(card.ability_id)
+            ability_ids.append(card.ability_id)
         
         association_ids = []
         if card.association_id:
@@ -287,12 +326,18 @@ class GameCardInput(GameBaseModel):
             magic_defence=card.magic_defence or 0,
             element_ids=element_ids,
             element_contribution=element_contribution,
+            type_id=card.type_id,
+            character_id=card.character_id,
+            character_name=card.character.label if card.character else None,
             attacks=attacks,
-            skill_ids=skill_ids,
+            ability_ids=ability_ids,
             association_ids=association_ids,
+            effect_specs=[
+                EffectSpec.model_validate(effect.model_dump())
+                for effect in getattr(card, "effects", [])
+            ],
             evolves_from_id=card.is_evolution_id,
         )
 
 
-__all__ = ["GameCard", "GameCardInput", "AttackInput"]
-
+__all__ = ["GameCard", "GameCardInput", "AttackInput", "EffectSpec", "ActiveStatus"]

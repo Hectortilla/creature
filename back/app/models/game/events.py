@@ -9,13 +9,13 @@ All events use Pydantic BaseModel for validation and serialization.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 from datetime import datetime
 
 from pydantic import Field, field_serializer
 
 from app.models.game.base import GameBaseModel
-from app.models.game.enums import Zone, TurnPhase, DamageType
+from app.models.game.enums import Zone, TurnPhase, DamageType, StatusType
 
 
 class GameEvent(GameBaseModel):
@@ -85,6 +85,7 @@ class CardAssociatedEvent(GameEvent):
     card_id: int = 0
     target_card_id: str = ""
     source_zone: Optional[Zone] = None
+    swap_with_supporting_card_id: str = ""
 
 
 class CardEvolvedEvent(GameEvent):
@@ -110,6 +111,7 @@ class AttackDeclaredEvent(GameEvent):
     target_id: str = ""
     attack_id: int = 0
     attack_name: str = ""
+    secondary_target_id: str = ""
 
 
 class DamageDealtEvent(GameEvent):
@@ -125,6 +127,19 @@ class DamageDealtEvent(GameEvent):
     remaining_health: int = 0
 
 
+class AttackResolvedEvent(GameEvent):
+    """Event fired after base combat damage for one attack/target has resolved."""
+    event_type: Literal["AttackResolvedEvent"] = "AttackResolvedEvent"
+    attacker_owner_id: str = ""
+    attacker_id: str = ""
+    target_id: str = ""
+    attack_id: int = 0
+    attack_name: str = ""
+    final_damage: int = 0
+    target_destroyed: bool = False
+    secondary_target_id: str = ""
+
+
 class CardDestroyedEvent(GameEvent):
     """Event fired when a card is destroyed (health <= 0)."""
     event_type: Literal["CardDestroyedEvent"] = "CardDestroyedEvent"
@@ -132,6 +147,86 @@ class CardDestroyedEvent(GameEvent):
     owner_id: str = ""
     card_name: str = ""
     destroyed_by: Optional[str] = None
+
+
+class CardExiledEvent(GameEvent):
+    """Event fired when a card is removed from the game instead of sent to graveyard."""
+    event_type: Literal["CardExiledEvent"] = "CardExiledEvent"
+    instance_id: str = ""
+    owner_id: str = ""
+    reason: str = ""
+
+
+class CardHealthChangedEvent(GameEvent):
+    """Event fired for non-combat health changes such as DoT or effect damage."""
+    event_type: Literal["CardHealthChangedEvent"] = "CardHealthChangedEvent"
+    target_id: str = ""
+    source_id: str = ""
+    delta: int = 0
+    new_health: int = 0
+    reason: str = ""
+
+
+class HealingAppliedEvent(GameEvent):
+    """Event fired when an effect heals a card."""
+    event_type: Literal["HealingAppliedEvent"] = "HealingAppliedEvent"
+    target_id: str = ""
+    source_id: str = ""
+    amount: int = 0
+    new_health: int = 0
+
+
+class StatusAppliedEvent(GameEvent):
+    """Event fired when an effect applies a temporary status."""
+    event_type: Literal["StatusAppliedEvent"] = "StatusAppliedEvent"
+    target_id: str = ""
+    source_card_id: str = ""
+    source_atom_id: Optional[int] = None
+    status_type: StatusType = StatusType.BLOCK_ATTACK
+    duration_turns: int = 1
+    tick_on: str = "none"
+    expires_on: str = "own_turn_end"
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class StatusTickedEvent(GameEvent):
+    """Event fired when a status consumes one tick of duration."""
+    event_type: Literal["StatusTickedEvent"] = "StatusTickedEvent"
+    target_id: str = ""
+    status_id: str = ""
+
+
+class StatusExpiredEvent(GameEvent):
+    """Event fired when a status expires or is consumed."""
+    event_type: Literal["StatusExpiredEvent"] = "StatusExpiredEvent"
+    target_id: str = ""
+    status_id: str = ""
+
+
+class ForcedSwapRequestedEvent(GameEvent):
+    """Event fired when a defending player must swap a damaged card."""
+    event_type: Literal["ForcedSwapRequestedEvent"] = "ForcedSwapRequestedEvent"
+    owner_id: str = ""
+    target_card_id: str = ""
+    source_card_id: str = ""
+
+
+class DiceRolledEvent(GameEvent):
+    """Event fired when an effect rolls a die."""
+    event_type: Literal["DiceRolledEvent"] = "DiceRolledEvent"
+    roller_id: str = ""
+    faces: int = 6
+    result: int = 0
+    purpose: str = ""
+
+
+class CardRevivedEvent(GameEvent):
+    """Event fired when a graveyard card swaps back into an active zone."""
+    event_type: Literal["CardRevivedEvent"] = "CardRevivedEvent"
+    player_id: str = ""
+    source_card_id: str = ""
+    revived_card_id: str = ""
+    target_zone: Zone = Zone.SUPPORTING
 
 
 # ============================================================================
@@ -214,27 +309,6 @@ class NoDefenderEvent(GameEvent):
     pending_attacker_owner_id: str = ""
 
 
-# ============================================================================
-# Effect Events
-# ============================================================================
-
-class EffectTriggeredEvent(GameEvent):
-    """Event fired when an effect is triggered."""
-    event_type: Literal["EffectTriggeredEvent"] = "EffectTriggeredEvent"
-    source_card_id: str = ""
-    effect_id: str = ""
-    effect_name: str = ""
-    trigger_reason: str = ""
-
-
-class EffectAppliedEvent(GameEvent):
-    """Event fired when an effect's result is applied."""
-    event_type: Literal["EffectAppliedEvent"] = "EffectAppliedEvent"
-    effect_id: str = ""
-    affected_card_ids: list[str] = []
-    description: str = ""
-
-
 # Single registry — union and dict are both derived from this list
 _ALL_EVENT_CLASSES: list[type[GameEvent]] = [
     CardDrawnEvent,
@@ -245,7 +319,17 @@ _ALL_EVENT_CLASSES: list[type[GameEvent]] = [
     CardEvolvedEvent,
     AttackDeclaredEvent,
     DamageDealtEvent,
+    AttackResolvedEvent,
     CardDestroyedEvent,
+    CardExiledEvent,
+    CardHealthChangedEvent,
+    HealingAppliedEvent,
+    StatusAppliedEvent,
+    StatusTickedEvent,
+    StatusExpiredEvent,
+    ForcedSwapRequestedEvent,
+    DiceRolledEvent,
+    CardRevivedEvent,
     ElementsConsumedEvent,
     ElementsRestoredEvent,
     TurnStartedEvent,
@@ -254,8 +338,6 @@ _ALL_EVENT_CLASSES: list[type[GameEvent]] = [
     GameStartedEvent,
     GameEndedEvent,
     NoDefenderEvent,
-    EffectTriggeredEvent,
-    EffectAppliedEvent,
 ]
 
 # Discriminated union for OpenAPI schema generation
@@ -270,37 +352,10 @@ EVENT_TYPES: dict[str, type[GameEvent]] = {
 }
 
 
+# Derived from the single registry above so it can never drift out of sync.
 __all__ = [
-    # Base
     "GameEvent",
-    # Card Movement
-    "CardDrawnEvent",
-    "CardPlayedEvent",
-    "CardPromotedEvent",
-    "CardSwappedEvent",
-    # Association & Evolution
-    "CardAssociatedEvent",
-    "CardEvolvedEvent",
-    # Combat
-    "AttackDeclaredEvent",
-    "DamageDealtEvent",
-    "CardDestroyedEvent",
-    # Elements
-    "ElementsConsumedEvent",
-    "ElementsRestoredEvent",
-    # Turn & Phase
-    "TurnStartedEvent",
-    "TurnEndedEvent",
-    "PhaseChangedEvent",
-    # Game-Level
-    "GameStartedEvent",
-    "GameEndedEvent",
-    "NoDefenderEvent",
-    # Effects
-    "EffectTriggeredEvent",
-    "EffectAppliedEvent",
-    # Union
+    *EVENT_TYPES.keys(),
     "GameEventUnion",
-    # Registry
     "EVENT_TYPES",
 ]

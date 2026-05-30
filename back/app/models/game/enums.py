@@ -13,8 +13,8 @@ class Zone(str, Enum):
     
     - DECK: Contains 22 cards at game start, cards are drawn from here
     - HAND: Cards held by player, can be played from here
-    - SUPPORTING: Max 3 cards, cannot attack but contribute elements/skills
-    - ATTACKING: Max 2 cards, can attack and contribute elements/skills
+    - SUPPORTING: Max 3 cards, cannot attack but contribute elements/effects
+    - ATTACKING: Max 2 cards, can attack and contribute elements/effects
     - GRAVEYARD: Destroyed cards go here, no effect
     """
     DECK = "DECK"
@@ -22,6 +22,7 @@ class Zone(str, Enum):
     SUPPORTING = "SUPPORTING"
     ATTACKING = "ATTACKING"
     GRAVEYARD = "GRAVEYARD"
+    EXILED = "EXILED"
 
 
 class TurnPhase(str, Enum):
@@ -108,11 +109,21 @@ class CardStatus(str, Enum):
     ASSOCIATED = "ASSOCIATED"
 
 
+class StatusType(str, Enum):
+    """
+    Temporary effect statuses applied by card effects.
+    """
+    BLOCK_ATTACK = "BLOCK_ATTACK"
+    DICE_LOCKED_ATTACK = "DICE_LOCKED_ATTACK"
+    DAMAGE_OVER_TIME = "DAMAGE_OVER_TIME"
+    REVIVE_SWAPPABLE = "REVIVE_SWAPPABLE"
+
+
 __all__ = [
     "Zone",
     "TurnPhase",
     "DamageType",
     "GameStatus",
     "CardStatus",
+    "StatusType",
 ]
-

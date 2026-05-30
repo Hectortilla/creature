@@ -10,12 +10,14 @@ from app.models.db.card import Card
 from app.models.db.attack import Attack
 from app.models.db.ability import Ability
 from app.models.db.association import Association
+from app.models.db.effect import Effect
 from app.models.schemas.card import CardCreate, CardRead, CardReadWithRelations
 from app.models.schemas.element import ElementRead
 from app.models.schemas.type import TypeRead
 from app.models.schemas.character import CharacterRead
 from app.models.schemas.ability import AbilityRead
 from app.models.schemas.association import AssociationRead
+from app.models.schemas.effect import EffectRead
 from app.services.attacks import enrich_attack
 from app.services.base import BaseService
 
@@ -62,6 +64,28 @@ class CardService(BaseService[Card, CardCreate]):
             ability_id=card.ability_id,
             association_id=card.association_id,
         )
+
+    def _get_effects_for_card(self, card: Card) -> list[EffectRead]:
+        """Fetch enabled effect rows for this card's ability, attacks, and association."""
+        owner_filters = []
+        if card.ability_id:
+            owner_filters.append((Effect.owner_kind == "ability") & (Effect.owner_id == card.ability_id))
+        if card.first_attack_id:
+            owner_filters.append((Effect.owner_kind == "attack") & (Effect.owner_id == card.first_attack_id))
+        if card.second_attack_id:
+            owner_filters.append((Effect.owner_kind == "attack") & (Effect.owner_id == card.second_attack_id))
+        if card.association_id:
+            owner_filters.append((Effect.owner_kind == "association") & (Effect.owner_id == card.association_id))
+        if not owner_filters:
+            return []
+
+        rows = self.db.exec(
+            select(Effect)
+            .where(Effect.enabled == True)  # noqa: E712
+            .where(or_(*owner_filters))
+            .order_by(Effect.owner_kind, Effect.owner_id, Effect.sort_order, Effect.id)
+        ).all()
+        return [EffectRead.model_validate(row) for row in rows]
     
     def enrich(self, card: Card, visited: set | None = None) -> CardReadWithRelations:
         """Enrich card with all relationships and computed properties."""
@@ -116,6 +140,7 @@ class CardService(BaseService[Card, CardCreate]):
             next_evolutions=next_evolutions_read,
             strengths=self._aggregate_element_property(card.first_element, card.second_element, "strengths"),
             weaknesses=self._aggregate_element_property(card.first_element, card.second_element, "weaknesses"),
+            effects=self._get_effects_for_card(card),
         )
     
     def get_all_enriched(self) -> list[CardReadWithRelations]:
