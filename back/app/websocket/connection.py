@@ -91,7 +91,7 @@ class ConnectionManager:
                 except TimeoutError:
                     continue
                 try:
-                    logger.info("Sending message to player %s: %s", player_id, message)
+                    logger.info("Sending message to player %s: %s", player_id, message.get("type") or "")
                     await self.connections[player_id].send_json(json.loads(message))
                 except asyncio.CancelledError:
                     raise
