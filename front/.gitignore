@@ -1,0 +1,34 @@
+# Frontend ignore file.
+#
+# Repo-wide ignore patterns live in the root ../.gitignore (git applies it across
+# the whole repo). This local file exists so tooling that resolves an ignore file
+# relative to front/ behaves correctly — chiefly eslint.config.js, which loads it
+# via `includeIgnoreFile('./.gitignore')` so ESLint skips build/transient output.
+#
+# IMPORTANT: only list transient / never-committed paths here. The generated API
+# client (src/lib/api/*.gen.ts, src/lib/api/client, src/lib/api/core) and action
+# metadata (src/lib/utils/generated) ARE tracked in git on purpose, so they must
+# NOT be ignored here — that would hide `npm run generate` output from git status.
+# (Prettier is told to skip *formatting* them via .prettierignore instead.)
+
+# Dependencies & build output
+node_modules
+build
+dist
+.svelte-kit
+
+# Test coverage output (from `npm run test:cov`)
+coverage
+
+# BabylonJS editor sub-project caches / build
+src/babylon-editor/.bjseditor
+src/babylon-editor/node_modules
+src/babylon-editor/dist
+src/babylon-editor/public/scene
+src/babylon-editor/electron-packages
+
+# Local data / logs / env
+*.log
+database.db*
+backup.sql
+.env

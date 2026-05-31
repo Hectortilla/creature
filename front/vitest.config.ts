@@ -1,0 +1,48 @@
+import { fileURLToPath } from "node:url";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { defineConfig } from "vitest/config";
+
+/**
+ * Standalone Vitest config for fast TS/Svelte unit tests.
+ *
+ * We deliberately do NOT load the full `sveltekit()` Vite plugin here: it pulls
+ * in the BabylonJS `optimizeDeps`/static-copy machinery that has no place in a
+ * unit run. Instead we register the lightweight `svelte()` compiler plugin (so
+ * `.svelte` / `.svelte.ts` files can be tested) and wire up the `$lib` alias by
+ * hand to mirror SvelteKit's resolution.
+ *
+ * Conventions:
+ *  - Test files live next to the code they cover as `*.test.ts` / `*.spec.ts`,
+ *    or under `src/**` generally.
+ *  - Pure units (utils, stores, plain TS) are the target. Do NOT unit-test
+ *    BabylonJS / 3D code here — drive that through the running app instead.
+ */
+export default defineConfig({
+	plugins: [svelte({ hot: false })],
+	resolve: {
+		alias: {
+			$lib: fileURLToPath(new URL("./src/lib", import.meta.url)),
+		},
+	},
+	test: {
+		// jsdom so component / DOM-touching units (e.g. changeThemeTo) can run.
+		environment: "jsdom",
+		include: ["src/**/*.{test,spec}.{js,ts}"],
+		// The Babylon editor sub-project has its own toolchain; never collect it.
+		exclude: ["src/babylon-editor/**", "node_modules/**"],
+		globals: true,
+		coverage: {
+			provider: "v8",
+			reporter: ["text", "html"],
+			// Only measure our own first-party source; exclude generated + 3D.
+			include: ["src/lib/**"],
+			exclude: [
+				"src/lib/api/**", // generated OpenAPI client
+				"src/lib/utils/generated/**", // generated action metadata
+				"src/babylon-editor/**",
+				"**/*.svelte", // component coverage is out of scope for now
+				"**/*.d.ts",
+			],
+		},
+	},
+});

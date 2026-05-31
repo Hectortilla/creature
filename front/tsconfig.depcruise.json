@@ -1,0 +1,18 @@
+{
+	// Minimal, self-contained tsconfig used ONLY by dependency-cruiser
+	// (`npm run deps:check`) to resolve the SvelteKit `$lib` path alias.
+	//
+	// We do NOT extend .svelte-kit/tsconfig.json here on purpose: SvelteKit emits
+	// that file with `baseUrl: null`, which dependency-cruiser's resolver does not
+	// honour, so the `$lib/...` edges would look like unresolved externals and the
+	// boundary rules would see no graph. Declaring `baseUrl` + `paths` explicitly
+	// fixes resolution. This file is not part of the build/type-check pipeline.
+	"compilerOptions": {
+		"baseUrl": ".",
+		"moduleResolution": "bundler",
+		"paths": {
+			"$lib": ["src/lib"],
+			"$lib/*": ["src/lib/*"]
+		}
+	}
+}
