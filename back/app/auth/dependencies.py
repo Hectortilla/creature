@@ -8,7 +8,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Query, WebSocket, WebSocketException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.auth.security import decode_access_token
 from app.database import DBSessionDep, get_db_session
@@ -40,14 +40,13 @@ def _validate_token(token: str) -> str:
 
 def _get_user_by_username(db: Session, username: str) -> User:
     """
-    Get user by username using lazy import to avoid circular deps.
+    Look up a user by username directly. Kept in the auth layer (rather than
+    delegating to a service) so that auth does not depend on app.services.
 
     Raises:
         ValueError: If user not found
     """
-    from app.services.users import UserService
-
-    user = UserService(db).get_by_username(username)
+    user = db.exec(select(User).where(User.username == username)).first()
     if user is None:
         raise ValueError("User not found")
     return user

@@ -42,6 +42,9 @@ from app.models.game.events import *
 # Player
 from app.models.game.player import PlayerState
 
+# Room — imports State; importing it here also triggers GameState.model_rebuild().
+from app.models.game.room import GameRoom
+
 # State
 from app.models.game.state import (
     GameConfiguration,

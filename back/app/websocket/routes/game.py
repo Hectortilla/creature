@@ -13,6 +13,7 @@ from fastapi.websockets import WebSocketState
 
 from app.auth.dependencies import WebSocketUser
 from app.database import get_db_session
+from app.services.player_state import build_player_state
 
 if TYPE_CHECKING:
     from app.models.game.player import PlayerState
@@ -81,7 +82,7 @@ async def game_websocket(
     """
     try:
         db = next(get_db_session())
-        player = user.to_player_state(deck_id, db)
+        player = build_player_state(db, user, deck_id)
     except Exception:
         db.close()
         raise WebSocketException(

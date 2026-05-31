@@ -147,19 +147,15 @@ fail_under = 62
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Harness: architecture-fitness sensor (import-linter). Run with `make arch`.
-# Enforces the two highest-value boundaries as deterministic tests. A full
-# top-to-bottom layered contract is a follow-up rung: today's code has known
-# upward edges (e.g. models.db.user -> services/websocket, auth -> services)
-# captured in ignore_imports below and documented in docs/architecture.md.
-# See docs/harness.md.
+# Three contracts turn the dependency rules in docs/architecture.md into tests:
+# the engine stays pure, models never import application machinery, and the whole
+# stack is layered so dependencies only ever point downward.
 # ─────────────────────────────────────────────────────────────────────────────
 [tool.importlinter]
 root_package = "app"
 
 # The crown jewel: the stateless engine must never import persistence, web,
 # auth, or service code. This turns the "pure engine" invariant into a test.
-# The ignored edges are the GameRoom type, which currently lives in
-# app.websocket.models (known debt — it belongs in app.models.game).
 [[tool.importlinter.contracts]]
 name = "Game engine stays pure (no DB, services, routing, or auth)"
 type = "forbidden"
@@ -172,22 +168,33 @@ forbidden_modules = [
     "app.auth",
     "app.models.db",
 ]
-ignore_imports = [
-    "app.game.engine -> app.websocket.models",        # GameRoom type hint (TYPE_CHECKING)
-    "app.models.game.state -> app.websocket.models",  # GameRoom data shape (transitive)
-]
 
-# The data/model layer must not reach into application machinery. The ignored
-# edges are pre-existing debt (a DB model and DTOs importing upward); new
-# violations beyond these will fail. See docs/architecture.md.
+# The data/model layer must not reach into application machinery.
 [[tool.importlinter.contracts]]
 name = "Models do not import application machinery"
 type = "forbidden"
 source_modules = ["app.models"]
 forbidden_modules = ["app.routers", "app.services", "app.websocket", "app.auth"]
+
+# Full layered architecture: dependencies point downward only. routers and the
+# websocket transport are independent entry points above the service layer;
+# app.models is treated as a single layer (its internals are governed by the
+# contract above), and app.settings.* is omitted as peripheral config/admin. The
+# one accepted upward edge is a lazy, function-local import that breaks a cycle
+# (see docs/architecture.md).
+[[tool.importlinter.contracts]]
+name = "Layered architecture (dependencies point downward)"
+type = "layers"
+containers = ["app"]
+layers = [
+    "routers | websocket",
+    "services",
+    "game",
+    "auth",
+    "database",
+    "models",
+    "utils",
+]
 ignore_imports = [
-    "app.models.db.user -> app.services.decks",
-    "app.models.db.user -> app.websocket.serialization",
-    "app.models.game.state -> app.websocket.models",
-    "app.models.schemas.websocket.server -> app.websocket.models",
+    "app.models.game.state -> app.game.effects",  # lazy cycle-breaker (docs/architecture.md)
 ]

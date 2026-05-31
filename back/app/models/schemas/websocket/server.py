@@ -9,12 +9,12 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import BaseModel, Field, SkipValidation
 
 from app.models.game.events import GameEventUnion
+from app.models.game.room import GameRoom
 from app.models.game.state import GameState, GameStateForPlayer
 
 # Import WebSocketMessage - defined in __init__.py
 from app.models.schemas.websocket import WebSocketMessage
 from app.models.schemas.websocket.game_schemas import ValidActionSchema
-from app.websocket.models import GameRoom
 
 # ============================================================================
 # Server → Client Data Models

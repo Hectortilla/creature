@@ -20,8 +20,8 @@ from app.models.game.attack import AttackDefinition
 from app.models.game.card import EffectSpec, GameCard
 from app.models.game.enums import CardStatus, DamageType, Zone
 from app.models.game.player import PlayerState
+from app.models.game.room import GameRoom
 from app.models.game.state import GameState
-from app.websocket.models import GameRoom
 
 pytestmark = pytest.mark.unit
 

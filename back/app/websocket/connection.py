@@ -6,10 +6,10 @@ from broadcaster import Broadcast
 from fastapi import WebSocket
 from redis import asyncio as redis
 
+from app.models.game.player import PlayerState
 from app.models.schemas.websocket import WebSocketMessage
 from app.models.schemas.websocket.server import ConnectedData, ConnectedMessage
 from app.settings.config import get_settings
-from app.websocket.models import PlayerState
 
 settings = get_settings()
 

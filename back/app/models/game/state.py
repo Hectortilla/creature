@@ -21,7 +21,7 @@ from app.models.game.player import PlayerState
 from app.utils.time import utcnow
 
 if TYPE_CHECKING:
-    from app.websocket.models import GameRoom
+    from app.models.game.room import GameRoom
 
 # Fields visible on hidden cards (deck, opponent hand).
 # Everything else is zeroed out so new card fields don't leak.

@@ -117,9 +117,6 @@ Tracked here so they're visible, not lost:
 
 - **Backend type coverage** beyond the engine (drop `ignore_errors` for
   routers/services/websocket; eventually `disallow_untyped_defs`).
-- **Architecture debt**: move `GameRoom` from `app.websocket.models` into
-  `app.models.game`; remove `models.db.user → services/websocket` and
-  `auth → services` upward edges — then promote a full layered import contract.
 - **Frontend lint/type debt**: clear the pre-existing prettier/eslint/svelte-check
   findings in app/legacy code (`npm run format`, then triage eslint + svelte-check),
   then promote `npm run lint` / `check` to gating and add them to pre-commit.

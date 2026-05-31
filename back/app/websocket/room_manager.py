@@ -11,6 +11,7 @@ from uuid import uuid4
 import structlog
 
 from app.game.engine import get_engine
+from app.models.game.room import GameRoom
 from app.models.schemas.websocket.server import (
     ActionResultData,
     ActionResultMessage,
@@ -27,7 +28,6 @@ from app.models.schemas.websocket.server import (
 )
 from app.settings.observability import get_tracer
 from app.websocket.connection import ConnectionManager
-from app.websocket.models import GameRoom
 from app.websocket.serialization import serialize_events, serialize_events_for_player
 
 if TYPE_CHECKING:

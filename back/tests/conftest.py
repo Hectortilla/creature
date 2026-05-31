@@ -19,8 +19,8 @@ from app.game.effects import build_effect_atoms
 from app.models.game.card import EffectSpec, GameCard
 from app.models.game.enums import Zone
 from app.models.game.player import PlayerState
+from app.models.game.room import GameRoom
 from app.models.game.state import GameState
-from app.websocket.models import GameRoom
 
 
 @pytest.fixture

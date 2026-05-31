@@ -20,8 +20,8 @@ import pytest
 from app.game.engine import GameEngine
 from app.models.game.card import AttackInput, EffectSpec, GameCardInput
 from app.models.game.player import PlayerState
+from app.models.game.room import GameRoom
 from app.models.game.state import GameConfiguration
-from app.websocket.models import GameRoom
 
 pytestmark = pytest.mark.unit
 

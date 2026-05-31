@@ -8,9 +8,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.models.game.card import GameCardInput
-from app.models.schemas.card import CardReadWithRelations
-
 
 def serialize_events(events) -> list[dict[str, Any]]:
     """Serialize a list of game events using Pydantic's model_dump()."""
@@ -30,8 +27,3 @@ def serialize_events_for_player(events, player_id: str) -> list[dict[str, Any]]:
             data["card_id"] = 0
         result.append(data)
     return result
-
-
-def serialize_deck_for_game(deck_cards: list[CardReadWithRelations]) -> list[dict[str, Any]]:
-    """Serialize deck cards to the format expected by the game engine."""
-    return [GameCardInput.from_card_read(card).model_dump(mode="json") for card in deck_cards]

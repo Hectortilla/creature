@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlmodel import Field, Relationship, Session, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base.user import UserBase
 from app.utils.time import utcnow
@@ -9,7 +9,6 @@ from app.utils.time import utcnow
 if TYPE_CHECKING:
     from app.models.db.card import Card
     from app.models.db.deck import Deck
-    from app.models.game.player import PlayerState
 
 
 class UserCard(SQLModel, table=True):
@@ -39,43 +38,3 @@ class User(UserBase, table=True):
     cards: list["Card"] = Relationship(
         back_populates="users", link_model=UserCard, sa_relationship_kwargs={"lazy": "selectin"}
     )
-
-    def to_player_state(self, deck_id: int, db: Session) -> "PlayerState":
-        """
-        Create a PlayerState from this user with the given deck.
-
-        Fetches, validates, enriches, and serializes the deck.
-
-        Args:
-            deck_id: The ID of the deck to use
-            db: Database session
-
-        Returns:
-            PlayerState with the serialized deck
-
-        Raises:
-            ValueError: If deck is not found, doesn't belong to user, or is invalid
-        """
-        from app.models.game.player import PlayerState
-        from app.services.decks import DeckService
-        from app.websocket.serialization import serialize_deck_for_game
-
-        # Get and validate deck
-        deck_service = DeckService(db, self.id)
-        deck = deck_service.get_user_deck(deck_id)
-
-        if not deck:
-            raise ValueError("Deck not found or does not belong to user")
-
-        # Validate deck is valid for playing
-        if not deck.is_valid_for_playing(db):
-            raise ValueError("Deck is not valid for playing")
-
-        # Serialize deck
-        enriched_deck = deck_service.get_enriched(deck_id)
-        if not enriched_deck:
-            raise ValueError("Failed to load deck")
-
-        serialized_deck = serialize_deck_for_game(enriched_deck.cards)
-
-        return PlayerState(player_id=str(self.id), name=self.full_name or self.username, deck=serialized_deck)

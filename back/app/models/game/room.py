@@ -1,7 +1,9 @@
 """
-WebSocket Models
+Game Room
 
-Data models for WebSocket connections and game rooms.
+The room/lobby that owns the connected players and the live GameState. It is a
+pure in-memory Pydantic model (no persistence), so it lives with the other
+engine data types in app.models.game rather than in the websocket layer.
 """
 
 from datetime import datetime
@@ -66,8 +68,8 @@ class GameRoom(GameBaseModel):
                 return player
         raise ValueError(f"No opponent found for player {player_id}")
 
-    def add_player(self, player: "PlayerState") -> int:
-        """Add a player to the room. Returns slot number (1 or 2)."""
+    def add_player(self, player: "PlayerState") -> None:
+        """Add a player to the room."""
         if player.deck is None:
             raise ValueError("Player deck is required")
 
@@ -76,7 +78,7 @@ class GameRoom(GameBaseModel):
 
         self.players[player.player_id] = player
 
-    def remove_player(self, player_id: str) -> bool:
+    def remove_player(self, player_id: str) -> None:
         """Remove a player from the room."""
         if player_id not in self.players:
             raise ValueError(f"Player {player_id} not found in room")
@@ -93,4 +95,8 @@ class GameRoom(GameBaseModel):
         return len(self.players.keys()) >= 2
 
 
+# GameState holds a forward reference to GameRoom (a TYPE_CHECKING-only import in
+# state.py, to avoid the runtime cycle). Now that GameRoom is defined, rebuild
+# GameState so that annotation resolves. GameRoom is in this module's namespace,
+# which is what model_rebuild() uses to resolve the reference.
 GameState.model_rebuild()

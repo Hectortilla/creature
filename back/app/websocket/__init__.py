@@ -8,6 +8,5 @@ Architecture:
     message_handler - Incoming message routing and validation
     room_manager    - Room lifecycle (create, join, leave, start game, process actions)
     connection      - WebSocket connection management with Redis pub/sub
-    models          - Data models (GameRoom, etc.)
     serialization   - Event/data serialization helpers
 """

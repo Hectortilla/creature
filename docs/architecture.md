@@ -29,8 +29,8 @@ reverse.
 
 ```
 app.main                         ← FastAPI app, wiring, observability setup
-  └─ app.routers                 ← HTTP endpoints
-       └─ app.websocket | app.services | app.settings.admin
+  └─ app.routers | app.websocket ← HTTP + WebSocket entry points
+       └─ app.services           ← business logic / orchestration
             └─ app.game          ← the game engine (pure, stateless)
                  └─ app.auth
                       └─ app.database
@@ -57,31 +57,28 @@ without a database and reasoned about deterministically. See
 
 ## Enforced boundaries
 
-`back/pyproject.toml → [tool.importlinter]` (run with `make arch`) encodes two
+`back/pyproject.toml → [tool.importlinter]` (run with `make arch`) encodes three
 contracts as deterministic tests:
 
 1. **Game engine stays pure** — `app.game` must not import `app.routers`,
    `app.services`, `app.websocket`, `app.database`, `app.auth`, or `app.models.db`.
 2. **Models do not import application machinery** — `app.models` must not import
    `app.routers`, `app.services`, `app.websocket`, or `app.auth`.
+3. **Layered architecture** — dependencies point downward only across
+   `routers | websocket → services → game → auth → database → models → utils`.
 
 ### Known debt (documented exceptions)
 
-These are real upward edges that exist today, listed in `ignore_imports` so they're
-**visible** rather than hidden. New violations beyond these fail CI. Each should be
-removed over time (tracked in [`harness.md`](harness.md)):
+One upward edge remains, accepted and kept **visible** via `ignore_imports`:
 
-| Edge | Why it exists | Fix |
-| ---- | ------------- | --- |
-| `app.game.engine → app.websocket.models` | `GameRoom` (the room/state container) lives in the websocket package | Move `GameRoom` into `app.models.game` |
-| `app.models.game.state → app.websocket.models` | same `GameRoom` type | same |
-| `app.models.db.user → app.services.decks` | a DB model builds player state via a service | Move that logic out of the model into a service |
-| `app.models.db.user → app.websocket.serialization` | same | same |
-| `app.auth.dependencies → app.services.users` | auth looks up users via a service | Acceptable, or invert via a thin repository |
-| `app.models.game.state → app.game.effects` | lazy, function-local import to break a cycle | keep function-local |
+| Edge | Why it exists | Status |
+| ---- | ------------- | ------ |
+| `app.models.game.state → app.game.effects` | lazy, function-local import that breaks an import cycle | kept function-local |
 
-A full top-to-bottom layered contract is deferred until the upward edges above are
-removed (see [`harness.md`](harness.md) follow-ups).
+The earlier upward edges have been removed: `GameRoom` now lives in `app.models.game`
+(not the websocket package), player-state assembly moved off the `User` model into
+`app.services.player_state`, and auth looks up users directly instead of via a service.
+With those gone, the layered contract above is enforced.
 
 ## Frontend structure
 

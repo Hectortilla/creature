@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from app.models.game.player import PlayerState
-    from app.websocket.models import GameRoom
+    from app.models.game.room import GameRoom
 
 from app.game.actions import (
     ACTION_TYPES,
