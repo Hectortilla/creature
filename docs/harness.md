@@ -48,11 +48,15 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **import-linter** (boundaries) | backend | `make arch` | CI |
 | **pytest** (unit) | backend | `make test` | CI |
 | **pytest** (integration, Postgres/Redis) | backend | `pytest -m integration` | CI (services) |
+| **pytest** (behaviour, syrupy goldens) | backend | `make test` | CI — gating |
+| **vulture + deptry** (dead code · dep drift) | backend | `make deadcode` | CI — gating |
+| **mutmut** (mutation, engine) | backend | `mutmut run` | nightly (`mutation.yml`) — non-gating |
 | **vitest** | frontend | `npm run test` | CI — gating |
 | **dependency-cruiser** (boundaries) | frontend | `npm run deps:check` | CI — gating |
 | **build** | frontend | `npm run build` | CI — gating |
 | **eslint + prettier** | frontend | `npm run lint` | pre-commit · CI — gating (eslint ratcheted) |
 | **svelte-check** | frontend | `npm run check` | CI — non-blocking (pre-existing type debt) |
+| **knip** (dead code · unused exports/deps) | frontend | `npm run knip` | CI — non-blocking (baseline) |
 | **markdown link-check** | docs | `lychee --offline` | CI (`docs.yml`) |
 
 The backend "done" gate is composed as **`make check`**. The frontend "done" gate
@@ -70,6 +74,8 @@ check` (svelte-check) stays non-blocking until its pre-existing type debt is cle
 1. **Game engine stays pure** — `app.game` may not import persistence, web, auth,
    or service code. (The crown-jewel guard.)
 2. **Models do not import application machinery.**
+3. **Layered architecture** — dependencies point downward only
+   (`routers | websocket → services → game → auth → database → models → utils`).
 
 Frontend: `front/.dependency-cruiser.cjs` enforces `src/lib` layering and forbids
 cycles.
@@ -127,6 +133,7 @@ Tracked here so they're visible, not lost:
   in CI and pre-commit. Remaining: ~55 `svelte-check` type errors (incl.
   `babylon-editor/src` and active routes) — clear them, then promote
   `npm run check` to gating too.
-- **More sensors**: mutation testing, a dead-code/drift job, behaviour
-  fixture-approval tests.
+- **Tune `knip`**: the frontend dead-code/unused-exports sensor runs as a
+  non-blocking baseline (it surfaces some genuinely dead app/legacy files) —
+  triage and clear it, then promote `npm run knip` to gating.
 - **Activate the Claude PR-review workflow** (add the API-key secret).

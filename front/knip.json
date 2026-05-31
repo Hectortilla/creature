@@ -1,0 +1,11 @@
+{
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"ignore": [
+		"src/lib/api/*.gen.ts",
+		"src/lib/api/client/**",
+		"src/lib/api/core/**",
+		"src/lib/utils/generated/**",
+		"src/babylon-editor/**"
+	],
+	"ignoreDependencies": ["prettier-plugin-svelte"]
+}

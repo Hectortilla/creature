@@ -1,0 +1,34 @@
+name: Mutation (nightly)
+
+# Mutation testing is slow, so it doesn't gate PRs — it runs nightly (and on
+# demand) over the pure, fast game engine and surfaces the surviving-mutant score
+# as an informational report. Tighten tests where mutants survive.
+on:
+  schedule:
+    - cron: "0 4 * * *" # 04:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutmut:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: back
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --frozen
+      # Scoped to app/game/ via [tool.mutmut] in pyproject.toml. Non-blocking:
+      # the score is a signal, not a gate.
+      - name: Mutation run (engine)
+        run: uv run mutmut run || true
+      - name: Mutation results
+        if: always()
+        run: uv run mutmut results || true

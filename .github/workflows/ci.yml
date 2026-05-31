@@ -122,6 +122,12 @@ jobs:
         run: npm run deps:check
       - name: Build
         run: npm run build
+      # Dead code / unused exports & deps. Non-blocking baseline (surfaces some
+      # genuinely dead app/legacy files); tighten to gating once triaged. See
+      # docs/harness.md.
+      - name: Dead code (knip) — non-blocking
+        run: npm run knip
+        continue-on-error: true
 
   # Aggregate status so branch protection can require a single check.
   ci-ok:

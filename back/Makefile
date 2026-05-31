@@ -1,4 +1,4 @@
-.PHONY: run run_render install lint format format-check typecheck arch test test-cov check
+.PHONY: run run_render install lint format format-check typecheck arch deadcode test test-cov check
 
 PORT ?= 8000
 
@@ -29,12 +29,16 @@ typecheck:
 arch:
 	uv run lint-imports
 
+deadcode:
+	uv run vulture
+	uv run deptry .
+
 test:
 	uv run pytest -m "not integration"
 
 test-cov:
 	uv run pytest -m "not integration" --cov=app --cov-report=term-missing
 
-# The deterministic "done" gate: lint + format + types + boundaries + tests
-# (with the coverage floor; see [tool.coverage.report] fail_under).
-check: lint format-check typecheck arch test-cov
+# The deterministic "done" gate: lint + format + types + boundaries + dead-code
+# + tests (with the coverage floor; see [tool.coverage.report] fail_under).
+check: lint format-check typecheck arch deadcode test-cov
