@@ -1,0 +1,13 @@
+# Code owners — a PR touching a path auto-requests review from its owner(s).
+# Adjust the handles below to your GitHub usernames / teams.
+# Docs: https://docs.github.com/articles/about-code-owners
+
+* @andrsabril @hectortilla
+
+# The game engine is the crown jewel — guard changes to it.
+/back/app/game/         @andrsabril
+
+# Harness config: changes to the gates / boundaries deserve extra eyes.
+/back/pyproject.toml    @andrsabril @hectortilla
+/.github/               @andrsabril @hectortilla
+/docs/harness.md        @andrsabril @hectortilla

@@ -1,0 +1,38 @@
+name: Claude PR Review
+
+# Inferential feedback sensor (see docs/harness.md). OPT-IN and inert by default:
+# this job runs only when the repo variable ENABLE_CLAUDE_REVIEW == 'true'. To turn
+# it on:
+#   gh secret set ANTHROPIC_API_KEY --body "<your-key>"
+#   gh variable set ENABLE_CLAUDE_REVIEW --body "true"
+# When enabling, pin and verify the action version/inputs against current docs:
+# https://github.com/anthropics/claude-code-action
+# Until then this workflow is a no-op. Meanwhile use the on-demand /code-review and
+# /security-review Claude Code skills.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    if: ${{ vars.ENABLE_CLAUDE_REVIEW == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request for correctness bugs, security issues, and
+            violations of the conventions in AGENTS.md and docs/architecture.md —
+            especially the game-engine purity boundary (app/game must stay free of
+            I/O, DB, web, and service imports). Be concise and high-signal; prefer
+            a few high-confidence findings over many speculative ones.
