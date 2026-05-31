@@ -1,4 +1,4 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad } from "./$types";
 import {
 	getAllCardsCardsGet,
 	getCardCardsValueGet,
@@ -7,9 +7,9 @@ import {
 	getAllCharactersGet,
 	getAllAttacksAttacksGet,
 	getAllAbilitiesGet,
-	getAllAssociationsGet
-} from '$lib/api';
-import { getAuthHeaders } from '$lib/server/auth';
+	getAllAssociationsGet,
+} from "$lib/api";
+import { getAuthHeaders } from "$lib/server/auth";
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const headers = getAuthHeaders(locals);
@@ -19,7 +19,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw new Error("Card parameter is missing");
 	}
 
-	const [allCardsRes, cardsRes, elementsRes, typesRes, charactersRes, attacksRes, abilitiesRes, associationsRes] = await Promise.all([
+	const [
+		allCardsRes,
+		cardsRes,
+		elementsRes,
+		typesRes,
+		charactersRes,
+		attacksRes,
+		abilitiesRes,
+		associationsRes,
+	] = await Promise.all([
 		getAllCardsCardsGet({ headers }),
 		getCardCardsValueGet({ path: { value: card }, headers }),
 		getAllElementsGet({ headers }),
@@ -27,7 +36,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		getAllCharactersGet({ headers }),
 		getAllAttacksAttacksGet({ headers }),
 		getAllAbilitiesGet({ headers }),
-		getAllAssociationsGet({ headers })
+		getAllAssociationsGet({ headers }),
 	]);
 
 	return {
@@ -39,6 +48,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		characters: charactersRes.data ?? [],
 		attacks: attacksRes.data ?? [],
 		abilities: abilitiesRes.data ?? [],
-		associations: associationsRes.data ?? []
+		associations: associationsRes.data ?? [],
 	};
 };

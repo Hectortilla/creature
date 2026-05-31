@@ -7,27 +7,27 @@
 /// Use case: to make font-size responsive but still keep to figma design
 /// @param {Number} $px-rem - The pixel value to convert to rem.
 @function rem($pxValue) {
-    $base: variables.$font-base;
-    @return #{math.div($pxValue, $base)}rem;
+	$base: variables.$font-base;
+	@return #{math.div($pxValue, $base)}rem;
 }
 
 /// Used to render colors
 @function color($base, $shade: 100, $s: 100%, $l: 50%, $a: 1) {
-  $h: map.get(map.get(variables.$colors, $base), $shade);
+	$h: map.get(map.get(variables.$colors, $base), $shade);
 
-  @if $h == null {
-    @error "Color `#{$base}` shade `#{$shade}` not found in $colors map.";
-  }
+	@if $h == null {
+		@error "Color `#{$base}` shade `#{$shade}` not found in $colors map.";
+	}
 
-  @if $a < 1 & {
-    @return hsl($h, $s, $l, $a);
-  }
+	@if $a < 1 & {
+		@return hsl($h, $s, $l, $a);
+	}
 
-  @return hsl($h, $s, $l);
+	@return hsl($h, $s, $l);
 }
 
 /// Used to render fonts sizes
 @function fontSize($base, $size: m) {
-    $fontSize: map.get(map.get(variables.$fontSizes, $base), $size);
-    @return rem($fontSize);
+	$fontSize: map.get(map.get(variables.$fontSizes, $base), $size);
+	@return rem($fontSize);
 }

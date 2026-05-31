@@ -1,9 +1,9 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad } from "./$types";
 import {
 	getAttackAttacksValueGet,
-	getCardsByAttackCardsByAttackAttackCodeGet
-} from '$lib/api';
-import { getAuthHeaders } from '$lib/server/auth';
+	getCardsByAttackCardsByAttackAttackCodeGet,
+} from "$lib/api";
+import { getAuthHeaders } from "$lib/server/auth";
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const headers = getAuthHeaders(locals);
@@ -15,12 +15,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const [attackRes, cardsRes] = await Promise.all([
 		getAttackAttacksValueGet({ path: { value: attack }, headers }),
-		getCardsByAttackCardsByAttackAttackCodeGet({ path: { attack_code: Number(attack) }, headers })
+		getCardsByAttackCardsByAttackAttackCodeGet({
+			path: { attack_code: Number(attack) },
+			headers,
+		}),
 	]);
 
 	return {
 		params,
 		attack: attackRes.data ?? null,
-		cards_use_attack: cardsRes.data ?? []
+		cards_use_attack: cardsRes.data ?? [],
 	};
 };

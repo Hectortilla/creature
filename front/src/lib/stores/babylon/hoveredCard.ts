@@ -1,5 +1,5 @@
-import type { AttackDefinition } from '$lib/api/types.gen';
-import { createHudStore, type HudStoreSetter } from './createHudStore';
+import type { AttackDefinition } from "$lib/api/types.gen";
+import { createHudStore, type HudStoreSetter } from "./createHudStore";
 
 export interface IngameCardState {
 	instanceId: string;
@@ -26,4 +26,5 @@ export interface HoveredCardPayload {
 
 export type HoveredCardSetter = HudStoreSetter<HoveredCardPayload>;
 
-export const [hoveredCard, setHoveredCard] = createHudStore<HoveredCardPayload>();
+export const [hoveredCard, setHoveredCard] =
+	createHudStore<HoveredCardPayload>();

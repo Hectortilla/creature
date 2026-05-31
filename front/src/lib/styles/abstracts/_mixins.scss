@@ -3,86 +3,90 @@
 @use "functions";
 
 /// Font Properties
-@mixin fontProps($fontType: "main", $fontWeight: 400, $fontWidth: 100, $fontStyle: normal) {
-    & {
-        @if($fontType == "title") {
-            font-family: variables.$font-title;
-            line-height: 120%;
-        } @else {
-            font-family: variables.$font-main;
-        }
-        font-weight: $fontWeight;
-        font-variation-settings: "wdth" $fontWidth;
-        font-style: $fontStyle;
-    }
+@mixin fontProps(
+	$fontType: "main",
+	$fontWeight: 400,
+	$fontWidth: 100,
+	$fontStyle: normal
+) {
+	& {
+		@if ($fontType == "title") {
+			font-family: variables.$font-title;
+			line-height: 120%;
+		} @else {
+			font-family: variables.$font-main;
+		}
+		font-weight: $fontWeight;
+		font-variation-settings: "wdth" $fontWidth;
+		font-style: $fontStyle;
+	}
 }
 
 /// Display flex
 @mixin displayFlex(
-    $flexDirection: column,
-    $gap: 0,
-    $justifyContent: flex-start,
-    $alignItems: flex-start,
-    $wrap: wrap
+	$flexDirection: column,
+	$gap: 0,
+	$justifyContent: flex-start,
+	$alignItems: flex-start,
+	$wrap: wrap
 ) {
-    & {
-        display: flex;
-        gap: functions.rem($gap);
-        flex-direction: $flexDirection;
-        justify-content: $justifyContent;
-        align-items: $alignItems;
-        flex-wrap: $wrap;
-    }
+	& {
+		display: flex;
+		gap: functions.rem($gap);
+		flex-direction: $flexDirection;
+		justify-content: $justifyContent;
+		align-items: $alignItems;
+		flex-wrap: $wrap;
+	}
 }
 
 /// Transition default
 @mixin transition($time: 0.4s, $property: all, $delay: 0s) {
-    & {
-        transition: $property $time cubic-bezier(0.3, 0.45, 0.44, 1) $delay;
-    }
+	& {
+		transition: $property $time cubic-bezier(0.3, 0.45, 0.44, 1) $delay;
+	}
 }
 
-@mixin isCardLoaded($index: 1){
-    & {
-        opacity: 0;
-        transform: translateY(20%) rotate3d(1, 1, 0, 45deg);
+@mixin isCardLoaded($index: 1) {
+	& {
+		opacity: 0;
+		transform: translateY(20%) rotate3d(1, 1, 0, 45deg);
 
-        @include transition(.6s, all, calc(.08s * $index));
+		@include transition(0.6s, all, calc(0.08s * $index));
 
-        &.is-loaded {
-            transform: translateY(0) rotate3d(0, 0, 0, 0);
-            opacity: 1;
-        }
-    }
-    
+		&.is-loaded {
+			transform: translateY(0) rotate3d(0, 0, 0, 0);
+			opacity: 1;
+		}
+	}
 }
 
 /// Margins
 @mixin margins() {
-    & {
-        padding-left: functions.rem(variables.$margin-page-desktop);
-        padding-right: functions.rem(variables.$margin-page-desktop);
-    }
+	& {
+		padding-left: functions.rem(variables.$margin-page-desktop);
+		padding-right: functions.rem(variables.$margin-page-desktop);
+	}
 
-    @media (max-width: 600px) {
-        padding-left: functions.rem(variables.$margin-page-mobile);
-        padding-right: functions.rem(variables.$margin-page-mobile);
-    }
+	@media (max-width: 600px) {
+		padding-left: functions.rem(variables.$margin-page-mobile);
+		padding-right: functions.rem(variables.$margin-page-mobile);
+	}
 }
 
 /// Stylished text
 @mixin stylishedText($bevelSize: 1px) {
-    & {
-        background: var(--color-stylished-gradient-text);
+	& {
+		background: var(--color-stylished-gradient-text);
 
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        -moz-background-clip: text;
-        -moz-text-fill-color: transparent;
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		-moz-background-clip: text;
+		-moz-text-fill-color: transparent;
 
-        background-clip: text;
-        color: transparent;
+		background-clip: text;
+		color: transparent;
 
-        filter: drop-shadow(0 calc($bevelSize * -1) 0 white);
-    }
+		filter: drop-shadow(0 calc($bevelSize * -1) 0 white);
+	}
 }

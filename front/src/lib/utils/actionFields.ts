@@ -1,28 +1,28 @@
 /**
  * Action field mappings
- * 
+ *
  * Fully dynamically derived from the generated OpenAPI client SDK.
  * Field metadata is auto-generated from types.gen.ts by scripts/generate-action-metadata.ts
- * 
+ *
  * To regenerate metadata after API changes:
  *   npm run generate-action-metadata
  *   or
  *   npm run generate (generates client + metadata)
  */
 
-import type { ActionData } from '$lib/api/types.gen';
+import type { ActionData } from "$lib/api/types.gen";
 // Import auto-generated metadata (regenerate with: npm run generate-action-metadata)
 import {
 	FIELD_METADATA as GENERATED_FIELD_METADATA,
 	NO_FIELD_ACTION_TYPES as GENERATED_NO_FIELD_ACTION_TYPES,
 	ALL_ACTION_TYPES as GENERATED_ALL_ACTION_TYPES,
-	type FieldMetadata
-} from './generated/actionFields.metadata';
+	type FieldMetadata,
+} from "./generated/actionFields.metadata";
 
 export interface ActionFieldConfig {
 	name: string;
 	label: string;
-	type: 'text' | 'number' | 'select' | 'multiselect' | 'json';
+	type: "text" | "number" | "select" | "multiselect" | "json";
 	required: boolean;
 	description?: string;
 	example?: string | number | string[];
@@ -42,24 +42,30 @@ export interface ActionTypeConfig {
  */
 const FIELD_REQUIREMENT_OVERRIDES: Record<string, Record<string, boolean>> = {
 	attack: {
-		target_card_id: false // target_card_id is optional for attack
-	}
+		target_card_id: false, // target_card_id is optional for attack
+	},
 };
 
 /**
  * Convert TypeScript type to field input type
  */
-function tsTypeToFieldType(tsType: string): 'text' | 'number' | 'select' | 'multiselect' | 'json' {
-	if (tsType.includes('Array')) {
-		if (tsType.includes('swaps') || tsType.includes('{') || tsType.includes('unknown')) {
-			return 'json';
+function tsTypeToFieldType(
+	tsType: string,
+): "text" | "number" | "select" | "multiselect" | "json" {
+	if (tsType.includes("Array")) {
+		if (
+			tsType.includes("swaps") ||
+			tsType.includes("{") ||
+			tsType.includes("unknown")
+		) {
+			return "json";
 		}
-		return 'multiselect';
+		return "multiselect";
 	}
-	if (tsType === 'number' || tsType.includes('number')) {
-		return 'number';
+	if (tsType === "number" || tsType.includes("number")) {
+		return "number";
 	}
-	return 'text';
+	return "text";
 }
 
 /**
@@ -67,9 +73,9 @@ function tsTypeToFieldType(tsType: string): 'text' | 'number' | 'select' | 'mult
  */
 function generateActionLabel(actionType: string): string {
 	return actionType
-		.split('_')
-		.map(word => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(' ');
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
 }
 
 /**
@@ -85,27 +91,30 @@ function generateActionDescription(actionType: string): string {
  */
 function generateFieldLabel(fieldName: string): string {
 	return fieldName
-		.split('_')
-		.map(word => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(' ');
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
 }
 
 /**
  * Generate placeholder from example
  */
-function generatePlaceholder(example: string | number | string[] | undefined, fieldName: string): string | undefined {
+function generatePlaceholder(
+	example: string | number | string[] | undefined,
+	fieldName: string,
+): string | undefined {
 	if (example === undefined) {
 		return undefined;
 	}
-	if (typeof example === 'string') {
+	if (typeof example === "string") {
 		return example;
 	}
-	if (typeof example === 'number') {
+	if (typeof example === "number") {
 		return example.toString();
 	}
 	if (Array.isArray(example)) {
-		if (example.length > 0 && typeof example[0] === 'string') {
-			return example.join(', ');
+		if (example.length > 0 && typeof example[0] === "string") {
+			return example.join(", ");
 		}
 		return JSON.stringify(example);
 	}
@@ -115,22 +124,23 @@ function generatePlaceholder(example: string | number | string[] | undefined, fi
 /**
  * Build field config from metadata
  */
-function buildFieldConfig(metadata: FieldMetadata, actionType: string): ActionFieldConfig {
+function buildFieldConfig(
+	metadata: FieldMetadata,
+	actionType: string,
+): ActionFieldConfig {
 	const fieldType = tsTypeToFieldType(metadata.tsType);
-	
+
 	// Check for requirement overrides first
 	const override = FIELD_REQUIREMENT_OVERRIDES[actionType]?.[metadata.name];
-	const isRequired = override !== undefined 
-		? override 
-		: !metadata.isOptional; // Required if not optional
-	
+	const isRequired = override !== undefined ? override : !metadata.isOptional; // Required if not optional
+
 	return {
 		name: metadata.name,
 		label: generateFieldLabel(metadata.name),
 		type: fieldType,
 		required: isRequired,
 		description: metadata.description,
-		placeholder: generatePlaceholder(undefined, metadata.name) // Examples not in metadata yet
+		placeholder: generatePlaceholder(undefined, metadata.name), // Examples not in metadata yet
 	};
 }
 
@@ -139,7 +149,7 @@ function buildFieldConfig(metadata: FieldMetadata, actionType: string): ActionFi
  */
 function getFieldsForActionType(actionType: string): ActionFieldConfig[] {
 	const fields: ActionFieldConfig[] = [];
-	
+
 	// Find all fields used by this action type
 	for (const fieldMeta of GENERATED_FIELD_METADATA) {
 		if (fieldMeta.usedBy.includes(actionType)) {
@@ -159,7 +169,7 @@ function buildActionTypeConfig(actionType: string): ActionTypeConfig {
 		type: actionType,
 		label: generateActionLabel(actionType),
 		description: generateActionDescription(actionType),
-		fields: getFieldsForActionType(actionType)
+		fields: getFieldsForActionType(actionType),
 	};
 }
 
@@ -167,12 +177,13 @@ function buildActionTypeConfig(actionType: string): ActionTypeConfig {
  * Dynamically generated action type configurations
  * All action types are inferred from auto-generated FIELD_METADATA
  */
-export const ACTION_TYPE_CONFIGS: Record<string, ActionTypeConfig> = Object.fromEntries(
-	GENERATED_ALL_ACTION_TYPES.map(actionType => [
-		actionType,
-		buildActionTypeConfig(actionType)
-	])
-);
+export const ACTION_TYPE_CONFIGS: Record<string, ActionTypeConfig> =
+	Object.fromEntries(
+		GENERATED_ALL_ACTION_TYPES.map((actionType) => [
+			actionType,
+			buildActionTypeConfig(actionType),
+		]),
+	);
 
 // Add no-field action types
 for (const actionType of GENERATED_NO_FIELD_ACTION_TYPES) {
@@ -191,7 +202,9 @@ export function getAllActionTypes(): string[] {
 /**
  * Get configuration for a specific action type
  */
-export function getActionConfig(actionType: string): ActionTypeConfig | undefined {
+export function getActionConfig(
+	actionType: string,
+): ActionTypeConfig | undefined {
 	return ACTION_TYPE_CONFIGS[actionType];
 }
 

@@ -1,8 +1,8 @@
-import { browser } from '$app/environment';
-import type { UserRead } from '$lib/api/types.gen';
+import { browser } from "$app/environment";
+import type { UserRead } from "$lib/api/types.gen";
 
-export const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'auth_user';
+export const TOKEN_KEY = "auth_token";
+const USER_KEY = "auth_user";
 
 // Re-export UserRead as User for convenience
 export type User = UserRead;
@@ -23,9 +23,11 @@ function deleteCookie(name: string) {
 // Create reactive state using Svelte 5 runes
 function createAuthStore() {
 	// Initialize from localStorage if in browser
-	let token = $state<string | null>(browser ? localStorage.getItem(TOKEN_KEY) : null);
+	let token = $state<string | null>(
+		browser ? localStorage.getItem(TOKEN_KEY) : null,
+	);
 	let user = $state<User | null>(
-		browser ? JSON.parse(localStorage.getItem(USER_KEY) || 'null') : null
+		browser ? JSON.parse(localStorage.getItem(USER_KEY) || "null") : null,
 	);
 
 	// Derived state
@@ -68,4 +70,3 @@ function createAuthStore() {
 }
 
 export const authStore = createAuthStore();
-

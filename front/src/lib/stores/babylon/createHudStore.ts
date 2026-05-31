@@ -1,4 +1,4 @@
-import { writable, type Writable } from 'svelte/store';
+import { writable, type Writable } from "svelte/store";
 
 export type HudStoreSetter<T> = (payload: T | null) => void;
 

@@ -9,5 +9,5 @@ import type { ParamMatcher } from "@sveltejs/kit";
 const params = ["cards", "attacks", "elements"] as const;
 
 export const match = ((param: string): param is (typeof params)[number] => {
-    return params.includes(param as any);
+	return params.includes(param as any);
 }) satisfies ParamMatcher;

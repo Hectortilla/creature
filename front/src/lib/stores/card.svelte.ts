@@ -1,11 +1,12 @@
-import { browser } from '$app/environment';
-import { getAllCardsCardsGet, getCardCardsValueGet } from '$lib/api';
-import type { CardReadWithRelations } from '$lib/api/types.gen';
-import { shouldPersist } from '$lib/utils';
-
+import { browser } from "$app/environment";
+import { getAllCardsCardsGet, getCardCardsValueGet } from "$lib/api";
+import type { CardReadWithRelations } from "$lib/api/types.gen";
+import { shouldPersist } from "$lib/utils";
 
 function createCardStore() {
-	let cards = $state<CardReadWithRelations[]>([shouldPersist() ? JSON.parse(localStorage.getItem('cards') ?? '[]') : []]);
+	let cards = $state<CardReadWithRelations[]>([
+		shouldPersist() ? JSON.parse(localStorage.getItem("cards") ?? "[]") : [],
+	]);
 	let loading = $state(false);
 	let fetchPromise: Promise<void> | null = null;
 
@@ -19,7 +20,7 @@ function createCardStore() {
 				const fetchedCards = (await getAllCardsCardsGet({})).data ?? [];
 				cards = fetchedCards;
 				if (shouldPersist())
-					localStorage.setItem('cards', JSON.stringify(fetchedCards));
+					localStorage.setItem("cards", JSON.stringify(fetchedCards));
 			} finally {
 				loading = false;
 				fetchPromise = null;
@@ -30,10 +31,8 @@ function createCardStore() {
 	}
 
 	async function getCard(id: number): Promise<CardReadWithRelations | null> {
-		if (loading)
-			await fetchPromise;
-		else if (cards.length === 0)
-			await fetchCards();
+		if (loading) await fetchPromise;
+		else if (cards.length === 0) await fetchCards();
 
 		return cards.find((card) => card.id === id) ?? null;
 	}
@@ -51,4 +50,3 @@ function createCardStore() {
 }
 
 export const cardStore = createCardStore();
-

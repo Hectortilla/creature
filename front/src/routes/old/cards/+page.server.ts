@@ -1,11 +1,11 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad } from "./$types";
 import {
 	getAllCardsCardsGet,
 	getAllElementsGet,
 	getAllTypesGet,
-	getAllCharactersGet
-} from '$lib/api';
-import { getAuthHeaders } from '$lib/server/auth';
+	getAllCharactersGet,
+} from "$lib/api";
+import { getAuthHeaders } from "$lib/server/auth";
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const headers = getAuthHeaders(locals);
@@ -14,13 +14,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		getAllCardsCardsGet({ headers }),
 		getAllElementsGet({ headers }),
 		getAllTypesGet({ headers }),
-		getAllCharactersGet({ headers })
+		getAllCharactersGet({ headers }),
 	]);
 
 	return {
 		cards: cardsRes.data ?? [],
 		elements: elementsRes.data ?? [],
 		types: typesRes.data ?? [],
-		characters: charactersRes.data ?? []
+		characters: charactersRes.data ?? [],
 	};
 };

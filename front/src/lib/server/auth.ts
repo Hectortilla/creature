@@ -5,8 +5,7 @@
 export function getAuthHeaders(locals: App.Locals): Record<string, string> {
 	const headers: Record<string, string> = {};
 	if (locals.token) {
-		headers['Authorization'] = `Bearer ${locals.token}`;
+		headers["Authorization"] = `Bearer ${locals.token}`;
 	}
 	return headers;
 }
-

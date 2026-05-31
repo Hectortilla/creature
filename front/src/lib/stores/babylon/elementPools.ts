@@ -1,4 +1,4 @@
-import { createHudStore, type HudStoreSetter } from './createHudStore';
+import { createHudStore, type HudStoreSetter } from "./createHudStore";
 
 export interface ElementPoolSnapshot {
 	elements: Record<string, number>;
@@ -12,4 +12,5 @@ export interface ElementPoolsPayload {
 
 export type ElementPoolsSetter = HudStoreSetter<ElementPoolsPayload>;
 
-export const [elementPools, setElementPools] = createHudStore<ElementPoolsPayload>();
+export const [elementPools, setElementPools] =
+	createHudStore<ElementPoolsPayload>();

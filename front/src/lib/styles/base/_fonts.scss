@@ -5,17 +5,17 @@
 * Weight: 300-800
 * Width: 300-800 (Condensed)
 */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&display=swap");
 
 /*
 *  Sinistre Regular
 *  Font: https://www.fontsquirrel.com/fonts/sinistre
 */
 @font-face {
-    font-family: 'Sinistre';
-    src: url('../../assets/fonts/sinistre-regular-webfont.woff2') format('woff2'),
-         url('../../assets/fonts/sinistre-regular-webfont.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-
+	font-family: "Sinistre";
+	src:
+		url("../../assets/fonts/sinistre-regular-webfont.woff2") format("woff2"),
+		url("../../assets/fonts/sinistre-regular-webfont.woff") format("woff");
+	font-weight: normal;
+	font-style: normal;
 }

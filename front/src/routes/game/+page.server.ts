@@ -1,12 +1,12 @@
-import type { PageServerLoad } from './$types';
-import { getAuthHeaders } from '$lib/server/auth';
-import type { DeckReadSummary, RoomSummary } from '$lib/types';
+import type { PageServerLoad } from "./$types";
+import { getAuthHeaders } from "$lib/server/auth";
+import type { DeckReadSummary, RoomSummary } from "$lib/types";
 import {
 	getDeckSummariesDecksSummariesGet,
 	listRoomsGameRoomsGet,
 	getAllCardsCardsGet,
-	getAllElementsGet
-} from '$lib/api';
+	getAllElementsGet,
+} from "$lib/api";
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const headers = getAuthHeaders(locals);
@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		getDeckSummariesDecksSummariesGet({ headers }),
 		listRoomsGameRoomsGet({ headers }),
 		getAllCardsCardsGet({ headers }),
-		getAllElementsGet({ headers })
+		getAllElementsGet({ headers }),
 	]);
 
 	let decks: DeckReadSummary[] = [];
@@ -34,6 +34,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		decks,
 		rooms,
 		cards: cardsRes.data ?? [],
-		elements: elementsRes.data ?? []
+		elements: elementsRes.data ?? [],
 	};
 };
