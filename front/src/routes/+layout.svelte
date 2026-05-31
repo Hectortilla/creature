@@ -4,7 +4,6 @@
 
 	// Components
 	import Nav from '$lib/components/menu/Nav.svelte';
-	import RollDice from '$lib/components/RollDice.svelte';
 
 	// Icons
 	import favicon from '$lib/assets/icons/favicon.svg';

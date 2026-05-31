@@ -168,10 +168,6 @@ async function generateMetadataFile() {
 	try {
 		const fields = parseActionDataFromTypes();
 
-		// Read the types file again to extract action type examples
-		const typesPath = join(__dirname, "../src/lib/api/types.gen.ts");
-		const content = readFileSync(typesPath, "utf-8");
-
 		// Extract all unique action types from fields
 		const actionTypes = new Set<string>();
 		fields.forEach((field) => {

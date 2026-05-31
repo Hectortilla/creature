@@ -51,14 +51,17 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **vitest** | frontend | `npm run test` | CI — gating |
 | **dependency-cruiser** (boundaries) | frontend | `npm run deps:check` | CI — gating |
 | **build** | frontend | `npm run build` | CI — gating |
-| **eslint + prettier** | frontend | `npm run lint` | CI — non-blocking (pre-existing debt) |
-| **svelte-check** | frontend | `npm run check` | CI — non-blocking (pre-existing debt) |
+| **eslint + prettier** | frontend | `npm run lint` | pre-commit · CI — gating (eslint ratcheted) |
+| **svelte-check** | frontend | `npm run check` | CI — non-blocking (pre-existing type debt) |
 | **markdown link-check** | docs | `lychee --offline` | CI (`docs.yml`) |
 
 The backend "done" gate is composed as **`make check`**. The frontend "done" gate
-is **`npm run test && npm run deps:check && npm run build`**; `npm run lint` and
-`npm run check` run non-blocking for now because of pre-existing app/legacy debt
-(see follow-ups) — don't add new violations.
+is **`npm run lint && npm run test && npm run deps:check && npm run build`**.
+`npm run lint` gates: prettier is clean and eslint is "ratcheted" — high-volume
+legacy rules (`no-at-html-tags`, `require-each-key`, `no-explicit-any`,
+`no-navigation-without-resolve`, …) are **warnings**, so the gate blocks new
+*errors* while the backlog shows as warnings; don't add new violations. `npm run
+check` (svelte-check) stays non-blocking until its pre-existing type debt is cleared.
 
 ### Architecture-fitness sensors (structural)
 
@@ -120,9 +123,10 @@ Tracked here so they're visible, not lost:
   and `settings` still carry `ignore_errors` (dynamic SQLAlchemy/async patterns,
   plus a latent `MessageHandler.join_room` call-arg bug to triage with integration
   tests). Drop those next; eventually `disallow_untyped_defs`.
-- **Frontend lint/type debt**: clear the pre-existing prettier/eslint/svelte-check
-  findings in app/legacy code (`npm run format`, then triage eslint + svelte-check),
-  then promote `npm run lint` / `check` to gating and add them to pre-commit.
+- **Frontend type debt**: `npm run lint` (prettier + ratcheted eslint) now gates
+  in CI and pre-commit. Remaining: ~55 `svelte-check` type errors (incl.
+  `babylon-editor/src` and active routes) — clear them, then promote
+  `npm run check` to gating too.
 - **More sensors**: mutation testing, a dead-code/drift job, behaviour
   fixture-approval tests.
 - **Activate the Claude PR-review workflow** (add the API-key secret).

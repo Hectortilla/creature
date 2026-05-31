@@ -107,12 +107,12 @@ jobs:
           cache: npm
           cache-dependency-path: front/package-lock.json
       - run: npm ci
-      # Pre-existing prettier/eslint/svelte-check debt lives in app/legacy code,
-      # so these run for visibility but do NOT yet gate (continue-on-error). Do not
-      # add new violations. Clearing the backlog is a tracked rung in docs/harness.md.
-      - name: Lint (prettier + eslint) — non-blocking
+      # eslint is ratcheted (high-volume legacy rules are warnings; see
+      # front/eslint.config.js) and prettier is clean, so lint now gates.
+      - name: Lint (prettier + eslint)
         run: npm run lint
-        continue-on-error: true
+      # svelte-check still carries pre-existing type debt (incl. babylon-editor/src);
+      # non-blocking until cleared (tracked in docs/harness.md). Don't add new errors.
       - name: Type-check (svelte-check) — non-blocking
         run: npm run check
         continue-on-error: true

@@ -1,6 +1,5 @@
 <script lang="ts">
     import type { PageProps } from "./$types";
-    import { page } from '$app/state';
 
     let { data }: PageProps = $props();
     $inspect(data);

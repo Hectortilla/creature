@@ -63,7 +63,7 @@
             {/if}
         </div>
         <div class="gallery-abilities">
-            {#each filteredAbilities() as ability, i}
+            {#each filteredAbilities() as ability}
                 <CardAbility data={ability} />
             {/each}
         </div>

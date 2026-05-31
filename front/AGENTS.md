@@ -144,17 +144,18 @@ due to a parser limitation in dependency-cruiser; see the comments in
 These **must be green** for a frontend change:
 
 ```bash
+npm run lint        # prettier + eslint (ratcheted; gates on errors)
 npm run test        # vitest
 npm run deps:check  # module boundaries
 npm run build       # production build
 ```
 
-`npm run lint` (prettier + eslint) and `npm run check` (svelte-check) currently
-carry **pre-existing debt** in app/legacy code, so they run in CI for visibility
-but do not yet gate. Still: **don't add new violations** — run `npm run lint` and
-`npm run check` against what you touched, and `npm run format` to fix formatting in
-your own files. Clearing the backlog is a tracked rung in
-[`../docs/harness.md`](../docs/harness.md).
+`npm run lint` (prettier + ratcheted eslint) **gates**: high-volume legacy eslint
+rules are warnings, so it blocks new _errors_. Don't add new violations, and run
+`npm run format` to fix formatting in your own files. `npm run check` (svelte-check)
+still carries **pre-existing type debt** (incl. `babylon-editor/src`), so it runs in
+CI non-blocking for now — don't add new type errors. Clearing it is a tracked rung
+in [`../docs/harness.md`](../docs/harness.md).
 
 Don't bypass a sensor — fix the design. If a sensor itself is wrong, that's a
 harness bug: fix the sensor (and note it here / in the root guide).

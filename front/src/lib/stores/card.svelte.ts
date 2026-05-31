@@ -1,5 +1,4 @@
-import { browser } from "$app/environment";
-import { getAllCardsCardsGet, getCardCardsValueGet } from "$lib/api";
+import { getAllCardsCardsGet } from "$lib/api";
 import type { CardReadWithRelations } from "$lib/api/types.gen";
 import { shouldPersist } from "$lib/utils";
 

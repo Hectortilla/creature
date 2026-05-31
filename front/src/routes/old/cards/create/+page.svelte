@@ -54,6 +54,7 @@
     let cardName = $state<string>('');
     let cardIsEvolution = $state<boolean>(false);
     let evolutionNumber = $state<number>(1);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- assigned but not yet read
     let cardHandle = $state<string>('');
     let cardDescription = $state<string>('');
     let cardOverlayImage = $state<File | null>(null);

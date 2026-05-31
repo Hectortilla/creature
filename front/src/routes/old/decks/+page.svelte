@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DeckReadWithCards, CardReadWithRelations, DeckCreate } from '$lib/api';
+	import type { DeckReadWithCards, DeckCreate } from '$lib/api';
 	import type { Creature } from '$lib/types';
 	import {
 		getAllDecksDecksGet,
@@ -132,6 +132,7 @@
 
 	// Container card position
 	let cardContainer = $state<HTMLElement>();
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars -- assigned but not yet read
 	let cardContainerPosition = $state(0);
 
 	onMount(() => {

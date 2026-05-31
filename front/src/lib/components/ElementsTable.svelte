@@ -106,7 +106,7 @@
                         >
                             <img src={element.icon} alt={element.label} />
                         </div>
-                        {#each elements as e, col}
+                        {#each elements as _e, col}
                             <div
                                 class="cell"
                                 aria-label="Focus"

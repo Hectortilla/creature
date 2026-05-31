@@ -15,7 +15,7 @@ import GameConnection from './game/GameConnection';
 import { CardDefinitionCache } from './game/CardDefinitionCache';
 import { GameStateStore } from './state/GameStateStore';
 import type { GameMessage, ValidAction } from './game/types';
-import type { Zone, TurnPhase, ClientGameState } from './game/models';
+import type { Zone, TurnPhase } from './game/models';
 import { CardEntityManager } from './entities/CardEntityManager';
 
 import type {

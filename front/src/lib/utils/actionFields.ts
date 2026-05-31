@@ -10,7 +10,6 @@
  *   npm run generate (generates client + metadata)
  */
 
-import type { ActionData } from "$lib/api/types.gen";
 // Import auto-generated metadata (regenerate with: npm run generate-action-metadata)
 import {
 	FIELD_METADATA as GENERATED_FIELD_METADATA,
@@ -101,7 +100,7 @@ function generateFieldLabel(fieldName: string): string {
  */
 function generatePlaceholder(
 	example: string | number | string[] | undefined,
-	fieldName: string,
+	_fieldName: string,
 ): string | undefined {
 	if (example === undefined) {
 		return undefined;

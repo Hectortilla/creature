@@ -23,6 +23,7 @@
 
     let {
         data,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- public prop consumed by callers
         key,
         allowLink = true,
         showDescription = true

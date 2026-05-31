@@ -5,12 +5,8 @@
     import type { Creature, Element, Type, Character } from '$lib/types';
     import { DECK_MAX_LENGTH } from "$lib/constants";
     import {
-		getAllDecksDecksGet,
-		getAllCardsCardsGet,
-		createDeckDecksPost,
 		addCardToDeckDecksDeckIdCardsCardIdPost,
 		removeCardFromDeckDecksDeckIdCardsCardIdDelete,
-		deleteDeckDecksDeckIdDelete,
         getDeckDecksDeckIdGet
 	} from '$lib/api';
 
@@ -63,12 +59,11 @@
 
     let showGallery = $state(true);
 
-    $inspect(displayView);
 
 
     // Force animation on appear
     $effect(() => {
-        page.url.pathname;
+        void page.url.pathname;
 
         cardsAreLoaded = false;
 
@@ -78,7 +73,7 @@
     });
 
     $effect(() => {
-        displayView;
+        void displayView;
 
         showGallery = false;
 

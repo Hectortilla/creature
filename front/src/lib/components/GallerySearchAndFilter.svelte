@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { FONT_BASE_SIZE } from "$lib/constants";
     import { page } from '$app/state';
 
     // Components
@@ -12,7 +11,6 @@
     import Plus from "$lib/assets/icons/plus.svg?raw";
     import Small from "$lib/assets/icons/grid-small.svg?raw";
     import Medium from "$lib/assets/icons/grid-medium.svg?raw";
-    import Large from "$lib/assets/icons/grid-large.svg?raw";
 
     interface Props {
         cards: any;
@@ -30,6 +28,7 @@
 
     let {
         cards,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- consumed in markup
         elements,
         showSearch = true,
         showFilters = true,
@@ -55,7 +54,7 @@
 
     // Force animation on appear
     $effect(() => {
-        page.url.pathname;
+        void page.url.pathname;
 
         cardsAreLoaded = false;
 
@@ -65,7 +64,7 @@
     });
 
     $effect(() => {
-        sizeView;
+        void sizeView;
         void document.body.offsetHeight;
     });
 </script>

@@ -106,7 +106,7 @@
             </div>
             {#if filteredAbilities().length > 0}
                 <ul class="cards-gallery">
-                    {#each filteredAbilities() as attack, i}
+                    {#each filteredAbilities() as attack}
                         <li>
                             <input
                                 type="radio"

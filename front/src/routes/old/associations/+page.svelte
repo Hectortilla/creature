@@ -43,7 +43,7 @@
             <InputSearch bind:value={searchTerm} placeholder="Busca por nombre o por código" />
         </div>
         <div class="gallery-associations">
-            {#each filteredAssociation() as association, i}
+            {#each filteredAssociation() as association}
                 <CardAssociation data={association}/>
             {/each}
         </div>

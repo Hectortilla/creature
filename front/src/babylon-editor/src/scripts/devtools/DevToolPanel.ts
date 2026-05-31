@@ -89,7 +89,8 @@ export class DevToolPanel {
 	// ── Visibility ───────────────────────────────────────────────────
 
 	toggle(): void {
-		this._visible ? this.hide() : this.show();
+		if (this._visible) this.hide();
+		else this.show();
 	}
 
 	show(): void {

@@ -26,8 +26,15 @@ repos:
         name: ruff format (backend)
         files: ^back/.*\.py$
 
-  # Frontend prettier/eslint are intentionally NOT pre-commit hooks yet: they
-  # carry pre-existing debt (see docs/harness.md) and `npm run lint` checks the
-  # whole tree, so it would fail on untouched files. They run as non-blocking CI
-  # steps; meanwhile the Claude PostToolUse hook auto-formats edited frontend
-  # files. Add a scoped frontend hook here once the lint backlog is cleared.
+  # Frontend: prettier + eslint over front/ when any front file is staged. The
+  # eslint backlog is cleared (high-volume legacy rules are ratcheted to warnings
+  # in front/eslint.config.js), so this gates on errors. svelte-check still carries
+  # pre-existing type debt and runs in CI only (non-blocking).
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: prettier + eslint (frontend)
+        language: system
+        entry: bash -c 'cd front && npm run lint'
+        files: ^front/.*\.(ts|js|svelte|css|scss)$
+        pass_filenames: false

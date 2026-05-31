@@ -87,7 +87,7 @@
     }
 
     $effect(() => {
-        itemsLength;
+        void itemsLength;
         build();
     });
 

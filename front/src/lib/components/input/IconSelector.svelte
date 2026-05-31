@@ -15,7 +15,7 @@
 </script>
 
 
-<div class={`icon-selector`}>
+<div class="icon-selector">
     {#each data as {value, icon}}
         <div class="input-wrapper">
             <input

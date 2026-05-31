@@ -42,12 +42,6 @@
     let cards = $state([...data.all_cards ?? []]);
     let card = $state(data.cards && data.cards.length === 1 ? data.cards[0] : null);
 
-    /*
-     * Search next code in cards
-     * */
-    let nextCardCode = $derived.by(() => {
-        return cards.length > 0 ? (cards[cards.length - 1]?.code + 1 || 1) : 1;
-    });
 
     // Inicialización de estados en edit
     let cardCode = $state(card?.code ?? 1);

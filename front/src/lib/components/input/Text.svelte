@@ -27,9 +27,6 @@
         placeholder
     }: Props = $props();
 
-    let isAlmostMaxLength = $state(false);
-    let isMaxLength = $state(false);
-
     /**
      * Reset input value
      */

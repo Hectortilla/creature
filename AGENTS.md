@@ -58,8 +58,8 @@ Run the gate for the side you touched. **These must pass before a change is done
 | Side | Command | Runs |
 | ---- | ------- | ---- |
 | Backend | `cd back && make check` | ruff (lint) · ruff format check · mypy · import-linter · pytest |
-| Frontend (gating) | `cd front && npm run test && npm run deps:check && npm run build` | vitest · dependency boundaries · build |
-| Frontend (non-blocking) | `npm run lint` · `npm run check` | prettier/eslint/svelte-check — pre-existing debt in app/legacy code; run them, don't add new violations ([docs/harness.md](docs/harness.md)) |
+| Frontend (gating) | `cd front && npm run lint && npm run test && npm run deps:check && npm run build` | prettier + eslint (ratcheted) · vitest · dependency boundaries · build |
+| Frontend (non-blocking) | `npm run check` | svelte-check — pre-existing type debt; run it, don't add new errors ([docs/harness.md](docs/harness.md)) |
 | Both | `make check` (repo root) | fans out to backend + frontend |
 
 Local hooks run the fast subset on every commit (see `.pre-commit-config.yaml`);
