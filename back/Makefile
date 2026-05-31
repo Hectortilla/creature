@@ -35,5 +35,6 @@ test:
 test-cov:
 	uv run pytest -m "not integration" --cov=app --cov-report=term-missing
 
-# The deterministic "done" gate: lint + format + types + boundaries + tests.
-check: lint format-check typecheck arch test
+# The deterministic "done" gate: lint + format + types + boundaries + tests
+# (with the coverage floor; see [tool.coverage.report] fail_under).
+check: lint format-check typecheck arch test-cov

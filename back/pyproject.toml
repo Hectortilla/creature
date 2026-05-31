@@ -140,7 +140,10 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
 ]
-# No `fail_under` yet — measure first (see docs/harness.md follow-ups).
+# Coverage ratchet. Unit-test floor measured at ~64% (the engine + model layers
+# are well-covered; framework/IO code is exercised by the integration suite).
+# Keep this just below the baseline and ratchet it upward as coverage grows.
+fail_under = 62
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Harness: architecture-fitness sensor (import-linter). Run with `make arch`.
