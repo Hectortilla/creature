@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import Session, create_engine
 
 from app.settings.config import get_settings
 

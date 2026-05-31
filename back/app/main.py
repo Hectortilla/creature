@@ -4,36 +4,32 @@ Creature Card Game API
 Main FastAPI application entrypoint.
 """
 
+from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .settings.admin.index import setup_admin
-
-from app.routers import (
-    elements_router,
-    types_router,
-    characters_router,
-    attacks_router,
-    abilities_router,
-    associations_router,
-    cards_router,
-    auth_router,
-    decks_router,
-)
-from app.websocket.routes import router as websocket_router
-from app.settings.lifespan import lifespan
 
 # Import models to ensure they're registered with SQLModel
-from app.models.db.element import Element
-from app.models.db.type import Type
-from app.models.db.character import Character
-from app.models.db.attack import Attack
-from app.models.db.ability import Ability
-from app.models.db.association import Association
-from app.models.db.card import Card
-from app.models.db.user import User
-from app.models.db.deck import Deck
-from app.models.db.deck_card import DeckCard
-from app.models.db.effect import Effect
+from app.routers import (
+    abilities_router,
+    associations_router,
+    attacks_router,
+    auth_router,
+    cards_router,
+    characters_router,
+    decks_router,
+    elements_router,
+    types_router,
+)
+from app.settings.config import get_settings
+from app.settings.lifespan import lifespan
+from app.settings.logging import configure_logging
+from app.settings.observability import setup_observability
+from app.websocket.routes import router as websocket_router
+
+from .settings.admin.index import setup_admin
+
+settings = get_settings()
+configure_logging(level=settings.log_level, json_logs=settings.log_json)
 
 app = FastAPI(
     title="Creature Card Game API",
@@ -49,6 +45,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(CorrelationIdMiddleware)
 
 # Setup admin panel
 setup_admin(app)
@@ -64,6 +61,9 @@ app.include_router(associations_router)
 app.include_router(cards_router)
 app.include_router(decks_router)
 app.include_router(websocket_router, prefix="/game", tags=["Game"])
+
+# Metrics (/metrics) and optional OpenTelemetry tracing.
+setup_observability(app, settings)
 
 
 @app.get("/")

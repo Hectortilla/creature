@@ -7,11 +7,11 @@ Element interaction bonuses and damage calculation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 from enum import IntEnum
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.game import GameCard, AttackDefinition
+    from app.models.game import AttackDefinition, GameCard
 
 
 class ElementId(IntEnum):
@@ -41,19 +41,19 @@ ELEMENT_BONUS: dict[tuple[int, int], int] = {}
 
 _RELATIONSHIPS: dict[int, tuple[list[int], list[int]]] = {
     # element: (strengths, weaknesses)
-    ElementId.ETHER:    ([ElementId.MENTAL],                                       [ElementId.LIGHT]),
-    ElementId.EARTH:    ([ElementId.THUNDER, ElementId.METAL],                     [ElementId.WATER, ElementId.NATURE]),
-    ElementId.WATER:    ([ElementId.EARTH, ElementId.FIRE],                        [ElementId.THUNDER, ElementId.NATURE]),
-    ElementId.AIR:      ([ElementId.FIRE, ElementId.NATURE],                       [ElementId.EARTH, ElementId.THUNDER]),
-    ElementId.FIRE:     ([ElementId.ICE, ElementId.NATURE],                        [ElementId.WATER, ElementId.AIR]),
-    ElementId.ICE:      ([ElementId.AIR, ElementId.NATURE],                        [ElementId.FIRE, ElementId.METAL]),
-    ElementId.THUNDER:  ([ElementId.WATER, ElementId.ICE],                         [ElementId.EARTH, ElementId.METAL]),
-    ElementId.METAL:    ([ElementId.ICE, ElementId.MENTAL],                        [ElementId.EARTH, ElementId.NATURE]),
-    ElementId.NATURE:   ([ElementId.METAL, ElementId.LIGHT],                       [ElementId.FIRE, ElementId.ICE]),
-    ElementId.TOXIC:    ([ElementId.NATURE, ElementId.TOXIC],                      [ElementId.EARTH, ElementId.MENTAL]),
-    ElementId.MENTAL:   ([ElementId.TOXIC, ElementId.MENTAL],                      [ElementId.DARKNESS, ElementId.MENTAL]),
-    ElementId.LIGHT:    ([ElementId.ETHER],                                        [ElementId.DARKNESS, ElementId.NATURE]),
-    ElementId.DARKNESS: ([ElementId.LIGHT],                                        [ElementId.ETHER, ElementId.METAL]),
+    ElementId.ETHER: ([ElementId.MENTAL], [ElementId.LIGHT]),
+    ElementId.EARTH: ([ElementId.THUNDER, ElementId.METAL], [ElementId.WATER, ElementId.NATURE]),
+    ElementId.WATER: ([ElementId.EARTH, ElementId.FIRE], [ElementId.THUNDER, ElementId.NATURE]),
+    ElementId.AIR: ([ElementId.FIRE, ElementId.NATURE], [ElementId.EARTH, ElementId.THUNDER]),
+    ElementId.FIRE: ([ElementId.ICE, ElementId.NATURE], [ElementId.WATER, ElementId.AIR]),
+    ElementId.ICE: ([ElementId.AIR, ElementId.NATURE], [ElementId.FIRE, ElementId.METAL]),
+    ElementId.THUNDER: ([ElementId.WATER, ElementId.ICE], [ElementId.EARTH, ElementId.METAL]),
+    ElementId.METAL: ([ElementId.ICE, ElementId.MENTAL], [ElementId.EARTH, ElementId.NATURE]),
+    ElementId.NATURE: ([ElementId.METAL, ElementId.LIGHT], [ElementId.FIRE, ElementId.ICE]),
+    ElementId.TOXIC: ([ElementId.NATURE, ElementId.TOXIC], [ElementId.EARTH, ElementId.MENTAL]),
+    ElementId.MENTAL: ([ElementId.TOXIC, ElementId.MENTAL], [ElementId.DARKNESS, ElementId.MENTAL]),
+    ElementId.LIGHT: ([ElementId.ETHER], [ElementId.DARKNESS, ElementId.NATURE]),
+    ElementId.DARKNESS: ([ElementId.LIGHT], [ElementId.ETHER, ElementId.METAL]),
 }
 
 for _atk, (_strengths, _weaknesses) in _RELATIONSHIPS.items():
@@ -75,9 +75,11 @@ def get_total_element_bonus(attack_element: int, defender_elements: list[int]) -
 
 # ── Damage calculation ──────────────────────────────────────────────────
 
+
 @dataclass
 class DamageCalculation:
     """Full damage breakdown for one attack."""
+
     base_damage: int
     element_bonus: int
     effect_modifiers: int = 0
@@ -95,9 +97,9 @@ class DamageCalculation:
 
 
 def calculate_damage(
-    attack: "AttackDefinition",
-    attacker: "GameCard",
-    target: "GameCard",
+    attack: AttackDefinition,
+    attacker: GameCard,
+    target: GameCard,
     effect_modifier: int = 0,
 ) -> DamageCalculation:
     """
@@ -123,9 +125,6 @@ def calculate_damage(
     )
 
 
-def can_afford_attack(player_elements: dict[int, int], attack: "AttackDefinition") -> bool:
+def can_afford_attack(player_elements: dict[int, int], attack: AttackDefinition) -> bool:
     """Check if a player has enough elements to pay for an attack."""
-    for cost in attack.necessary_force:
-        if player_elements.get(cost.element_id, 0) < cost.amount:
-            return False
-    return True
+    return all(player_elements.get(cost.element_id, 0) >= cost.amount for cost in attack.necessary_force)

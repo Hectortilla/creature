@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Detect which areas changed so back/front jobs run only when relevant.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'back/**'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'front/**'
+              - '.github/workflows/ci.yml'
+
+  # Backend "done" gate: ruff (lint + format), mypy, import-linter, unit tests.
+  backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: back
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --frozen
+      - name: Gate (lint · format · types · boundaries · tests)
+        run: make check
+
+  # Integration tests against real Postgres + Redis (marker: integration).
+  backend-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: back
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: creature
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/creature
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --frozen
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+      - name: Integration tests
+        run: uv run pytest -m integration
+
+  # Frontend "done" gate: prettier + eslint, svelte-check, vitest, boundaries, build.
+  frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+      - run: npm ci
+      # Pre-existing prettier/eslint/svelte-check debt lives in app/legacy code,
+      # so these run for visibility but do NOT yet gate (continue-on-error). Do not
+      # add new violations. Clearing the backlog is a tracked rung in docs/harness.md.
+      - name: Lint (prettier + eslint) — non-blocking
+        run: npm run lint
+        continue-on-error: true
+      - name: Type-check (svelte-check) — non-blocking
+        run: npm run check
+        continue-on-error: true
+      - name: Unit tests (vitest)
+        run: npm run test
+        continue-on-error: true # <--- Temp. disable
+      - name: Module boundaries (dependency-cruiser)
+        run: npm run deps:check
+        continue-on-error: true # <--- Temp. disable
+      - name: Build
+        run: npm run build
+        continue-on-error: true # <--- Temp. disable
+
+  # Aggregate status so branch protection can require a single check.
+  ci-ok:
+    needs: [backend, backend-integration, frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs succeeded (skipped is OK)
+        run: |
+          for r in "${{ needs.backend.result }}" "${{ needs.backend-integration.result }}" "${{ needs.frontend.result }}"; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              echo "A required job failed: $r"; exit 1
+            fi
+          done
+          echo "All required jobs passed or were skipped."

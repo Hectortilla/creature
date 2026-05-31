@@ -12,7 +12,7 @@ class AbilityAdmin(ModelView, model=Ability):
     category = "Gestión de Cartas"
 
     searchable_columns = [Ability.name]
-    
+
     column_list = [
         Ability.id,
         Ability.name,
@@ -48,6 +48,6 @@ class AbilityAdmin(ModelView, model=Ability):
         "code",
         "handle",
     ]
-    
+
     page_size = 50
     page_size_options = [25, 50, 100, 200]

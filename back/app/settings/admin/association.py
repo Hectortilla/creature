@@ -12,12 +12,12 @@ class AssociationAdmin(ModelView, model=Association):
     category = "Gestión de Cartas"
 
     searchable_columns = [Association.name]
-    
+
     column_list = [
         Association.id,
         Association.name,
     ]
-    
+
     column_labels = {
         "id": "ID",
         "name": "Nombre",
@@ -45,6 +45,6 @@ class AssociationAdmin(ModelView, model=Association):
         "code",
         "handle",
     ]
-    
+
     page_size = 50
     page_size_options = [25, 50, 100, 200]

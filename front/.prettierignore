@@ -1,0 +1,30 @@
+# Generated, build, and cache output — not hand-formatted.
+# (eslint already ignores these via includeIgnoreFile('.gitignore'); prettier
+# does not read .gitignore, so the same paths are listed here.)
+
+# Package / build artifacts
+node_modules
+build
+dist
+package-lock.json
+coverage
+
+# SvelteKit generated output (types, tsconfig, etc.)
+.svelte-kit
+
+# Generated code — owned by the generators, never hand-edited.
+# See the generated-code contract in AGENTS.md (`npm run generate`).
+src/lib/api/*.gen.ts
+src/lib/api/client
+src/lib/api/core
+src/lib/utils/generated
+
+# BabylonJS editor sub-project: a self-contained project with its own package.json,
+# tsconfig and Vite config (and large generated scene JSON). It is not formatted by
+# the root toolchain — it is excluded from dependency-cruiser the same way.
+src/babylon-editor
+
+# Local data / logs
+*.log
+database.db
+backup.sql

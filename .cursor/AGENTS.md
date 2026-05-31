@@ -1,5 +1,11 @@
 # AGENTS – Portable Guide to Cursor Rule Files
 
+> **Project source of truth:** the canonical, cross-tool agent guide for *this*
+> repo is [`/AGENTS.md`](../AGENTS.md) (build/test/run commands, the "done" gates,
+> architecture rules). Read it first. This file only explains the generic Cursor
+> rule-discovery mechanism below; the style rules themselves live in
+> [`rules/`](rules/).
+
 This document explains how **any** AI agent can discover and follow Cursor rule files in a repository.  Copy it into another project and it should still make sense without modification.
 
 ---

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth.dependencies import get_current_active_user
 from app.database import DBSessionDep
 from app.models.schemas.card import CardCreate, CardReadWithRelations
 from app.services.cards import CardService
-from app.auth.dependencies import get_current_active_user
 
 router = APIRouter(
     prefix="/cards",

@@ -12,8 +12,7 @@ class AttackAdmin(ModelView, model=Attack):
     category = "Gestión de Cartas"
 
     searchable_columns = [Attack.name]
-    
-    
+
     column_list = [
         Attack.id,
         Attack.name,
@@ -37,7 +36,7 @@ class AttackAdmin(ModelView, model=Attack):
         "created_at": "Creado el",
         "effect_summary": "Efectos",
     }
-    
+
     column_details_list = [
         "id",
         "name",
@@ -57,7 +56,7 @@ class AttackAdmin(ModelView, model=Attack):
     column_formatters_detail = {
         "effect_summary": lambda model, a: effect_summary("attack", model.id),
     }
-    
+
     form_columns = [
         "id",
         "name",
@@ -71,10 +70,10 @@ class AttackAdmin(ModelView, model=Attack):
         "handle",
         "necessary_force",
     ]
-    
+
     column_formatters = {
         "element": lambda model, a: model.element.label,
     }
-    
+
     page_size = 50
     page_size_options = [25, 50, 100, 200]

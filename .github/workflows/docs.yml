@@ -1,0 +1,27 @@
+name: Docs
+
+# Enforces the cross-linked-docs invariant: internal Markdown links must resolve.
+on:
+  push:
+    branches: [main]
+    paths: ['**/*.md']
+  pull_request:
+    paths: ['**/*.md']
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check internal Markdown links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --offline checks only on-disk links (internal cross-links), so the
+          # job is deterministic and not subject to external-site flakiness.
+          args: >-
+            --offline
+            --no-progress
+            --exclude-path node_modules
+            --exclude-path back/.venv
+            "./**/*.md"
+          fail: true

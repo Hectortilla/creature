@@ -10,7 +10,5 @@ These are designed as mixins/base classes that can be inherited by both
 SQLModel and Pydantic models without conflict.
 """
 
-from app.models.core.card import CardCombatFields, CardIdentityFields
 from app.models.core.attack import AttackCoreFields
-
-
+from app.models.core.card import CardCombatFields, CardIdentityFields

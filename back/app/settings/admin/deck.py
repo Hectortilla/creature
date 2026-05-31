@@ -9,12 +9,12 @@ class DeckAdmin(ModelView, model=Deck):
     name_plural = "Mazos"
     icon = "fa-solid fa-layer-group"
     category = "Gestión de Mazos"
-    
+
     column_list = [Deck.id, Deck.name, Deck.user]
     column_default_sort = (Deck.name, False)
 
     searchable_columns = [Deck.name]
-    
+
     column_labels = {
         "id": "ID",
         "name": "Nombre",

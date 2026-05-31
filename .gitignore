@@ -137,3 +137,21 @@ front/src/babylon-editor/.bjseditor/
 front/src/babylon-editor/public/scene/
 front/src/babylon-editor/dist/
 front/src/babylon-editor/electron-packages/
+
+# Python tooling caches (harness: ruff, mypy, pytest, coverage)
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local DB / cache dumps & artifacts (never commit — may contain real data)
+dump.rdb
+*.rdb
+backup.sql
+database.db*
+*.sqbpro
+
+# OpenAPI codegen error logs (also matched by *.log above; listed explicitly)
+front/openapi-ts-error-*.log

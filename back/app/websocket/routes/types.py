@@ -8,37 +8,37 @@ WebSocket message schemas in the OpenAPI spec for client code generation.
 
 from fastapi import APIRouter
 
-from app.models.schemas.websocket.client import (
-    JoinGameMessage,
-    ListRoomsMessage,
-    ActionMessage,
-    GetStateMessage,
-    GetValidActionsMessage,
-    LeaveGameMessage,
-    PingMessage,
-)
-from app.models.schemas.websocket.server import (
-    ConnectedMessage,
-    GameCreatedMessage,
-    GameJoinedMessage,
-    PlayerJoinedMessage,
-    PlayerLeftMessage,
-    GameStartedMessage,
-    GameStateMessage,
-    ActionResultMessage,
-    ValidActionsMessage,
-    RoomsListMessage,
-    GameLeftMessage,
-    ErrorMessage,
-    PongMessage,
-)
-from app.models.game.element import ElementContribution, ElementPool
 from app.models.game.attack import AttackDefinition
-from app.models.game.zone import ZoneState
 from app.models.game.card import GameCard
+from app.models.game.element import ElementContribution, ElementPool
 from app.models.game.enums import CardStatus
 from app.models.game.player import PlayerState
 from app.models.game.state import GameStateForPlayer
+from app.models.game.zone import ZoneState
+from app.models.schemas.websocket.client import (
+    ActionMessage,
+    GetStateMessage,
+    GetValidActionsMessage,
+    JoinGameMessage,
+    LeaveGameMessage,
+    ListRoomsMessage,
+    PingMessage,
+)
+from app.models.schemas.websocket.server import (
+    ActionResultMessage,
+    ConnectedMessage,
+    ErrorMessage,
+    GameCreatedMessage,
+    GameJoinedMessage,
+    GameLeftMessage,
+    GameStartedMessage,
+    GameStateMessage,
+    PlayerJoinedMessage,
+    PlayerLeftMessage,
+    PongMessage,
+    RoomsListMessage,
+    ValidActionsMessage,
+)
 
 router = APIRouter(prefix="/websocket-messages", tags=["WebSocket Messages"])
 
@@ -46,6 +46,7 @@ router = APIRouter(prefix="/websocket-messages", tags=["WebSocket Messages"])
 # ============================================================================
 # Client → Server Messages (request types)
 # ============================================================================
+
 
 @router.post("/join-game", response_model=JoinGameMessage, include_in_schema=True)
 async def _ws_join_game_type(msg: JoinGameMessage) -> JoinGameMessage:
@@ -92,6 +93,7 @@ async def _ws_ping_type(msg: PingMessage) -> PingMessage:
 # ============================================================================
 # Server → Client Messages (response types)
 # ============================================================================
+
 
 @router.get("/connected", response_model=ConnectedMessage, include_in_schema=True)
 async def _ws_connected_type() -> ConnectedMessage:
@@ -174,6 +176,7 @@ async def _ws_pong_type() -> PongMessage:
 # ============================================================================
 # Game Domain Types (for frontend code generation)
 # ============================================================================
+
 
 @router.get("/domain/element-contribution", response_model=ElementContribution, include_in_schema=True)
 async def _domain_element_contribution_type() -> ElementContribution:

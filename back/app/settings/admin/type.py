@@ -11,7 +11,7 @@ class TypeAdmin(ModelView, model=Type):
     category = "Gestión de Cartas"
 
     searchable_columns = [Type.label]
-    
+
     column_list = [
         Type.id,
         Type.label,
@@ -30,5 +30,5 @@ class TypeAdmin(ModelView, model=Type):
         "label",
         "icon",
     ]
-    
+
     page_size = 20

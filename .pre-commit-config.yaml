@@ -1,0 +1,33 @@
+# Fast, "keep quality left" gate run on changed files at commit time.
+#   pipx install pre-commit  (or: uv tool install pre-commit)
+#   pre-commit install
+# Heavier checks (mypy, import-linter, svelte-check, vitest, build) run in CI.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  # Backend: ruff lint (+autofix) and format, scoped to back/.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.15
+    hooks:
+      - id: ruff
+        name: ruff lint (backend)
+        args: [--fix]
+        files: ^back/.*\.py$
+      - id: ruff-format
+        name: ruff format (backend)
+        files: ^back/.*\.py$
+
+  # Frontend prettier/eslint are intentionally NOT pre-commit hooks yet: they
+  # carry pre-existing debt (see docs/harness.md) and `npm run lint` checks the
+  # whole tree, so it would fail on untouched files. They run as non-blocking CI
+  # steps; meanwhile the Claude PostToolUse hook auto-formats edited frontend
+  # files. Add a scoped frontend hook here once the lint backlog is cleared.

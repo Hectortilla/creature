@@ -11,17 +11,18 @@ from pydantic import BaseModel
 class AttackCoreFields(BaseModel):
     """
     Core attack fields shared across all attack representations.
-    
+
     Used by:
     - AttackBase (database model)
     - AttackDefinition (runtime game model)
-    
-    Note: 
+
+    Note:
     - 'type' is str in AttackBase but DamageType enum in AttackDefinition
     - 'necessary_force' is list[dict] in AttackBase but list[ElementContribution] in AttackDefinition
-    
+
     These type differences are handled by the inheriting classes.
     """
+
     name: str
     description: str | None = None
     damage: int | None = None

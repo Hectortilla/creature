@@ -5,15 +5,14 @@ Creates standardized CRUD routers from service/schema configuration.
 Eliminates duplicate router patterns across simple entities.
 """
 
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import SQLModel
 
+from app.auth.dependencies import get_current_active_user
 from app.database import DBSessionDep
 from app.services.base import BaseService
-from app.auth.dependencies import get_current_active_user
-
 
 T = TypeVar("T", bound=SQLModel)  # DB Model
 C = TypeVar("C", bound=SQLModel)  # Create schema
@@ -24,14 +23,14 @@ def create_crud_router(
     *,
     prefix: str,
     tag: str,
-    service_class: Type[BaseService],
-    read_schema: Type[R],
-    create_schema: Type[C],
+    service_class: type[BaseService],
+    read_schema: type[R],
+    create_schema: type[C],
     entity_name: str,
 ) -> APIRouter:
     """
     Create a standardized CRUD router for simple entities.
-    
+
     Args:
         prefix: URL prefix (e.g., "/elements")
         tag: OpenAPI tag for grouping
@@ -39,7 +38,7 @@ def create_crud_router(
         read_schema: Pydantic schema for read responses
         create_schema: Pydantic schema for create requests
         entity_name: Human-readable entity name for error messages
-    
+
     Returns:
         Configured APIRouter with GET all, GET one, POST, DELETE endpoints
     """

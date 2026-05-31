@@ -1,33 +1,33 @@
 # app/settings/admin.py
-from sqladmin import Admin
 from fastapi import FastAPI
+from sqladmin import Admin
+
 from app.database import engine
 
+from .ability import AbilityAdmin
+from .association import AssociationAdmin
+from .attack import AttackAdmin
+from .card import CardAdmin
+from .character import CharacterAdmin
+from .deck import DeckAdmin
+from .effect import EffectAdmin
+from .element import ElementAdmin
+from .type import TypeAdmin
 
 # Admins
 from .user import UserAdmin
-from .card import CardAdmin
-from .character import CharacterAdmin
-from .type import TypeAdmin
-from .element import ElementAdmin
-from .attack import AttackAdmin
-from .ability import AbilityAdmin
-from .association import AssociationAdmin
-from .effect import EffectAdmin
-from .deck import DeckAdmin
 
 
 # --- Admin views ---
 def setup_admin(app: FastAPI) -> None:
     """Init FastAPI Admin panel and register views."""
-    
+
     admin = Admin(
         app,
         engine=engine,
         title="Alen Admin",
     )
 
-    
     # Views registration
     admin.add_view(UserAdmin)
     admin.add_view(CardAdmin)

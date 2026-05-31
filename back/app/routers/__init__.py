@@ -5,24 +5,23 @@ Configures and exports all API routers.
 Simple CRUD entities use the factory pattern.
 """
 
-from app.routers.crud import create_crud_router
+from app.models.schemas.ability import AbilityCreate, AbilityRead
+from app.models.schemas.association import AssociationCreate, AssociationRead
+from app.models.schemas.character import CharacterCreate, CharacterRead
 
 # Schemas
 from app.models.schemas.element import ElementCreate, ElementRead
 from app.models.schemas.type import TypeCreate, TypeRead
-from app.models.schemas.ability import AbilityCreate, AbilityRead
-from app.models.schemas.character import CharacterCreate, CharacterRead
-from app.models.schemas.association import AssociationCreate, AssociationRead
+from app.routers.crud import create_crud_router
 
 # Services (simple services now defined in base.py)
 from app.services.base import (
+    AbilityService,
+    AssociationService,
+    CharacterService,
     ElementService,
     TypeService,
-    AbilityService,
-    CharacterService,
-    AssociationService,
 )
-
 
 # Generate CRUD routers using factory
 elements_router = create_crud_router(
@@ -72,6 +71,6 @@ associations_router = create_crud_router(
 
 # Custom routers (not using factory - have additional endpoints)
 from app.routers.attacks import router as attacks_router
-from app.routers.cards import router as cards_router
 from app.routers.auth import router as auth_router
+from app.routers.cards import router as cards_router
 from app.routers.decks import router as decks_router

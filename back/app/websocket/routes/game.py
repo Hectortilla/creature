@@ -8,7 +8,7 @@ import logging
 import traceback
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, WebSocket, Query, status, WebSocketException, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, WebSocketException, status
 from fastapi.websockets import WebSocketState
 
 from app.auth.dependencies import WebSocketUser
@@ -29,17 +29,17 @@ async def game_websocket_handler(
 ) -> None:
     """
     Main WebSocket handler for game connections.
-    
+
     Manages the player's connection lifecycle:
     1. Connect and authenticate
     2. Join or create a room
     3. Process incoming messages
     4. Handle disconnection and cleanup
     """
-    from app.settings.lifespan import connection_manager, room_manager, message_handler
+    from app.settings.lifespan import connection_manager, message_handler, room_manager
 
     await connection_manager.connect(websocket, player)
-    
+
     if room_id:
         if not await room_manager.join_room(player, room_id):
             return
@@ -73,9 +73,9 @@ async def game_websocket(
 ):
     """
     Authenticated WebSocket endpoint for game connections.
-    
+
     Connect with: ws://host/game/ws?token=<jwt_token>&deck_id=<deck_id>[&room_id=<room_id>]
-    
+
     If room_id is provided, the player will automatically join that room after connecting.
     If room_id is not provided, a new room will be created.
     """
@@ -87,23 +87,20 @@ async def game_websocket(
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
             reason=traceback.format_exc(),
-        )
+        ) from None
     finally:
         db.close()
 
-    await game_websocket_handler(
-        websocket, 
-        player,
-        room_id=room_id
-    )
+    await game_websocket_handler(websocket, player, room_id=room_id)
 
 
 @router.get("/rooms")
 def list_rooms():
     """
     List all available game rooms (HTTP endpoint for convenience).
-    
+
     Returns rooms that haven't started yet.
     """
     from app.settings.lifespan import room_manager
+
     return {"rooms": room_manager.list_rooms() if room_manager else []}
