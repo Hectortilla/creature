@@ -16,7 +16,7 @@ class DeckCreate(DeckBase):
 class DeckUpdate(DeckBase):
     """Schema for updating a deck."""
 
-    name: str | None = None
+    name: str | None = None  # type: ignore[assignment]  # partial-update override of DeckBase.name
     description: str | None = None
 
 

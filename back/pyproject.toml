@@ -88,19 +88,20 @@ no_implicit_optional = true
 module = ["app.game.*", "app.models.game.*"]
 disable_error_code = ["override", "prop-decorator"]
 
-# Type coverage beyond the engine is a follow-up rung (see docs/harness.md):
-# this framework-integration code leans on dynamic FastAPI/SQLModel patterns.
+# Pydantic schemas use stacked @computed_field/@property that mypy can't model.
+[[tool.mypy.overrides]]
+module = ["app.models.schemas.*"]
+disable_error_code = ["prop-decorator"]
+
+# Remaining type-coverage rung (see docs/harness.md): services and the websocket
+# transport still lean on dynamic SQLAlchemy/async patterns (and have a latent bug
+# or two to triage with integration tests); app.settings is framework glue
+# (sqladmin/otel/structlog) plus codegen-only dummy endpoints.
 [[tool.mypy.overrides]]
 module = [
-    "app.routers.*",
-    "app.websocket.*",
     "app.services.*",
+    "app.websocket.*",
     "app.settings.*",
-    "app.auth.*",
-    "app.database",
-    "app.models.db.*",
-    "app.models.schemas.*",
-    "app.utils.*",
 ]
 ignore_errors = true
 

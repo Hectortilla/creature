@@ -115,8 +115,11 @@ controls cheap to build — use them.
 
 Tracked here so they're visible, not lost:
 
-- **Backend type coverage** beyond the engine (drop `ignore_errors` for
-  routers/services/websocket; eventually `disallow_untyped_defs`).
+- **Backend type coverage** — `auth`, `database`, `utils`, `routers`,
+  `models.db`, and `models.schemas` are now type-checked; `services`, `websocket`,
+  and `settings` still carry `ignore_errors` (dynamic SQLAlchemy/async patterns,
+  plus a latent `MessageHandler.join_room` call-arg bug to triage with integration
+  tests). Drop those next; eventually `disallow_untyped_defs`.
 - **Frontend lint/type debt**: clear the pre-existing prettier/eslint/svelte-check
   findings in app/legacy code (`npm run format`, then triage eslint + svelte-check),
   then promote `npm run lint` / `check` to gating and add them to pre-commit.

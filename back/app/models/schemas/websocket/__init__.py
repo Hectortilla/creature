@@ -21,5 +21,5 @@ class WebSocketMessage(BaseModel):
         """Override to include the ClassVar type in serialization."""
         result = super().model_dump(**kwargs)
         # Include the type from the class variable
-        result["type"] = self.__class__.type
+        result["type"] = self.__class__.type  # type: ignore[attr-defined]  # subclasses define the `type` ClassVar
         return result

@@ -19,8 +19,11 @@ class DeckService(BaseService[Deck, DeckCreate]):
     lookup_str_field = "name"
     has_handle = False
 
-    def __init__(self, db: Session, user_id: int):
+    def __init__(self, db: Session, user_id: int | None):
         super().__init__(db)
+        # user_id comes from the authenticated user, whose id is always set; the
+        # Optional only exists because the SQLModel PK column is None before insert.
+        assert user_id is not None, "DeckService requires an authenticated user id"
         self.user_id = user_id
         self.deck_size = GameConfiguration().deck_size  # 22 cards
 

@@ -48,7 +48,7 @@ def create_crud_router(
         dependencies=[Depends(get_current_active_user)],
     )
 
-    @router.get("", response_model=list[read_schema])
+    @router.get("", response_model=list[read_schema])  # type: ignore[valid-type]  # dynamic CRUD factory
     def get_all(db: DBSessionDep):
         """Get all records."""
         return service_class(db).get_all()
@@ -62,7 +62,7 @@ def create_crud_router(
         return result
 
     @router.post("", response_model=read_schema, status_code=201)
-    def create(data: create_schema, db: DBSessionDep):
+    def create(data: create_schema, db: DBSessionDep):  # type: ignore[valid-type]  # dynamic CRUD factory
         """Create a new record."""
         return service_class(db).create(data)
 

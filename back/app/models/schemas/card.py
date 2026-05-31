@@ -20,7 +20,7 @@ class CardRead(CardBase, CardForeignKeys):
     id: int
     created_at: datetime
     handle: str
-    forces: list[dict] | None = None  # Override to allow list format in response
+    forces: list[dict] | None = None  # type: ignore[assignment]  # response allows list form of CardBase.forces
 
 
 class CardReadWithRelations(CardRead):

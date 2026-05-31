@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlmodel import Field, Relationship, func, select
+from sqlmodel import Field, Relationship, col, func, select
 
 from app.models.base.deck import DeckBase
 from app.models.db.deck_card import DeckCard
@@ -49,6 +49,6 @@ class Deck(DeckBase, table=True):
         Returns:
             True if deck is valid for playing, False otherwise
         """
-        card_count = db.exec(select(func.count(DeckCard.card_id)).where(DeckCard.deck_id == self.id)).one() or 0
+        card_count = db.exec(select(func.count(col(DeckCard.card_id))).where(DeckCard.deck_id == self.id)).one() or 0
 
         return card_count == GameConfiguration().deck_size
