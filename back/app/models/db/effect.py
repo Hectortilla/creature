@@ -5,6 +5,8 @@ from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
+from app.utils.time import utcnow
+
 
 class Effect(SQLModel, table=True):
     """Data-driven effect atom attached to an ability, attack, or association."""
@@ -21,4 +23,4 @@ class Effect(SQLModel, table=True):
     script_id: str | None = Field(default=None, max_length=128)
     enabled: bool = True
     notes: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)

@@ -12,6 +12,7 @@ from app.models.game.base import GameBaseModel
 from app.models.game.enums import GameStatus
 from app.models.game.player import PlayerState
 from app.models.game.state import GameState
+from app.utils.time import utcnow
 
 
 class GameRoom(GameBaseModel):
@@ -25,7 +26,7 @@ class GameRoom(GameBaseModel):
     host_id: str
     state: GameState | None = Field(default=None, exclude=True)
     players: dict[str, PlayerState] = Field(default_factory=dict)  # Player ID -> PlayerState
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
 
     @field_serializer("created_at")
     def serialize_created_at(self, value: datetime) -> str:

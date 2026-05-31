@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship, Session, SQLModel
 
 from app.models.base.user import UserBase
+from app.utils.time import utcnow
 
 if TYPE_CHECKING:
     from app.models.db.card import Card
@@ -31,7 +32,7 @@ class User(UserBase, table=True):
     username: str = Field(unique=True, index=True, max_length=50)
     email: str | None = Field(default=None, unique=True, index=True, max_length=255)
     hashed_password: str = Field(max_length=255)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
 
     # Relationships
     decks: list["Deck"] = Relationship(back_populates="user")

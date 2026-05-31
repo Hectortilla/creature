@@ -16,6 +16,7 @@ from pydantic import Field, field_serializer
 
 from app.models.game.base import GameBaseModel
 from app.models.game.enums import DamageType, StatusType, TurnPhase, Zone
+from app.utils.time import utcnow
 
 
 class GameEvent(GameBaseModel):
@@ -26,7 +27,7 @@ class GameEvent(GameBaseModel):
     Subclasses define event_type as a Literal field for discriminated union support.
     """
 
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=utcnow)
     game_id: str | None = None
     event_type: str
 

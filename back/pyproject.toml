@@ -123,9 +123,10 @@ markers = [
     "unit: pure in-memory engine/model tests (no DB/Redis)",
     "integration: requires Postgres and/or Redis",
 ]
-# NOTE: `filterwarnings = ["error"]` is deferred — two SAWarning relationship
-# overlaps on Deck.cards/Deck.deck_cards fire on import of app.models.db.
-# Enable it after that cleanup lands. See docs/harness.md (follow-ups).
+# Warnings are errors — keep the tree warning-clean. Add narrowly-scoped entries
+# here (each with a reason) only for genuinely un-fixable third-party warnings;
+# never a blanket `ignore`. See docs/harness.md.
+filterwarnings = ["error"]
 
 [tool.coverage.run]
 source = ["app"]

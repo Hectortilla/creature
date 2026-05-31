@@ -118,8 +118,6 @@ Tracked here so they're visible, not lost:
 - **Backend type coverage** beyond the engine (drop `ignore_errors` for
   routers/services/websocket; eventually `disallow_untyped_defs`).
 - **Coverage ratchet**: set `fail_under` once a baseline is measured.
-- **Enable pytest `filterwarnings=error`** after fixing the `Deck` relationship
-  `SAWarning`s and the `datetime.utcnow()` deprecation.
 - **Architecture debt**: move `GameRoom` from `app.websocket.models` into
   `app.models.game`; remove `models.db.user → services/websocket` and
   `auth → services` upward edges — then promote a full layered import contract.

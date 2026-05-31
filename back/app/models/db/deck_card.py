@@ -21,5 +21,5 @@ class DeckCard(SQLModel, table=True):
     position: int | None = Field(default=None)  # Optional position/order in deck
 
     # Relationships
-    deck: "Deck" = Relationship()
+    deck: "Deck" = Relationship(back_populates="deck_cards")
     card: "Card" = Relationship()

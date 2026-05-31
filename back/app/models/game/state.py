@@ -18,6 +18,7 @@ from app.models.game.card import GameCard, GameCardInput
 from app.models.game.element import ElementContribution
 from app.models.game.enums import DamageType, GameStatus, TurnPhase, Zone
 from app.models.game.player import PlayerState
+from app.utils.time import utcnow
 
 if TYPE_CHECKING:
     from app.websocket.models import GameRoom
@@ -78,7 +79,7 @@ class GameState(GameBaseModel):
     current_phase: TurnPhase = TurnPhase.DRAW
     status: GameStatus = GameStatus.WAITING
     winner_id: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
     pending_action: str | None = None
     pending_defender_id: str | None = None
     pending_attack: PendingAttack | None = None

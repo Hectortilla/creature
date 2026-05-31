@@ -8,6 +8,7 @@ from app.models.game.state import GameConfiguration
 from app.models.schemas.deck import DeckCreate, DeckReadSummary, DeckReadWithCards, DeckUpdate
 from app.services.base import BaseService
 from app.services.cards import CardService
+from app.utils.time import utcnow
 
 
 class DeckService(BaseService[Deck, DeckCreate]):
@@ -50,9 +51,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
         for field, value in update_data.items():
             setattr(deck, field, value)
 
-        from datetime import datetime
-
-        deck.updated_at = datetime.utcnow()
+        deck.updated_at = utcnow()
 
         self.db.add(deck)
         self.db.commit()
@@ -103,9 +102,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
         self.db.add(deck_card)
 
         # Update deck updated_at
-        from datetime import datetime
-
-        deck.updated_at = datetime.utcnow()
+        deck.updated_at = utcnow()
         self.db.add(deck)
 
         self.db.commit()
@@ -131,9 +128,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
         self.db.delete(deck_card)
 
         # Update deck updated_at
-        from datetime import datetime
-
-        deck.updated_at = datetime.utcnow()
+        deck.updated_at = utcnow()
         self.db.add(deck)
 
         self.db.commit()

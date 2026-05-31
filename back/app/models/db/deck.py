@@ -6,6 +6,7 @@ from sqlmodel import Field, Relationship, func, select
 from app.models.base.deck import DeckBase
 from app.models.db.deck_card import DeckCard
 from app.models.game.state import GameConfiguration
+from app.utils.time import utcnow
 
 if TYPE_CHECKING:
     from sqlmodel import Session
@@ -21,15 +22,19 @@ class Deck(DeckBase, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
 
     # Relationships
     user: "User" = Relationship(back_populates="decks")
+    # Read-only convenience view of this deck's cards (the writable path is the
+    # DeckCard association object below). viewonly avoids overlap with deck_cards.
     cards: list["Card"] = Relationship(
-        back_populates="decks", link_model=DeckCard, sa_relationship_kwargs={"lazy": "selectin"}
+        back_populates="decks",
+        link_model=DeckCard,
+        sa_relationship_kwargs={"lazy": "selectin", "viewonly": True},
     )
-    deck_cards: list[DeckCard] = Relationship()
+    deck_cards: list[DeckCard] = Relationship(back_populates="deck")
 
     def is_valid_for_playing(self, db: "Session") -> bool:
         """

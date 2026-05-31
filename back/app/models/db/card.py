@@ -6,6 +6,7 @@ from sqlmodel import Column, Field, Relationship
 
 from app.models.base.card import CardBase, CardForeignKeys
 from app.models.db.user import UserCard
+from app.utils.time import utcnow
 
 if TYPE_CHECKING:
     from app.models.db import DeckCard
@@ -25,7 +26,7 @@ class Card(CardBase, CardForeignKeys, table=True):
     __tablename__ = "cards"
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
     code: int = Field(unique=True)
     handle: str = Field(default="", max_length=255)
     forces: list[dict] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False, server_default="[]"))
@@ -61,9 +62,12 @@ class Card(CardBase, CardForeignKeys, table=True):
         sa_relationship_kwargs={"remote_side": "Card.id", "foreign_keys": "[Card.is_evolution_id]"}
     )
 
-    # Many-to-many relationship with decks
+    # Read-only convenience view of the decks containing this card (the writable
+    # path is the DeckCard association object). viewonly avoids relationship overlap.
     decks: list["Deck"] = Relationship(
-        back_populates="cards", link_model=DeckCard, sa_relationship_kwargs={"lazy": "selectin"}
+        back_populates="cards",
+        link_model=DeckCard,
+        sa_relationship_kwargs={"lazy": "selectin", "viewonly": True},
     )
 
     def __str__(self) -> str:
