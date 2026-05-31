@@ -1,18 +1,17 @@
 from contextlib import asynccontextmanager
-from typing import Optional
 
-from broadcaster import Broadcast
 from fastapi import FastAPI
 
-from app.websocket.connection import ConnectionManager
-from app.websocket.room_manager import RoomManager
-from app.websocket.message_handler import MessageHandler
 from app.settings.config import get_settings
+from app.websocket.connection import ConnectionManager
+from app.websocket.message_handler import MessageHandler
+from app.websocket.room_manager import RoomManager
 
 settings = get_settings()
-connection_manager: Optional[ConnectionManager] = None
-room_manager: Optional[RoomManager] = None
-message_handler: Optional[MessageHandler] = None
+connection_manager: ConnectionManager | None = None
+room_manager: RoomManager | None = None
+message_handler: MessageHandler | None = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

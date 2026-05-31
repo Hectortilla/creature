@@ -6,14 +6,13 @@ Provides FastAPI dependencies for user authentication via JWT tokens.
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status, Query, WebSocket, WebSocketException
+from fastapi import Depends, HTTPException, Query, WebSocket, WebSocketException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
+from app.auth.security import decode_access_token
 from app.database import DBSessionDep, get_db_session
 from app.models.db.user import User
-from app.auth.security import decode_access_token
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -21,33 +20,33 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 def _validate_token(token: str) -> str:
     """
     Validate JWT token and extract username.
-    
+
     Returns:
         Username from token payload
-        
+
     Raises:
         ValueError: If token is invalid or missing username
     """
     payload = decode_access_token(token)
     if payload is None:
         raise ValueError("Invalid token")
-    
+
     username: str | None = payload.get("sub")
     if username is None:
         raise ValueError("Token missing username")
-    
+
     return username
 
 
 def _get_user_by_username(db: Session, username: str) -> User:
     """
     Get user by username using lazy import to avoid circular deps.
-    
+
     Raises:
         ValueError: If user not found
     """
     from app.services.users import UserService
-    
+
     user = UserService(db).get_by_username(username)
     if user is None:
         raise ValueError("User not found")
@@ -64,12 +63,12 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         username = _validate_token(token)
         return _get_user_by_username(db, username)
     except ValueError:
-        raise credentials_exception
+        raise credentials_exception from None
 
 
 async def get_current_active_user(
@@ -95,35 +94,35 @@ async def get_websocket_user(
 ) -> User:
     """
     Dependency to authenticate WebSocket connections using JWT token.
-    
+
     Token is passed as a query parameter since WebSocket handshakes
     don't support Authorization headers the same way as HTTP requests.
-    
+
     Usage: ws://host/game/ws?token=<jwt_token>
     """
     credentials_exception = WebSocketException(
         code=status.WS_1008_POLICY_VIOLATION,
         reason="Could not validate credentials",
     )
-    
+
     try:
         username = _validate_token(token)
     except ValueError:
-        raise credentials_exception
-    
+        raise credentials_exception from None
+
     db = next(get_db_session())
     try:
         user = _get_user_by_username(db, username)
-        
+
         if user.disabled:
             raise WebSocketException(
                 code=status.WS_1008_POLICY_VIOLATION,
                 reason="User account is disabled",
             )
-        
+
         return user
     except ValueError:
-        raise credentials_exception
+        raise credentials_exception from None
     finally:
         db.close()
 

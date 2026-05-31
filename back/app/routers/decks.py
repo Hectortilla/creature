@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
-from typing import List
 
+from app.auth.dependencies import CurrentActiveUser, get_current_active_user
 from app.database import DBSessionDep
-from app.models.schemas.deck import DeckCreate, DeckUpdate, DeckRead, DeckReadWithCards, DeckReadSummary
+from app.models.schemas.deck import DeckCreate, DeckReadSummary, DeckReadWithCards, DeckUpdate
 from app.services.decks import DeckService
-from app.auth.dependencies import get_current_active_user, CurrentActiveUser
-from app.models.db.user import User
 
 router = APIRouter(
     prefix="/decks",
@@ -15,7 +13,7 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=List[DeckReadWithCards])
+@router.get("", response_model=list[DeckReadWithCards])
 def get_all_decks(
     db: DBSessionDep,
     current_user: CurrentActiveUser,
@@ -24,7 +22,7 @@ def get_all_decks(
     return DeckService(db, current_user.id).get_all_enriched()
 
 
-@router.get("/summaries", response_model=List[DeckReadSummary])
+@router.get("/summaries", response_model=list[DeckReadSummary])
 def get_deck_summaries(
     db: DBSessionDep,
     current_user: CurrentActiveUser,
@@ -42,10 +40,7 @@ def get_deck(
     """Get a specific deck by ID (only if owned by current user)."""
     deck = DeckService(db, current_user.id).get_enriched(deck_id)
     if not deck:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Deck not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deck not found")
     return deck
 
 
@@ -72,10 +67,7 @@ def update_deck(
     service = DeckService(db, current_user.id)
     updated_deck = service.update(deck_id, deck_update)
     if not updated_deck:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Deck not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deck not found")
     return service.enrich(updated_deck)
 
 
@@ -87,10 +79,7 @@ def delete_deck(
 ):
     """Delete a deck (only if owned by current user)."""
     if not DeckService(db, current_user.id).delete(deck_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Deck not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deck not found")
 
 
 @router.post("/{deck_id}/cards/{card_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -115,4 +104,3 @@ def remove_card_from_deck(
     """Remove a card from a deck."""
     DeckService(db, current_user.id).remove_card_from_deck(deck_id, card_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-

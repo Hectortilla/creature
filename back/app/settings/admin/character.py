@@ -11,7 +11,7 @@ class CharacterAdmin(ModelView, model=Character):
     category = "Gestión de Cartas"
 
     searchable_columns = [Character.label]
-    
+
     column_list = [
         Character.id,
         Character.label,
@@ -30,5 +30,5 @@ class CharacterAdmin(ModelView, model=Character):
         "label",
         "icon",
     ]
-    
+
     page_size = 20

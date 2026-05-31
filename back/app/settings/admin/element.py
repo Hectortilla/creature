@@ -3,6 +3,7 @@ from sqladmin import ModelView
 # Models
 from app.models.db.element import Element
 
+
 class ElementAdmin(ModelView, model=Element):
     name = "Elemento"
     name_plural = "Elementos"
@@ -10,7 +11,7 @@ class ElementAdmin(ModelView, model=Element):
     category = "Gestión de Cartas"
 
     searchable_columns = [Element.label]
-    
+
     column_list = [
         Element.id,
         Element.label,
@@ -38,5 +39,5 @@ class ElementAdmin(ModelView, model=Element):
         "strengths",
         "weaknesses",
     ]
-    
+
     page_size = 20

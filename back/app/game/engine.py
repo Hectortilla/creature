@@ -8,59 +8,59 @@ Stateless coordinator that orchestrates the game pipeline:
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
-from typing import Any, Optional, TYPE_CHECKING
 import traceback
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from app.models.game.player import PlayerState
     from app.websocket.models import GameRoom
 
-from app.models.game.enums import Zone, TurnPhase, GameStatus
-from app.models.game.state import GameState, GameConfiguration
-from app.models.game.events import (
-    GameEvent,
-    GameStartedEvent,
-    GameEndedEvent,
-    TurnStartedEvent,
-    PhaseChangedEvent,
-)
 from app.game.actions import (
-    Action,
-    DrawAction,
-    PassPhaseAction,
-    ConcedeAction,
-    ForceDefendAction,
-    ResolveForcedSwapAction,
     ACTION_TYPES,
+    Action,
+    ConcedeAction,
+    DrawAction,
+    ForceDefendAction,
+    PassPhaseAction,
+    ResolveForcedSwapAction,
     create_action,
 )
-from app.game.validators import RuleValidator
 from app.game.event_loop import EventLoop
 from app.game.reducer import apply_event
+from app.game.validators import RuleValidator
+from app.models.game.enums import GameStatus, TurnPhase
+from app.models.game.events import (
+    GameEndedEvent,
+    GameEvent,
+    GameStartedEvent,
+    PhaseChangedEvent,
+    TurnStartedEvent,
+)
+from app.models.game.state import GameConfiguration, GameState
 
 
 @dataclass
 class ActionResult:
     success: bool
     events: list[GameEvent] = field(default_factory=list)
-    error: Optional[str] = None
+    error: str | None = None
     game_over: bool = False
-    winner_id: Optional[str] = None
-    state: Optional[GameState] = None
-    final_players: Optional[dict[str, "PlayerState"]] = None
+    winner_id: str | None = None
+    state: GameState | None = None
+    final_players: dict[str, PlayerState] | None = None
     valid_actions: list[dict[str, Any]] = field(default_factory=list)
 
 
 class GameEngine:
     """Stateless engine — coordinates validation, event generation, and state updates."""
 
-    def __init__(self, config: Optional[GameConfiguration] = None):
+    def __init__(self, config: GameConfiguration | None = None):
         self.config = config or GameConfiguration()
         self.validator = RuleValidator()
         self.event_loop = EventLoop()
 
-    def create_game(self, room: "GameRoom") -> GameState:
+    def create_game(self, room: GameRoom) -> GameState:
         state = GameState.create(room, self.config)
         for player in room.players.values():
             state._setup_deck(player)
@@ -68,7 +68,7 @@ class GameEngine:
         state.status = GameStatus.STARTING
         return state
 
-    def start_game(self, state: "GameRoom") -> ActionResult:
+    def start_game(self, state: GameState) -> ActionResult:
         player_ids = list(state.room.players.keys())
         first_player_id = random.choice(player_ids)
 
@@ -81,10 +81,14 @@ class GameEngine:
         draw_action = DrawAction(player_id=first_player_id, count=self.config.initial_draw)
         initial_events.extend(draw_action.to_events(state))
 
-        initial_events.append(PhaseChangedEvent(
-            game_id=state.game_id, player_id=first_player_id,
-            from_phase=TurnPhase.DRAW, to_phase=TurnPhase.PLACEMENT,
-        ))
+        initial_events.append(
+            PhaseChangedEvent(
+                game_id=state.game_id,
+                player_id=first_player_id,
+                from_phase=TurnPhase.DRAW,
+                to_phase=TurnPhase.PLACEMENT,
+            )
+        )
 
         result = self.event_loop.process(state, state.room.players, initial_events)
         if result.final_state:
@@ -93,8 +97,10 @@ class GameEngine:
         valid_actions = self.get_valid_actions(result.final_state) if result.final_state else []
 
         return ActionResult(
-            success=True, events=result.all_events,
-            state=result.final_state, final_players=result.final_players,
+            success=True,
+            events=result.all_events,
+            state=result.final_state,
+            final_players=result.final_players,
             valid_actions=valid_actions,
         )
 
@@ -121,20 +127,25 @@ class GameEngine:
                 if loser_id:
                     end_event = GameEndedEvent(
                         game_id=result.final_state.game_id,
-                        winner_id=winner_id, loser_id=loser_id,
+                        winner_id=winner_id,
+                        loser_id=loser_id,
                         reason="No cards remaining",
                     )
-                    result.final_state, result.final_players = apply_event(result.final_state, result.final_players, end_event)
+                    result.final_state, result.final_players = apply_event(
+                        result.final_state, result.final_players, end_event
+                    )
                     result.final_state.room.players = result.final_players
                     result.all_events.append(end_event)
 
             valid_actions = self.get_valid_actions(result.final_state) if result.final_state and not game_over else []
 
             return ActionResult(
-                success=True, events=result.all_events,
+                success=True,
+                events=result.all_events,
                 game_over=game_over or result.final_state.status == GameStatus.FINISHED,
                 winner_id=result.final_state.winner_id,
-                state=result.final_state, final_players=result.final_players,
+                state=result.final_state,
+                final_players=result.final_players,
                 valid_actions=valid_actions,
             )
         except Exception:
@@ -155,6 +166,8 @@ class GameEngine:
 
     def get_valid_actions(self, state: GameState) -> list[dict[str, Any]]:
         actions: list[Action] = []
+        if state.active_player_id is None:
+            return []
 
         # Pass + Concede always available
         actions.append(PassPhaseAction(player_id=state.active_player_id))
@@ -180,9 +193,10 @@ class GameEngine:
 
 
 # Singleton
-_engine: Optional[GameEngine] = None
+_engine: GameEngine | None = None
 
-def get_engine(config: Optional[GameConfiguration] = None) -> GameEngine:
+
+def get_engine(config: GameConfiguration | None = None) -> GameEngine:
     global _engine
     if _engine is None:
         _engine = GameEngine(config)

@@ -10,45 +10,46 @@ Pipeline:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from app.models.game.attack import PendingAttack
-from app.models.game.enums import Zone, GameStatus, CardStatus
 from app.models.game.card import ActiveStatus
+from app.models.game.enums import CardStatus, GameStatus, Zone
 from app.models.game.events import (
-    GameEvent,
-    CardDrawnEvent,
-    CardPlayedEvent,
-    CardPromotedEvent,
-    CardSwappedEvent,
-    CardAssociatedEvent,
-    CardEvolvedEvent,
     AttackDeclaredEvent,
     AttackResolvedEvent,
-    DamageDealtEvent,
+    CardAssociatedEvent,
     CardDestroyedEvent,
+    CardDrawnEvent,
+    CardEvolvedEvent,
     CardExiledEvent,
     CardHealthChangedEvent,
-    HealingAppliedEvent,
-    StatusAppliedEvent,
-    StatusTickedEvent,
-    StatusExpiredEvent,
-    ForcedSwapRequestedEvent,
+    CardPlayedEvent,
+    CardPromotedEvent,
     CardRevivedEvent,
+    CardSwappedEvent,
+    DamageDealtEvent,
     ElementsConsumedEvent,
     ElementsRestoredEvent,
-    TurnStartedEvent,
-    TurnEndedEvent,
-    PhaseChangedEvent,
-    GameStartedEvent,
+    ForcedSwapRequestedEvent,
     GameEndedEvent,
+    GameEvent,
+    GameStartedEvent,
+    HealingAppliedEvent,
     NoDefenderEvent,
+    PhaseChangedEvent,
+    StatusAppliedEvent,
+    StatusExpiredEvent,
+    StatusTickedEvent,
+    TurnEndedEvent,
+    TurnStartedEvent,
 )
 
 if TYPE_CHECKING:
-    from app.models.game.state import GameState
-    from app.models.game.player import PlayerState
     from app.models.game.card import GameCard
+    from app.models.game.player import PlayerState
+    from app.models.game.state import GameState
 
 
 # Dispatch table: event type -> handler function
@@ -57,13 +58,17 @@ _EVENT_HANDLERS: dict[type, Callable] = {}
 
 def _handler(event_type):
     """Decorator to register an event handler."""
+
     def decorator(fn):
         _EVENT_HANDLERS[event_type] = fn
         return fn
+
     return decorator
 
 
-def apply_event(state: "GameState", players: dict[str, "PlayerState"], event: GameEvent) -> tuple["GameState", dict[str, "PlayerState"]]:
+def apply_event(
+    state: GameState, players: dict[str, PlayerState], event: GameEvent
+) -> tuple[GameState, dict[str, PlayerState]]:
     """
     Apply a single event to the game state and players (in place).
 
@@ -79,24 +84,25 @@ def apply_event(state: "GameState", players: dict[str, "PlayerState"], event: Ga
 
 # ── Zone mutation helpers ────────────────────────────────────────────────
 
-def _remove_from_zone(player: "PlayerState", zone: Zone, instance_id: str) -> None:
+
+def _remove_from_zone(player: PlayerState, zone: Zone, instance_id: str) -> None:
     ids = player.zones[zone.name].card_ids
     if instance_id in ids:
         ids.remove(instance_id)
 
 
-def _add_to_zone(player: "PlayerState", zone: Zone, instance_id: str) -> None:
+def _add_to_zone(player: PlayerState, zone: Zone, instance_id: str) -> None:
     ids = player.zones[zone.name].card_ids
     if instance_id not in ids:
         ids.append(instance_id)
 
 
-def _move_zone(player: "PlayerState", instance_id: str, from_zone: Zone, to_zone: Zone) -> None:
+def _move_zone(player: PlayerState, instance_id: str, from_zone: Zone, to_zone: Zone) -> None:
     _remove_from_zone(player, from_zone, instance_id)
     _add_to_zone(player, to_zone, instance_id)
 
 
-def _detach_association(state: "GameState", card: "GameCard") -> None:
+def _detach_association(state: GameState, card: GameCard) -> None:
     """Unlink a card from the host it was associated with, if any."""
     if not card.association_target_id:
         return
@@ -109,6 +115,7 @@ def _detach_association(state: "GameState", card: "GameCard") -> None:
 # ============================================================================
 # Card Movement Reducers
 # ============================================================================
+
 
 @_handler(CardDrawnEvent)
 def _apply_card_drawn(state, players, event: CardDrawnEvent) -> None:
@@ -180,6 +187,7 @@ def _apply_card_swapped(state, players, event: CardSwappedEvent) -> None:
 # Association & Evolution Reducers
 # ============================================================================
 
+
 @_handler(CardAssociatedEvent)
 def _apply_card_associated(state, players, event: CardAssociatedEvent) -> None:
     player = players[event.player_id]
@@ -228,6 +236,7 @@ def _apply_card_evolved(state, players, event: CardEvolvedEvent) -> None:
 # Combat Reducers
 # ============================================================================
 
+
 @_handler(AttackDeclaredEvent)
 def _apply_attack_declared(state, players, event: AttackDeclaredEvent) -> None:
     """Mark the attacker as having attacked and record cooldown usage."""
@@ -269,15 +278,17 @@ def _apply_status_applied(state, players, event: StatusAppliedEvent) -> None:
     """Attach a runtime status to a card."""
     target = state.cards.get(event.target_id)
     if target:
-        target.active_statuses.append(ActiveStatus(
-            status_type=event.status_type,
-            source_card_id=event.source_card_id,
-            source_atom_id=event.source_atom_id,
-            remaining_turns=event.duration_turns,
-            tick_on=event.tick_on,
-            expires_on=event.expires_on,
-            payload=dict(event.payload),
-        ))
+        target.active_statuses.append(
+            ActiveStatus(
+                status_type=event.status_type,
+                source_card_id=event.source_card_id,
+                source_atom_id=event.source_atom_id,
+                remaining_turns=event.duration_turns,
+                tick_on=event.tick_on,
+                expires_on=event.expires_on,
+                payload=dict(event.payload),
+            )
+        )
 
 
 @_handler(StatusTickedEvent)
@@ -361,6 +372,7 @@ def _apply_card_destroyed(state, players, event: CardDestroyedEvent) -> None:
 # Element Reducers
 # ============================================================================
 
+
 @_handler(ElementsConsumedEvent)
 def _apply_elements_consumed(state, players, event: ElementsConsumedEvent) -> None:
     pool = players[event.player_id].element_pool
@@ -376,6 +388,7 @@ def _apply_elements_restored(state, players, event: ElementsRestoredEvent) -> No
 # ============================================================================
 # Turn & Phase Reducers
 # ============================================================================
+
 
 @_handler(TurnStartedEvent)
 def _apply_turn_started(state, players, event: TurnStartedEvent) -> None:
@@ -413,6 +426,7 @@ def _apply_phase_changed(state, players, event: PhaseChangedEvent) -> None:
 # Game-Level Reducers
 # ============================================================================
 
+
 @_handler(GameStartedEvent)
 def _apply_game_started(state, players, event: GameStartedEvent) -> None:
     state.status = GameStatus.IN_PROGRESS
@@ -445,7 +459,8 @@ def _apply_no_defender(state, players, event: NoDefenderEvent) -> None:
 # Helper Functions
 # ============================================================================
 
-def _recalculate_elements(state: "GameState", players: dict[str, "PlayerState"], player_id: str) -> None:
+
+def _recalculate_elements(state: GameState, players: dict[str, PlayerState], player_id: str) -> None:
     """
     Recalculate a player's element pool from their active cards.
 

@@ -6,19 +6,20 @@ Models for attack definitions and attack results.
 
 from app.models.core.attack import AttackCoreFields
 from app.models.game.base import GameBaseModel
-from app.models.game.enums import DamageType
 from app.models.game.element import ElementContribution
+from app.models.game.enums import DamageType
 
 
 class AttackDefinition(AttackCoreFields, GameBaseModel):
     """
     Represents an attack that a creature can perform.
-    
+
     Inherits shared fields from AttackCoreFields:
     - name, description, damage, effect, dice_rolls
-    
+
     Adds game-specific fields: attack_id, type (enum), element_id, necessary_force (typed)
     """
+
     attack_id: int
     # Override damage to be required (not Optional) for game runtime
     damage: int
@@ -33,6 +34,7 @@ class AttackResult(GameBaseModel):
     """
     Result of an attack calculation.
     """
+
     attacker_id: str
     target_id: str
     attack_id: int
@@ -47,6 +49,7 @@ class AttackResult(GameBaseModel):
 
 class PendingAttack(GameBaseModel):
     """An attack waiting on a forced defend resolution."""
+
     attacker_id: str
     attack_id: int
     attacker_owner_id: str
@@ -57,4 +60,3 @@ __all__ = [
     "AttackResult",
     "PendingAttack",
 ]
-

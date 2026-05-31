@@ -13,11 +13,12 @@ import math
 import random
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from app.models.game.enums import Zone, DamageType, StatusType
+from app.models.game.enums import DamageType, StatusType, Zone
 from app.models.game.events import (
-    GameEvent,
+    AttackDeclaredEvent,
+    AttackResolvedEvent,
     CardAssociatedEvent,
     CardDestroyedEvent,
     CardExiledEvent,
@@ -26,10 +27,9 @@ from app.models.game.events import (
     DamageDealtEvent,
     DiceRolledEvent,
     ForcedSwapRequestedEvent,
+    GameEvent,
     HealingAppliedEvent,
     StatusAppliedEvent,
-    AttackDeclaredEvent,
-    AttackResolvedEvent,
 )
 
 if TYPE_CHECKING:
@@ -73,35 +73,38 @@ class PassiveCategory(str, Enum):
 @dataclass
 class EffectContext:
     """Context for a triggered atom reacting to a single event."""
-    state: "GameState"
-    source_card: "GameCard"
-    trigger_event: Optional[GameEvent] = None
-    trigger: Optional[EffectTrigger] = None
+
+    state: GameState
+    source_card: GameCard
+    trigger_event: GameEvent | None = None
+    trigger: EffectTrigger | None = None
 
 
 @dataclass
 class EffectResult:
     """Events produced by a triggered atom."""
+
     events: list[GameEvent] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class PassiveContext:
     """Inputs a passive atom inspects while contributing to a query."""
-    state: "GameState"
-    source_card: "GameCard"
-    host_card: Optional["GameCard"] = None
-    target_card: Optional["GameCard"] = None
-    attack: Optional["AttackDefinition"] = None
-    attacker: Optional["GameCard"] = None
-    effect_kind: Optional[str] = None
+
+    state: GameState
+    source_card: GameCard
+    host_card: GameCard | None = None
+    target_card: GameCard | None = None
+    attack: AttackDefinition | None = None
+    attacker: GameCard | None = None
+    effect_kind: str | None = None
 
 
 @dataclass
 class PassiveSource:
-    source_card: "GameCard"
-    atom: "EffectAtom"
-    host_card: Optional["GameCard"] = None
+    source_card: GameCard
+    atom: EffectAtom
+    host_card: GameCard | None = None
 
 
 @dataclass
@@ -110,11 +113,11 @@ class PassiveQueryResult:
     defense_bonus: int = 0
     health_bonus: int = 0
     attack_multiplier: float = 1.0
-    defense_override: Optional[int] = None
+    defense_override: int | None = None
     incoming_damage_modifier: int = 0
     immune: bool = False
     association_forbidden: bool = False
-    association_limit: Optional[int] = None
+    association_limit: int | None = None
     attack_cooldown: int = 0
     revive_from_graveyard: bool = False
     errors: list[str] = field(default_factory=list)
@@ -136,7 +139,7 @@ class EffectAtom:
     default_triggers: tuple[EffectTrigger, ...] = ()
     passive_categories: tuple[PassiveCategory, ...] = ()
 
-    def __init__(self, spec: "EffectSpec"):
+    def __init__(self, spec: EffectSpec):
         self.id = spec.id
         self.owner_kind = spec.owner_kind
         self.owner_id = spec.owner_id
@@ -156,11 +159,14 @@ class EffectAtom:
 
     def should_trigger(self, context: EffectContext) -> bool:
         event = context.trigger_event
-        if self.owner_kind == "attack" and hasattr(event, "attack_id"):
-            return getattr(event, "attack_id") == self.owner_id
+        if self.owner_kind == "attack" and event is not None and hasattr(event, "attack_id"):
+            return event.attack_id == self.owner_id
         if self.owner_kind == "association":
             if isinstance(event, CardAssociatedEvent):
-                return context.source_card.instance_id == event.association_card_id and self.owner_id in context.source_card.association_ids
+                return (
+                    context.source_card.instance_id == event.association_card_id
+                    and self.owner_id in context.source_card.association_ids
+                )
             return self.owner_id in context.source_card.association_ids
         if self.owner_kind == "ability":
             return self.owner_id in context.source_card.ability_ids
@@ -175,20 +181,21 @@ class EffectAtom:
 
 # ── Shared helpers ───────────────────────────────────────────────────────
 
+
 def _as_list(value: Any) -> list[Any]:
     if value is None:
         return []
     return value if isinstance(value, list) else [value]
 
 
-def _has_any_element(card: Optional["GameCard"], values: Any) -> bool:
+def _has_any_element(card: GameCard | None, values: Any) -> bool:
     if not card:
         return False
     ids = {int(v) for v in _as_list(values)}
     return bool(ids.intersection(card.element_ids))
 
 
-def _damage_type_matches(params: dict[str, Any], attack: Optional["AttackDefinition"]) -> bool:
+def _damage_type_matches(params: dict[str, Any], attack: AttackDefinition | None) -> bool:
     values = _as_list(params.get("damage_type")) + _as_list(params.get("damage_types"))
     if not values:
         return True
@@ -197,7 +204,7 @@ def _damage_type_matches(params: dict[str, Any], attack: Optional["AttackDefinit
     return attack.type.value.lower() in {str(v).lower() for v in values}
 
 
-def _matches_card_filter(params: dict[str, Any], card: Optional["GameCard"]) -> bool:
+def _matches_card_filter(params: dict[str, Any], card: GameCard | None) -> bool:
     if not card:
         return False
     if params.get("filter_element_id") and not _has_any_element(card, params["filter_element_id"]):
@@ -213,9 +220,7 @@ def _matches_card_filter(params: dict[str, Any], card: Optional["GameCard"]) -> 
     name = params.get("character_name") or params.get("card_name")
     if name and name.lower() not in {card.name.lower(), (card.character_name or "").lower()}:
         return False
-    if params.get("zone") and card.zone.value.lower() != str(params["zone"]).lower():
-        return False
-    return True
+    return not (params.get("zone") and card.zone.value.lower() != str(params["zone"]).lower())
 
 
 def _scope_affects(ctx: PassiveContext, params: dict[str, Any]) -> bool:
@@ -237,8 +242,8 @@ def _scope_affects(ctx: PassiveContext, params: dict[str, Any]) -> bool:
     return False
 
 
-def _active_cards(state: "GameState") -> list["GameCard"]:
-    cards: list["GameCard"] = []
+def _active_cards(state: GameState) -> list[GameCard]:
+    cards: list[GameCard] = []
     for player in state.room.players.values():
         for card_id in player.get_active_cards():
             if card := state.cards.get(card_id):
@@ -246,12 +251,9 @@ def _active_cards(state: "GameState") -> list["GameCard"]:
     return cards
 
 
-def _named_card_count(state: "GameState", name: str) -> int:
+def _named_card_count(state: GameState, name: str) -> int:
     needle = name.lower()
-    return sum(
-        1 for card in _active_cards(state)
-        if needle in {card.name.lower(), (card.character_name or "").lower()}
-    )
+    return sum(1 for card in _active_cards(state) if needle in {card.name.lower(), (card.character_name or "").lower()})
 
 
 def _status_payload(required_face: int | None = None, **extra: Any) -> dict[str, Any]:
@@ -261,7 +263,9 @@ def _status_payload(required_face: int | None = None, **extra: Any) -> dict[str,
     return payload
 
 
-def _health_delta_events(state: "GameState", target: "GameCard", source: "GameCard", delta: int, reason: str) -> list[GameEvent]:
+def _health_delta_events(
+    state: GameState, target: GameCard, source: GameCard, delta: int, reason: str
+) -> list[GameEvent]:
     """A health change plus a destruction event when it drops the card to 0."""
     new_health = target.current_health + delta
     events: list[GameEvent] = [
@@ -275,17 +279,20 @@ def _health_delta_events(state: "GameState", target: "GameCard", source: "GameCa
         )
     ]
     if new_health <= 0:
-        events.append(CardDestroyedEvent(
-            game_id=state.game_id,
-            instance_id=target.instance_id,
-            owner_id=target.owner_id,
-            card_name=target.name,
-            destroyed_by=source.instance_id,
-        ))
+        events.append(
+            CardDestroyedEvent(
+                game_id=state.game_id,
+                instance_id=target.instance_id,
+                owner_id=target.owner_id,
+                card_name=target.name,
+                destroyed_by=source.instance_id,
+            )
+        )
     return events
 
 
 # ── Passive atoms ──────────────────────────────────────────────────────────
+
 
 class StatModifierAtom(EffectAtom):
     atom_type = "stat-modifier"
@@ -321,6 +328,7 @@ class StatModifierAtom(EffectAtom):
 
 class StatModifierPerNamedCardAtom(StatModifierAtom):
     """Stat modifier whose attack/defense scale with the count of a named card on the field."""
+
     atom_type = "stat-modifier-per-named-card"
 
     def contribute_passive(self, result: PassiveQueryResult, ctx: PassiveContext) -> None:
@@ -358,12 +366,17 @@ class ImmunityAtom(EffectAtom):
         params = self.params
         if not _scope_affects(ctx, params) or not _matches_card_filter(params, ctx.target_card):
             return
-        if params.get("enemy_damage_type"):
-            if not ctx.attack or ctx.attack.type.value.lower() != str(params["enemy_damage_type"]).lower():
-                return
+        if params.get("enemy_damage_type") and (
+            not ctx.attack or ctx.attack.type.value.lower() != str(params["enemy_damage_type"]).lower()
+        ):
+            return
         if params.get("immune_element_id") and ctx.attack and ctx.attack.element_id != int(params["immune_element_id"]):
             return
-        if params.get("immune_kind") and ctx.effect_kind and str(params["immune_kind"]).lower() != ctx.effect_kind.lower():
+        if (
+            params.get("immune_kind")
+            and ctx.effect_kind
+            and str(params["immune_kind"]).lower() != ctx.effect_kind.lower()
+        ):
             return
         result.immune = True
 
@@ -405,17 +418,20 @@ class AssociationTargetFilterAtom(EffectAtom):
 
 class AttackShapeAtom(EffectAtom):
     """Marker atom: the attack hits every enemy in the attacking zone."""
+
     atom_type = "multi-target-zone"
     passive_categories = (PassiveCategory.ATTACK_SHAPE,)
 
 
 class AttackCostAtom(EffectAtom):
     """Marker atom: the attack costs exiling a graveyard ally (paid in AttackAction)."""
+
     atom_type = "exile-graveyard-ally-cost"
     passive_categories = (PassiveCategory.ATTACK_COST,)
 
 
 # ── Triggered atoms ──────────────────────────────────────────────────────
+
 
 class SplashAdjacentAtom(EffectAtom):
     atom_type = "splash-adjacent"
@@ -433,7 +449,9 @@ class SplashAdjacentAtom(EffectAtom):
         if params.get("exclude_target_element_id") and _has_any_element(target, params["exclude_target_element_id"]):
             return EffectResult()
         amount = math.floor(event.final_damage * float(params.get("fraction", 0.5)))
-        return EffectResult(events=_health_delta_events(context.state, secondary, context.source_card, -amount, "splash"))
+        return EffectResult(
+            events=_health_delta_events(context.state, secondary, context.source_card, -amount, "splash")
+        )
 
 
 class ApplyStatusAtom(EffectAtom):
@@ -447,7 +465,7 @@ class ApplyStatusAtom(EffectAtom):
         event = context.trigger_event
         if not isinstance(event, (AttackResolvedEvent, DamageDealtEvent, CardAssociatedEvent)):
             return EffectResult()
-        target_id = getattr(event, "target_id", None) or getattr(event, "target_card_id", "")
+        target_id = str(getattr(event, "target_id", None) or getattr(event, "target_card_id", "") or "")
         target = context.state.get_card(target_id)
         if not target:
             return EffectResult()
@@ -458,28 +476,32 @@ class ApplyStatusAtom(EffectAtom):
         if params.get("dice_face") is not None:
             faces = int(params.get("faces", 6))
             roll = random.randint(1, faces)
-            events.append(DiceRolledEvent(
-                game_id=context.state.game_id,
-                roller_id=context.source_card.owner_id,
-                faces=faces,
-                result=roll,
-                purpose=str(params.get("purpose", "apply_status")),
-            ))
+            events.append(
+                DiceRolledEvent(
+                    game_id=context.state.game_id,
+                    roller_id=context.source_card.owner_id,
+                    faces=faces,
+                    result=roll,
+                    purpose=str(params.get("purpose", "apply_status")),
+                )
+            )
             if roll != int(params["dice_face"]):
                 return EffectResult(events=events)
 
         status_type = StatusType(str(params.get("status_type", StatusType.BLOCK_ATTACK.value)))
-        events.append(StatusAppliedEvent(
-            game_id=context.state.game_id,
-            target_id=target.instance_id,
-            source_card_id=context.source_card.instance_id,
-            source_atom_id=self.id,
-            status_type=status_type,
-            duration_turns=int(params.get("duration_turns", 1)),
-            tick_on=str(params.get("tick_on", "none")),
-            expires_on=str(params.get("expires_on", "own_turn_end")),
-            payload=_status_payload(params.get("required_face"), **dict(params.get("payload", {}))),
-        ))
+        events.append(
+            StatusAppliedEvent(
+                game_id=context.state.game_id,
+                target_id=target.instance_id,
+                source_card_id=context.source_card.instance_id,
+                source_atom_id=self.id,
+                status_type=status_type,
+                duration_turns=int(params.get("duration_turns", 1)),
+                tick_on=str(params.get("tick_on", "none")),
+                expires_on=str(params.get("expires_on", "own_turn_end")),
+                payload=_status_payload(params.get("required_face"), **dict(params.get("payload", {}))),
+            )
+        )
         return EffectResult(events=events)
 
 
@@ -514,7 +536,9 @@ class OnTakeDamagePunishAtom(EffectAtom):
         if excluded and _has_any_element(attacker, excluded):
             return EffectResult()
         delta = int(self.params.get("attacker_health_delta", -10))
-        return EffectResult(events=_health_delta_events(context.state, attacker, context.source_card, delta, "counter_effect"))
+        return EffectResult(
+            events=_health_delta_events(context.state, attacker, context.source_card, delta, "counter_effect")
+        )
 
 
 class OnTakeDamageStatusAtom(EffectAtom):
@@ -532,16 +556,20 @@ class OnTakeDamageStatusAtom(EffectAtom):
         if excluded and _has_any_element(attacker, excluded):
             return EffectResult()
         status_type = StatusType(str(self.params.get("status_type", StatusType.BLOCK_ATTACK.value)))
-        return EffectResult(events=[StatusAppliedEvent(
-            game_id=context.state.game_id,
-            target_id=attacker.instance_id,
-            source_card_id=context.source_card.instance_id,
-            source_atom_id=self.id,
-            status_type=status_type,
-            duration_turns=int(self.params.get("duration_turns", 1)),
-            expires_on=str(self.params.get("expires_on", "own_turn_end")),
-            payload=_status_payload(self.params.get("required_face")),
-        )])
+        return EffectResult(
+            events=[
+                StatusAppliedEvent(
+                    game_id=context.state.game_id,
+                    target_id=attacker.instance_id,
+                    source_card_id=context.source_card.instance_id,
+                    source_atom_id=self.id,
+                    status_type=status_type,
+                    duration_turns=int(self.params.get("duration_turns", 1)),
+                    expires_on=str(self.params.get("expires_on", "own_turn_end")),
+                    payload=_status_payload(self.params.get("required_face")),
+                )
+            ]
+        )
 
 
 class HealAtom(EffectAtom):
@@ -560,13 +588,17 @@ class HealAtom(EffectAtom):
         if amount <= 0:
             return EffectResult()
         new_health = min(source.health, source.current_health + amount)
-        return EffectResult(events=[HealingAppliedEvent(
-            game_id=context.state.game_id,
-            target_id=source.instance_id,
-            source_id=source.instance_id,
-            amount=new_health - source.current_health,
-            new_health=new_health,
-        )])
+        return EffectResult(
+            events=[
+                HealingAppliedEvent(
+                    game_id=context.state.game_id,
+                    target_id=source.instance_id,
+                    source_id=source.instance_id,
+                    amount=new_health - source.current_health,
+                    new_health=new_health,
+                )
+            ]
+        )
 
 
 class SelfDamageAtom(EffectAtom):
@@ -579,7 +611,9 @@ class SelfDamageAtom(EffectAtom):
         amount = int(self.params.get("amount", 0))
         if amount <= 0:
             return EffectResult()
-        return EffectResult(events=_health_delta_events(context.state, context.source_card, context.source_card, -amount, "self_damage"))
+        return EffectResult(
+            events=_health_delta_events(context.state, context.source_card, context.source_card, -amount, "self_damage")
+        )
 
 
 class ForcedSwapAtom(EffectAtom):
@@ -597,12 +631,16 @@ class ForcedSwapAtom(EffectAtom):
         defender = context.state.room.players[target.owner_id]
         if not defender.zones[Zone.SUPPORTING.name].card_ids:
             return EffectResult()
-        return EffectResult(events=[ForcedSwapRequestedEvent(
-            game_id=context.state.game_id,
-            owner_id=target.owner_id,
-            target_card_id=target.instance_id,
-            source_card_id=context.source_card.instance_id,
-        )])
+        return EffectResult(
+            events=[
+                ForcedSwapRequestedEvent(
+                    game_id=context.state.game_id,
+                    owner_id=target.owner_id,
+                    target_card_id=target.instance_id,
+                    source_card_id=context.source_card.instance_id,
+                )
+            ]
+        )
 
 
 class AllyFollowupAttackAtom(EffectAtom):
@@ -636,24 +674,32 @@ class OnAssociateGrantThenExileAtom(EffectAtom):
             amount = int(self.params.get("health", 0))
             if not host or amount <= 0:
                 return EffectResult()
-            return EffectResult(events=[CardHealthChangedEvent(
-                game_id=context.state.game_id,
-                target_id=host.instance_id,
-                source_id=source.instance_id,
-                delta=amount,
-                new_health=host.current_health + amount,
-                reason="association_health",
-            )])
+            return EffectResult(
+                events=[
+                    CardHealthChangedEvent(
+                        game_id=context.state.game_id,
+                        target_id=host.instance_id,
+                        source_id=source.instance_id,
+                        delta=amount,
+                        new_health=host.current_health + amount,
+                        reason="association_health",
+                    )
+                ]
+            )
         if isinstance(event, AttackDeclaredEvent):
             if source.association_target_id != event.attacker_id:
                 return EffectResult()
-            return EffectResult(events=[CardDestroyedEvent(
-                game_id=context.state.game_id,
-                instance_id=source.instance_id,
-                owner_id=source.owner_id,
-                card_name=source.name,
-                destroyed_by=event.attacker_id,
-            )])
+            return EffectResult(
+                events=[
+                    CardDestroyedEvent(
+                        game_id=context.state.game_id,
+                        instance_id=source.instance_id,
+                        owner_id=source.owner_id,
+                        card_name=source.name,
+                        destroyed_by=event.attacker_id,
+                    )
+                ]
+            )
         return EffectResult()
 
 
@@ -669,6 +715,7 @@ class ScriptAtom(EffectAtom):
 
 
 # ── Registered scripts ───────────────────────────────────────────────────
+
 
 def _script_cambio_de_guardia(context: EffectContext, atom: EffectAtom) -> list[GameEvent]:
     event = context.trigger_event
@@ -726,7 +773,7 @@ EFFECT_REGISTRY: dict[str, type[EffectAtom]] = {
 }
 
 
-def build_effect_atoms(specs: list["EffectSpec"]) -> list[EffectAtom]:
+def build_effect_atoms(specs: list[EffectSpec]) -> list[EffectAtom]:
     atoms: list[EffectAtom] = []
     for spec in sorted(specs, key=lambda s: (s.sort_order, s.id)):
         cls = EFFECT_REGISTRY.get(spec.atom_type)
@@ -738,7 +785,8 @@ def build_effect_atoms(specs: list["EffectSpec"]) -> list[EffectAtom]:
 
 # ── Passive query engine ─────────────────────────────────────────────────
 
-def _iter_passive_sources(state: "GameState") -> list[PassiveSource]:
+
+def _iter_passive_sources(state: GameState) -> list[PassiveSource]:
     sources: list[PassiveSource] = []
     for card in _active_cards(state):
         for atom in card.effect_atoms:
@@ -754,13 +802,13 @@ def _iter_passive_sources(state: "GameState") -> list[PassiveSource]:
 
 
 def query_passive(
-    state: "GameState",
+    state: GameState,
     category: PassiveCategory,
     *,
-    target_card: Optional["GameCard"] = None,
-    attack: Optional["AttackDefinition"] = None,
-    attacker: Optional["GameCard"] = None,
-    effect_kind: Optional[str] = None,
+    target_card: GameCard | None = None,
+    attack: AttackDefinition | None = None,
+    attacker: GameCard | None = None,
+    effect_kind: str | None = None,
 ) -> PassiveQueryResult:
     result = PassiveQueryResult()
     for source in _iter_passive_sources(state):
@@ -779,8 +827,15 @@ def query_passive(
     return result
 
 
-def get_passive_stat_modifiers(state: "GameState", target_card: "GameCard", attack: Optional["AttackDefinition"] = None, attacker: Optional["GameCard"] = None) -> dict[str, Any]:
-    result = query_passive(state, PassiveCategory.STAT_MODIFIER, target_card=target_card, attack=attack, attacker=attacker)
+def get_passive_stat_modifiers(
+    state: GameState,
+    target_card: GameCard,
+    attack: AttackDefinition | None = None,
+    attacker: GameCard | None = None,
+) -> dict[str, Any]:
+    result = query_passive(
+        state, PassiveCategory.STAT_MODIFIER, target_card=target_card, attack=attack, attacker=attacker
+    )
     return {
         "attack_bonus": result.attack_bonus,
         "defense_bonus": result.final_defense_bonus,
@@ -789,68 +844,83 @@ def get_passive_stat_modifiers(state: "GameState", target_card: "GameCard", atta
     }
 
 
-def get_incoming_damage_modifier(state: "GameState", target_card: "GameCard", attack: "AttackDefinition", attacker: "GameCard") -> int:
-    return query_passive(state, PassiveCategory.INCOMING_DAMAGE_MODIFIER, target_card=target_card, attack=attack, attacker=attacker).incoming_damage_modifier
+def get_incoming_damage_modifier(
+    state: GameState, target_card: GameCard, attack: AttackDefinition, attacker: GameCard
+) -> int:
+    return query_passive(
+        state, PassiveCategory.INCOMING_DAMAGE_MODIFIER, target_card=target_card, attack=attack, attacker=attacker
+    ).incoming_damage_modifier
 
 
-def is_immune_to_attack(state: "GameState", target_card: "GameCard", attack: "AttackDefinition", attacker: "GameCard") -> bool:
-    return query_passive(state, PassiveCategory.IMMUNITY, target_card=target_card, attack=attack, attacker=attacker).immune
+def is_immune_to_attack(state: GameState, target_card: GameCard, attack: AttackDefinition, attacker: GameCard) -> bool:
+    return query_passive(
+        state, PassiveCategory.IMMUNITY, target_card=target_card, attack=attack, attacker=attacker
+    ).immune
 
 
-def is_immune_to_effect(state: "GameState", target_card: "GameCard", source_card: "GameCard", effect_kind: str) -> bool:
-    return query_passive(state, PassiveCategory.IMMUNITY, target_card=target_card, attacker=source_card, effect_kind=effect_kind).immune
+def is_immune_to_effect(state: GameState, target_card: GameCard, source_card: GameCard, effect_kind: str) -> bool:
+    return query_passive(
+        state, PassiveCategory.IMMUNITY, target_card=target_card, attacker=source_card, effect_kind=effect_kind
+    ).immune
 
 
-def get_association_limit(state: "GameState", target_card: "GameCard") -> int:
+def get_association_limit(state: GameState, target_card: GameCard) -> int:
     return query_passive(state, PassiveCategory.ASSOCIATION_RULES, target_card=target_card).association_limit or 1
 
 
-def associations_allowed(state: "GameState", target_card: "GameCard") -> bool:
+def associations_allowed(state: GameState, target_card: GameCard) -> bool:
     return not query_passive(state, PassiveCategory.ASSOCIATION_RULES, target_card=target_card).association_forbidden
 
 
-def get_attack_cooldown(state: "GameState", attacker: "GameCard", attack: "AttackDefinition") -> int:
-    result = query_passive(state, PassiveCategory.ATTACK_COOLDOWN, target_card=attacker, attack=attack, attacker=attacker)
+def get_attack_cooldown(state: GameState, attacker: GameCard, attack: AttackDefinition) -> int:
+    result = query_passive(
+        state, PassiveCategory.ATTACK_COOLDOWN, target_card=attacker, attack=attack, attacker=attacker
+    )
     cooldown = result.attack_cooldown
     for atom in get_attack_atoms(attacker, attack.attack_id, "attack-cooldown"):
         cooldown = max(cooldown, int(atom.params.get("attack_cooldown_turns", 0)))
     return cooldown
 
 
-def can_revive_from_graveyard(state: "GameState", card: "GameCard") -> bool:
+def can_revive_from_graveyard(state: GameState, card: GameCard) -> bool:
     return query_passive(state, PassiveCategory.REVIVE_RULE, target_card=card).revive_from_graveyard
 
 
 # ── Attack-owned atom lookups ────────────────────────────────────────────
 
-def get_attack_atoms(card: "GameCard", attack_id: int, atom_type: Optional[str] = None) -> list[EffectAtom]:
+
+def get_attack_atoms(card: GameCard, attack_id: int, atom_type: str | None = None) -> list[EffectAtom]:
     atoms = [
-        atom for atom in card.effect_atoms
-        if atom.owner_kind == "attack" and atom.owner_id == attack_id and (atom_type is None or atom.atom_type == atom_type)
+        atom
+        for atom in card.effect_atoms
+        if atom.owner_kind == "attack"
+        and atom.owner_id == attack_id
+        and (atom_type is None or atom.atom_type == atom_type)
     ]
     return sorted(atoms, key=lambda atom: (atom.sort_order, atom.id))
 
 
-def _first_attack_atom(card: "GameCard", attack_id: int, atom_type: str) -> Optional[EffectAtom]:
+def _first_attack_atom(card: GameCard, attack_id: int, atom_type: str) -> EffectAtom | None:
     atoms = get_attack_atoms(card, attack_id, atom_type)
     return atoms[0] if atoms else None
 
 
-def attack_has_multi_target(card: "GameCard", attack_id: int) -> bool:
+def attack_has_multi_target(card: GameCard, attack_id: int) -> bool:
     return bool(get_attack_atoms(card, attack_id, "multi-target-zone"))
 
 
-def get_attack_cost_atom(card: "GameCard", attack_id: int) -> Optional[EffectAtom]:
+def get_attack_cost_atom(card: GameCard, attack_id: int) -> EffectAtom | None:
     return _first_attack_atom(card, attack_id, "exile-graveyard-ally-cost")
 
 
-def get_splash_atom(card: "GameCard", attack_id: int) -> Optional[EffectAtom]:
+def get_splash_atom(card: GameCard, attack_id: int) -> EffectAtom | None:
     return _first_attack_atom(card, attack_id, "splash-adjacent")
 
 
 # ── Association-owned atom lookups ───────────────────────────────────────
 
-def validate_association_target(state: "GameState", assoc_card: "GameCard", target_card: "GameCard") -> list[str]:
+
+def validate_association_target(state: GameState, assoc_card: GameCard, target_card: GameCard) -> list[str]:
     result = PassiveQueryResult()
     ctx = PassiveContext(state=state, source_card=assoc_card, target_card=target_card)
     for atom in assoc_card.effect_atoms:
@@ -859,18 +929,21 @@ def validate_association_target(state: "GameState", assoc_card: "GameCard", targ
     return result.errors
 
 
-def association_allows_direct_from_hand(assoc_card: "GameCard") -> bool:
+def association_allows_direct_from_hand(assoc_card: GameCard) -> bool:
     for atom in assoc_card.effect_atoms:
-        if atom.owner_kind == "association" and atom.atom_type == "script":
-            if atom.params.get("playable_directly_from_hand") or atom.script_id == "cambio_de_guardia":
-                return True
+        if (
+            atom.owner_kind == "association"
+            and atom.atom_type == "script"
+            and (atom.params.get("playable_directly_from_hand") or atom.script_id == "cambio_de_guardia")
+        ):
+            return True
     return False
 
 
-def graveyard_cost_candidates(state: "GameState", player_id: str, atom: EffectAtom) -> list["GameCard"]:
+def graveyard_cost_candidates(state: GameState, player_id: str, atom: EffectAtom) -> list[GameCard]:
     excluded = atom.params.get("exclude_element_id") or atom.params.get("exclude_element_ids")
     player = state.room.players[player_id]
-    candidates: list["GameCard"] = []
+    candidates: list[GameCard] = []
     for card_id in player.zones[Zone.GRAVEYARD.name].card_ids:
         card = state.cards.get(card_id)
         if not card:

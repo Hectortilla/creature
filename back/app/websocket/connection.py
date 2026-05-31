@@ -1,19 +1,20 @@
 import asyncio
 import json
 import logging
-from fastapi import WebSocket
-from starlette.websockets import WebSocketState
+
 from broadcaster import Broadcast
+from fastapi import WebSocket
 from redis import asyncio as redis
 
-from app.websocket.models import PlayerState
+from app.models.schemas.websocket import WebSocketMessage
 from app.models.schemas.websocket.server import ConnectedData, ConnectedMessage
 from app.settings.config import get_settings
-from app.models.schemas.websocket import WebSocketMessage
+from app.websocket.models import PlayerState
 
 settings = get_settings()
 
 logger = logging.getLogger(__name__)
+
 
 class ConnectionManager:
     def __init__(self):
@@ -49,19 +50,20 @@ class ConnectionManager:
         ready = asyncio.Event()
         self.player_ready[player.player_id] = ready
 
-        self.player_tasks[player.player_id] = asyncio.create_task(
-            self._player_loop(player.player_id)
-        )
-    
+        self.player_tasks[player.player_id] = asyncio.create_task(self._player_loop(player.player_id))
+
         await ready.wait()
 
-        await self.send_to_player(player.player_id, ConnectedMessage(
-            data=ConnectedData(
-                player_id=player.player_id,
-                name=player.name,
-                message="Connected to game server",
-            )
-        ))
+        await self.send_to_player(
+            player.player_id,
+            ConnectedMessage(
+                data=ConnectedData(
+                    player_id=player.player_id,
+                    name=player.name,
+                    message="Connected to game server",
+                )
+            ),
+        )
 
     async def _player_loop(self, player_id: str):
         queue: asyncio.Queue = asyncio.Queue()
@@ -86,7 +88,7 @@ class ConnectionManager:
             while True:
                 try:
                     message = await asyncio.wait_for(queue.get(), timeout=1.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
                 try:
                     logger.info("Sending message to player %s: %s", player_id, message)
@@ -124,7 +126,7 @@ class ConnectionManager:
     async def send_to_player(self, player_id: str, message: WebSocketMessage):
         await self.broadcast.publish(
             channel=player_id,
-            message=json.dumps(message.model_dump(mode='json')),
+            message=json.dumps(message.model_dump(mode="json")),
         )
 
     # ---------------------------- Room Management ----------------------------
@@ -132,12 +134,7 @@ class ConnectionManager:
     async def send_to_room(self, room_id: str, message: WebSocketMessage):
         players = await self.get_players(room_id)
 
-        await asyncio.gather(
-            *[
-                self.send_to_player(player_id, message)
-                for player_id in players
-            ]
-        )
+        await asyncio.gather(*[self.send_to_player(player_id, message) for player_id in players])
 
     async def subscribe_to_room(self, player_id: str, room_id: str):
         await self.redis.sadd(f"room:{room_id}", player_id)
@@ -148,10 +145,7 @@ class ConnectionManager:
         await self.redis.srem(f"player:{player_id}", room_id)
 
     async def get_players(self, room_id: str) -> set[str]:
-        return {
-            pid.decode()
-            for pid in await self.redis.smembers(f"room:{room_id}")
-        }
+        return {pid.decode() for pid in await self.redis.smembers(f"room:{room_id}")}
 
     async def remove_player(self, player_id: str):
         rooms = await self.redis.smembers(f"player:{player_id}")

@@ -6,20 +6,24 @@ drives the engine through many actions, asserting every step succeeds. This
 exercises the reducer (element recalculation), the effect/passive query
 framework, combat, and the status sweep without needing a database.
 
-Runnable directly (no pytest required):
+Run with:
 
-    .venv/bin/python -m tests.test_engine_smoke
+    uv run pytest tests/unit/test_engine_smoke.py
 """
 
 from __future__ import annotations
 
 import random
 
-from app.models.game.card import GameCardInput, AttackInput, EffectSpec
+import pytest
+
+from app.game.engine import GameEngine
+from app.models.game.card import AttackInput, EffectSpec, GameCardInput
 from app.models.game.player import PlayerState
 from app.models.game.state import GameConfiguration
 from app.websocket.models import GameRoom
-from app.game.engine import GameEngine
+
+pytestmark = pytest.mark.unit
 
 
 def _attack(attack_id: int, name: str, damage: int, element_id: int, type_: str = "physical") -> AttackInput:
@@ -35,33 +39,45 @@ def _make_deck(owner_tag: str) -> list[GameCardInput]:
         effect_specs: list[EffectSpec] = []
         if i == 0:
             # Ability stat aura: +10 attack to active allies (exercises STAT_MODIFIER passive).
-            effect_specs.append(EffectSpec(
-                id=1000 + i, owner_kind="ability", owner_id=900 + i,
-                atom_type="stat-modifier", params={"scope": "allies_active", "attack": 10},
-            ))
+            effect_specs.append(
+                EffectSpec(
+                    id=1000 + i,
+                    owner_kind="ability",
+                    owner_id=900 + i,
+                    atom_type="stat-modifier",
+                    params={"scope": "allies_active", "attack": 10},
+                )
+            )
         if i == 1:
             # Attack DoT (exercises status application + turn-start sweep).
-            effect_specs.append(EffectSpec(
-                id=2000 + i, owner_kind="attack", owner_id=10 + i,
-                atom_type="damage-over-time", trigger="ON_ATTACK_RESOLVE",
-                params={"amount": 5, "duration_turns": 2, "immune_element_id": 6},
-            ))
-        cards.append(GameCardInput(
-            id=100 + i,
-            name=f"{owner_tag}-creature-{i}",
-            health=60,
-            physical_defence=5,
-            magic_defence=5,
-            element_ids=[element_id],
-            element_contribution=[{"element_id": element_id, "amount": 2}],
-            attacks=[_attack(10 + i, f"strike-{i}", damage=20, element_id=element_id)],
-            ability_ids=[900 + i] if i == 0 else [],
-            effect_specs=effect_specs,
-        ))
+            effect_specs.append(
+                EffectSpec(
+                    id=2000 + i,
+                    owner_kind="attack",
+                    owner_id=10 + i,
+                    atom_type="damage-over-time",
+                    trigger="ON_ATTACK_RESOLVE",
+                    params={"amount": 5, "duration_turns": 2, "immune_element_id": 6},
+                )
+            )
+        cards.append(
+            GameCardInput(
+                id=100 + i,
+                name=f"{owner_tag}-creature-{i}",
+                health=60,
+                physical_defence=5,
+                magic_defence=5,
+                element_ids=[element_id],
+                element_contribution=[{"element_id": element_id, "amount": 2}],
+                attacks=[_attack(10 + i, f"strike-{i}", damage=20, element_id=element_id)],
+                ability_ids=[900 + i] if i == 0 else [],
+                effect_specs=effect_specs,
+            )
+        )
     return cards
 
 
-def _build_game() -> tuple[GameEngine, "object"]:
+def _build_game() -> tuple[GameEngine, object]:
     p1 = PlayerState(player_id="p1", name="Player One", deck=_make_deck("p1"))
     p2 = PlayerState(player_id="p2", name="Player Two", deck=_make_deck("p2"))
     room = GameRoom(room_id="room1", host_id="p1")
@@ -82,10 +98,7 @@ def _act_player_id(state) -> str:
 def _client_payload(action: dict) -> dict:
     """Reduce an enriched valid-action dict to the fields a real client sends."""
     drop = {"action", "player_id", "valid_phases"}
-    return {
-        k: v for k, v in action.items()
-        if k not in drop and not k.endswith("_name")
-    }
+    return {k: v for k, v in action.items() if k not in drop and not k.endswith("_name")}
 
 
 def run_smoke(steps: int = 120) -> tuple[int, set[str]]:
@@ -123,9 +136,12 @@ def test_engine_smoke() -> None:
     # With the fixed seed the run deterministically reaches combat, the DoT
     # attack status, and the full status lifecycle — guard all of them.
     required = {
-        "DamageDealtEvent", "AttackResolvedEvent",      # combat
-        "StatusAppliedEvent", "StatusTickedEvent", "StatusExpiredEvent",  # status lifecycle
-        "CardHealthChangedEvent",                        # damage-over-time tick
+        "DamageDealtEvent",
+        "AttackResolvedEvent",  # combat
+        "StatusAppliedEvent",
+        "StatusTickedEvent",
+        "StatusExpiredEvent",  # status lifecycle
+        "CardHealthChangedEvent",  # damage-over-time tick
     }
     missing = required - seen
     assert not missing, f"smoke run never produced {sorted(missing)}; saw {sorted(seen)}"

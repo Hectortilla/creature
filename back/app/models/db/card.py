@@ -1,20 +1,21 @@
-from sqlmodel import Field, Relationship, Column
-from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Column, Field, Relationship
 
 from app.models.base.card import CardBase, CardForeignKeys
 from app.models.db.user import UserCard
 
 if TYPE_CHECKING:
-    from app.models.db.element import Element
-    from app.models.db.type import Type
-    from app.models.db.character import Character
-    from app.models.db.attack import Attack
+    from app.models.db import DeckCard
     from app.models.db.ability import Ability
     from app.models.db.association import Association
+    from app.models.db.attack import Attack
+    from app.models.db.character import Character
     from app.models.db.deck import Deck
-    from app.models.db import DeckCard
+    from app.models.db.element import Element
+    from app.models.db.type import Type
     from app.models.db.user import User
 else:
     from app.models.db.deck_card import DeckCard
@@ -22,16 +23,13 @@ else:
 
 class Card(CardBase, CardForeignKeys, table=True):
     __tablename__ = "cards"
-    
+
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     code: int = Field(unique=True)
     handle: str = Field(default="", max_length=255)
-    forces: list[dict] = Field(
-        default_factory=list, 
-        sa_column=Column(JSONB, nullable=False, server_default="[]")
-    )
-    
+    forces: list[dict] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False, server_default="[]"))
+
     # Foreign keys with constraints
     is_evolution_id: int | None = Field(default=None, foreign_key="cards.id")
     first_element_id: int | None = Field(default=None, foreign_key="elements.id")
@@ -42,12 +40,9 @@ class Card(CardBase, CardForeignKeys, table=True):
     second_attack_id: int | None = Field(default=None, foreign_key="attacks.id")
     ability_id: int | None = Field(default=None, foreign_key="abilities.id")
     association_id: int | None = Field(default=None, foreign_key="associations.id")
-    
+
     # Relationships
-    users: list["User"] = Relationship(
-        back_populates="cards",
-        link_model=UserCard
-    )
+    users: list["User"] = Relationship(back_populates="cards", link_model=UserCard)
     first_element: Optional["Element"] = Relationship(
         sa_relationship_kwargs={"foreign_keys": "[Card.first_element_id]"}
     )
@@ -56,31 +51,23 @@ class Card(CardBase, CardForeignKeys, table=True):
     )
     type: Optional["Type"] = Relationship()
     character: Optional["Character"] = Relationship()
-    first_attack: Optional["Attack"] = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Card.first_attack_id]"}
-    )
-    second_attack: Optional["Attack"] = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Card.second_attack_id]"}
-    )
+    first_attack: Optional["Attack"] = Relationship(sa_relationship_kwargs={"foreign_keys": "[Card.first_attack_id]"})
+    second_attack: Optional["Attack"] = Relationship(sa_relationship_kwargs={"foreign_keys": "[Card.second_attack_id]"})
     ability: Optional["Ability"] = Relationship()
     association: Optional["Association"] = Relationship()
-    
+
     # Self-referential relationship for evolution
     is_evolution: Optional["Card"] = Relationship(
         sa_relationship_kwargs={"remote_side": "Card.id", "foreign_keys": "[Card.is_evolution_id]"}
     )
-    
+
     # Many-to-many relationship with decks
     decks: list["Deck"] = Relationship(
-        back_populates="cards",
-        link_model=DeckCard,
-        sa_relationship_kwargs={"lazy": "selectin"}
+        back_populates="cards", link_model=DeckCard, sa_relationship_kwargs={"lazy": "selectin"}
     )
-    
+
     def __str__(self) -> str:
         return self.name
-    
+
     def __repr__(self) -> str:
         return self.name
-    
-    

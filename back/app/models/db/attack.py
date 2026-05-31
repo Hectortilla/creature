@@ -1,8 +1,8 @@
-from sqlmodel import Field, Relationship, Column
-from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
-from app.utils.enums import ActionType
+
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Column, Field, Relationship
 
 from app.models.base.attack import AttackBase
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class Attack(AttackBase, table=True):
     __tablename__ = "attacks"
-    
+
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     code: int = Field(unique=True)
@@ -20,6 +20,6 @@ class Attack(AttackBase, table=True):
     necessary_force: list[dict] | None = Field(default=None, sa_column=Column(JSONB))
     dice_rolls: int | None = None
     element_id: int | None = Field(default=None, foreign_key="elements.id")
-    
+
     # Relationship
     element: Optional["Element"] = Relationship()
