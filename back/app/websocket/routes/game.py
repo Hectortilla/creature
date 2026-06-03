@@ -104,4 +104,5 @@ def list_rooms():
     """
     from app.settings.lifespan import room_manager
 
-    return {"rooms": room_manager.list_rooms() if room_manager else []}
+    rooms = room_manager.list_rooms() if room_manager else []
+    return {"rooms": [room.model_dump(mode="json") for room in rooms]}

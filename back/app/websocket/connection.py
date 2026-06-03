@@ -91,8 +91,9 @@ class ConnectionManager:
                 except TimeoutError:
                     continue
                 try:
-                    logger.info("Sending message to player %s: %s", player_id, message.get("type") or "")
-                    await self.connections[player_id].send_json(json.loads(message))
+                    payload = json.loads(message)
+                    logger.info("Sending message to player %s: %s", player_id, payload.get("type") or "")
+                    await self.connections[player_id].send_json(payload)
                 except asyncio.CancelledError:
                     raise
                 except Exception as e:
@@ -116,7 +117,7 @@ class ConnectionManager:
             return
 
         task = self.player_tasks.pop(player_id, None)
-        if task:
+        if task and task is not asyncio.current_task():
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 

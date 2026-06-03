@@ -83,7 +83,7 @@ class RoomManager:
         room.add_player(player)
 
         await self.connection_manager.send_to_player(
-            player.player_id, GameJoinedMessage(data=GameJoinedData(room=room.model_dump(mode="json")))
+            player.player_id, GameJoinedMessage(data=GameJoinedData(room=room))
         )
 
         self.player_rooms[player.player_id] = room_id
@@ -94,7 +94,7 @@ class RoomManager:
                 data=PlayerJoinedData(
                     player_id=player.player_id,
                     name=player.name,
-                    room=room.model_dump(mode="json"),
+                    room=room,
                 )
             ),
         )
@@ -120,7 +120,7 @@ class RoomManager:
             PlayerLeftMessage(
                 data=PlayerLeftData(
                     player_id=player_id,
-                    room=room.model_dump(mode="json"),
+                    room=room,
                 )
             ),
         )
@@ -136,9 +136,9 @@ class RoomManager:
         """Get the room ID for a player."""
         return self.player_rooms.get(player_id)
 
-    def list_rooms(self) -> list[dict]:
+    def list_rooms(self) -> list[GameRoom]:
         """List all rooms."""
-        return [room.model_dump(mode="json") for room in self.rooms.values()]
+        return list(self.rooms.values())
 
     async def start_game(self, room: GameRoom) -> dict:
         """

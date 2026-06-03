@@ -85,7 +85,7 @@ class MessageHandler:
                     room_id=data.get("room_id"),
                 )
                 await self.connection_manager.send_to_player(
-                    player_id, GameJoinedMessage(data=GameJoinedData(room=room.model_dump(mode="json")))
+                    player_id, GameJoinedMessage(data=GameJoinedData(room=room))
                 )
 
             elif msg_type == ListRoomsMessage.type:
