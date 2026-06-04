@@ -2,7 +2,7 @@
 
 Human-friendly console output in development; single-line JSON in production
 (``LOG_JSON=true``). Correlation IDs bound by ``asgi-correlation-id`` and the
-per-request/per-connection context (see ``room_manager``) are merged into every
+per-request/per-connection context (see ``game_runner``) are merged into every
 log line, so an agent can filter a whole request or game by one id.
 
 The existing ``logging.getLogger(__name__)`` call sites keep working unchanged —

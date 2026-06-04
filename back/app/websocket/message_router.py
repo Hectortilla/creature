@@ -1,7 +1,8 @@
 """
-WebSocket Message Handler
+Message Router
 
-Handles incoming WebSocket messages and routes them to appropriate handlers.
+Validates incoming WebSocket messages and dispatches them to the Lobby or the
+GameRunner, sending any direct reply back to the requesting player.
 """
 
 import logging
@@ -20,8 +21,6 @@ from app.models.schemas.websocket.client import (
 from app.models.schemas.websocket.server import (
     ErrorData,
     ErrorMessage,
-    GameJoinedData,
-    GameJoinedMessage,
     GameLeftMessage,
     GameStateData,
     GameStateMessage,
@@ -31,22 +30,25 @@ from app.models.schemas.websocket.server import (
     ValidActionsData,
     ValidActionsMessage,
 )
-from app.websocket.connection import ConnectionManager
-from app.websocket.room_manager import RoomManager
+from app.websocket.connections import PlayerConnections
+from app.websocket.game_runner import GameRunner
+from app.websocket.lobby import Lobby
 
 logger = logging.getLogger(__name__)
 
 
-class MessageHandler:
-    """Handles incoming WebSocket messages."""
+class MessageRouter:
+    """Validates and dispatches incoming WebSocket messages."""
 
     def __init__(
         self,
-        connection_manager: ConnectionManager,
-        room_manager: RoomManager,
+        connections: PlayerConnections,
+        lobby: Lobby,
+        game_runner: GameRunner,
     ):
-        self.connection_manager = connection_manager
-        self.room_manager = room_manager
+        self.connections = connections
+        self.lobby = lobby
+        self.game_runner = game_runner
 
     async def handle_message(self, player_id: str, message: dict) -> None:
         """Handle an incoming WebSocket message."""
@@ -73,68 +75,69 @@ class MessageHandler:
                 # Log validation error but continue processing (for backwards compatibility)
                 logger.warning(f"WebSocket message validation failed for player {player_id}: {e}")
                 # Still send error to client
-                await self.connection_manager.send_to_player(
+                await self.connections.send_to_player(
                     player_id, ErrorMessage(data=ErrorData(message=f"Invalid message format: {e!s}"))
                 )
                 return
 
         try:
             if msg_type == JoinGameMessage.type:
-                room = await self.room_manager.join_room(
-                    player_id=player_id,
-                    room_id=data.get("room_id"),
-                )
-                await self.connection_manager.send_to_player(
-                    player_id, GameJoinedMessage(data=GameJoinedData(room=room))
+                # A player joins (or creates) their room at connect time via the
+                # `room_id` query param. Joining a different room mid-session is
+                # not supported: this handler only has a player_id, not the
+                # PlayerState (deck, etc.) a join requires.
+                await self.connections.send_to_player(
+                    player_id,
+                    ErrorMessage(
+                        data=ErrorData(
+                            message="Joining a room mid-session is not supported; reconnect with ?room_id=..."
+                        )
+                    ),
                 )
 
             elif msg_type == ListRoomsMessage.type:
-                rooms = self.room_manager.list_rooms()
-                await self.connection_manager.send_to_player(
-                    player_id, RoomsListMessage(data=RoomsListData(rooms=rooms))
-                )
+                rooms = self.lobby.list_rooms()
+                await self.connections.send_to_player(player_id, RoomsListMessage(data=RoomsListData(rooms=rooms)))
 
             elif msg_type == ActionMessage.type:
-                room_id = self.room_manager.get_player_room(player_id)
+                room_id = await self.lobby.get_player_room(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
-                await self.room_manager.process_action(player_id, room_id, data)
+                await self.game_runner.process_action(player_id, room_id, data)
 
             elif msg_type == GetStateMessage.type:
-                room_id = self.room_manager.get_player_room(player_id)
+                room_id = await self.lobby.get_player_room(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
-                state = self.room_manager.get_game_state(room_id)
-                await self.connection_manager.send_to_player(
-                    player_id, GameStateMessage(data=GameStateData(state=state))
-                )
+                state = self.game_runner.get_game_state(room_id)
+                await self.connections.send_to_player(player_id, GameStateMessage(data=GameStateData(state=state)))
 
             elif msg_type == GetValidActionsMessage.type:
-                room_id = self.room_manager.get_player_room(player_id)
+                room_id = await self.lobby.get_player_room(player_id)
                 if not room_id:
                     raise ValueError("Not in a game")
-                actions = self.room_manager.get_valid_actions(player_id, room_id)
-                await self.connection_manager.send_to_player(
+                actions = self.game_runner.get_valid_actions(player_id, room_id)
+                await self.connections.send_to_player(
                     player_id, ValidActionsMessage(data=ValidActionsData(actions=actions))
                 )
 
             elif msg_type == LeaveGameMessage.type:
-                room_id = self.room_manager.get_player_room(player_id)
+                room_id = await self.lobby.get_player_room(player_id)
                 if room_id:
-                    await self.room_manager.leave_room(player_id, room_id)
-                await self.connection_manager.send_to_player(player_id, GameLeftMessage())
+                    await self.lobby.leave_room(player_id, room_id)
+                await self.connections.send_to_player(player_id, GameLeftMessage())
 
             elif msg_type == PingMessage.type:
-                await self.connection_manager.send_to_player(player_id, PongMessage())
+                await self.connections.send_to_player(player_id, PongMessage())
 
             else:
-                await self.connection_manager.send_to_player(
+                await self.connections.send_to_player(
                     player_id, ErrorMessage(data=ErrorData(message=f"Unknown message type: {msg_type}"))
                 )
 
         except ValueError as e:
-            await self.connection_manager.send_to_player(player_id, ErrorMessage(data=ErrorData(message=str(e))))
+            await self.connections.send_to_player(player_id, ErrorMessage(data=ErrorData(message=str(e))))
         except Exception as e:
-            await self.connection_manager.send_to_player(
+            await self.connections.send_to_player(
                 player_id, ErrorMessage(data=ErrorData(message=f"Internal error: {e!s}"))
             )

@@ -53,17 +53,22 @@ Action → Validator → action.to_events() → EventLoop → Reducer → new Ga
 
 ## Module-boundary rules (enforced by `make arch`)
 
-Direction: `models/* → game → services|websocket → routers → main`. Two contracts
+Direction: `models/* → game → services|websocket → routers → main`. Four contracts
 (`pyproject.toml → [tool.importlinter]`):
 
 1. **Engine purity** — `app.game` must not import `routers`, `services`,
    `websocket`, `database`, `auth`, or `models.db`.
 2. **Model isolation** — `app.models` must not import `routers`, `services`,
    `websocket`, `auth`.
+3. **Layered architecture** — app-wide dependencies point downward only
+   (`routers | websocket → services → game → auth → database → models → utils`).
+4. **WebSocket internals layered** — within `app.websocket`:
+   `session → message_router → game_runner → lobby → room_registry → connections`.
 
-Documented exceptions are in `ignore_imports` (e.g. `GameRoom` currently lives in
-`app.websocket.models` — known debt). **Do not add to `ignore_imports` to silence a
-new violation** — fix the design, or raise it explicitly. See [`../docs/architecture.md`](../docs/architecture.md).
+The one documented exception is in `ignore_imports`: a lazy, function-local
+`app.models.game.state → app.game.effects` import that breaks a cycle. **Do not add
+to `ignore_imports` to silence a new violation** — fix the design, or raise it
+explicitly. See [`../docs/architecture.md`](../docs/architecture.md).
 
 ## Recipes
 

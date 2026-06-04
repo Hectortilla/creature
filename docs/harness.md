@@ -76,6 +76,9 @@ check` (svelte-check) stays non-blocking until its pre-existing type debt is cle
 2. **Models do not import application machinery.**
 3. **Layered architecture** — dependencies point downward only
    (`routers | websocket → services → game → auth → database → models → utils`).
+4. **WebSocket internals stay layered** — within `app.websocket`, the chain
+   `session → message_router → game_runner → lobby → room_registry → connections`
+   points downward only.
 
 Frontend: `front/.dependency-cruiser.cjs` enforces `src/lib` layering and forbids
 cycles.
@@ -126,9 +129,8 @@ Tracked here so they're visible, not lost:
 
 - **Backend type coverage** — `auth`, `database`, `utils`, `routers`,
   `models.db`, and `models.schemas` are now type-checked; `services`, `websocket`,
-  and `settings` still carry `ignore_errors` (dynamic SQLAlchemy/async patterns,
-  plus a latent `MessageHandler.join_room` call-arg bug to triage with integration
-  tests). Drop those next; eventually `disallow_untyped_defs`.
+  and `settings` still carry `ignore_errors` (dynamic SQLAlchemy/async patterns).
+  Drop those next; eventually `disallow_untyped_defs`.
 - **Frontend type debt**: `npm run lint` (prettier + ratcheted eslint) now gates
   in CI and pre-commit. Remaining: ~55 `svelte-check` type errors (incl.
   `babylon-editor/src` and active routes) — clear them, then promote

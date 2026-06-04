@@ -91,7 +91,7 @@ Once the server is running, visit:
 - `DELETE /cards/{id}` - Delete card
 
 ### WebSocket
-- `WS /game/{client_id}` - Real-time game communication
+- `WS /game/ws?token=<jwt>&deck_id=<id>[&room_id=<id>]` - Real-time game connection
 
 ## Project Structure
 

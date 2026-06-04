@@ -23,7 +23,7 @@ of it is controlled by settings in `back/app/settings/config.py` (env-overridabl
 - **Correlation IDs**: `asgi-correlation-id` attaches an `X-Request-ID` to each
   HTTP request and binds it into the log context; the websocket layer binds
   `room_id`, `player_id`, and `game_id` around engine processing
-  (`app/websocket/room_manager.py`). Filter a whole request or game by one id.
+  (`app/websocket/game_runner.py`). Filter a whole request or game by one id.
 
 ```bash
 LOG_JSON=true LOG_LEVEL=DEBUG make run
@@ -38,7 +38,7 @@ latency/throughput series. Scrape it from Prometheus, or just `curl localhost:80
 ## Traces
 
 FastAPI is auto-instrumented and the engine path adds an explicit
-`engine.process_action` span (set in `room_manager`). Enable and view locally:
+`engine.process_action` span (set in `game_runner`). Enable and view locally:
 
 ```bash
 OTEL_ENABLED=true make run     # spans print to the console (SimpleSpanProcessor)

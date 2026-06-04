@@ -1,10 +1,16 @@
+"""
+Player Connections
+
+Owns the live WebSocket connections and delivers messages to a single player
+over Redis pub/sub. Pure transport: it knows nothing about rooms or games.
+"""
+
 import asyncio
 import json
 import logging
 
 from broadcaster import Broadcast
 from fastapi import WebSocket
-from redis import asyncio as redis
 
 from app.models.game.player import PlayerState
 from app.models.schemas.websocket import WebSocketMessage
@@ -16,24 +22,21 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-class ConnectionManager:
-    def __init__(self):
+class PlayerConnections:
+    """Tracks open player sockets and pushes messages to them via pub/sub."""
 
+    def __init__(self):
         self.broadcast = Broadcast(settings.broadcast_url)
         self.connections: dict[str, WebSocket] = {}
 
         self.player_tasks: dict[str, asyncio.Task] = {}
         self.player_ready: dict[str, asyncio.Event] = {}
 
-        self.redis = redis.Redis.from_url(settings.redis_url)
-
     async def async_init(self):
         await self.broadcast.connect()
 
     async def async_deinit(self):
         await self.broadcast.disconnect()
-
-    # ---------------------------- Raw Connection Management ----------------------------
 
     async def connect(self, websocket: WebSocket, player: PlayerState) -> None:
         await websocket.accept()
@@ -129,27 +132,3 @@ class ConnectionManager:
             channel=player_id,
             message=json.dumps(message.model_dump(mode="json")),
         )
-
-    # ---------------------------- Room Management ----------------------------
-
-    async def send_to_room(self, room_id: str, message: WebSocketMessage):
-        players = await self.get_players(room_id)
-
-        await asyncio.gather(*[self.send_to_player(player_id, message) for player_id in players])
-
-    async def subscribe_to_room(self, player_id: str, room_id: str):
-        await self.redis.sadd(f"room:{room_id}", player_id)
-        await self.redis.sadd(f"player:{player_id}", room_id)
-
-    async def unsubscribe_from_room(self, player_id: str, room_id: str):
-        await self.redis.srem(f"room:{room_id}", player_id)
-        await self.redis.srem(f"player:{player_id}", room_id)
-
-    async def get_players(self, room_id: str) -> set[str]:
-        return {pid.decode() for pid in await self.redis.smembers(f"room:{room_id}")}
-
-    async def remove_player(self, player_id: str):
-        rooms = await self.redis.smembers(f"player:{player_id}")
-        for room_id in rooms:
-            await self.redis.srem(f"room:{room_id.decode()}", player_id)
-        await self.redis.delete(f"player:{player_id}")

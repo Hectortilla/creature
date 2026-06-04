@@ -98,9 +98,8 @@ module = ["app.models.schemas.*"]
 disable_error_code = ["prop-decorator"]
 
 # Remaining type-coverage rung (see docs/harness.md): services and the websocket
-# transport still lean on dynamic SQLAlchemy/async patterns (and have a latent bug
-# or two to triage with integration tests); app.settings is framework glue
-# (sqladmin/otel/structlog) plus codegen-only dummy endpoints.
+# transport still lean on dynamic SQLAlchemy/async patterns; app.settings is
+# framework glue (sqladmin/otel/structlog) plus codegen-only dummy endpoints.
 [[tool.mypy.overrides]]
 module = [
     "app.services.*",
@@ -202,6 +201,22 @@ layers = [
 ]
 ignore_imports = [
     "app.models.game.state -> app.game.effects",  # lazy cycle-breaker (docs/architecture.md)
+]
+
+# The websocket layer is itself layered: a one-way chain from the per-connection
+# lifecycle down to raw transport. This locks the structure in so the pieces
+# can't re-tangle (e.g. transport reaching back up into rooms or gameplay).
+[[tool.importlinter.contracts]]
+name = "WebSocket internals stay layered (dependencies point downward)"
+type = "layers"
+containers = ["app.websocket"]
+layers = [
+    "session",
+    "message_router",
+    "game_runner",
+    "lobby",
+    "room_registry",
+    "connections",
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────

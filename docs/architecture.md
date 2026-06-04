@@ -57,7 +57,7 @@ without a database and reasoned about deterministically. See
 
 ## Enforced boundaries
 
-`back/pyproject.toml → [tool.importlinter]` (run with `make arch`) encodes three
+`back/pyproject.toml → [tool.importlinter]` (run with `make arch`) encodes four
 contracts as deterministic tests:
 
 1. **Game engine stays pure** — `app.game` must not import `app.routers`,
@@ -66,6 +66,9 @@ contracts as deterministic tests:
    `app.routers`, `app.services`, `app.websocket`, or `app.auth`.
 3. **Layered architecture** — dependencies point downward only across
    `routers | websocket → services → game → auth → database → models → utils`.
+4. **WebSocket internals stay layered** — within `app.websocket`, dependencies
+   point downward only: `session → message_router → game_runner → lobby →
+   room_registry → connections`.
 
 ### Known debt (documented exceptions)
 
