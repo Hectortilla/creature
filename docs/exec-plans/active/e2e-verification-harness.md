@@ -394,11 +394,6 @@ the gate green and be shippable on its own.
 - **Notes for next agent:**
   - **`package.json` uses `"type": "module"`** — `__dirname` is unavailable in
     ESM; `global-setup.ts` uses `fileURLToPath(import.meta.url)` instead.
-  - **Card ID 12 is absent from the migration** (`001_initial_schema_and_data.py`
-    seeds IDs 1–11 and 13–30, skipping 12). `CARD_IDS` in `global-setup.ts` uses
-    IDs 1–11 + 13–23 (22 cards, skipping 12). Step 4's deck-present assertion
-    should query the seeded deck_id from `e2e/.auth/seed.json`, not assume a
-    specific set of card IDs.
   - **`storageState` format:** sets `localStorage["auth_token"]` +
     `localStorage["auth_user"]` (JSON string of the `/auth/me` response) on
     origin `http://localhost:4173`, plus an `auth_token` cookie — matching
