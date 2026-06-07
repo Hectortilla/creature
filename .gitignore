@@ -155,3 +155,8 @@ database.db*
 
 # OpenAPI codegen error logs (also matched by *.log above; listed explicitly)
 front/openapi-ts-error-*.log
+
+# Playwright E2E (front/) — HTML report, run artifacts, and seeded auth state
+front/playwright-report/
+front/test-results/
+front/e2e/.auth/
