@@ -39,6 +39,27 @@
             "type": "node-terminal",
             "request": "launch",
             "cwd": "${workspaceFolder}/front",
+        },
+        {
+            "name": "E2E: Playwright UI (GUI)",
+            "command": "npm run test:e2e:ui",
+            "type": "node-terminal",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/front",
+        },
+        {
+            "name": "E2E: Playwright (headed)",
+            "command": "npm run test:e2e:headed",
+            "type": "node-terminal",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/front",
+        },
+        {
+            "name": "E2E: Playwright (all, headless)",
+            "command": "npm run test:e2e",
+            "type": "node-terminal",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/front",
         }
     ],
     "inputs": [

@@ -20,6 +20,11 @@ dist
 # Test coverage output (from `npm run test:cov`)
 coverage
 
+# Playwright E2E output (from `npm run test:e2e`) — report, traces, seeded auth
+playwright-report
+test-results
+e2e/.auth
+
 # BabylonJS editor sub-project caches / build
 src/babylon-editor/.bjseditor
 src/babylon-editor/node_modules
