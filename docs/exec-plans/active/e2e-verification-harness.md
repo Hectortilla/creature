@@ -482,7 +482,7 @@ the gate green and be shippable on its own.
 
 ### Step 6 — 3D screenshot baseline (non-gating, masked)
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-08 — `game.e2e.ts` asserts `toHaveScreenshot("board.png", { maxDiffPixelRatio: 0.1, mask: [.hovered-card-overlay, .element-pools-overlay] })` on the host canvas after both boards render; baseline `e2e/game.e2e.ts-snapshots/board-chromium-darwin.png` generated + committed; second `--grep @nongating` run matched (1 passed); lint green (0 errors) — commit b3fd348
 - **Depends on:** Step 5
 - **Goal:** a tolerant, masked visual baseline of the canvas. See §5.5 (5), §5.7.
 - **Do:** in `game.e2e.ts`, add
@@ -494,6 +494,22 @@ the gate green and be shippable on its own.
   ```bash
   cd front && npm run test:e2e:update-snapshots && npm run test:e2e -- --grep @nongating
   ```
+- **Notes for next agent:**
+  - **The committed baseline is `board-chromium-darwin.png` (macOS only).** Playwright
+    suffixes snapshots by platform, so CI (Ubuntu + swiftshader) has **no matching
+    baseline** and will fail this assertion on first run. That's fine — Flow B is
+    `continue-on-error` in CI (D3/§5.7), so it surfaces as a **non-blocking** diff,
+    not a blocked merge. **Step 7 must regenerate the linux baseline in the CI
+    environment** (run `test:e2e:update-snapshots` on the CI image, or accept the
+    `*-linux.png` artifact once) and commit it alongside the darwin one — per §5.7's
+    "baselines must be generated in the same environment they're compared in."
+  - **Masking:** the canvas is one WebGL surface, so sub-regions can't be masked via
+    locators. The two masked elements (`.hovered-card-overlay`, `.element-pools-overlay`)
+    are the dynamic **DOM HUD overlays** layered over the canvas. The remaining
+    WebGL nondeterminism is absorbed by `maxDiffPixelRatio: 0.1` (§9: tune empirically —
+    0.1 was stable across two local darwin runs; revisit if CI proves noisier).
+  - **Screenshot is on the host page only** — one baseline is enough; the guest board
+    is equivalent and adding a second snapshot just doubles flake surface.
 
 ### Step 7 — CI job + split gating
 
@@ -558,6 +574,10 @@ the gate green and be shippable on its own.
 ## 9. Open questions
 
 - Exact masked regions + tolerance for the 3D screenshot (tune empirically).
+  _(Step 6: settled on `maxDiffPixelRatio: 0.1` + masking the two DOM HUD overlays
+  `.hovered-card-overlay` / `.element-pools-overlay`; stable across two local darwin
+  runs. The WebGL canvas itself can't be sub-masked. Revisit the tolerance once CI's
+  linux/swiftshader baseline exists — see Step 6 notes / Step 7.)_
 - Login inputs expose proper `<label for>`, so `getByLabel('Username'|'Password')`
   works today. **But the Sign-In button's accessible name is the slug `"sign-in"`**
   — the shared `Button.svelte` runs its `text` through `formatHandle()` for the

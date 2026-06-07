@@ -107,6 +107,23 @@ test.describe("@nongating game start + board render", () => {
 
 			// Host stays in-game once the second player joins and the game starts.
 			await assertBoardReady(hostPage);
+
+			// Optional, non-gating visual baseline of the 3D board (plan §5.5 (5),
+			// §5.7). Software-WebGL output varies across GPU/OS, so this is tolerant
+			// (maxDiffPixelRatio) and masks the dynamic DOM HUD overlays layered over
+			// the canvas. The screenshot is non-gating in CI, so environment drift
+			// surfaces as a non-blocking diff rather than a blocked merge — regenerate
+			// the baseline with `npm run test:e2e:update-snapshots`.
+			await expect(hostPage.getByTestId("game-board-canvas")).toHaveScreenshot(
+				"board.png",
+				{
+					maxDiffPixelRatio: 0.1,
+					mask: [
+						hostPage.locator(".hovered-card-overlay"),
+						hostPage.locator(".element-pools-overlay"),
+					],
+				},
+			);
 		} finally {
 			await hostContext.close();
 			await guestContext.close();
