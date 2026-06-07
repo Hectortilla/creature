@@ -367,7 +367,7 @@ the gate green and be shippable on its own.
 
 ### Step 3 — API seeding (global-setup) + wire backend into webServer
 
-- [x] **Status:** ✅ done — 2026-06-07 — backend webServer + globalSetup wired; two players seeded via REST API with 22-card valid decks; storageState files written; smoke test still passes — commit TBD
+- [x] **Status:** ✅ done — 2026-06-07 — backend webServer + globalSetup wired; two players seeded via REST API with 22-card valid decks; storageState files written; smoke test still passes — commit 68bbc19
 - **Depends on:** Step 1
 - **Goal:** provision two players, each with a valid 22-card deck, via the public
   API; persist a logged-in `storageState` per player. See §5.2–§5.3.
