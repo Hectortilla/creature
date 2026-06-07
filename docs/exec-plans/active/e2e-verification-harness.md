@@ -9,24 +9,6 @@ sensor class the harness is missing today.
 
 ---
 
-## 0. How to execute this plan
-
-This plan is a queue of checkbox steps (§6), executed **one step at a time by
-fresh, clean-context agents** — a Ralph-style loop. The selection and completion
-protocol — how to pick a step, verify it, tick the box, commit, and revise the
-remaining steps — lives in the spec-agnostic **`ralph-iteration`** skill
-(`.claude/skills/ralph-iteration/`), not in this file. Point it at this plan (in
-Claude Code: `/ralph-iteration e2e-verification-harness.md`) and it picks the
-most valuable unblocked step, implements only that step, verifies it, marks it
-done, and updates the remaining steps if what it learns warrants it.
-
-Each step in §6 carries a **`Status`** checkbox, **`Depends on`** (ordering), a
-**`Goal`**, a concrete **`Do`** list, **`Acceptance`** criteria, and **`Verify`**
-commands. §1–§5 are the shared design context an agent needs to act on a step
-cold — steps reference them instead of repeating them.
-
----
-
 ## 1. Goal & why this exists
 
 **Close the one true sensor gap.** Every sensor in
