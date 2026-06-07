@@ -324,7 +324,7 @@ the gate green and be shippable on its own.
 
 ### Step 2 — Add testability hooks to the app
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-07 — board-ready hooks (`data-testid="game-board"` + `data-scene-ready`) on `.scene-container`, `data-testid="game-board-canvas"` on `<canvas>`, `role="alert"` on the login error; gate green, 0 new svelte-check errors — commit `52d6f70`
 - **Depends on:** Step 1
 - **Goal:** deterministic, non-brittle hooks for the flows (these double as the
   autonomous-mode probe + a small a11y win). See §5.4.
@@ -340,6 +340,30 @@ the gate green and be shippable on its own.
   ```bash
   cd front && npm run lint && npm run test && npm run deps:check && npm run build && npm run check
   ```
+- **Notes for next agent:**
+  - **The board-ready hook is on `.scene-container`** (inside
+    `BabylonEditorScene.svelte`), **not** `.scene-wrapper` — that's the game
+    page's outer `<div>` ([`game/+page.svelte:237`](../../../front/src/routes/game/+page.svelte)).
+    Steps 4/5 selector: `[data-testid="game-board"][data-scene-ready="true"]`.
+    `data-scene-ready` is a `$derived` = `!loading && error === null`, rendered as
+    the string `"true"`/`"false"`; it is `"true"` **only on successful init**
+    (render loop running) and stays `"false"` on scene error — so the selector is
+    a true success signal, not just "loading finished".
+  - **`<label for>` was already wired** on both login inputs, so
+    `getByLabel('Username'|'Password')` works (as §9 noted) — the only new login
+    edit was `role="alert"` on `.error-message` (Step 4's optional negative test
+    can now assert it via `getByRole('alert')`).
+  - **Did NOT normalise the Sign-In button's a11y name** (out of scope; shared
+    `Button.svelte`, wide blast radius). Its accessible name is still the slug
+    `"sign-in"` — Step 4 must query `getByRole('button', { name: /sign-?in/i })`
+    (§9). §9's open question stands.
+  - **Running the gate:** there is **no `front/.env`** (only `.env.example`).
+    `npm run build` *and* `npm run check` both resolve `PUBLIC_API_URL` from
+    `$env/static/public` and fail without it, so prefix the env var, e.g.
+    `PUBLIC_API_URL=http://localhost:8000 npm run build`. **Build/check run fine
+    sandboxed** once it's set (no `.env` read to block).
+  - **svelte-check baseline = 55 errors / 20 warnings** (pre-existing debt,
+    unchanged by this step). Use this number to confirm "no new errors" downstream.
 
 ### Step 3 — API seeding (global-setup) + wire backend into webServer
 
