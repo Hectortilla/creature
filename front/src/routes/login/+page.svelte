@@ -48,7 +48,7 @@
 
 		<form onsubmit={handleLogin}>
 			{#if error}
-				<div class="error-message">
+				<div class="error-message" role="alert">
 					{error}
 				</div>
 			{/if}
