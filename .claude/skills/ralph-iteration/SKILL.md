@@ -1,22 +1,15 @@
 ---
 name: ralph-iteration
 description: >-
-  Run one Ralph-style iteration against an execution plan under
-  `docs/exec-plans/active/`: do a single step, then stop. Use this whenever the
-  user wants to advance, run, continue, pick up, iterate on, or "do a ralph
-  loop/iteration" over one of these checkbox plans one step at a time — e.g. "do
-  the next step of the e2e plan", "run a ralph iteration on
-  e2e-verification-harness.md", "continue the verification-harness plan", "knock
-  out the next item in <plan>.md", "run step 3 of <plan>", or when handing a plan
-  step to a fresh/clean-context agent. Given a plan filename (and optional step
-  number): it reads the plan; if no step is named it picks the MOST IMPORTANT
-  step that is actually unblocked and doable now (not just the first box);
-  implements ONLY that step; verifies it against the repo's done-gate; marks it
-  complete (ticks the box, adds a status line, commits); and — if what it learned
-  changes the remaining work — also updates the plan's other steps (adds, edits,
-  reorders, or removes them) before stopping. Prefer this skill any time the work
-  involves a plan file under `docs/exec-plans/`, even if the user never says the
-  word "skill".
+  Run one Ralph-style iteration against a checkbox execution plan under
+  `docs/exec-plans/active/`: pick the most important unblocked step (or the one
+  named), implement and verify only that step, tick its box and commit, then
+  stop. Use whenever the user wants to advance, run, continue, pick up, iterate
+  on, or "do a ralph loop/iteration" over such a plan one step at a time — e.g.
+  "do the next step of the e2e plan", "run a ralph iteration on
+  e2e-verification-harness.md", "continue the verification-harness plan", or "run
+  step 3". Prefer it any time the work involves a plan file under
+  `docs/exec-plans/`, even if the user never says "skill".
 ---
 
 # Ralph iteration — execute one step of an execution plan
