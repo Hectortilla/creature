@@ -12,8 +12,8 @@ import { defineConfig } from "@playwright/test";
  * Chromium runs with SwiftShader software rendering so BabylonJS gets a WebGL2
  * context with no GPU present (needed for headless CI; see plan §5.6).
  *
- * Step 1 wires the frontend preview only; the backend `webServer` entry and the
- * data-seeding `globalSetup` arrive in Step 3.
+ * Local prerequisites (Steps 3+): Postgres + Redis up and migrations applied.
+ *   make up && cd ../back && uv run alembic upgrade head
  */
 export default defineConfig({
 	testDir: "./e2e",
@@ -25,6 +25,7 @@ export default defineConfig({
 		baseURL: "http://localhost:4173",
 		trace: "on-first-retry",
 	},
+	globalSetup: "./e2e/global-setup.ts",
 	projects: [
 		{
 			name: "chromium",
@@ -41,18 +42,29 @@ export default defineConfig({
 			},
 		},
 	],
-	webServer: {
-		// Production build → `vite preview` on :4173 (frontend only for now).
-		command: "npm run build && npm run preview",
-		url: "http://localhost:4173",
-		reuseExistingServer: !process.env.CI,
-		// First boot runs a full production build — give it room.
-		timeout: 180_000,
-		// PUBLIC_API_URL is inlined at BUILD time (`$env/static/public`, see
-		// src/lib/api.ts), so it must be set before `npm run build`. Setting it
-		// here keeps the harness self-sufficient where no front/.env exists (CI).
-		env: {
-			PUBLIC_API_URL: process.env.PUBLIC_API_URL ?? "http://localhost:8000",
+	webServer: [
+		{
+			// Backend: uvicorn on :8000 (run from the repo root via ../back).
+			// Prerequisite: Postgres + Redis up, alembic upgrade head applied.
+			command:
+				"cd ../back && uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
+			url: "http://localhost:8000",
+			reuseExistingServer: !process.env.CI,
+			timeout: 60_000,
 		},
-	},
+		{
+			// Production build → `vite preview` on :4173.
+			// PUBLIC_API_URL is inlined at BUILD time (`$env/static/public`, see
+			// src/lib/api.ts), so it must be set before `npm run build`. Setting it
+			// here keeps the harness self-sufficient where no front/.env exists (CI).
+			command: "npm run build && npm run preview",
+			url: "http://localhost:4173",
+			reuseExistingServer: !process.env.CI,
+			// First boot runs a full production build — give it room.
+			timeout: 180_000,
+			env: {
+				PUBLIC_API_URL: process.env.PUBLIC_API_URL ?? "http://localhost:8000",
+			},
+		},
+	],
 });
