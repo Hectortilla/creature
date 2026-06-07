@@ -454,7 +454,7 @@ the gate green and be shippable on its own.
 
 ### Step 3.5 — Isolate E2E onto a dedicated, reset-per-run database
 
-- [x] **Status:** ✅ done — 2026-06-07 — e2e backend on dedicated :8001 (`reuseExistingServer:false`) bound to disposable `creature_e2e` + Redis DB 1; global-setup drops/creates/migrates `creature_e2e` + flushes Redis before seeding; best-effort `globalTeardown` drops it. Two full `test:e2e` runs: both `@gating` tests green, dev `creature` DB e2e\_ user count unchanged (delta 0), `creature_e2e` dropped after each — commit `<sha>`
+- [x] **Status:** ✅ done — 2026-06-07 — e2e backend on dedicated :8001 (`reuseExistingServer:false`) bound to disposable `creature_e2e` + Redis DB 1; global-setup drops/creates/migrates `creature_e2e` + flushes Redis before seeding; best-effort `globalTeardown` drops it. Two full `test:e2e` runs: both `@gating` tests green, dev `creature` DB e2e\_ user count unchanged (delta 0), `creature_e2e` dropped after each — commit `dcca544`
 - **Added:** after Steps 1–4 shipped — running them surfaced that seeding writes
   into the **dev `creature` DB** with no cleanup (D6, §5.8). It logically belongs
   beside Step 3 (seeding), hence the `3.5`; numbering of the done/committed steps
