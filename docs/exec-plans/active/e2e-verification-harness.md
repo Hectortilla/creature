@@ -440,7 +440,7 @@ the gate green and be shippable on its own.
 
 ### Step 5 — Game start + board render flow (`@nongating`)
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-08 — `e2e/game.e2e.ts` (`@nongating`): two contexts from seeded storageState; host creates room → guest joins via the UI room list → both reach the "Playing" view and `[data-testid="game-board"][data-scene-ready="true"]` renders with a non-zero canvas under swiftshader; `test:e2e --grep @nongating` green (1 passed, 10.3s), frontend lint green — commit 64e7885
 - **Depends on:** Steps 2, 3, 4
 - **Goal:** two browsers create/join a room; both reach the in-game view and the
   board reports ready. See §5.5 B.
@@ -453,6 +453,32 @@ the gate green and be shippable on its own.
   non-zero size.
 - **Acceptance:** `npm run test:e2e -- --grep @nongating` is green locally.
 - **Verify:** `cd front && npm run test:e2e -- --grep @nongating`
+- **Notes for next agent:**
+  - **Button names matter** — the lobby has *two* distinct controls per intent.
+    To create: click the room-option `getByRole('button', { name: /Create New
+    Room/ })`, **then** the connect button `/Create Room & Play/`. To join:
+    `/Join Existing Room/` is selected by default; the connect button is
+    `/Join Room & Play/`. (§5.5's "Create New Room & Play" is two clicks, not one.)
+  - **Room only becomes discoverable after the host's scene loads.** In babylon
+    mode `connect()` just flips `connected=true`; the room-creating WebSocket
+    opens *inside* `BabylonEditorScene` (`GameConnection`) only after `loadScene`
+    finishes. So the spec awaits the host's `BOARD_READY` *before* the guest
+    polls — that ordering is load-bearing, not cosmetic.
+  - **Guest room discovery** = click `/Refresh/` in an `expect(...).toPass()`
+    loop until a `getByRole('button', { name: /Can Join/ })` appears (the room
+    button's accessible name includes its "✓ Can Join" badge), then click it →
+    `/Join Room & Play/`. The room-list auto-refreshes every 5s too, but the
+    active refresh loop is faster/robust. The §5.5 `room_id`-handoff fallback was
+    **not needed** — the URL never carries `room_id` anyway (lobby is pure UI
+    state), so the room list is the only handoff path.
+  - **Scene load under swiftshader is the slow part** (~10s for a full
+    two-browser game start locally, but give it room): board-ready waits use a
+    120s timeout and the test sets its own `setTimeout(SCENE_TIMEOUT*2 + 60s)`.
+  - **§9 open question resolved (partially):** the "Playing" heading +
+    `data-scene-ready="true"` is a genuine started+rendered signal — the backend
+    log confirms `game_started` fires for both players before the boards report
+    ready. A deeper game-state assertion (populated hand) is **not** added here;
+    left as the documented stronger-check option for a follow-up rung.
 
 ### Step 6 — 3D screenshot baseline (non-gating, masked)
 
@@ -540,6 +566,10 @@ the gate green and be shippable on its own.
   shared component used by many buttons, so weigh the blast radius).
 - Whether the in-game "Playing" view is enough of a "started" signal, or we also
   assert a game-state artifact (e.g. a populated hand) for a stronger check.
+  _(Step 5 finding: "Playing" + `data-scene-ready="true"` is backed by the
+  backend emitting `game_started` to both players before boards report ready, so
+  it is a true started+rendered signal; a populated-hand assertion remains an
+  optional stronger check for a follow-up rung.)_
 
 ## 10. Follow-up rungs (post-v1)
 
