@@ -404,7 +404,7 @@ the gate green and be shippable on its own.
 
 ### Step 4 — Auth smoke flow (`@gating`)
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-07 — `front/e2e/auth.e2e.ts` (`@gating`, 2 tests): real UI login → home → lobby surfaces the seeded valid deck (present + selectable), plus a bad-creds `role="alert"` negative; smoke.e2e.ts retired; `test:e2e:gating` + frontend gate green — commit 2775af7
 - **Depends on:** Steps 2, 3
 - **Goal:** real UI login → home → lobby shows the seeded valid deck. See §5.5 A.
 - **Do:** `front/e2e/auth.e2e.ts` (tag `@gating`): unauthenticated `/` redirects
@@ -416,6 +416,31 @@ the gate green and be shippable on its own.
   test (or fold it in).
 - **Acceptance:** `npm run test:e2e:gating` is green (full stack up).
 - **Verify:** `cd front && npm run test:e2e:gating`
+- **Notes for next agent (Step 5 will reuse these):**
+  - **Tagging:** used describe-level `test.describe("auth smoke", { tag: "@gating" }, …)`
+    (Playwright ≥1.42 tag option). `--grep @gating` matches it. Step 5 should tag
+    `game.e2e.ts` the same way with `@nongating`.
+  - **seed.json read in `beforeAll`, not at module top-level.** Playwright loads
+    spec files for collection *before* `globalSetup` runs, so a top-level
+    `readFileSync("e2e/.auth/seed.json")` throws on a clean checkout / CI (file
+    not written yet). Reading it in `beforeAll` (run time) is safe.
+  - **Deck selector that worked:** `getByRole('button', { name: /E2E Deck \(host\)/ })`
+    — the deck name is global-setup's `E2E Deck (<role>)`. A *valid* deck renders an
+    **enabled** button (`disabled={!is_valid_for_playing}` in `LobbySelector.svelte`);
+    clicking it reveals the **`Select or Create a Room`** `<h2>`, proving selectable.
+  - **⚠️ Real lobby labels (plan §5.5 B / Step 5 `Do` were imprecise — corrected
+    below).** In [`LobbySelector.svelte`](../../../front/src/lib/components/lobby/LobbySelector.svelte)
+    selecting a deck is a *separate* step from picking room mode: room-mode buttons
+    are **"Create New Room"** (➕) and **"Join Existing Room"** (🔍); the final connect
+    button reads **"Create Room & Play"** / **"Join Room & Play"** (text is
+    `createNewRoom ? 'Create Room & Play' : 'Join Room & Play'`) — there is **no**
+    single "Create New Room & Play" button. Refresh button text is `🔄 Refresh`; the
+    in-game header is `<h1>Playing</h1>` ([`game/+page.svelte:233`](../../../front/src/routes/game/+page.svelte)).
+  - **URL assertions:** `toHaveURL(/\/login$/)` for the login bounce, `toHaveURL(/localhost:4173\/$/)`
+    for home (regex avoids hardcoding the full origin while still excluding `/login`,`/game`).
+  - `loginApi` uses a raw `fetch` and `/auth/token` is excluded from the api.ts 401
+    redirect interceptor, so a bad-creds 401 throws → `error` set → `role="alert"`
+    renders and we stay on `/login` (no redirect). The negative test relies on this.
 
 ### Step 5 — Game start + board render flow (`@nongating`)
 
@@ -424,12 +449,14 @@ the gate green and be shippable on its own.
 - **Goal:** two browsers create/join a room; both reach the in-game view and the
   board reports ready. See §5.5 B.
 - **Do:** `front/e2e/game.e2e.ts` (tag `@nongating`): two contexts from the
-  seeded `storageState` (`host`, `guest`); host selects deck → **Create New Room
-  & Play**; guest selects deck → **Join Existing Room** → refresh → pick the
-  joinable room → **Join Room & Play** (fallback: `room_id` handoff per §5.5);
-  both assert the **Playing** view +
-  `[data-testid="game-board"][data-scene-ready="true"]` visible + canvas
-  non-zero size.
+  seeded `storageState` (`host`, `guest`). **Selection is two clicks** (real
+  labels, confirmed in Step 4 — see Step 4 notes): (1) click the deck button
+  `getByRole('button', { name: /E2E Deck \(host|guest\)/ })`; (2a) host → click
+  **"Create New Room"** then **"Create Room & Play"**; (2b) guest → click **"Join
+  Existing Room"** → **"🔄 Refresh"** → pick the joinable room (`.room-item.can-join`)
+  → **"Join Room & Play"** (fallback: `room_id` handoff per §5.5). Both assert the
+  **`<h1>Playing</h1>`** view + `[data-testid="game-board"][data-scene-ready="true"]`
+  visible + canvas non-zero size.
 - **Acceptance:** `npm run test:e2e -- --grep @nongating` is green locally.
 - **Verify:** `cd front && npm run test:e2e -- --grep @nongating`
 
