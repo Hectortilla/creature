@@ -18,12 +18,8 @@ const BASE_URL = process.env.PUBLIC_API_URL ?? "http://localhost:8000";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_DIR = path.join(__dirname, ".auth");
 
-// Cards seeded by the initial migration: IDs 1–11 and 13–30 (ID 12 is absent —
-// gap in the migration data). We pick 22 consecutive available IDs: 1–11, 13–23.
-const CARD_IDS = [
-	...Array.from({ length: 11 }, (_, i) => i + 1),
-	...Array.from({ length: 11 }, (_, i) => i + 13),
-];
+// Cards seeded by the initial migration — IDs 1–22 used here (22 = deck_size).
+const CARD_IDS = Array.from({ length: 22 }, (_, i) => i + 1);
 
 interface SeedPlayer {
 	username: string;
