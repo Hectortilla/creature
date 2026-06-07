@@ -404,7 +404,7 @@ the gate green and be shippable on its own.
 
 ### Step 4 — Auth smoke flow (`@gating`)
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-08 — `e2e/auth.e2e.ts` (`@gating`, 3 tests): unauth redirect→/login, real UI login→home→lobby shows seeded valid deck (selectable), bad-creds `role="alert"`; `test:e2e:gating` green (3 passed); frontend gate green — commit 5284edd
 - **Depends on:** Steps 2, 3
 - **Goal:** real UI login → home → lobby shows the seeded valid deck. See §5.5 A.
 - **Do:** `front/e2e/auth.e2e.ts` (tag `@gating`): unauthenticated `/` redirects
@@ -416,6 +416,27 @@ the gate green and be shippable on its own.
   test (or fold it in).
 - **Acceptance:** `npm run test:e2e:gating` is green (full stack up).
 - **Verify:** `cd front && npm run test:e2e:gating`
+- **Notes for next agent:**
+  - **`e2e/smoke.e2e.ts` was deleted** — Step 1's login-form assertion is folded
+    into the first `auth.e2e.ts` test (the unauth-redirect case). `auth.e2e.ts` is
+    now the only spec; `test:e2e` runs it until Step 5 adds `game.e2e.ts`.
+  - **`@gating` lives in the `describe` title** (`test.describe("@gating auth
+    smoke", …)`); `--grep @gating` matches the full title path, so all three
+    tests are picked up. Step 5's `game.e2e.ts` should tag its describe
+    `@nongating` the same way.
+  - **Deck assertion is by role+name:** `getByRole('button', { name: /E2E Deck
+    \(host\)/ })` — the deck renders as a `<button>` whose accessible name is its
+    text ("E2E Deck (host) 22 cards ✓ Valid"). Valid decks are enabled; clicking
+    one reveals the **"Select or Create a Room"** heading, which is the
+    selectable proof. The host user is unique per run, so they have exactly one
+    deck (no ambiguity).
+  - **Home assertion:** after login, `getByRole('button', { name: /sign-?in/i })`
+    → URL becomes `:4173/` (matched `/:4173\/$/`). Home's only heading is a
+    visually-hidden `<h1>Alen TCG</h1>`, so the flow asserts the URL, not a
+    heading. The login page heading is `Creature`.
+  - **`global-setup` re-seeds new unique users every run** (`runId` = timestamp),
+    so `seed.json` is rewritten before each suite; the spec reads it at module
+    load. No stale-data risk.
 
 ### Step 5 — Game start + board render flow (`@nongating`)
 
