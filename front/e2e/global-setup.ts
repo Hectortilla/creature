@@ -2,19 +2,23 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { E2E_API_URL } from "./config";
+import { flushRedis, migrateDatabase, resetDatabase } from "./db";
+
 /**
- * Playwright global-setup: provision two E2E players, each with a valid
- * 22-card deck, via the public REST API. Writes per-player credentials and
- * Playwright storageState to `e2e/.auth/` so the auth and game smoke flows
- * can use them.
+ * Playwright global-setup: prepare a disposable, freshly-migrated database, then
+ * provision two E2E players — each with a valid 22-card deck — via the public
+ * REST API. Writes per-player credentials and Playwright storageState to
+ * `e2e/.auth/` so the auth and game smoke flows can use them.
  *
- * Plan: docs/exec-plans/active/e2e-verification-harness.md §5.3
+ * Plan: docs/exec-plans/active/e2e-verification-harness.md §5.3, §5.8
  *
- * Prerequisites (not owned here): Postgres + Redis up, Alembic migrations
- * applied. Locally: `make up` then `cd back && uv run alembic upgrade head`.
+ * The disposable DB (`creature_e2e`) is reset + migrated HERE (see db.ts), so
+ * seeding never touches the dev `creature` DB. The only prerequisite NOT owned
+ * here is that Postgres + Redis are *running*: locally `make up`.
  */
 
-const BASE_URL = process.env.PUBLIC_API_URL ?? "http://localhost:8000";
+const BASE_URL = E2E_API_URL;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_DIR = path.join(__dirname, ".auth");
 
@@ -173,6 +177,15 @@ async function seedPlayer(
 }
 
 export default async function globalSetup(): Promise<void> {
+	// Prepare a clean, disposable DB *before* seeding. The backend webServer is
+	// already up (Playwright starts it before globalSetup) but bound to a DB that
+	// may not exist yet — fine: it boots lazily and `/` is DB-free, so it holds
+	// no connection to creature_e2e here. See plan §5.8.
+	console.log("[global-setup] preparing disposable e2e database…");
+	resetDatabase();
+	migrateDatabase();
+	flushRedis();
+
 	console.log("[global-setup] waiting for backend…");
 	await pollUntilReady(`${BASE_URL}/`);
 	console.log("[global-setup] backend ready — seeding test data");

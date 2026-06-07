@@ -316,8 +316,10 @@ Do these **in order**, one step per agent, per §0. Each step is sized to leave
 the gate green and be shippable on its own.
 
 > **Local prerequisite for any step that starts the backend (Steps 3–6):**
-> `make up` (Postgres + Redis), then `cd back && uv run alembic upgrade head`.
-> Steps 1–2 need no backend.
+> just `make up` (Postgres + Redis *running*). Since Step 3.5 the harness owns
+> creating + migrating the disposable `creature_e2e` DB in global-setup, so the
+> manual `cd back && uv run alembic upgrade head` is **no longer needed for the
+> e2e run**. Steps 1–2 need no backend.
 
 ### Step 1 — Scaffold Playwright + a trivial running-app test
 
@@ -452,7 +454,7 @@ the gate green and be shippable on its own.
 
 ### Step 3.5 — Isolate E2E onto a dedicated, reset-per-run database
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-07 — e2e backend on dedicated :8001 (`reuseExistingServer:false`) bound to disposable `creature_e2e` + Redis DB 1; global-setup drops/creates/migrates `creature_e2e` + flushes Redis before seeding; best-effort `globalTeardown` drops it. Two full `test:e2e` runs: both `@gating` tests green, dev `creature` DB e2e\_ user count unchanged (delta 0), `creature_e2e` dropped after each — commit `<sha>`
 - **Added:** after Steps 1–4 shipped — running them surfaced that seeding writes
   into the **dev `creature` DB** with no cleanup (D6, §5.8). It logically belongs
   beside Step 3 (seeding), hence the `3.5`; numbering of the done/committed steps
@@ -479,16 +481,54 @@ the gate green and be shippable on its own.
     the Postgres/Redis *instances*, but the harness now owns
     creating+migrating `creature_e2e`, so the manual "`alembic upgrade head`"
     prereq no longer applies to the e2e run.
-- **Acceptance:** after a full `npm run test:e2e`, the dev `creature` DB has **no**
-  `e2e_*` users; a second run succeeds from a clean slate; Step 4's gating flow
-  stays green.
+- **Acceptance:** after a full `npm run test:e2e`, the dev `creature` DB gains
+  **no new** `e2e_*` users (delta 0 — see ⚠️ note: pre-isolation runs already left
+  some); a second run succeeds from a clean slate; Step 4's gating flow stays green.
 - **Verify:** (`make up` first)
   ```bash
-  cd front && npm run test:e2e
-  # dev DB must be untouched (users table is `users`, per 002_add_users_table.py):
+  # Capture the BEFORE count (pre-isolation Steps 3/4 left e2e_ junk in the dev DB),
+  # run the suite, then confirm the count is UNCHANGED (the run seeded creature_e2e):
   psql "postgresql://postgres:postgres@localhost:5432/creature" \
-    -c "select count(*) from users where username like 'e2e\_%';"   # expect 0
+    -tAc "select count(*) from users where username like 'e2e\_%';"   # note this N
+  cd front && npm run test:e2e
+  psql "postgresql://postgres:postgres@localhost:5432/creature" \
+    -tAc "select count(*) from users where username like 'e2e\_%';"   # must equal N
   ```
+- **Notes for next agent (Step 5 / Step 7 reuse these):**
+  - **Endpoints are centralised in [`front/e2e/config.ts`](../../../front/e2e/config.ts):**
+    `E2E_API_URL` (default `http://localhost:8001`), `E2E_DATABASE_URL` (default
+    `…/creature_e2e`), `E2E_REDIS_URL` (default `redis://localhost:6379/1`).
+    `playwright.config.ts` + `global-setup.ts` both import these — change a port/URL
+    in one place. Overrides use **E2E-specific** env names (`E2E_DATABASE_URL`,
+    `E2E_REDIS_URL`, `PUBLIC_API_URL`), never the ambient `DATABASE_URL`/`REDIS_URL`,
+    so a dev who exported those at the *dev* stack can't make the harness reset it.
+  - **DB lifecycle lives in [`front/e2e/db.ts`](../../../front/e2e/db.ts):**
+    `resetDatabase()` (psql drop+create against the `postgres` maintenance DB, after
+    `pg_terminate_backend`), `migrateDatabase()` (`uv run alembic upgrade head` in
+    `../back` with `DATABASE_URL` overridden), `flushRedis()` (**best-effort** —
+    `redis-cli FLUSHDB`; the gating flow doesn't use Redis), `dropDatabase()`
+    (teardown, best-effort). A hard **guard** refuses any DB whose name doesn't end
+    in `_e2e` — the safety net in front of `DROP DATABASE`.
+  - **Backend now on :8001 with `reuseExistingServer:false`** and `env:{DATABASE_URL,
+    REDIS_URL}`. The frontend build bakes `PUBLIC_API_URL=http://localhost:8001`.
+    A crashed run can leave a backend on :8001 → next run errors loudly ("8001 is
+    already used") rather than silently reusing — kill it (`lsof -ti:8001 | xargs kill`).
+  - **Ordering confirmed (Playwright 1.60):** `webServer` starts **before**
+    `globalSetup` (runner `createGlobalSetupTasks`: plugin-setup → globalSetup). The
+    backend boots while `creature_e2e` may not exist yet — fine: the engine is lazy,
+    `create_db_and_tables` is a no-op, lifespan only touches Redis, and `GET /` is
+    DB-free, so it holds **zero** Postgres connections when global-setup resets. (The
+    reset's `pg_terminate_backend` is belt-and-suspenders; teardown did terminate 5
+    live pool connections, proving it works.)
+  - **CI (Step 7):** no manual DB create needed — global-setup makes `creature_e2e`
+    against the service's `postgres` maintenance DB. Just provide `postgres:14` +
+    `redis:7` services; `psql`/`redis-cli` are pre-installed on GitHub Ubuntu runners
+    and `uv sync` provides alembic. The default `creature_e2e` URL matches CI's
+    existing `postgres:postgres@localhost` creds ([`ci.yml:80`](../../../.github/workflows/ci.yml)).
+  - **One-time cleanup (optional, not done here):** the dev `creature` DB still holds
+    the `e2e_*` users seeded by the *pre-isolation* Steps 3/4. They're harmless test
+    junk; left untouched (this step deliberately never issues writes against the dev
+    DB). Purge manually if desired.
 
 ### Step 4 — Auth smoke flow (`@gating`)
 

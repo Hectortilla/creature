@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+import { E2E_API_URL, E2E_DATABASE_URL, E2E_REDIS_URL } from "./e2e/config";
+
 /**
  * Playwright E2E harness for the running app.
  * Plan: docs/exec-plans/active/e2e-verification-harness.md
@@ -12,8 +14,15 @@ import { defineConfig } from "@playwright/test";
  * Chromium runs with SwiftShader software rendering so BabylonJS gets a WebGL2
  * context with no GPU present (needed for headless CI; see plan §5.6).
  *
- * Local prerequisites (Steps 3+): Postgres + Redis up and migrations applied.
- *   make up && cd ../back && uv run alembic upgrade head
+ * DB isolation (plan §5.8 / Step 3.5): the backend runs on a DEDICATED port
+ * bound to a DISPOSABLE `creature_e2e` DB (+ Redis logical DB 1), with
+ * `reuseExistingServer: false` so a dev backend on :8000/creature can never be
+ * silently reused. global-setup resets+migrates that DB each run; the dev DB is
+ * never touched.
+ *
+ * Local prerequisite (Steps 3+): Postgres + Redis *running* — `make up`. The
+ * harness now owns creating + migrating `creature_e2e` itself, so no manual
+ * `alembic upgrade head` is needed for the e2e run.
  */
 export default defineConfig({
 	testDir: "./e2e",
@@ -26,6 +35,7 @@ export default defineConfig({
 		trace: "on-first-retry",
 	},
 	globalSetup: "./e2e/global-setup.ts",
+	globalTeardown: "./e2e/global-teardown.ts",
 	projects: [
 		{
 			name: "chromium",
@@ -44,26 +54,32 @@ export default defineConfig({
 	],
 	webServer: [
 		{
-			// Backend: uvicorn on :8000 (run from the repo root via ../back).
-			// Prerequisite: Postgres + Redis up, alembic upgrade head applied.
-			command:
-				"cd ../back && uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
-			url: "http://localhost:8000",
-			reuseExistingServer: !process.env.CI,
+			// Backend: uvicorn on a DEDICATED port (8001), bound to the disposable
+			// creature_e2e DB + Redis logical DB 1 via `env`. `reuseExistingServer:
+			// false` guarantees a stray dev backend on :8000 (bound to the dev DB)
+			// is never silently reused, defeating isolation (plan §5.8 reuse gotcha).
+			command: `cd ../back && uv run python -m uvicorn app.main:app --host 0.0.0.0 --port ${new URL(E2E_API_URL).port}`,
+			url: E2E_API_URL,
+			reuseExistingServer: false,
 			timeout: 60_000,
+			env: {
+				DATABASE_URL: E2E_DATABASE_URL,
+				REDIS_URL: E2E_REDIS_URL,
+			},
 		},
 		{
 			// Production build → `vite preview` on :4173.
 			// PUBLIC_API_URL is inlined at BUILD time (`$env/static/public`, see
-			// src/lib/api.ts), so it must be set before `npm run build`. Setting it
-			// here keeps the harness self-sufficient where no front/.env exists (CI).
+			// src/lib/api.ts), so it must be set before `npm run build`. Point it at
+			// the dedicated e2e backend so the built UI talks to creature_e2e, not
+			// a dev backend. Self-sufficient where no front/.env exists (CI).
 			command: "npm run build && npm run preview",
 			url: "http://localhost:4173",
 			reuseExistingServer: !process.env.CI,
 			// First boot runs a full production build — give it room.
 			timeout: 180_000,
 			env: {
-				PUBLIC_API_URL: process.env.PUBLIC_API_URL ?? "http://localhost:8000",
+				PUBLIC_API_URL: E2E_API_URL,
 			},
 		},
 	],
