@@ -513,7 +513,7 @@ the gate green and be shippable on its own.
 
 ### Step 7 — CI job + split gating
 
-- [x] **Status:** ✅ done (CI wiring; remote run pending PR) — 2026-06-08 — added the `e2e` job to `.github/workflows/ci.yml` (postgres:14 + redis:7 services; uv + py3.12 + `uv sync --frozen`; `alembic upgrade head`; node 22 + `npm ci`; `playwright install --with-deps chromium`; **step A** `test:e2e:gating` blocking, **step B** `test:e2e -- --grep @nongating` `continue-on-error: true`; always-upload report+traces) and added `e2e` to `ci-ok`'s `needs`. YAML validated structurally. — commit 9477e23
+- [x] **Status:** ✅ done (CI wiring; remote run pending PR) — 2026-06-08 — added the `e2e` job to `.github/workflows/ci.yml` (postgres:14 + redis:7 services; uv + py3.12 + `uv sync --frozen`; `alembic upgrade head`; node 22 + `npm ci`; `playwright install --with-deps chromium`; **step A** `test:e2e:gating` blocking, **step B** `test:e2e -- --grep @nongating` `continue-on-error: true`; always-upload report+traces) and added `e2e` to `ci-ok`'s `needs`. YAML validated structurally. — commit 87fec76
 - **Depends on:** Steps 4, 5, 6
 - **Goal:** run the harness in CI — auth gates, 3D is non-gating. See §5.7.
 - **Do:** add an `e2e` job to `.github/workflows/ci.yml` (postgres:14 + redis:7
