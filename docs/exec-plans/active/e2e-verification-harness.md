@@ -513,7 +513,7 @@ the gate green and be shippable on its own.
 
 ### Step 7 — CI job + split gating
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done (CI wiring; remote run pending PR) — 2026-06-08 — added the `e2e` job to `.github/workflows/ci.yml` (postgres:14 + redis:7 services; uv + py3.12 + `uv sync --frozen`; `alembic upgrade head`; node 22 + `npm ci`; `playwright install --with-deps chromium`; **step A** `test:e2e:gating` blocking, **step B** `test:e2e -- --grep @nongating` `continue-on-error: true`; always-upload report+traces) and added `e2e` to `ci-ok`'s `needs`. YAML validated structurally. — commit 9477e23
 - **Depends on:** Steps 4, 5, 6
 - **Goal:** run the harness in CI — auth gates, 3D is non-gating. See §5.7.
 - **Do:** add an `e2e` job to `.github/workflows/ci.yml` (postgres:14 + redis:7
@@ -525,6 +525,36 @@ the gate green and be shippable on its own.
 - **Acceptance:** the `e2e` job is green on a PR; flipping one auth assertion
   fails the job + `ci-ok` (prove it, then revert); a forced 3D failure does not.
 - **Verify:** open a PR; observe the `e2e` job and `ci-ok`.
+- **Notes for next agent:**
+  - **No manual `start backend` step and no standalone `npm run build` step** —
+    Step 3 wired the **backend** into Playwright's `webServer` (array form) and
+    `reuseExistingServer: !process.env.CI` means in CI Playwright boots **both**
+    uvicorn `:8000` *and* `npm run build && npm run preview` `:4173` itself. A
+    manual backend start would collide on `:8000`; a separate build would be
+    redundant (the preview build sets `PUBLIC_API_URL` via `webServer.env`). The
+    §5.7 "start backend" / "npm run build" bullets are folded into webServer
+    orchestration — this is the one place the plan text and the implementation
+    diverge, on purpose.
+  - **Two `playwright test` invocations boot the stack twice** (gating run, then
+    non-gating run) — unavoidable, since the split-gating posture (D3) needs the
+    blocking and `continue-on-error` runs as *separate* steps. Each boot does a
+    full prod build; budget CI time accordingly.
+  - **Job `env` sets `DATABASE_URL` / `REDIS_URL` / `PUBLIC_API_URL`** at job
+    scope so both the Playwright-spawned uvicorn and the preview build inherit
+    them (mirrors the `backend-integration` job's service-container env).
+  - **Linux screenshot baseline still missing.** Step 6 committed only
+    `board-chromium-darwin.png`; CI is Ubuntu+swiftshader → no matching baseline,
+    so `toHaveScreenshot` will *fail* on the first CI run — but inside the
+    **non-gating** step (`continue-on-error`), so it does **not** block. Once the
+    `e2e` job has run once, download the `playwright-report` artifact, lift the
+    generated `board-chromium-linux.png`, and commit it under
+    `front/e2e/game.e2e.ts-snapshots/` (per §5.7's "same-environment baselines").
+    This is the natural first task after the PR is open.
+  - **Acceptance is inherently remote.** The CI wiring is implemented and the YAML
+    parses, but "green on a PR" + the back-pressure proof (flip an auth assertion →
+    job + `ci-ok` red; force a 3D failure → still green) can only be observed once
+    the branch is pushed and a PR is opened. That observation + the linux baseline
+    commit are the remaining work before Step 8.
 
 ### Step 8 — Docs/harness updates; complete the plan
 
