@@ -1,147 +1,180 @@
 """Initial schema and data
 
 Revision ID: 001
-Revises: 
+Revises:
 Create Date: 2025-12-20
 
 """
-from typing import Sequence, Union
 
-from alembic import op
+from collections.abc import Sequence
+from typing import Union
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 # revision identifiers, used by Alembic.
-revision: str = '001'
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "001"
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     # Create tables
-    
+
     # Elements table
     op.create_table(
-        'elements',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('label', sa.String(length=100), nullable=False),
-        sa.Column('icon', sa.String(length=255), nullable=True),
-        sa.Column('color', sa.String(length=50), nullable=True),
-        sa.Column('strengths', postgresql.ARRAY(sa.Integer()), nullable=True),
-        sa.Column('weaknesses', postgresql.ARRAY(sa.Integer()), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('label')
+        "elements",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("label", sa.String(length=100), nullable=False),
+        sa.Column("icon", sa.String(length=255), nullable=True),
+        sa.Column("color", sa.String(length=50), nullable=True),
+        sa.Column("strengths", postgresql.ARRAY(sa.Integer()), nullable=True),
+        sa.Column("weaknesses", postgresql.ARRAY(sa.Integer()), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("label"),
     )
-    
+
     # Types table
     op.create_table(
-        'types',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('label', sa.String(length=100), nullable=False),
-        sa.Column('icon', sa.String(length=255), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('label')
+        "types",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("label", sa.String(length=100), nullable=False),
+        sa.Column("icon", sa.String(length=255), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("label"),
     )
-    
+
     # Characters table
     op.create_table(
-        'characters',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('label', sa.String(length=100), nullable=False),
-        sa.Column('icon', sa.String(length=255), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('label')
+        "characters",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("label", sa.String(length=100), nullable=False),
+        sa.Column("icon", sa.String(length=255), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("label"),
     )
-    
+
     # Abilities table
     op.create_table(
-        'abilities',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('code', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('handle', sa.String(length=255), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('type', sa.String(length=50), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('code')
+        "abilities",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("code", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("handle", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("type", sa.String(length=50), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("code"),
     )
-    
+
     # Associations table
     op.create_table(
-        'associations',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('code', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('handle', sa.String(length=255), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('code')
+        "associations",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("code", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("handle", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("code"),
     )
-    
+
     # Attacks table (depends on elements)
     op.create_table(
-        'attacks',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('code', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('handle', sa.String(length=255), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('damage', sa.Integer(), nullable=True),
-        sa.Column('type', sa.String(length=50), nullable=True),
-        sa.Column('dice_rolls', sa.Integer(), nullable=True),
-        sa.Column('necessary_force', postgresql.JSONB(), nullable=True),
-        sa.Column('effect', sa.Text(), nullable=True),
-        sa.Column('element_id', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['element_id'], ['elements.id'], ),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('code')
+        "attacks",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("code", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("handle", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("damage", sa.Integer(), nullable=True),
+        sa.Column("type", sa.String(length=50), nullable=True),
+        sa.Column("dice_rolls", sa.Integer(), nullable=True),
+        sa.Column("necessary_force", postgresql.JSONB(), nullable=True),
+        sa.Column("effect", sa.Text(), nullable=True),
+        sa.Column("element_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["element_id"],
+            ["elements.id"],
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("code"),
     )
-    
+
     # Cards table (depends on many tables)
     op.create_table(
-        'cards',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('code', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('handle', sa.String(length=255), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('image', sa.String(length=500), nullable=True),
-        sa.Column('overlay_image', sa.String(length=500), nullable=True),
-        sa.Column('health', sa.Integer(), nullable=True),
-        sa.Column('physical_defence', sa.Integer(), nullable=True),
-        sa.Column('magic_defence', sa.Integer(), nullable=True),
-        sa.Column('forces', postgresql.JSONB(), nullable=True),
-        sa.Column('is_evolution_id', sa.Integer(), nullable=True),
-        sa.Column('first_element_id', sa.Integer(), nullable=True),
-        sa.Column('second_element_id', sa.Integer(), nullable=True),
-        sa.Column('type_id', sa.Integer(), nullable=True),
-        sa.Column('character_id', sa.Integer(), nullable=True),
-        sa.Column('first_attack_id', sa.Integer(), nullable=True),
-        sa.Column('second_attack_id', sa.Integer(), nullable=True),
-        sa.Column('ability_id', sa.Integer(), nullable=True),
-        sa.Column('association_id', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['is_evolution_id'], ['cards.id'], ),
-        sa.ForeignKeyConstraint(['first_element_id'], ['elements.id'], ),
-        sa.ForeignKeyConstraint(['second_element_id'], ['elements.id'], ),
-        sa.ForeignKeyConstraint(['type_id'], ['types.id'], ),
-        sa.ForeignKeyConstraint(['character_id'], ['characters.id'], ),
-        sa.ForeignKeyConstraint(['first_attack_id'], ['attacks.id'], ),
-        sa.ForeignKeyConstraint(['second_attack_id'], ['attacks.id'], ),
-        sa.ForeignKeyConstraint(['ability_id'], ['abilities.id'], ),
-        sa.ForeignKeyConstraint(['association_id'], ['associations.id'], ),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('code')
+        "cards",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("code", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("handle", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("image", sa.String(length=500), nullable=True),
+        sa.Column("overlay_image", sa.String(length=500), nullable=True),
+        sa.Column("health", sa.Integer(), nullable=True),
+        sa.Column("physical_defence", sa.Integer(), nullable=True),
+        sa.Column("magic_defence", sa.Integer(), nullable=True),
+        sa.Column("forces", postgresql.JSONB(), nullable=True),
+        sa.Column("is_evolution_id", sa.Integer(), nullable=True),
+        sa.Column("first_element_id", sa.Integer(), nullable=True),
+        sa.Column("second_element_id", sa.Integer(), nullable=True),
+        sa.Column("type_id", sa.Integer(), nullable=True),
+        sa.Column("character_id", sa.Integer(), nullable=True),
+        sa.Column("first_attack_id", sa.Integer(), nullable=True),
+        sa.Column("second_attack_id", sa.Integer(), nullable=True),
+        sa.Column("ability_id", sa.Integer(), nullable=True),
+        sa.Column("association_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["is_evolution_id"],
+            ["cards.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["first_element_id"],
+            ["elements.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["second_element_id"],
+            ["elements.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["type_id"],
+            ["types.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["character_id"],
+            ["characters.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["first_attack_id"],
+            ["attacks.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["second_attack_id"],
+            ["attacks.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["ability_id"],
+            ["abilities.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["association_id"],
+            ["associations.id"],
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("code"),
     )
-    
+
     # Insert initial data
     # Note: Using exec_driver_sql() to prevent SQLAlchemy from interpreting colons in JSON as bind parameters
     conn = op.get_bind()
-    
+
     # Elements data
     conn.exec_driver_sql("""
         INSERT INTO elements (id, label, icon, color, strengths, weaknesses) VALUES
@@ -159,10 +192,10 @@ def upgrade() -> None:
         (12, 'Luz', '/images/elements/light.png', 'E8E7D7', '{1}', '{13,9}'),
         (13, 'Oscuridad', '/images/elements/darkness.png', '2D2733', '{12}', '{1,8}');
     """)
-    
+
     # Update sequence for elements
     conn.exec_driver_sql("SELECT setval('elements_id_seq', (SELECT MAX(id) FROM elements));")
-    
+
     # Types data
     conn.exec_driver_sql("""
         INSERT INTO types (id, label, icon) VALUES
@@ -174,10 +207,10 @@ def upgrade() -> None:
         (6, 'Objeto', 'object'),
         (7, 'Campo', 'field');
     """)
-    
+
     # Update sequence for types
     conn.exec_driver_sql("SELECT setval('types_id_seq', (SELECT MAX(id) FROM types));")
-    
+
     # Characters data
     conn.exec_driver_sql("""
         INSERT INTO characters (id, label, icon) VALUES
@@ -189,10 +222,10 @@ def upgrade() -> None:
         (6, 'No muerto', 'undead'),
         (7, 'Común', 'common');
     """)
-    
+
     # Update sequence for characters
     conn.exec_driver_sql("SELECT setval('characters_id_seq', (SELECT MAX(id) FROM characters));")
-    
+
     # Abilities data
     conn.exec_driver_sql("""
         INSERT INTO abilities (id, code, handle, name, description, created_at, type) VALUES
@@ -216,10 +249,10 @@ Los ataque de tipo <ground> le hacen -10 de daño independientemente del tipo de
         (18, 17, 'nevada', 'Nevada', 'Aumenta el ataque <physical> y <magical> de cartas <ice> en +20 puntos.', '2025-09-21T14:52:28.501Z', 'physical'),
         (19, 18, 'sofoco', 'Sofoco', 'Aumenta los ataques <physical> y <magical> de las cartas <fire> en +20 puntos.', '2025-09-21T14:56:23.335Z', 'physical');
     """)
-    
+
     # Update sequence for abilities
     conn.exec_driver_sql("SELECT setval('abilities_id_seq', (SELECT MAX(id) FROM abilities));")
-    
+
     # Associations data
     conn.exec_driver_sql("""
         INSERT INTO associations (id, code, name, handle, description, created_at) VALUES
@@ -231,10 +264,10 @@ Los ataque de tipo <ground> le hacen -10 de daño independientemente del tipo de
         (9, 6, 'Mutación X', 'mutacion-x', 'Aumenta el ataque <physical> y <magical> en +20 puntos de daño de cartas <creature>', '2025-09-21T08:37:33.175Z'),
         (10, 7, 'Poción', 'pocion', 'Aumenta los puntos de <health> en +20. La carta debe ser enviada al cementerio una vez usada.', '2025-09-21T09:47:26.801Z');
     """)
-    
+
     # Update sequence for associations
     conn.exec_driver_sql("SELECT setval('associations_id_seq', (SELECT MAX(id) FROM associations));")
-    
+
     # Attacks data
     conn.exec_driver_sql("""
         INSERT INTO attacks (id, code, created_at, name, handle, damage, type, element_id, dice_rolls, necessary_force, description, effect) VALUES
@@ -266,25 +299,23 @@ Los ataque de tipo <ground> le hacen -10 de daño independientemente del tipo de
         (40, 27, '2025-09-21T09:24:48.732Z', 'Congoja', 'congoja', 40, 'magical', 13, 0, '[{"value":2,"elementData":{"id":13,"label":"Oscuridad","color":"2D2733","icon":"/images/elements/darkness.png"}}]', 'Usa el miedo para generar un daño al rival.', NULL),
         (41, 28, '2025-09-21T09:29:26.590Z', 'Invocación', 'invocacion', 90, 'magical', 13, 0, '[{"value":3,"elementData":{"id":13,"label":"Oscuridad","color":"2D2733","icon":"/images/elements/darkness.png"}}]', 'Es capaz de invocar espíritus del cementerio de cartas para atacar a su rival.', 'Este ataque solo puede usarse si en el cementerio hay cartas aliadas que no sean <darkness>. La carta aliada seleccionada se elimina del juego después de ser utilizada.');
     """)
-    
+
     # Update sequence for attacks
     conn.exec_driver_sql("SELECT setval('attacks_id_seq', (SELECT MAX(id) FROM attacks));")
-    
+
     # Cards data - Note: The JSON stores attack/ability/association by CODE, not ID.
     # We need to map codes to actual IDs:
-    # 
+    #
     # Attack code -> ID: 1->14, 2->15, 3->13, 4->16, 5->17, 6->19, 7->20, 8->21, 9->22,
     #                   11->24, 12->25, 13->26, 14->27, 15->28, 16->29, 17->30, 18->31,
     #                   19->32, 20->33, 21->34, 22->35, 23->36, 24->37, 25->38, 26->39,
     #                   27->40, 28->41
-    # 
+    #
     # Ability code -> ID: 1->1, 2->3, 3->4, 4->5, 5->6, 6->7, 7->8, 8->9, 9->10, 10->11,
     #                    11->12, 12->13, 13->14, 14->15, 15->16, 16->17, 17->18, 18->19
-    # 
-    # Association code -> ID: 1->1, 2->5, 3->6, 4->7, 5->8, 6->9, 7->10
     #
-    # Card code -> ID (for is_evolution): 12->13 (Héroe), 16->17 (Come metal)
-    
+    # Association code -> ID: 1->1, 2->5, 3->6, 4->7, 5->8, 6->9, 7->10
+
     conn.exec_driver_sql("""
         INSERT INTO cards (id, code, name, created_at, is_evolution_id, handle, description, image, overlay_image, first_element_id, second_element_id, type_id, character_id, health, physical_defence, magic_defence, forces, first_attack_id, second_attack_id, ability_id, association_id) VALUES
         (1, 1, 'Zero', '2025-09-21T10:15:24.350Z', NULL, 'zero', 'Se dice que cuando no existía nada, esta criatura, pululaba aburrida por un plano existencial desconocido.', '/uploads/zero.jpg', '', 1, NULL, 1, 1, 320, 10, 10, '[{"value":4,"elementData":{"id":1,"label":"Ether","color":"BCBCBC","icon":"/images/elements/ether.png"}}]', 16, 39, 6, NULL),
@@ -298,36 +329,35 @@ Los ataque de tipo <ground> le hacen -10 de daño independientemente del tipo de
         (9, 9, 'Hombre lobo', '2025-09-21T11:33:16.578Z', NULL, 'hombre-lobo', 'Su fuerza depende de los ciclos lunares.', '/uploads/hombre-lobo.jpg', '', 1, NULL, 4, 7, 160, 20, 0, '[{"value":2,"elementData":{"id":1,"label":"Ether","color":"BCBCBC","icon":"/images/elements/ether.png"}}]', 14, NULL, NULL, NULL),
         (10, 10, 'Moira', '2025-09-21T11:40:09.803Z', NULL, 'moira', 'Ser místico que es capaz de canalizar los elementos para aprovechar su poder.', '/uploads/moira-1.jpg', '', 13, 6, 3, 5, 240, 0, 20, '[{"value":2,"elementData":{"id":6,"label":"Hielo","color":"70D4DA","icon":"/images/elements/ice.png"}}]', 21, 40, 17, NULL),
         (11, 11, 'Moira', '2025-09-21T11:41:38.234Z', NULL, 'moira', 'Ser místico que es capaz de canalizar los elementos para aprovechar su poder.', '/uploads/moira-2.jpg', '', 13, 7, 3, 5, 190, 0, 0, '[{"value":2,"elementData":{"id":7,"label":"Rayo","color":"CBB734","icon":"/images/elements/thunder.png"}}]', 13, 40, 17, NULL),
-        (13, 12, 'Héroe', '2025-09-21T11:54:00.994Z', NULL, 'heroe', 'Héroe entre los mortales. Mucho que demostrar ante los inmortales.', '/uploads/guerrero-en-practicas.jpg', '', 1, NULL, 2, 4, 190, 10, 0, '[{"value":1,"elementData":{"id":1,"label":"Ether","color":"BCBCBC","icon":"/images/elements/ether.png"}}]', 15, 14, 11, 5),
-        (14, 13, 'Heraldo del rayo', '2025-09-21T11:55:08.554Z', 13, 'heraldo-del-rayo', 'Cuando suena el trueno, el Heraldo del rayo está en camino.', '/uploads/heraldo-del-rayo.jpg', '', 7, NULL, 2, 2, 190, 20, 0, '[{"value":2,"elementData":{"id":7,"label":"Rayo","color":"CBB734","icon":"/images/elements/thunder.png"}}]', 13, 30, 10, NULL),
-        (15, 14, 'Guerrero de la llama', '2025-09-21T11:58:03.036Z', 13, 'guerrero-de-la-llama', 'Cuando hizo su viaje al Hades no se esperaba resurgir con el poder de la llama.', '/uploads/guerrero_de_fuego.jpg', '', 5, NULL, 2, 2, 160, 20, 0, '[{"value":3,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}}]', 20, NULL, 12, NULL),
-        (16, 15, 'Heraldo de Poseidón', '2025-09-21T12:00:28.368Z', 13, 'heraldo-de-poseidon', 'El dios Poseidón se percató del potencial de este guerrero otorgándole el poder de las mareas.', '/uploads/heraldo-del-poseidon.jpg', '', 3, NULL, 2, 2, 250, 0, 0, '[{"value":2,"elementData":{"id":3,"label":"Agua","color":"3E82B6","icon":"/images/elements/water.png"}}]', 19, NULL, NULL, NULL),
-        (17, 16, 'Come metal', '2025-09-21T12:13:58.647Z', NULL, 'come-metal', 'Pequeño monstruo que busca constantemente objetos hechos de metal para alimentarse.', '/uploads/come-metal.jpg', '', 8, NULL, 4, 7, 180, 0, 0, NULL, 27, NULL, NULL, NULL),
-        (18, 17, 'Devora metal', '2025-09-21T12:16:44.740Z', 17, 'devora-metal', 'Cuando <i>Come metal</i> crece, se ve en la necesidad de buscar estructuras de metal para alimentarse.', '/uploads/traga-metal.jpg', '', 8, NULL, 4, 2, 260, 0, 0, '[{"value":2,"elementData":{"id":8,"label":"Metal","color":"939393","icon":"/images/elements/metal.png"}}]', 27, 28, NULL, NULL),
-        (19, 18, 'Dragón de la montaña', '2025-09-21T12:19:39.108Z', NULL, 'dragon-de-la-montana', 'Este dragón pacífico y de enorme tamaño se mimetiza con la montaña.', '/uploads/dragon-de-la-montaña.jpg', '', 2, NULL, 4, 3, 300, 30, 0, NULL, 31, NULL, 7, NULL),
-        (20, 19, 'Jörmungandr', '2025-09-21T12:21:46.485Z', NULL, 'jormungandr', 'La serpiente del mundo. Leyenda de la mitología nórdica.', '/uploads/Jormungandr-1.jpg', '', 1, NULL, 4, 3, 320, 0, 0, NULL, 19, 32, 10, NULL),
-        (21, 20, 'Jörmungandr', '2025-09-21T12:24:40.149Z', NULL, 'jormungandr', 'La serpiente del mundo. Leyenda de la mitología nórdica.', '/uploads/Jormungandr-3.jpg', '', 1, 3, 4, 3, 240, 20, 0, '[{"value":1,"elementData":{"id":1,"label":"Ether","color":"BCBCBC","icon":"/images/elements/ether.png"}}]', 19, 30, NULL, NULL),
-        (22, 21, 'Cabeza de medusa', '2025-09-21T12:27:52.155Z', NULL, 'cabeza-de-medusa', 'Cabeza cercenada de una de las hermanas gorgonas.', '/uploads/cabeza-de-medusa.jpg', '', 13, NULL, 5, 3, 120, 0, 0, '[{"value":2,"elementData":{"id":13,"label":"Oscuridad","color":"2D2733","icon":"/images/elements/darkness.png"}}]', 40, NULL, 9, 7),
-        (23, 22, 'Lumeiga', '2025-09-21T12:31:26.746Z', NULL, 'lumeiga', 'Cuando la tiraron a la hoguera descubrieron que hay brujas que no solo les afecta el fuego, si no que lo controlan.', '/uploads/lumeiga.jpg', '', 5, 13, 3, 2, 210, 0, 20, '[{"value":1,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}},{"value":1,"elementData":{"id":13,"label":"Oscuridad","color":"2D2733","icon":"/images/elements/darkness.png"}}]', 29, 41, 12, NULL),
-        (24, 23, 'Extracto de ether', '2025-09-21T12:36:23.550Z', NULL, 'extracto-de-ether', 'Objeto que se usa en batalla para aumentar la salud.', '/uploads/extracto-de-ether.jpg', '', 1, NULL, 6, 7, 80, 0, 0, NULL, 16, NULL, 15, 10),
-        (25, 24, 'Ego', '2025-09-21T14:44:05.603Z', NULL, 'ego', 'Sabio.', '/uploads/ego.jpg', '', 11, NULL, 3, 5, 90, 20, 40, '[{"value":2,"elementData":{"id":11,"label":"Mental","color":"D92FC5","icon":"/images/elements/mental.png"}}]', 26, 38, NULL, NULL),
-        (26, 25, 'Nórdico', '2025-09-21T14:49:45.048Z', NULL, 'nordico', 'Monstruo de hielo del norte.', '/uploads/nordico.jpg', '', 6, NULL, 4, 7, 290, 0, 0, '[{"value":3,"elementData":{"id":6,"label":"Hielo","color":"70D4DA","icon":"/images/elements/ice.png"}}]', 35, NULL, 10, NULL),
-        (27, 26, 'Paramo helado', '2025-09-21T14:52:37.853Z', NULL, 'paramo-helado', 'Cada vez hace más frio y hasta empieza a nevar.', '/uploads/paramo-helado.jpg', '', 6, NULL, 7, 2, 100, 0, 0, '[{"value":3,"elementData":{"id":6,"label":"Hielo","color":"70D4DA","icon":"/images/elements/ice.png"}}]', 35, NULL, 18, NULL),
-        (28, 27, 'Volcán', '2025-09-21T14:57:17.279Z', NULL, 'volcan', 'Calor, humedad y olor a azufre.', '/uploads/volcan.jpg', '', 5, NULL, 7, 2, 1000, 0, 0, '[{"value":3,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}}]', 20, NULL, 19, NULL),
-        (29, 28, 'Fénix', '2025-09-21T18:07:48.827Z', NULL, 'fenix', 'Renace de sus propias cenizas.', '/uploads/fenix.jpg', '', 5, NULL, 4, 3, 320, 0, 0, NULL, 20, NULL, 1, NULL),
-        (30, 29, 'Herrero', '2025-09-21T18:14:48.743Z', NULL, 'herrero', 'Trabaja el metal y el fuego.', '/uploads/herrero.jpg', '', 8, 5, 5, 7, 80, 0, 0, '[{"value":1,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}},{"value":1,"elementData":{"id":8,"label":"Metal","color":"939393","icon":"/images/elements/metal.png"}}]', 28, NULL, 7, 9);
+        (12, 12, 'Héroe', '2025-09-21T11:54:00.994Z', NULL, 'heroe', 'Héroe entre los mortales. Mucho que demostrar ante los inmortales.', '/uploads/guerrero-en-practicas.jpg', '', 1, NULL, 2, 4, 190, 10, 0, '[{"value":1,"elementData":{"id":1,"label":"Ether","color":"BCBCBC","icon":"/images/elements/ether.png"}}]', 15, 14, 11, 5),
+        (13, 13, 'Heraldo del rayo', '2025-09-21T11:55:08.554Z', 12, 'heraldo-del-rayo', 'Cuando suena el trueno, el Heraldo del rayo está en camino.', '/uploads/heraldo-del-rayo.jpg', '', 7, NULL, 2, 2, 190, 20, 0, '[{"value":2,"elementData":{"id":7,"label":"Rayo","color":"CBB734","icon":"/images/elements/thunder.png"}}]', 13, 30, 10, NULL),
+        (14, 14, 'Guerrero de la llama', '2025-09-21T11:58:03.036Z', 12, 'guerrero-de-la-llama', 'Cuando hizo su viaje al Hades no se esperaba resurgir con el poder de la llama.', '/uploads/guerrero_de_fuego.jpg', '', 5, NULL, 2, 2, 160, 20, 0, '[{"value":3,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}}]', 20, NULL, 12, NULL),
+        (15, 15, 'Heraldo de Poseidón', '2025-09-21T12:00:28.368Z', 12, 'heraldo-de-poseidon', 'El dios Poseidón se percató del potencial de este guerrero otorgándole el poder de las mareas.', '/uploads/heraldo-del-poseidon.jpg', '', 3, NULL, 2, 2, 250, 0, 0, '[{"value":2,"elementData":{"id":3,"label":"Agua","color":"3E82B6","icon":"/images/elements/water.png"}}]', 19, NULL, NULL, NULL),
+        (16, 16, 'Come metal', '2025-09-21T12:13:58.647Z', NULL, 'come-metal', 'Pequeño monstruo que busca constantemente objetos hechos de metal para alimentarse.', '/uploads/come-metal.jpg', '', 8, NULL, 4, 7, 180, 0, 0, NULL, 27, NULL, NULL, NULL),
+        (17, 17, 'Devora metal', '2025-09-21T12:16:44.740Z', 16, 'devora-metal', 'Cuando <i>Come metal</i> crece, se ve en la necesidad de buscar estructuras de metal para alimentarse.', '/uploads/traga-metal.jpg', '', 8, NULL, 4, 2, 260, 0, 0, '[{"value":2,"elementData":{"id":8,"label":"Metal","color":"939393","icon":"/images/elements/metal.png"}}]', 27, 28, NULL, NULL),
+        (18, 18, 'Dragón de la montaña', '2025-09-21T12:19:39.108Z', NULL, 'dragon-de-la-montana', 'Este dragón pacífico y de enorme tamaño se mimetiza con la montaña.', '/uploads/dragon-de-la-montaña.jpg', '', 2, NULL, 4, 3, 300, 30, 0, NULL, 31, NULL, 7, NULL),
+        (19, 19, 'Jörmungandr', '2025-09-21T12:21:46.485Z', NULL, 'jormungandr', 'La serpiente del mundo. Leyenda de la mitología nórdica.', '/uploads/Jormungandr-1.jpg', '', 1, NULL, 4, 3, 320, 0, 0, NULL, 19, 32, 10, NULL),
+        (20, 20, 'Jörmungandr', '2025-09-21T12:24:40.149Z', NULL, 'jormungandr', 'La serpiente del mundo. Leyenda de la mitología nórdica.', '/uploads/Jormungandr-3.jpg', '', 1, 3, 4, 3, 240, 20, 0, '[{"value":1,"elementData":{"id":1,"label":"Ether","color":"BCBCBC","icon":"/images/elements/ether.png"}}]', 19, 30, NULL, NULL),
+        (21, 21, 'Cabeza de medusa', '2025-09-21T12:27:52.155Z', NULL, 'cabeza-de-medusa', 'Cabeza cercenada de una de las hermanas gorgonas.', '/uploads/cabeza-de-medusa.jpg', '', 13, NULL, 5, 3, 120, 0, 0, '[{"value":2,"elementData":{"id":13,"label":"Oscuridad","color":"2D2733","icon":"/images/elements/darkness.png"}}]', 40, NULL, 9, 7),
+        (22, 22, 'Lumeiga', '2025-09-21T12:31:26.746Z', NULL, 'lumeiga', 'Cuando la tiraron a la hoguera descubrieron que hay brujas que no solo les afecta el fuego, si no que lo controlan.', '/uploads/lumeiga.jpg', '', 5, 13, 3, 2, 210, 0, 20, '[{"value":1,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}},{"value":1,"elementData":{"id":13,"label":"Oscuridad","color":"2D2733","icon":"/images/elements/darkness.png"}}]', 29, 41, 12, NULL),
+        (23, 23, 'Extracto de ether', '2025-09-21T12:36:23.550Z', NULL, 'extracto-de-ether', 'Objeto que se usa en batalla para aumentar la salud.', '/uploads/extracto-de-ether.jpg', '', 1, NULL, 6, 7, 80, 0, 0, NULL, 16, NULL, 15, 10),
+        (24, 24, 'Ego', '2025-09-21T14:44:05.603Z', NULL, 'ego', 'Sabio.', '/uploads/ego.jpg', '', 11, NULL, 3, 5, 90, 20, 40, '[{"value":2,"elementData":{"id":11,"label":"Mental","color":"D92FC5","icon":"/images/elements/mental.png"}}]', 26, 38, NULL, NULL),
+        (25, 25, 'Nórdico', '2025-09-21T14:49:45.048Z', NULL, 'nordico', 'Monstruo de hielo del norte.', '/uploads/nordico.jpg', '', 6, NULL, 4, 7, 290, 0, 0, '[{"value":3,"elementData":{"id":6,"label":"Hielo","color":"70D4DA","icon":"/images/elements/ice.png"}}]', 35, NULL, 10, NULL),
+        (26, 26, 'Paramo helado', '2025-09-21T14:52:37.853Z', NULL, 'paramo-helado', 'Cada vez hace más frio y hasta empieza a nevar.', '/uploads/paramo-helado.jpg', '', 6, NULL, 7, 2, 100, 0, 0, '[{"value":3,"elementData":{"id":6,"label":"Hielo","color":"70D4DA","icon":"/images/elements/ice.png"}}]', 35, NULL, 18, NULL),
+        (27, 27, 'Volcán', '2025-09-21T14:57:17.279Z', NULL, 'volcan', 'Calor, humedad y olor a azufre.', '/uploads/volcan.jpg', '', 5, NULL, 7, 2, 1000, 0, 0, '[{"value":3,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}}]', 20, NULL, 19, NULL),
+        (28, 28, 'Fénix', '2025-09-21T18:07:48.827Z', NULL, 'fenix', 'Renace de sus propias cenizas.', '/uploads/fenix.jpg', '', 5, NULL, 4, 3, 320, 0, 0, NULL, 20, NULL, 1, NULL),
+        (29, 29, 'Herrero', '2025-09-21T18:14:48.743Z', NULL, 'herrero', 'Trabaja el metal y el fuego.', '/uploads/herrero.jpg', '', 8, 5, 5, 7, 80, 0, 0, '[{"value":1,"elementData":{"id":5,"label":"Fuego","color":"CB4634","icon":"/images/elements/fire.png"}},{"value":1,"elementData":{"id":8,"label":"Metal","color":"939393","icon":"/images/elements/metal.png"}}]', 28, NULL, 7, 9);
     """)
-    
+
     # Update sequence for cards
     conn.exec_driver_sql("SELECT setval('cards_id_seq', (SELECT MAX(id) FROM cards));")
 
 
 def downgrade() -> None:
-    op.drop_table('cards')
-    op.drop_table('attacks')
-    op.drop_table('associations')
-    op.drop_table('abilities')
-    op.drop_table('characters')
-    op.drop_table('types')
-    op.drop_table('elements')
-
+    op.drop_table("cards")
+    op.drop_table("attacks")
+    op.drop_table("associations")
+    op.drop_table("abilities")
+    op.drop_table("characters")
+    op.drop_table("types")
+    op.drop_table("elements")

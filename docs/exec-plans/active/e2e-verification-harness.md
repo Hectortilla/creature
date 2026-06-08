@@ -73,7 +73,8 @@ no E2E config in the repo today.
 | D2 | **Roles/labels first; `data-testid` only as a deliberate fallback** | Playwright's own guidance + Testing-Library philosophy: query the app the way a user / assistive tech does, so tests survive refactors and catch a11y regressions for free. `data-testid` couples tests to implementation, so it's an escape hatch. | "`data-testid` everywhere" (brittle to markup, litters prod) or "existing CSS/`id`/text only" (no app edits, but fragile). |
 | D3 | **Split gating:** the auth flow **gates**; the game-start + 3D flow is **non-gating** | Matches the repo's established ratchet pattern (knip, svelte-check land non-blocking then get promoted — [`ci.yml:116`](../../../.github/workflows/ci.yml), [`ci.yml:128`](../../../.github/workflows/ci.yml)). The cheap, stable auth path gives real back-pressure now; the flakier WebGL/two-browser path settles before it can block unrelated PRs. | Gate everything day one (flakes block the repo) or gate nothing (no back-pressure). |
 | D4 | **3D screenshot baseline: include now, non-gating, masked + tolerance** | Gives a real signal on the 3D layer without the WebGL-determinism-in-CI rabbit hole blocking merges. Masking dynamic regions + a pixel tolerance keeps it useful, not noisy. | Defer entirely (no 3D signal) or gate it (fragile across GPUs/OS). |
-| D5 | **Seed test data via the public REST API** in Playwright global-setup | No test-only backdoors → the tests stay honest and exercise the real endpoints. Unique users per run keep tests isolated and re-runnable against the persistent local DB. | A backend seed script / `make seed-e2e` (faster, but more surface to keep in sync) or a test-only seed endpoint (security smell). Seed script is noted as a later optimization (§10). |
+| D5 | **Seed test data via the public REST API** in Playwright global-setup | No test-only backdoors → the tests stay honest and exercise the real endpoints. Unique users per run keep tests isolated and re-runnable; **D6** puts those writes in a dedicated, reset-per-run DB rather than the dev DB. | A backend seed script / `make seed-e2e` (faster, but more surface to keep in sync) or a test-only seed endpoint (security smell). Seed script is noted as a later optimization (§10). |
+| D6 | **Run E2E against a dedicated, reset-per-run database** (`creature_e2e`), selected via `DATABASE_URL`; **never the dev `creature` DB** | The whole stack already routes through one `DATABASE_URL` lever — app settings, the SQLModel engine, and Alembic all read it (§5.8) — so isolation costs almost nothing and mirrors CI's already-ephemeral posture. A fresh `alembic upgrade head` reseeds the reference cards deterministically; **resetting at setup** (not just teardown) means even a crashed run leaves the next one a clean slate. | Cleanup-only on the dev DB (still risks the dev's data; teardown may never run); a throwaway **Docker** Postgres (max isolation, but the repo's local stack is deliberately Homebrew — no compose file — so this fights the chosen stack; kept as the documented escape hatch in §5.8); per-test **transactional rollback** (infeasible — the app commits over HTTP from a separate process). |
 
 ---
 
@@ -155,7 +156,9 @@ head` · backend (uvicorn `:8000`) · built frontend preview (`:4173`).
 players** (roles `host` and `guest`), via the **public REST API**:
 
 1. `POST /auth/register` with a **unique** username, e.g. `e2e_host_<runId>` (a
-   timestamp/uuid) → isolated and re-runnable on the persistent local DB.
+   timestamp/uuid) → isolated and re-runnable. (Unique-per-run names are now
+   belt-and-suspenders: the **dedicated, reset-per-run DB** in §5.8 / D6 is the
+   real isolation mechanism — these writes never land in the dev DB.)
 2. `POST /auth/token` → JWT.
 3. `POST /decks` → `deck_id`.
 4. **22×** `POST /decks/{deck_id}/cards/{card_id}` (card IDs `1..22`).
@@ -260,6 +263,51 @@ exercises both):
 > non-gating, environment drift surfaces as a (non-blocking) diff rather than a
 > blocked merge.
 
+### 5.8 Database (and Redis) isolation
+
+**The problem this solves.** As first wired (Step 3), seeding registers users and
+builds decks **in the dev `creature` DB** — the same DB `make up` serves — and
+never cleans up. Junk accumulates across runs; a teardown bug could corrupt real
+dev data. E2E must run against a **disposable** database instead (D6).
+
+**One lever controls everything: `DATABASE_URL`.** The app settings
+([`back/app/settings/config.py:7`](../../../back/app/settings/config.py)), the
+SQLModel engine ([`back/app/database.py:10`](../../../back/app/database.py)), and
+Alembic ([`back/alembic/env.py:34`](../../../back/alembic/env.py)) all read the
+same value. So isolating E2E is just *"point that one variable at a throwaway
+DB"* — **no app changes**, and it's exactly how CI already operates
+([`ci.yml:80`](../../../.github/workflows/ci.yml)).
+
+- **Target DB.** E2E uses **`creature_e2e`**, never `creature`. The e2e backend
+  `webServer` sets `DATABASE_URL=…/creature_e2e` in its `env`. Env vars outrank
+  `back/.env` in pydantic-settings, and `back/.env` sets no DB url today, so the
+  override is clean.
+- **Reset at *setup*, not (only) cleanup at teardown.** Before the suite,
+  create-or-reset `creature_e2e` and `alembic upgrade head` against it, *then*
+  seed (§5.3). Setup-side reset is the real guarantee: a crashed run still leaves
+  the next run a clean slate. A best-effort `globalTeardown` may drop it after,
+  but correctness must **not** depend on teardown running.
+- **Migrate fresh, don't truncate.** The initial migration
+  ([`001_initial_schema_and_data.py`](../../../back/alembic/versions/001_initial_schema_and_data.py))
+  seeds the reference cards (IDs 1–30) the deck-builder needs. Truncating
+  "everything" wipes them; a *selective* truncate (users/decks/rooms, keep cards)
+  is fragile to schema drift. `alembic upgrade head` on a fresh DB reseeds cards
+  deterministically and tracks the schema for free.
+- **The reuse gotcha (must address).** `reuseExistingServer: !CI` on the backend
+  `webServer` means a locally-running dev backend — bound to the **dev** DB —
+  would be silently reused, defeating isolation. So the e2e backend must be
+  guaranteed to be the one bound to `creature_e2e`: run it on a **dedicated port**
+  with `reuseExistingServer: false`, and point the frontend build's
+  `PUBLIC_API_URL` at that port. This trades the "reuse my running backend"
+  convenience for a correctness guarantee.
+- **Redis too.** Room/session state lives in Redis (`broadcast_url`). Point the
+  e2e backend at a dedicated logical DB (`REDIS_URL=redis://localhost:6379/1`) and
+  flush it at setup, so room/game state can't leak between runs either.
+- **CI is already isolated.** CI's Postgres is an ephemeral per-job service that
+  dies with the runner, so the CI job needs no teardown — it just sets
+  `DATABASE_URL` to the e2e DB (or keeps the throwaway `creature`). This work is
+  almost entirely about protecting **local** dev data.
+
 ---
 
 ## 6. Execution queue (work orders)
@@ -268,8 +316,10 @@ Do these **in order**, one step per agent, per §0. Each step is sized to leave
 the gate green and be shippable on its own.
 
 > **Local prerequisite for any step that starts the backend (Steps 3–6):**
-> `make up` (Postgres + Redis), then `cd back && uv run alembic upgrade head`.
-> Steps 1–2 need no backend.
+> just `make up` (Postgres + Redis *running*). Since Step 3.5 the harness owns
+> creating + migrating the disposable `creature_e2e` DB in global-setup, so the
+> manual `cd back && uv run alembic upgrade head` is **no longer needed for the
+> e2e run**. Steps 1–2 need no backend.
 
 ### Step 1 — Scaffold Playwright + a trivial running-app test
 
@@ -367,7 +417,7 @@ the gate green and be shippable on its own.
 
 ### Step 3 — API seeding (global-setup) + wire backend into webServer
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-07 — backend webServer + globalSetup wired; two players seeded via REST API with 22-card valid decks; storageState files written; smoke test still passes — commit 68bbc19
 - **Depends on:** Step 1
 - **Goal:** provision two players, each with a valid 22-card deck, via the public
   API; persist a logged-in `storageState` per player. See §5.2–§5.3.
@@ -391,10 +441,98 @@ the gate green and be shippable on its own.
   ```bash
   cd front && npm run test:e2e && ls e2e/.auth/host.json e2e/.auth/guest.json
   ```
+- **Notes for next agent:**
+  - **`package.json` uses `"type": "module"`** — `__dirname` is unavailable in
+    ESM; `global-setup.ts` uses `fileURLToPath(import.meta.url)` instead.
+  - **`storageState` format:** sets `localStorage["auth_token"]` +
+    `localStorage["auth_user"]` (JSON string of the `/auth/me` response) on
+    origin `http://localhost:4173`, plus an `auth_token` cookie — matching
+    `front/src/lib/stores/auth.svelte.ts`.
+  - **Backend `webServer` command** runs from `front/` dir:
+    `cd ../back && uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000`.
+    `reuseExistingServer: !process.env.CI` so a locally running backend is reused.
+
+### Step 3.5 — Isolate E2E onto a dedicated, reset-per-run database
+
+- [x] **Status:** ✅ done — 2026-06-07 — e2e backend on dedicated :8001 (`reuseExistingServer:false`) bound to disposable `creature_e2e` + Redis DB 1; global-setup drops/creates/migrates `creature_e2e` + flushes Redis before seeding; best-effort `globalTeardown` drops it. Two full `test:e2e` runs: both `@gating` tests green, dev `creature` DB e2e\_ user count unchanged (delta 0), `creature_e2e` dropped after each — commit `dcca544`
+- **Added:** after Steps 1–4 shipped — running them surfaced that seeding writes
+  into the **dev `creature` DB** with no cleanup (D6, §5.8). It logically belongs
+  beside Step 3 (seeding), hence the `3.5`; numbering of the done/committed steps
+  is left intact. **Land it before Step 7 (CI)** and before heavy local Flow-B
+  iteration; it is order-independent vs. Step 5.
+- **Depends on:** Step 3
+- **Goal:** E2E never touches the dev DB — it runs against a disposable
+  `creature_e2e`, freshly migrated and seeded per run, with Redis isolated too.
+  See §5.8.
+- **Do:**
+  - **Backend `webServer` (`playwright.config.ts`):** give the e2e backend its own
+    `env` — `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/creature_e2e`
+    and `REDIS_URL=redis://localhost:6379/1` — on a **dedicated port** (e.g. 8001)
+    with `reuseExistingServer: false`, so a stray dev backend can't be reused
+    (§5.8 *reuse gotcha*). Point the frontend build's `PUBLIC_API_URL` at that port.
+  - **DB lifecycle (in `global-setup.ts`, before seeding):** create-or-reset
+    `creature_e2e` (drop+create, or `DROP SCHEMA public CASCADE` then recreate),
+    `alembic upgrade head` against it (shell out:
+    `cd ../back && DATABASE_URL=…creature_e2e uv run alembic upgrade head`), flush
+    the e2e Redis logical DB, *then* run the existing REST seeding (§5.3).
+  - **Teardown (`globalTeardown`, best-effort):** drop `creature_e2e` (or leave it
+    for the next run's reset). Correctness must **not** depend on this running.
+  - **Local prereq doc:** update the §6 blockquote below — `make up` still provides
+    the Postgres/Redis *instances*, but the harness now owns
+    creating+migrating `creature_e2e`, so the manual "`alembic upgrade head`"
+    prereq no longer applies to the e2e run.
+- **Acceptance:** after a full `npm run test:e2e`, the dev `creature` DB gains
+  **no new** `e2e_*` users (delta 0 — see ⚠️ note: pre-isolation runs already left
+  some); a second run succeeds from a clean slate; Step 4's gating flow stays green.
+- **Verify:** (`make up` first)
+  ```bash
+  # Capture the BEFORE count (pre-isolation Steps 3/4 left e2e_ junk in the dev DB),
+  # run the suite, then confirm the count is UNCHANGED (the run seeded creature_e2e):
+  psql "postgresql://postgres:postgres@localhost:5432/creature" \
+    -tAc "select count(*) from users where username like 'e2e\_%';"   # note this N
+  cd front && npm run test:e2e
+  psql "postgresql://postgres:postgres@localhost:5432/creature" \
+    -tAc "select count(*) from users where username like 'e2e\_%';"   # must equal N
+  ```
+- **Notes for next agent (Step 5 / Step 7 reuse these):**
+  - **Endpoints are centralised in [`front/e2e/config.ts`](../../../front/e2e/config.ts):**
+    `E2E_API_URL` (default `http://localhost:8001`), `E2E_DATABASE_URL` (default
+    `…/creature_e2e`), `E2E_REDIS_URL` (default `redis://localhost:6379/1`).
+    `playwright.config.ts` + `global-setup.ts` both import these — change a port/URL
+    in one place. Overrides use **E2E-specific** env names (`E2E_DATABASE_URL`,
+    `E2E_REDIS_URL`, `PUBLIC_API_URL`), never the ambient `DATABASE_URL`/`REDIS_URL`,
+    so a dev who exported those at the *dev* stack can't make the harness reset it.
+  - **DB lifecycle lives in [`front/e2e/db.ts`](../../../front/e2e/db.ts):**
+    `resetDatabase()` (psql drop+create against the `postgres` maintenance DB, after
+    `pg_terminate_backend`), `migrateDatabase()` (`uv run alembic upgrade head` in
+    `../back` with `DATABASE_URL` overridden), `flushRedis()` (**best-effort** —
+    `redis-cli FLUSHDB`; the gating flow doesn't use Redis), `dropDatabase()`
+    (teardown, best-effort). A hard **guard** refuses any DB whose name doesn't end
+    in `_e2e` — the safety net in front of `DROP DATABASE`.
+  - **Backend now on :8001 with `reuseExistingServer:false`** and `env:{DATABASE_URL,
+    REDIS_URL}`. The frontend build bakes `PUBLIC_API_URL=http://localhost:8001`.
+    A crashed run can leave a backend on :8001 → next run errors loudly ("8001 is
+    already used") rather than silently reusing — kill it (`lsof -ti:8001 | xargs kill`).
+  - **Ordering confirmed (Playwright 1.60):** `webServer` starts **before**
+    `globalSetup` (runner `createGlobalSetupTasks`: plugin-setup → globalSetup). The
+    backend boots while `creature_e2e` may not exist yet — fine: the engine is lazy,
+    `create_db_and_tables` is a no-op, lifespan only touches Redis, and `GET /` is
+    DB-free, so it holds **zero** Postgres connections when global-setup resets. (The
+    reset's `pg_terminate_backend` is belt-and-suspenders; teardown did terminate 5
+    live pool connections, proving it works.)
+  - **CI (Step 7):** no manual DB create needed — global-setup makes `creature_e2e`
+    against the service's `postgres` maintenance DB. Just provide `postgres:14` +
+    `redis:7` services; `psql`/`redis-cli` are pre-installed on GitHub Ubuntu runners
+    and `uv sync` provides alembic. The default `creature_e2e` URL matches CI's
+    existing `postgres:postgres@localhost` creds ([`ci.yml:80`](../../../.github/workflows/ci.yml)).
+  - **One-time cleanup (optional, not done here):** the dev `creature` DB still holds
+    the `e2e_*` users seeded by the *pre-isolation* Steps 3/4. They're harmless test
+    junk; left untouched (this step deliberately never issues writes against the dev
+    DB). Purge manually if desired.
 
 ### Step 4 — Auth smoke flow (`@gating`)
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-07 — `front/e2e/auth.e2e.ts` (`@gating`, 2 tests): real UI login → home → lobby surfaces the seeded valid deck (present + selectable), plus a bad-creds `role="alert"` negative; smoke.e2e.ts retired; `test:e2e:gating` + frontend gate green — commit c7cf059
 - **Depends on:** Steps 2, 3
 - **Goal:** real UI login → home → lobby shows the seeded valid deck. See §5.5 A.
 - **Do:** `front/e2e/auth.e2e.ts` (tag `@gating`): unauthenticated `/` redirects
@@ -406,6 +544,31 @@ the gate green and be shippable on its own.
   test (or fold it in).
 - **Acceptance:** `npm run test:e2e:gating` is green (full stack up).
 - **Verify:** `cd front && npm run test:e2e:gating`
+- **Notes for next agent (Step 5 will reuse these):**
+  - **Tagging:** used describe-level `test.describe("auth smoke", { tag: "@gating" }, …)`
+    (Playwright ≥1.42 tag option). `--grep @gating` matches it. Step 5 should tag
+    `game.e2e.ts` the same way with `@nongating`.
+  - **seed.json read in `beforeAll`, not at module top-level.** Playwright loads
+    spec files for collection *before* `globalSetup` runs, so a top-level
+    `readFileSync("e2e/.auth/seed.json")` throws on a clean checkout / CI (file
+    not written yet). Reading it in `beforeAll` (run time) is safe.
+  - **Deck selector that worked:** `getByRole('button', { name: /E2E Deck \(host\)/ })`
+    — the deck name is global-setup's `E2E Deck (<role>)`. A *valid* deck renders an
+    **enabled** button (`disabled={!is_valid_for_playing}` in `LobbySelector.svelte`);
+    clicking it reveals the **`Select or Create a Room`** `<h2>`, proving selectable.
+  - **⚠️ Real lobby labels (plan §5.5 B / Step 5 `Do` were imprecise — corrected
+    below).** In [`LobbySelector.svelte`](../../../front/src/lib/components/lobby/LobbySelector.svelte)
+    selecting a deck is a *separate* step from picking room mode: room-mode buttons
+    are **"Create New Room"** (➕) and **"Join Existing Room"** (🔍); the final connect
+    button reads **"Create Room & Play"** / **"Join Room & Play"** (text is
+    `createNewRoom ? 'Create Room & Play' : 'Join Room & Play'`) — there is **no**
+    single "Create New Room & Play" button. Refresh button text is `🔄 Refresh`; the
+    in-game header is `<h1>Playing</h1>` ([`game/+page.svelte:233`](../../../front/src/routes/game/+page.svelte)).
+  - **URL assertions:** `toHaveURL(/\/login$/)` for the login bounce, `toHaveURL(/localhost:4173\/$/)`
+    for home (regex avoids hardcoding the full origin while still excluding `/login`,`/game`).
+  - `loginApi` uses a raw `fetch` and `/auth/token` is excluded from the api.ts 401
+    redirect interceptor, so a bad-creds 401 throws → `error` set → `role="alert"`
+    renders and we stay on `/login` (no redirect). The negative test relies on this.
 
 ### Step 5 — Game start + board render flow (`@nongating`)
 
@@ -414,12 +577,14 @@ the gate green and be shippable on its own.
 - **Goal:** two browsers create/join a room; both reach the in-game view and the
   board reports ready. See §5.5 B.
 - **Do:** `front/e2e/game.e2e.ts` (tag `@nongating`): two contexts from the
-  seeded `storageState` (`host`, `guest`); host selects deck → **Create New Room
-  & Play**; guest selects deck → **Join Existing Room** → refresh → pick the
-  joinable room → **Join Room & Play** (fallback: `room_id` handoff per §5.5);
-  both assert the **Playing** view +
-  `[data-testid="game-board"][data-scene-ready="true"]` visible + canvas
-  non-zero size.
+  seeded `storageState` (`host`, `guest`). **Selection is two clicks** (real
+  labels, confirmed in Step 4 — see Step 4 notes): (1) click the deck button
+  `getByRole('button', { name: /E2E Deck \(host|guest\)/ })`; (2a) host → click
+  **"Create New Room"** then **"Create Room & Play"**; (2b) guest → click **"Join
+  Existing Room"** → **"🔄 Refresh"** → pick the joinable room (`.room-item.can-join`)
+  → **"Join Room & Play"** (fallback: `room_id` handoff per §5.5). Both assert the
+  **`<h1>Playing</h1>`** view + `[data-testid="game-board"][data-scene-ready="true"]`
+  visible + canvas non-zero size.
 - **Acceptance:** `npm run test:e2e -- --grep @nongating` is green locally.
 - **Verify:** `cd front && npm run test:e2e -- --grep @nongating`
 
@@ -492,6 +657,7 @@ the gate green and be shippable on its own.
 | Two-browser room-discovery timing | UI room-list path with a `room_id`-handoff fallback; **WS sparring-bot architecture stays documented as the escape hatch** |
 | Screenshot nondeterminism | mask dynamic regions, pixel tolerance, non-gating, env-pinned baselines |
 | Seeding slow/brittle | API seeding once in global-setup; unique users; backend seed script as later optimization |
+| E2E pollutes/corrupts the dev DB | Dedicated reset-per-run `creature_e2e` via `DATABASE_URL`; dedicated backend port + `reuseExistingServer:false` so a dev backend isn't reused; Redis on a dedicated logical DB (D6, §5.8, Step 3.5) |
 | `PUBLIC_API_URL` build-time vs runtime inlining | ✅ resolved (Step 1): build-time (`$env/static/public`); harness sets it via `webServer.env` (§5.2) |
 | Vitest/Playwright spec collision | `*.e2e.ts` naming + `testDir` + Vitest `exclude` |
 | Flake blocking the repo | split gating (D3); only the cheap auth flow can block |
