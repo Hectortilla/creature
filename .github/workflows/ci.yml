@@ -129,15 +129,98 @@ jobs:
         run: npm run knip
         continue-on-error: true
 
+  # Running-app E2E smoke (Playwright). Exercises the integrated stack in a real
+  # browser. Split gating (plan D3): the auth flow GATES (blocking), the
+  # game-start + 3D flow is NON-GATING (continue-on-error) so flaky WebGL /
+  # two-browser timing can settle before it can block unrelated PRs.
+  # Playwright's webServer (reuseExistingServer: !CI) boots BOTH the backend
+  # (uvicorn :8000) and the production preview build (:4173) itself — see
+  # front/playwright.config.ts — so no manual server start / build step here.
+  e2e:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: creature
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/creature
+      REDIS_URL: redis://localhost:6379
+      # Inlined into the preview build (front/playwright.config.ts webServer.env
+      # also pins it, but set here so the backend webServer + global-setup agree).
+      PUBLIC_API_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install Python + backend deps
+        working-directory: back
+        run: |
+          uv python install 3.12
+          uv sync --frozen
+      - name: Apply migrations
+        working-directory: back
+        run: uv run alembic upgrade head
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+      - name: Install frontend deps
+        working-directory: front
+        run: npm ci
+      - name: Install Playwright Chromium
+        working-directory: front
+        run: npx playwright install --with-deps chromium
+      # Step A — auth smoke. BLOCKING: a failure here fails the job and ci-ok.
+      - name: E2E auth smoke (gating)
+        working-directory: front
+        run: npm run test:e2e:gating
+      # Step B — game start + 3D board render. NON-BLOCKING: continue-on-error so
+      # WebGL/two-browser flake (and the not-yet-generated linux screenshot
+      # baseline) surface as a diff, not a blocked merge. Mirrors knip/svelte-check.
+      - name: E2E game + 3D smoke (non-gating)
+        working-directory: front
+        run: npm run test:e2e -- --grep @nongating
+        continue-on-error: true
+      - name: Upload Playwright report + traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            front/playwright-report/
+            front/test-results/
+          retention-days: 7
+
   # Aggregate status so branch protection can require a single check.
   ci-ok:
-    needs: [backend, backend-integration, frontend]
+    needs: [backend, backend-integration, frontend, e2e]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs succeeded (skipped is OK)
         run: |
-          for r in "${{ needs.backend.result }}" "${{ needs.backend-integration.result }}" "${{ needs.frontend.result }}"; do
+          for r in "${{ needs.backend.result }}" "${{ needs.backend-integration.result }}" "${{ needs.frontend.result }}" "${{ needs.e2e.result }}"; do
             if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
               echo "A required job failed: $r"; exit 1
             fi
