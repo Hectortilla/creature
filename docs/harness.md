@@ -57,6 +57,7 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **eslint + prettier** | frontend | `npm run lint` | pre-commit · CI — gating (eslint ratcheted) |
 | **svelte-check** | frontend | `npm run check` | CI — non-blocking (pre-existing type debt) |
 | **knip** (dead code · unused exports/deps) | frontend | `npm run knip` | CI — non-blocking (baseline) |
+| **Playwright E2E** (running-app smoke, real browser) | frontend + backend (full stack) | `npm run test:e2e` | CI (`e2e` job) — auth flow `@gating`; game-start + 3D-board flow `@nongating` |
 | **markdown link-check** | docs | `lychee --offline` | CI (`docs.yml`) |
 
 The backend "done" gate is composed as **`make check`**. The frontend "done" gate
@@ -66,6 +67,19 @@ legacy rules (`no-at-html-tags`, `require-each-key`, `no-explicit-any`,
 `no-navigation-without-resolve`, …) are **warnings**, so the gate blocks new
 *errors* while the backlog shows as warnings; don't add new violations. `npm run
 check` (svelte-check) stays non-blocking until its pre-existing type debt is cleared.
+
+The **Playwright E2E** sensor is the only **running-app** control: it boots the
+whole stack (Postgres · Redis · backend · the production frontend build) and
+drives a real Chromium through the core flows — login → lobby (`@gating`) and a
+two-browser game-start with the 3D board rendering (`@nongating`). It is what
+makes [`front/AGENTS.md`](../front/AGENTS.md)'s "exercise BabylonJS / 3D through
+the running app instead" instruction executable, and its deterministic
+`[data-scene-ready]` board-ready signal is the probe a future autonomous loop
+will poll. Split gating follows the repo's ratchet pattern: the cheap, stable
+auth flow blocks merges now; the flakier WebGL flow runs `continue-on-error`
+until it settles, then gets promoted. Specs live under `front/e2e/*.e2e.ts`; see
+`front/playwright.config.ts` and the design plan in
+`docs/exec-plans/completed/e2e-verification-harness.md`.
 
 ### Architecture-fitness sensors (structural)
 
@@ -115,6 +129,14 @@ structured reports + signed episode packages):
 attribution (each sensor names what failed and usually how to fix it), full
 local + CI back-pressure, and observability for reproduction.
 
+The **running-app sensor gap is now closed**: until the Playwright E2E harness
+landed, every sensor was static or unit-level and nothing exercised the app
+actually running in a browser — a change could pass the whole "done" gate and
+still leave login broken or the 3D board failing to render. That was the last
+missing sensor *class*, and closing it (plus the deterministic board-ready
+probe) is the prerequisite for the autonomous / long-running mode that pushes
+the harness toward H3.
+
 ## The steering loop
 
 The harness is owned and evolved like code: **when an issue recurs, improve the
@@ -139,3 +161,10 @@ Tracked here so they're visible, not lost:
   non-blocking baseline (it surfaces some genuinely dead app/legacy files) —
   triage and clear it, then promote `npm run knip` to gating.
 - **Activate the Claude PR-review workflow** (add the API-key secret).
+- **Promote the E2E game + 3D flow (`@nongating` → `@gating`)** once it proves
+  stable in CI — the next ratchet step for the running-app sensor. Then widen
+  coverage: cross-browser (WebKit), a mobile viewport, and deeper gameplay
+  flows (play a card, end a turn, resolve an attack).
+- **Wire the E2E harness in as the running-app verifier for autonomous mode**
+  (the `[data-scene-ready]` / `creature:scene-ready` signal becomes the agent's
+  "is it alive?" probe).

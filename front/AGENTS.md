@@ -38,6 +38,11 @@ The dev client talks to the backend at `PUBLIC_API_URL` (default
 | `npm run generate-client`          | regenerate only the OpenAPI client                    |
 | `npm run generate-action-metadata` | regenerate only `utils/generated/*`                   |
 | `npm run scene:generate`           | rebuild the BabylonJS scene assets                    |
+| `npm run test:e2e`                 | Playwright running-app smoke (full stack, both flows) |
+| `npm run test:e2e:gating`          | only `@gating` specs (the CI blocking subset)         |
+| `npm run test:e2e:ui`              | Playwright UI mode (local debugging)                  |
+| `npm run test:e2e:headed`          | headed run (local debugging)                          |
+| `npm run test:e2e:update-snapshots`| regenerate the 3D screenshot baseline                 |
 
 ## Svelte 5 runes conventions
 
@@ -134,7 +139,13 @@ due to a parser limitation in dependency-cruiser; see the comments in
 - Co-locate tests as `*.test.ts` / `*.spec.ts` next to the code under test
   (e.g. `src/lib/utils/formatHandle.test.ts`).
 - Target **pure units** — utils, stores, plain TS. **Do not unit-test
-  BabylonJS / 3D code**; exercise that through the running app instead.
+  BabylonJS / 3D code**; exercise that through the running app instead — that
+  mechanism now exists: the **Playwright E2E harness** (`npm run test:e2e`,
+  specs under `e2e/*.e2e.ts`, config in `playwright.config.ts`) boots the full
+  stack and drives a real browser through login → lobby and a two-browser
+  game-start with the 3D board rendering. See
+  [`../docs/harness.md`](../docs/harness.md) (running-app sensor) and the design
+  in [`../docs/exec-plans/completed/e2e-verification-harness.md`](../docs/exec-plans/completed/e2e-verification-harness.md).
 - For DOM/component tests, `@testing-library/svelte` + `jsdom` are available.
 - See the exemplars `src/lib/utils/formatHandle.test.ts` and
   `src/lib/utils/getStrenghtsAndWeaknesses.test.ts` for the pattern.
@@ -156,6 +167,12 @@ rules are warnings, so it blocks new _errors_. Don't add new violations, and run
 still carries **pre-existing type debt** (incl. `babylon-editor/src`), so it runs in
 CI non-blocking for now — don't add new type errors. Clearing it is a tracked rung
 in [`../docs/harness.md`](../docs/harness.md).
+
+If you touched a core flow (auth, lobby, game-start, or the 3D board), also run
+the **running-app** harness — `npm run test:e2e` (full stack up; see
+`../AGENTS.md §3`). Its CI `e2e` job gates only the auth flow (`@gating`); the
+game-start + 3D flow is `@nongating` for now. This is the only sensor that
+exercises the app actually running in a browser.
 
 Don't bypass a sensor — fix the design. If a sensor itself is wrong, that's a
 harness bug: fix the sensor (and note it here / in the root guide).

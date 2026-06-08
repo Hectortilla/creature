@@ -1,7 +1,9 @@
 # Running-app verification harness (Playwright E2E)
 
-> Status: **spec / not started** · Owner: _TBD_ · Target maturity: advances the
-> harness from **H2 → H3** (see [`../../harness.md`](../../harness.md)).
+> Status: **implementation complete** (all steps done; **remote CI acceptance +
+> linux screenshot baseline pending the PR — see Step 7/Step 8 notes**) · Owner:
+> _TBD_ · Target maturity: advances the harness from **H2 → H3** (see
+> [`../../harness.md`](../../harness.md)).
 
 A real-browser smoke harness that drives the **integrated, running** app
 (frontend + backend + Postgres + Redis) through the core flows. This is the one
@@ -558,7 +560,16 @@ the gate green and be shippable on its own.
 
 ### Step 8 — Docs/harness updates; complete the plan
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-08 — registered the running-app sensor:
+  `harness.md` gained a Playwright E2E sensor row, a running-app explainer
+  paragraph, a Maturity note ("running-app sensor gap now closed"), and two
+  follow-up rungs (promote Flow B to gating; autonomous-mode verifier);
+  `front/AGENTS.md` line-136 now links the harness + design plan and gained the
+  `test:e2e*` command-table rows + a Definition-of-Done note; root `AGENTS.md §4`
+  gained a running-app gate row. Plan moved to `completed/`. **NOTE:** Step 7's
+  remote acceptance (the `e2e` job green on a PR + the back-pressure proof) and
+  the Ubuntu/swiftshader `board-chromium-linux.png` baseline remain — both
+  require an open PR and are tracked in Step 7's notes / §10. — commit <sha>
 - **Depends on:** Step 7
 - **Goal:** register the new sensor and make `front/AGENTS.md:136` executable in
   the docs; close out the effort.
