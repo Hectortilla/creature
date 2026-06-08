@@ -138,6 +138,11 @@ front/src/babylon-editor/public/scene/
 front/src/babylon-editor/dist/
 front/src/babylon-editor/electron-packages/
 
+# Playwright E2E (front/) — HTML report, run artifacts, and seeded auth state
+front/playwright-report/
+front/test-results/
+front/e2e/.auth/
+
 # Python tooling caches (harness: ruff, mypy, pytest, coverage)
 .ruff_cache/
 .mypy_cache/

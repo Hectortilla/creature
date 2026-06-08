@@ -137,10 +137,11 @@ head` · backend (uvicorn `:8000`) · built frontend preview (`:4173`).
   produces and is closest to reality. `baseURL = http://localhost:4173`.
 - **Backend** = `uv run python -m uvicorn app.main:app` on `:8000`. The frontend
   talks to it via `PUBLIC_API_URL` (default `http://localhost:8000`).
-  - ⚠️ **Verify** how SvelteKit inlines `PUBLIC_API_URL` — if it's compiled in at
-    build time, set it before `npm run build`; if read at runtime
-    (`$env/dynamic/public`), set it for the preview process. Pin this during
-    implementation.
+  - ✅ **Resolved (Step 1):** `PUBLIC_API_URL` is inlined at **build time** —
+    `src/lib/api.ts` imports it from `$env/static/public`, so `npm run build`
+    *fails* if it isn't set beforehand. The harness sets it via Playwright's
+    `webServer.env` (default `http://localhost:8000`), so the preview build is
+    self-sufficient even with no `front/.env` (e.g. CI).
 - **Orchestration:** Playwright `webServer` (array form) launches **both** the
   backend and the frontend preview, with `reuseExistingServer: true` for local
   runs. Generous `timeout` for first-boot.
@@ -272,7 +273,7 @@ the gate green and be shippable on its own.
 
 ### Step 1 — Scaffold Playwright + a trivial running-app test
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-07 — Playwright + Chromium scaffolded; `npm run test:e2e` smoke green; frontend gate green — commit `88aa872`
 - **Depends on:** —
 - **Goal:** prove the harness boots the built frontend and drives a real browser.
 - **Do:**
@@ -298,10 +299,32 @@ the gate green and be shippable on its own.
   cd front && npm run test:e2e
   cd front && npm run lint && npm run test && npm run deps:check && npm run build
   ```
+- **Notes for next agent:**
+  - `@playwright/test@1.60.0` added (devDep). Chromium installed with
+    `npx playwright install chromium` (no `--with-deps`: that's a Linux/CI-only
+    flag, a no-op on macOS). CI still uses `--with-deps` per Step 7.
+  - **§5.2 RESOLVED — `PUBLIC_API_URL` is inlined at BUILD time** (`$env/static/public`
+    in `src/lib/api.ts`). `npm run build` *fails* (`"PUBLIC_API_URL" is not exported`)
+    if it isn't set first. The harness now sets it via Playwright `webServer.env`
+    (default `http://localhost:8000`, overridable), so the preview build is
+    self-sufficient even with no `front/.env` (e.g. CI). Step 3/Step 7 rely on this.
+  - **Two `.gitignore` files exist**: root `../.gitignore` (git; `front/`-prefixed)
+    and `front/.gitignore` (read by eslint's `includeIgnoreFile`, so eslint skips
+    transient output). Playwright artifacts (`playwright-report/`, `test-results/`,
+    `e2e/.auth/`) were added to **both**.
+  - Used `browserName: "chromium"` (the bundled browser), **not**
+    `devices['Desktop Chrome']` — the latter sets `channel: 'chrome'` and would
+    require system Chrome.
+  - `hooks.server.ts` makes **no backend call** on `/login` (only reads the auth
+    cookie), so the smoke test asserts the login form directly — Step 1's "defer if
+    hooks hit the backend" contingency did not apply.
+  - **The Sign-In button's accessible name is the slug `"sign-in"`**, not "Sign In":
+    the shared `Button.svelte` runs its `text` through `formatHandle()` for the
+    `aria-label`. Role-name queries must use `/sign-?in/i` (Step 4 + §9 updated).
 
 ### Step 2 — Add testability hooks to the app
 
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-07 — board-ready hooks (`data-testid="game-board"` + `data-scene-ready`) on `.scene-container`, `data-testid="game-board-canvas"` on `<canvas>`, `role="alert"` on the login error; gate green, 0 new svelte-check errors — commit `52d6f70`
 - **Depends on:** Step 1
 - **Goal:** deterministic, non-brittle hooks for the flows (these double as the
   autonomous-mode probe + a small a11y win). See §5.4.
@@ -317,6 +340,30 @@ the gate green and be shippable on its own.
   ```bash
   cd front && npm run lint && npm run test && npm run deps:check && npm run build && npm run check
   ```
+- **Notes for next agent:**
+  - **The board-ready hook is on `.scene-container`** (inside
+    `BabylonEditorScene.svelte`), **not** `.scene-wrapper` — that's the game
+    page's outer `<div>` ([`game/+page.svelte:237`](../../../front/src/routes/game/+page.svelte)).
+    Steps 4/5 selector: `[data-testid="game-board"][data-scene-ready="true"]`.
+    `data-scene-ready` is a `$derived` = `!loading && error === null`, rendered as
+    the string `"true"`/`"false"`; it is `"true"` **only on successful init**
+    (render loop running) and stays `"false"` on scene error — so the selector is
+    a true success signal, not just "loading finished".
+  - **`<label for>` was already wired** on both login inputs, so
+    `getByLabel('Username'|'Password')` works (as §9 noted) — the only new login
+    edit was `role="alert"` on `.error-message` (Step 4's optional negative test
+    can now assert it via `getByRole('alert')`).
+  - **Did NOT normalise the Sign-In button's a11y name** (out of scope; shared
+    `Button.svelte`, wide blast radius). Its accessible name is still the slug
+    `"sign-in"` — Step 4 must query `getByRole('button', { name: /sign-?in/i })`
+    (§9). §9's open question stands.
+  - **Running the gate:** there is **no `front/.env`** (only `.env.example`).
+    `npm run build` *and* `npm run check` both resolve `PUBLIC_API_URL` from
+    `$env/static/public` and fail without it, so prefix the env var, e.g.
+    `PUBLIC_API_URL=http://localhost:8000 npm run build`. **Build/check run fine
+    sandboxed** once it's set (no `.env` read to block).
+  - **svelte-check baseline = 55 errors / 20 warnings** (pre-existing debt,
+    unchanged by this step). Use this number to confirm "no new errors" downstream.
 
 ### Step 3 — API seeding (global-setup) + wire backend into webServer
 
@@ -332,6 +379,11 @@ the gate green and be shippable on its own.
     unique user (`e2e_<role>_<runId>`), get a token, `POST /decks`, add cards
     `1..22`, assert `is_valid_for_playing`. Write creds+`deck_id` to
     `e2e/.auth/seed.json` and a Playwright `storageState` to `e2e/.auth/<role>.json`.
+  - **Note (from Step 1):** the frontend `webServer` already pins `PUBLIC_API_URL`
+    at build time via `webServer.env`. `global-setup.ts` runs in **Node**, so read
+    the backend base URL from `process.env.PUBLIC_API_URL ?? 'http://localhost:8000'`
+    (not `$env/static/public`, which is frontend-only). `e2e/.auth/` is already
+    git-ignored (root + `front/.gitignore`).
 - **Acceptance:** with the backend up, `npm run test:e2e` runs global-setup to
   completion and writes `e2e/.auth/host.json` + `guest.json`; Step 1's test still
   passes.
@@ -347,7 +399,8 @@ the gate green and be shippable on its own.
 - **Goal:** real UI login → home → lobby shows the seeded valid deck. See §5.5 A.
 - **Do:** `front/e2e/auth.e2e.ts` (tag `@gating`): unauthenticated `/` redirects
   to `/login`; fill the seeded `host` creds via `getByLabel`; sign in via
-  `getByRole('button', { name: /sign in/i })`; assert `/`; `goto('/game')`;
+  `getByRole('button', { name: /sign-?in/i })` (the button's accessible name is
+  the slug `"sign-in"`, not "Sign In" — see §9); assert `/`; `goto('/game')`;
   assert the **Game Lobby** heading + the seeded deck present and selectable.
   Optional negative: bad creds → `role="alert"` error. Retire Step 1's trivial
   test (or fold it in).
@@ -439,7 +492,7 @@ the gate green and be shippable on its own.
 | Two-browser room-discovery timing | UI room-list path with a `room_id`-handoff fallback; **WS sparring-bot architecture stays documented as the escape hatch** |
 | Screenshot nondeterminism | mask dynamic regions, pixel tolerance, non-gating, env-pinned baselines |
 | Seeding slow/brittle | API seeding once in global-setup; unique users; backend seed script as later optimization |
-| `PUBLIC_API_URL` build-time vs runtime inlining | pin during implementation (§5.2) |
+| `PUBLIC_API_URL` build-time vs runtime inlining | ✅ resolved (Step 1): build-time (`$env/static/public`); harness sets it via `webServer.env` (§5.2) |
 | Vitest/Playwright spec collision | `*.e2e.ts` naming + `testDir` + Vitest `exclude` |
 | Flake blocking the repo | split gating (D3); only the cheap auth flow can block |
 
@@ -448,8 +501,12 @@ the gate green and be shippable on its own.
 ## 9. Open questions
 
 - Exact masked regions + tolerance for the 3D screenshot (tune empirically).
-- Final accessible names/labels for login + Sign-In (confirm against current
-  markup while wiring `getByLabel`/`getByRole`).
+- Login inputs expose proper `<label for>`, so `getByLabel('Username'|'Password')`
+  works today. **But the Sign-In button's accessible name is the slug `"sign-in"`**
+  — the shared `Button.svelte` runs its `text` through `formatHandle()` for the
+  `aria-label` — so query it as `getByRole('button', { name: /sign-?in/i })`. Step 2
+  may normalise this if the team wants the a11y name to read "Sign In" (note: it's a
+  shared component used by many buttons, so weigh the blast radius).
 - Whether the in-game "Playing" view is enough of a "started" signal, or we also
   assert a game-state artifact (e.g. a populated hand) for a stronger check.
 

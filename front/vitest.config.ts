@@ -29,7 +29,9 @@ export default defineConfig({
 		environment: "jsdom",
 		include: ["src/**/*.{test,spec}.{js,ts}"],
 		// The Babylon editor sub-project has its own toolchain; never collect it.
-		exclude: ["src/babylon-editor/**", "node_modules/**"],
+		// `e2e/**` holds Playwright specs (`*.e2e.ts`) driven by playwright.config.ts,
+		// not Vitest — exclude it so the two runners never fight over spec files.
+		exclude: ["src/babylon-editor/**", "node_modules/**", "e2e/**"],
 		globals: true,
 		coverage: {
 			provider: "v8",

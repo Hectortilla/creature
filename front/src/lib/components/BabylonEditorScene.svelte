@@ -48,6 +48,9 @@
 	let scene: Scene | null = $state(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	// Deterministic "board-ready" signal for E2E / autonomous probes: true only once
+	// the scene has initialised successfully and the render loop is running.
+	const sceneReady = $derived(!loading && error === null);
 	let devToolPanel: DevToolPanel | null = null;
 
 	async function initScene() {
@@ -156,13 +159,13 @@
 	});
 </script>
 
-<div class="scene-container">
+<div class="scene-container" data-testid="game-board" data-scene-ready={sceneReady ? 'true' : 'false'}>
 	{#if loading}
 		<div class="loading">Loading scene...</div>
 	{:else if error}
 		<div class="error">{error}</div>
 	{/if}
-	<canvas bind:this={canvas}></canvas>
+	<canvas bind:this={canvas} data-testid="game-board-canvas"></canvas>
 	<HoveredCardOverlay {cards} {elements} />
 	<ElementPoolsOverlay {elements} />
 </div>
