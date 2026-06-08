@@ -160,3 +160,6 @@ front/openapi-ts-error-*.log
 front/playwright-report/
 front/test-results/
 front/e2e/.auth/
+
+# Ralph loop logs (scripts/ralph-loop.sh)
+.ralph/
