@@ -14,17 +14,20 @@ description: >-
 
 # Ralph iteration — execute one step of an execution plan
 
-Execution plans live in `docs/exec-plans/active/` as a queue of checkbox steps.
-This skill runs **one "Ralph-style" iteration**: do a single, well-chosen step,
+Execution plans live in `docs/exec-plans/active/` as a queue of checkbox steps
+(see `docs/exec-plans/active/README.md` for the format). This skill runs **one
+"Ralph-style" iteration**: do a single, well-chosen step,
 keep the plan honest about what's left, then stop — so the plan can be driven
 forward one iteration at a time, typically by a fresh, clean-context agent each
 run. Treat the plan file plus the repo's guides as your entire context;
 everything you need to act on a step should be in that step or reachable from it.
 
 Why one step at a time: it keeps each unit of progress small, shippable, and
-attributable (one commit per iteration), and it lets the *next* run pick up
-cleanly from the file's updated state. Doing several steps at once defeats that
-handoff — so resist the urge, even if the next step looks easy.
+attributable (**one commit and one stacked PR per iteration**), and it lets the
+*next* run pick up cleanly from the file's updated state. Each iteration stacks
+its branch on the previous step's branch, so looping N times leaves a clean
+**stack of N PRs** to review in the morning. Doing several steps at once defeats
+that handoff — so resist the urge, even if the next step looks easy.
 
 ## Inputs
 
@@ -43,9 +46,10 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
 ## Procedure
 
 1. **Read your context.** Read the plan file in full, then `AGENTS.md` and any
-   scoped guide it points at (`back/AGENTS.md` / `front/AGENTS.md`). These are
-   your spec and your rules. If the plan has its own "how to execute" section,
-   follow it where it is more specific than this skill.
+   scoped guide it points at (`back/AGENTS.md` / `front/AGENTS.md`); for branch /
+   PR conventions see `CONTRIBUTING.md`. These are your spec and your rules. If
+   the plan has its own "how to execute" section, follow it where it is more
+   specific than this skill.
 
 2. **Choose the step.**
    - If the user named a step, do that one.
@@ -79,7 +83,8 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
 5. **Mark your step complete — only once the gate and `Verify` are green:**
    - tick the box: `[ ]` → `[x]`;
    - set or append the step's status line, using today's date:
-     `✅ done — <YYYY-MM-DD> — <one-line summary> — commit <sha>`;
+     `✅ done — <YYYY-MM-DD> — <one-line summary> — branch <branch> — commit <sha> — PR <url>`
+     (the recorded **branch** is what the next iteration stacks on — see step 7);
    - if the next agent needs to know something, add a one-line
      `Notes for next agent:` under that step.
 
@@ -95,16 +100,52 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
    `Notes for next agent:` or a short `## Changelog` entry — so the next
    iteration can trust the file.
 
-7. **Commit and stop.** Commit the step's work **and** any plan edits together,
-   on a feature branch (branch off `main` first if you're on it — never commit
-   straight to `main`), conventional-commit style, **one commit for this
-   iteration**, e.g. `feat(scope): <step summary> (<plan> step <N>)`. (If the
-   user said they will handle commits, skip committing but still update the file
-   and note that the commit is pending.) If you just completed the **last**
-   unchecked step, move the plan file to `docs/exec-plans/completed/` as your
-   final action. Then **stop — do not start another step** — and report: which
-   step you chose and why, what changed, the gate / `Verify` output, any plan
-   edits you made, and any `Notes for next agent`.
+7. **Stack a branch, commit, submit a PR, and stop.** Every iteration produces
+   **one new branch stacked on the previous step's branch** and **one PR** — so an
+   overnight loop leaves a clean stack of PRs to review in the morning. Use
+   **Graphite** (`gt`); the stack state lives in `.git`, so it persists across
+   fresh-agent iterations. **Never commit straight to `main`.** Opening and
+   refreshing these PRs each iteration is the *intended* behaviour of this loop —
+   do it without pausing to confirm each submit; just never force-push over remote
+   commits you don't recognize.
+
+   1. **Pick the base branch to stack on, and check it out:**
+      - If no earlier step in this plan has a recorded branch yet, base on trunk:
+        `gt checkout main`.
+      - Otherwise base on the branch of the **most-recently-completed step** (the
+        current tip of the plan's stack), read from its status line:
+        `gt checkout <that-branch>`. If your step's `Depends on` points at a
+        *different* completed step, base on **that** one instead so the stack
+        mirrors real dependencies; with multiple deps, pick the latest as the base
+        (`gt move --onto <branch>` can re-parent later). If a branch isn't tracked
+        by Graphite yet, `gt track` it first.
+   2. **Create the stacked branch with one commit.** Stage the step's work **and**
+      your plan edits (`git add -A`), then create the branch — Graphite puts it on
+      top of the base you just checked out and records the commit in one go:
+      `gt create spec/<plan-slug>/step-<N>/<keyword> -m "<type>(<scope>): <summary> (<plan> step <N>)"`,
+      where `<plan-slug>` is the plan filename without `.md`, `<N>` is the step
+      number, and `<keyword>` is a short descriptor — e.g. `gt create
+      spec/e2e-gameplay-harness/step-3/api-seeding -m "test(e2e): seed game state
+      over the API (e2e-gameplay-harness step 3)"`. Conventional Commits (see
+      `CONTRIBUTING.md §4`) — valid types
+      `feat`/`fix`/`chore`/`docs`/`refactor`/`test`/`perf`; scope = the area
+      touched.
+   3. **Submit / refresh the stack of PRs:** `gt submit --stack` — creates this
+      branch's PR and keeps the bases + descriptions of the whole stack correct.
+      (One-time per machine, the loop needs `gt init` and `gt auth` done first; if
+      `gt submit` reports it's not initialized/authed, do those once, then re-run.)
+   4. **Record the branch + PR URL** in the step's status line (step 5) so the next
+      iteration knows what to stack on.
+
+   (If the user said they'll handle branches/commits/PRs, skip the `gt` steps but
+   still update the plan file and note that the commit/PR is pending.)
+
+   If you just completed the **last** unchecked step, move the plan file to
+   `docs/exec-plans/completed/` as your final action (its own commit on the top
+   branch, then `gt submit --stack` to refresh). Then **stop — do not start
+   another step** — and report: which step you chose and why, what changed, the
+   gate / `Verify` output, the **branch + PR URL**, any plan edits you made, and
+   any `Notes for next agent`.
 
 ## What a plan should provide
 
