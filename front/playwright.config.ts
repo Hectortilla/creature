@@ -87,6 +87,8 @@ export default defineConfig({
 			timeout: 180_000,
 			env: {
 				PUBLIC_API_URL: E2E_API_URL,
+				// Build-time flag enabling the `window.__creature` drive API (tree-shaken from prod builds).
+				PUBLIC_E2E_HOOKS: "1",
 			},
 		},
 	],

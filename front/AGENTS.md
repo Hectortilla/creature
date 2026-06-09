@@ -21,28 +21,28 @@ The dev client talks to the backend at `PUBLIC_API_URL` (default
 
 ## Command table
 
-| Command                            | What it does                                          |
-| ---------------------------------- | ----------------------------------------------------- |
-| `npm run dev`                      | Vite dev server with HMR                              |
-| `npm run build`                    | Production build (`vite build`)                       |
-| `npm run preview`                  | Serve the built app                                   |
-| `npm run check`                    | `svelte-kit sync` + `svelte-check` (type/diagnostics) |
-| `npm run check:watch`              | `svelte-check` in watch mode                          |
-| `npm run format`                   | `prettier --write .` (fix formatting)                 |
-| `npm run lint`                     | `prettier --check .` + `eslint .`                     |
-| `npm run test`                     | `vitest run` (unit tests, one-shot)                   |
-| `npm run test:watch`               | `vitest` (watch mode)                                 |
-| `npm run test:cov`                 | `vitest run --coverage` (v8 coverage, text + HTML)    |
-| `npm run deps:check`               | `depcruise` — module-boundary sensor (see below)      |
-| `npm run generate`                 | regenerate the API client **and** action metadata     |
-| `npm run generate-client`          | regenerate only the OpenAPI client                    |
-| `npm run generate-action-metadata` | regenerate only `utils/generated/*`                   |
-| `npm run scene:generate`           | rebuild the BabylonJS scene assets                    |
-| `npm run test:e2e`                 | Playwright running-app smoke (full stack, both flows) |
-| `npm run test:e2e:gating`          | only `@gating` specs (the CI blocking subset)         |
-| `npm run test:e2e:ui`              | Playwright UI mode (local debugging)                  |
-| `npm run test:e2e:headed`          | headed run (local debugging)                          |
-| `npm run test:e2e:update-snapshots`| regenerate the 3D screenshot baseline                 |
+| Command                             | What it does                                          |
+| ----------------------------------- | ----------------------------------------------------- |
+| `npm run dev`                       | Vite dev server with HMR                              |
+| `npm run build`                     | Production build (`vite build`)                       |
+| `npm run preview`                   | Serve the built app                                   |
+| `npm run check`                     | `svelte-kit sync` + `svelte-check` (type/diagnostics) |
+| `npm run check:watch`               | `svelte-check` in watch mode                          |
+| `npm run format`                    | `prettier --write .` (fix formatting)                 |
+| `npm run lint`                      | `prettier --check .` + `eslint .`                     |
+| `npm run test`                      | `vitest run` (unit tests, one-shot)                   |
+| `npm run test:watch`                | `vitest` (watch mode)                                 |
+| `npm run test:cov`                  | `vitest run --coverage` (v8 coverage, text + HTML)    |
+| `npm run deps:check`                | `depcruise` — module-boundary sensor (see below)      |
+| `npm run generate`                  | regenerate the API client **and** action metadata     |
+| `npm run generate-client`           | regenerate only the OpenAPI client                    |
+| `npm run generate-action-metadata`  | regenerate only `utils/generated/*`                   |
+| `npm run scene:generate`            | rebuild the BabylonJS scene assets                    |
+| `npm run test:e2e`                  | Playwright running-app smoke (full stack, both flows) |
+| `npm run test:e2e:gating`           | only `@gating` specs (the CI blocking subset)         |
+| `npm run test:e2e:ui`               | Playwright UI mode (local debugging)                  |
+| `npm run test:e2e:headed`           | headed run (local debugging)                          |
+| `npm run test:e2e:update-snapshots` | regenerate the 3D screenshot baseline                 |
 
 ## Svelte 5 runes conventions
 

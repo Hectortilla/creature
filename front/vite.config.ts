@@ -2,8 +2,20 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
+// Build-time gate for the `window.__creature` E2E drive API: a literal-boolean
+// `define` (from PUBLIC_E2E_HOOKS, set only by the e2e preview build) so the
+// guarded call in BabylonEditorScene folds to dead code, tree-shaken from prod.
+// A `define` is needed because a named `$env/static/public` import breaks
+// `npm run build` when the var is unset, and a namespace import doesn't tree-shake.
+const E2E_HOOKS =
+	process.env.PUBLIC_E2E_HOOKS === "1" ||
+	process.env.PUBLIC_E2E_HOOKS === "true";
+
 export default defineConfig({
 	cacheDir: "node_modules/.vite-babylon",
+	define: {
+		__CREATURE_E2E_HOOKS__: JSON.stringify(E2E_HOOKS),
+	},
 	plugins: [
 		sveltekit(),
 		viteStaticCopy({

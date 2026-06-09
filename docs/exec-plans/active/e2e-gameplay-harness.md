@@ -161,13 +161,21 @@ New module `front/src/babylon-editor/src/scripts/devtools/E2EHarness.ts`
 Attached from the scene bootstrap **after `BoardController.instance` is set**,
 only when hooks are enabled.
 
-**Flag plumbing (avoids a SvelteKit env trap):** babylon-editor reads no Vite
-env today, and SvelteKit does **not** populate `import.meta.env.PUBLIC_*` by
-default (only `$env/static/public`). So read `PUBLIC_E2E_HOOKS` in
-`BabylonEditorScene.svelte` (which already uses `$env/static/public`) and pass
-it **into the bootstrap as a boolean** (e.g. `new App(canvas, { e2eHooks })`) —
-keeping babylon-editor decoupled from SvelteKit env. Thin facade over the
-existing singletons:
+**Flag plumbing (resolved in Step 4 — `$env/static/public` does NOT work here):**
+the original plan was to read `PUBLIC_E2E_HOOKS` via `$env/static/public`, but
+that has no working form: a **named** import breaks `npm run build` when the var
+is unset (SvelteKit only `export const`s vars that are set, so the import is a
+hard Rollup error); a **namespace** import (`import * as`) avoids the error but is
+not a compile-time constant, so it never tree-shakes; and a **dynamic** `import()`
+in a dead branch still leaves an orphan chunk. The working mechanism is a vite
+`define`: `vite.config.ts` inlines `__CREATURE_E2E_HOOKS__` as a literal boolean
+(`process.env.PUBLIC_E2E_HOOKS === "1"`, read at build), and
+`BabylonEditorScene.svelte` does a **static** `import { attachE2EHarness }` whose
+only call site is `if (__CREATURE_E2E_HOOKS__) { attachE2EHarness(); }` in
+`initScene` (after `BoardController.instance` is set). When the constant is
+`false`, the side-effect-free module is fully eliminated — **no chunk emitted**.
+`PUBLIC_E2E_HOOKS=1` is still the env flag (set in the e2e build `webServer.env`);
+only the read mechanism changed. Thin facade over the existing singletons:
 
 - **Read:** `getState()`, `validActions()`, `phase()`, `isMyTurn()`,
   `cardsInZone(zone, perspective)` — straight off `GameStateStore`.
@@ -255,11 +263,18 @@ Each step is independently shippable and ends at a named gate, for
   - Verified: full `npm run test:e2e` green (3 passed, ~38s) with the backend booted under `GAME_SEED=42`; the prod-build frontend `webServer` is untouched (no `PUBLIC_E2E_HOOKS` yet — that's Step 4). Run needs Postgres+Redis up (`make up`) and the sandbox off.
 
 ### Step 4 — Frontend: build-gated `window.__creature` API
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-10 — added `devtools/E2EHarness.ts` (read off `GameStateStore` + drive via `ActionBuilder.execute` + `waitForState`/`nextEvent` off the `BoardController` event bus); `attachE2EHarness()` is called from `BabylonEditorScene.svelte`'s `initScene` (after `BoardController.instance` is set), guarded by a vite `define` build constant `__CREATURE_E2E_HOOKS__`; `PUBLIC_E2E_HOOKS=1` added to the frontend build `webServer.env`. Tree-shaking verified both ways. — branch `spec/e2e-gameplay-harness/step-4/e2e-harness-api` (stacked on step-3's branch) — PR blocked (same remote-access barrier as steps 1–3)
+- Notes for next agent:
+  - **PR still blocked by repo remote/Graphite access** (not a code issue) — same as steps 1–3: `gt submit`/`gh` can't reach the remote under the authed account. The step-4 commit is the tip of `spec/e2e-gameplay-harness/step-4/e2e-harness-api`, stacked on `spec/e2e-gameplay-harness/step-3/seed-plumbing`. Step 5 can `gt checkout spec/e2e-gameplay-harness/step-4/e2e-harness-api` to stack on it.
+  - **Gating mechanism changed from the plan's `$env/static/public` to a vite `define` constant** (`__CREATURE_E2E_HOOKS__`). Why: a `$env/static/public` *named* import of `PUBLIC_E2E_HOOKS` **breaks `npm run build` when the var is unset** — SvelteKit's `create_static_module` only emits `export const` for vars that are actually set, so a missing named import is a hard Rollup error ("not exported by virtual:env/static/public"). A *namespace* import (`import * as`) avoids the error but is **not a compile-time constant**, so it does not tree-shake. And even a *dynamic* `import()` inside a dead `if` branch leaves an **orphan chunk** in the output. The working combination is: vite `define` inlines `__CREATURE_E2E_HOOKS__` as a literal boolean (read from `process.env.PUBLIC_E2E_HOOKS` at build) + a **static** guarded `import { attachE2EHarness }` whose only call site is the dead branch → the side-effect-free module is fully eliminated, **no chunk emitted**. §5.4 updated to match. The `webServer.env` flag is still `PUBLIC_E2E_HOOKS=1` (the define reads it), so playwright plumbing is unchanged from the plan.
+  - **Verified tree-shaking:** `PUBLIC_API_URL=… npm run build` (no hooks) ⇒ `__creature`/`E2EHarness`/`attachE2EHarness` absent from `.svelte-kit/output/client/_app` (grep count 0); `PUBLIC_API_URL=… PUBLIC_E2E_HOOKS=1 npm run build` ⇒ `__creature` present. Note: `npm run build` needs `PUBLIC_API_URL` set inline (the sandbox denies reading `front/.env`).
+  - **svelte-check baseline unchanged at 55 errors** (all pre-existing babylon-editor type debt); `E2EHarness.ts` adds none. The two `BabylonEditorScene.svelte` errors (lines ~71 `loadScene`, ~153 `Scene` cross-`node_modules` type mismatch) pre-date this step. `app.d.ts` declares `__CREATURE_E2E_HOOKS__` **inside `declare global`** (module-scope `declare const` is invisible to consumers — that was a real svelte-check error I had to fix).
+  - **Drive API ↔ backend action names** (confirmed against `back/app/game/actions/`): `play_card` (`instance_id`), `pass`, `swap` (`supporting_card_id`/`attacking_card_id`), `attack` (`attacker_id`/`target_card_id`; pass no target for the no-defender case), `promote` (`instance_id`). Helpers look up the matching entry in `store.validActions` and `throw` if absent — so a spec that drives an action the server didn't offer fails fast with a clear message.
+  - For Step 5: import `attachE2EHarness`'s window surface as `window.__creature` in the spec via `page.evaluate`. `waitForState(predicate)` re-checks after any of a curated event list and is the no-sleep primitive; `nextEvent(name)` resolves one granular event. The store is updated **before** events fire, so predicates always see fresh state. There's still **no known opening-hand constant** (deferred from Step 3) — derive it from the seeded deal when the first assertion needs concrete `card_id`s, and keep it beside `E2E_GAME_SEED` in `e2e/config.ts`.
 - Add `E2EHarness.ts` (read + drive-via-`ActionBuilder` + `waitForState`/
-  `nextEvent`). Read `PUBLIC_E2E_HOOKS` in `BabylonEditorScene.svelte` via
-  `$env/static/public` and pass it as a boolean into the bootstrap (§5.4 — do
-  **not** rely on `import.meta.env.PUBLIC_*` inside babylon-editor). Add the flag
+  `nextEvent`). Gate the `window.__creature` attach behind a build constant so it
+  is tree-shaken from normal/prod builds (see §5.4 for the vite-`define`
+  mechanism and why `$env/static/public` does not work here). Add `PUBLIC_E2E_HOOKS`
   to the frontend build `webServer.env`.
 - **Gate:** frontend gate green; **verify tree-shaking** — `__creature` absent
   from a normal `npm run build` bundle, present only with the flag; 0 new

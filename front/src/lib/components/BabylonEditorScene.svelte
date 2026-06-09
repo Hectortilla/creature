@@ -7,6 +7,8 @@
 	import GameConnection from '../../babylon-editor/src/scripts/game/GameConnection';
 	import HudController from '../../babylon-editor/src/scripts/hud/HudController';
 	import { DevToolPanel } from '../../babylon-editor/src/scripts/devtools/DevToolPanel';
+	// Static import; guarded by `__CREATURE_E2E_HOOKS__` below so it's tree-shaken from prod builds.
+	import { attachE2EHarness } from '../../babylon-editor/src/scripts/devtools/E2EHarness';
 	import { setHoveredCard } from '$lib/stores/babylon/hoveredCard';
 	import { setElementPools } from '$lib/stores/babylon/elementPools';
 	import HoveredCardOverlay from '$lib/components/babylon/HoveredCardOverlay.svelte';
@@ -52,6 +54,8 @@
 	// the scene has initialised successfully and the render loop is running.
 	const sceneReady = $derived(!loading && error === null);
 	let devToolPanel: DevToolPanel | null = null;
+	// `__CREATURE_E2E_HOOKS__`: vite `define` literal, true only in the e2e preview build.
+	const e2eHooks = __CREATURE_E2E_HOOKS__;
 
 	async function initScene() {
 		if (!canvas) return;
@@ -110,6 +114,11 @@
 
 			if (scene.activeCamera) {
 				scene.activeCamera.attachControl();
+			}
+
+			// E2E drive API — attached only in the e2e preview build, after loadScene sets BoardController.instance.
+			if (e2eHooks) {
+				attachE2EHarness();
 			}
 
 			engine.runRenderLoop(() => scene?.render());
