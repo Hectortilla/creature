@@ -4,7 +4,6 @@ Combat actions (Attack, ForceDefend) and shared combat event generation.
 
 from __future__ import annotations
 
-import random
 from typing import TYPE_CHECKING
 
 from app.game.actions.base import Action
@@ -340,7 +339,7 @@ class AttackAction(Action):
         if not status:
             return [], True
         required = int(status.payload.get("required_face", 3))
-        result = random.randint(1, int(status.payload.get("faces", 6)))
+        result = state.rng.randint(1, int(status.payload.get("faces", 6)))
         events: list[GameEvent] = [
             DiceRolledEvent(
                 game_id=state.game_id, roller_id=attacker.owner_id, faces=6, result=result, purpose="dice_locked_attack"

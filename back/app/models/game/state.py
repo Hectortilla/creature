@@ -6,11 +6,12 @@ Core game state models including configuration and full game state.
 
 from __future__ import annotations
 
+import random
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Annotated, Any
 
-from pydantic import Field, SkipValidation, computed_field, field_serializer
+from pydantic import Field, PrivateAttr, SkipValidation, computed_field, field_serializer
 
 from app.models.game.attack import AttackDefinition, PendingAttack
 from app.models.game.base import GameBaseModel
@@ -64,6 +65,7 @@ class GameConfiguration(GameBaseModel):
     normal_draw: int = 1
     supporting_zone_size: int = 3
     attacking_zone_size: int = 2
+    seed: int | None = None
 
 
 class GameState(GameBaseModel):
@@ -87,6 +89,15 @@ class GameState(GameBaseModel):
     pending_forced_swap_source_id: str | None = None
     config: GameConfiguration = Field(default_factory=GameConfiguration)
 
+    # Per-game RNG seeded from ``config.seed`` for deterministic shuffles/deal.
+    # ``PrivateAttr`` so it never leaks into ``model_dump``/``serialize_for_player``.
+    _rng: random.Random = PrivateAttr(default_factory=random.Random)
+
+    @property
+    def rng(self) -> random.Random:
+        """The per-game random source for shuffles, first-player, and dice."""
+        return self._rng
+
     @computed_field
     @property
     def total_cards(self) -> float:
@@ -104,6 +115,7 @@ class GameState(GameBaseModel):
             room=room,
             config=config or GameConfiguration(),
         )
+        instance._rng = random.Random(instance.config.seed)
         room.state = instance
         return instance
 

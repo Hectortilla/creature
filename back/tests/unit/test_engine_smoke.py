@@ -13,8 +13,6 @@ Run with:
 
 from __future__ import annotations
 
-import random
-
 import pytest
 
 from app.game.engine import GameEngine
@@ -77,14 +75,15 @@ def _make_deck(owner_tag: str) -> list[GameCardInput]:
     return cards
 
 
-def _build_game() -> tuple[GameEngine, object]:
+def _build_game(seed: int | None = 1234) -> tuple[GameEngine, object]:
     p1 = PlayerState(player_id="p1", name="Player One", deck=_make_deck("p1"))
     p2 = PlayerState(player_id="p2", name="Player Two", deck=_make_deck("p2"))
     room = GameRoom(room_id="room1", host_id="p1")
     room.add_player(p1)
     room.add_player(p2)
 
-    engine = GameEngine(GameConfiguration())
+    # Seed the per-game RNG here so this suite and the behaviour goldens stay deterministic.
+    engine = GameEngine(GameConfiguration(seed=seed))
     state = engine.create_game(room)
     return engine, state
 
@@ -102,7 +101,6 @@ def _client_payload(action: dict) -> dict:
 
 
 def run_smoke(steps: int = 120) -> tuple[int, set[str]]:
-    random.seed(1234)
     engine, state = _build_game()
 
     result = engine.start_game(state)

@@ -7,7 +7,6 @@ Stateless coordinator that orchestrates the game pipeline:
 
 from __future__ import annotations
 
-import random
 import traceback
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -64,13 +63,13 @@ class GameEngine:
         state = GameState.create(room, self.config)
         for player in room.players.values():
             state._setup_deck(player)
-            player.shuffle_deck()
+            player.shuffle_deck(state.rng)
         state.status = GameStatus.STARTING
         return state
 
     def start_game(self, state: GameState) -> ActionResult:
         player_ids = list(state.room.players.keys())
-        first_player_id = random.choice(player_ids)
+        first_player_id = state.rng.choice(player_ids)
 
         initial_events: list[GameEvent] = [
             GameStartedEvent(game_id=state.game_id, player_ids=player_ids, first_player_id=first_player_id),

@@ -213,7 +213,12 @@ Each step is independently shippable and ends at a named gate, for
 `npm run test:e2e` (or `-- --grep @nongating`).
 
 ### Step 1 — Backend: per-game seeded RNG (purity-preserving)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-10 — per-game `GameState.rng` (PrivateAttr) seeded from `GameConfiguration.seed`; 4 module-level `random.*` sites now use it; new `test_rng_determinism.py` — branch `spec/e2e-gameplay-harness/step-1/seeded-rng` (tip = the iteration commit) — PR blocked (see note)
+- Notes for next agent:
+  - **PR submission is blocked by repo remote/Graphite access** (not a code issue): `gt submit` errors with "could not verify you have access to the repo andrsabril/creature"; `gh` can't resolve that repo under the authed account `hector-soria-clio`; `origin` uses SSH host-alias `github.com-hec` with push URLs for both `andrsabril/creature` and `Hectortilla/creature`. Every step in the predecessor plan (`../completed/e2e-verification-harness.md`) likewise recorded **commits only, no PR URLs** — same barrier. I fixed a doubled-owner bug in `.git/.graphite_repo_config` (`name` was `andrsabril/creature`, now `creature`) but the access error persists. The iteration commit is the tip of branch `spec/e2e-gameplay-harness/step-1/seeded-rng` (stacked on `main`); whoever has working remote access should `gt submit --stack` / open the PR. The next iteration can still `gt checkout spec/e2e-gameplay-harness/step-1/seeded-rng` to stack on it.
+  - The shared `_build_game()` in `tests/unit/test_engine_smoke.py` now seeds via `GameConfiguration(seed=1234)` (default arg) instead of `random.seed(1234)`; the behaviour goldens (`tests/behaviour/`) inherit this and **passed unchanged** — `random.Random(1234)` reproduces the same Mersenne-Twister stream in the same call order, so no golden regeneration was needed. If you change RNG *call order*, expect goldens to shift.
+  - `instance_id` is a per-card uuid (non-deterministic by design); compare seeded deals by template `card_id`, as `test_rng_determinism.py` does.
+  - `rng` is a `PrivateAttr` (`_rng`) with a public `state.rng` property — automatically excluded from `model_dump`/`serialize_for_player` (asserted in the new test). Step 2 can read `state.rng` directly; no plumbing needed.
 - Add `seed` to `GameConfiguration`; add non-serialized `rng: random.Random` to
   `GameState`, initialised in `create()`; replace the 4 module-level `random.*`
   sites (player shuffle, first-player choice, effects/combat dice) with
