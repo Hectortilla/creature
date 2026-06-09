@@ -166,5 +166,5 @@ front/playwright-report/
 front/test-results/
 front/e2e/.auth/
 
-# Ralph loop logs (scripts/ralph-loop.sh)
+# Ralph loop logs (scripts/ralph_loop.py)
 .ralph/
