@@ -230,7 +230,13 @@ Each step is independently shippable and ends at a named gate, for
   if a deliberate, reviewed change).
 
 ### Step 2 — Backend: surface seed via `Settings` → `game_runner`
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-10 — `Settings.game_seed` (env `GAME_SEED`); `GameRunner.__init__` builds `GameConfiguration(seed=settings.game_seed)` and passes it to `get_engine(...)`; new `test_rng_multi_action.py` proves dice + rng position reproduce across a multi-action sequence and the live `_rng` object is never dropped — branch `spec/e2e-gameplay-harness/step-2/settings-seed` (stacked on step-1's branch) — PR blocked (same remote-access barrier as step 1)
+- Notes for next agent:
+  - **PR still blocked by repo remote/Graphite access** (not a code issue) — same as step 1's note: `gt submit`/`gh` can't reach the remote under the authed account. The step-2 commit is the tip of `spec/e2e-gameplay-harness/step-2/settings-seed`, stacked on `spec/e2e-gameplay-harness/step-1/seeded-rng`. Step 3 can `gt checkout spec/e2e-gameplay-harness/step-2/settings-seed` to stack on it.
+  - **Singleton caveat:** `get_engine()` is a module-level singleton (`engine.py:198`) — it honours the passed config only on the *first* call, when `_engine is None`. In prod that first call is `GameRunner.__init__` (lifespan builds exactly one runner), so the seed always takes. If a future test/caller invokes `get_engine()` before the runner is built, the seed config would be ignored — set it explicitly there if that ever matters.
+  - **State-lifetime question (§9) is now confirmed by test, not just by reading:** `test_rng_multi_action.py::test_same_seed_reproduces_dice_across_actions` asserts `state.rng is rng_obj` after every `process_action` — the reducer's in-place mutation preserves the live `_rng` PrivateAttr, so single-seed determinism covers mid-game dice. **No `getstate()`/`setstate()` plumbing is needed** for Step 6's attack-dice determinism.
+  - The dice in the new test come from a deck where each card carries a dice-gated `apply-status` effect (`dice_face=7`, `faces=6` ⇒ never matches, so it only emits a `DiceRolledEvent` without altering combat). Reuses the smoke suite's `_make_deck`/`_act_player_id`/`_client_payload` driver helpers.
+  - For Step 3, the e2e backend just needs `GAME_SEED` in `playwright.config.ts`'s backend `webServer.env`; the plumbing all the way to the engine is done and verified (`GAME_SEED=42` → `Settings.game_seed=42` → `GameConfiguration.seed=42`).
 - Add `Settings.game_seed: int | None = None` (env `GAME_SEED`, no prefix —
   §9); build `GameConfiguration(seed=settings.game_seed)` in `game_runner`
   (`self.engine`/`get_engine()`). Default `None` = unchanged prod behaviour.

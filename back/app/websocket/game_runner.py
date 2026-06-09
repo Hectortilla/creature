@@ -10,12 +10,14 @@ import structlog
 
 from app.game.engine import get_engine
 from app.models.game.room import GameRoom
+from app.models.game.state import GameConfiguration
 from app.models.schemas.websocket.server import (
     ActionResultData,
     ActionResultMessage,
     GameStartedData,
     GameStartedMessage,
 )
+from app.settings.config import get_settings
 from app.settings.observability import get_tracer
 from app.websocket.lobby import Lobby
 from app.websocket.room_registry import RoomRegistry
@@ -35,7 +37,9 @@ class GameRunner:
     def __init__(self, lobby: Lobby, registry: RoomRegistry):
         self.lobby = lobby
         self.registry = registry
-        self.engine = get_engine()
+        # Configured RNG seed (None = system entropy). app.game stays pure — the
+        # seed rides in via GameConfiguration rather than app.game reading settings.
+        self.engine = get_engine(GameConfiguration(seed=get_settings().game_seed))
 
     async def start_game(self, room: GameRoom) -> dict:
         """
