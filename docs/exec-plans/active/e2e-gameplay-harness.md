@@ -247,10 +247,12 @@ Each step is independently shippable and ends at a named gate, for
   start a game twice, confirm identical opening hand (logs/WS).
 
 ### Step 3 — E2E plumbing: pass the seed to the e2e backend
-- [ ] **Status:** not started
-- Add `GAME_SEED` to backend `webServer.env` in `playwright.config.ts`;
-  optionally surface it + the expected hand in `e2e/config.ts`.
-- **Gate:** existing `npm run test:e2e` still green (no behaviour change yet).
+- [x] **Status:** ✅ done — 2026-06-10 — added `E2E_GAME_SEED` (env `GAME_SEED`, default `"42"`) to `e2e/config.ts`; wired it into the backend `webServer.env` in `playwright.config.ts` alongside `DATABASE_URL`/`REDIS_URL`. All 3 e2e specs pass unchanged. — branch `spec/e2e-gameplay-harness/step-3/seed-plumbing` (stacked on step-2's branch) — PR blocked (same remote-access barrier as steps 1–2)
+- Notes for next agent:
+  - **PR still blocked by repo remote/Graphite access** (not a code issue) — same as steps 1–2: `gt submit`/`gh` can't reach the remote under the authed account. The step-3 commit is the tip of `spec/e2e-gameplay-harness/step-3/seed-plumbing`, stacked on `spec/e2e-gameplay-harness/step-2/settings-seed`. Step 4 can `gt checkout spec/e2e-gameplay-harness/step-3/seed-plumbing` to stack on it.
+  - **`E2E_GAME_SEED` is a string** (`process.env.GAME_SEED ?? "42"`) because Playwright `webServer.env` values must be strings; the backend's `Settings.game_seed: int | None` coerces it (pydantic-settings parses `"42"` → `42`). Gameplay specs (Steps 5–7) should import `E2E_GAME_SEED` from `e2e/config.ts` so the seed and the expected hand live in one place.
+  - The "expected opening hand" surfacing (mentioned as optional in the step) was **deferred** — there's no known-hand constant yet. Derive it in Step 5 when the first gameplay spec needs concrete card ids to assert against; the seed (`42`) is fixed and reproducible per the Step 1 determinism test.
+  - Verified: full `npm run test:e2e` green (3 passed, ~38s) with the backend booted under `GAME_SEED=42`; the prod-build frontend `webServer` is untouched (no `PUBLIC_E2E_HOOKS` yet — that's Step 4). Run needs Postgres+Redis up (`make up`) and the sandbox off.
 
 ### Step 4 — Frontend: build-gated `window.__creature` API
 - [ ] **Status:** not started

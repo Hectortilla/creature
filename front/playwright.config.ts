@@ -1,6 +1,11 @@
 import { defineConfig } from "@playwright/test";
 
-import { E2E_API_URL, E2E_DATABASE_URL, E2E_REDIS_URL } from "./e2e/config";
+import {
+	E2E_API_URL,
+	E2E_DATABASE_URL,
+	E2E_GAME_SEED,
+	E2E_REDIS_URL,
+} from "./e2e/config";
 
 /**
  * Playwright E2E harness for the running app.
@@ -65,6 +70,8 @@ export default defineConfig({
 			env: {
 				DATABASE_URL: E2E_DATABASE_URL,
 				REDIS_URL: E2E_REDIS_URL,
+				// Fixed RNG seed → deterministic deal/dice for the gameplay specs.
+				GAME_SEED: E2E_GAME_SEED,
 			},
 		},
 		{

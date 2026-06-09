@@ -31,3 +31,10 @@ export const E2E_DATABASE_URL =
 /** Dedicated Redis logical DB (1) — isolates room/session state from dev (0). */
 export const E2E_REDIS_URL =
 	process.env.E2E_REDIS_URL ?? "redis://localhost:6379/1";
+
+/**
+ * Fixed RNG seed for the e2e backend, passed as `GAME_SEED` → `Settings.game_seed`
+ * → `GameConfiguration` → the per-game RNG, so the deal/first-player/dice are
+ * identical every run. Gameplay specs import this so seed + expected hand stay together.
+ */
+export const E2E_GAME_SEED = process.env.GAME_SEED ?? "42";
