@@ -34,6 +34,14 @@ export default defineConfig({
 	testMatch: "**/*.e2e.ts",
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
+	// Run specs serially. The gameplay/board specs share ONE backend process,
+	// ONE preview server, and ONE pair of seeded users; running spec files in
+	// parallel workers makes their guests race to join each other's freshly
+	// created rooms (greedy "first joinable room" selection), which surfaces as
+	// a backend "Failed to join room" when a room fills/starts mid-join. One
+	// worker isolates each spec's room lifecycle — matching the reliable
+	// single-spec behaviour.
+	workers: 1,
 	reporter: [["html", { open: "never" }], ["list"]],
 	use: {
 		baseURL: "http://localhost:4173",

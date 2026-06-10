@@ -138,8 +138,12 @@ export function attachE2EHarness(): E2EHarness {
 		// Drive
 		dispatch,
 		playCard: (instanceId) => {
+			// play_card carries `instance_ids: [cid]` (a list), not a scalar `instance_id`.
 			const action = findValidAction(
-				(a) => a.action === 'play_card' && a.instance_id === instanceId,
+				(a) =>
+					a.action === 'play_card' &&
+					Array.isArray(a.instance_ids) &&
+					(a.instance_ids as string[]).includes(instanceId),
 				`play_card ${instanceId}`,
 			);
 			dispatch(action);
