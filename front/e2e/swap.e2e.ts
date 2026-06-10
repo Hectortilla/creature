@@ -1,7 +1,14 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { SCENE_TIMEOUT, startTwoPlayerGame } from "./game-setup";
-import { passToPhase, passWholeTurn, waitForGameReady } from "./harness";
+import {
+	passToPhase,
+	passWholeTurn,
+	placeIntoSupporting,
+	promoteToAttacking,
+	waitForGameReady,
+	waitForMyTurn,
+} from "./harness";
 
 /**
  * Gameplay flow: `swap` exchanges a SUPPORTING and an ATTACKING card (@nongating).
@@ -15,46 +22,6 @@ import { passToPhase, passWholeTurn, waitForGameReady } from "./harness";
  * exchanged zones on the actor's store AND the opponent's snapshot (cross-client
  * cardsSwapped round-trip). Non-gating: shares the flaky two-browser/WebGL path.
  */
-
-/** Place `count` distinct hand cards into SUPPORTING; return their ids in order. */
-async function placeIntoSupporting(
-	page: Page,
-	count: number,
-): Promise<string[]> {
-	return page.evaluate(async (n) => {
-		const c = window.__creature!;
-		const placed: string[] = [];
-		for (let i = 0; i < n; i++) {
-			await c.waitForState(() =>
-				c
-					.validActions()
-					.some(
-						(a) =>
-							a.action === "play_card" &&
-							!!a.instance_ids &&
-							!placed.includes(a.instance_ids[0]),
-					),
-			);
-			const action = c
-				.validActions()
-				.find(
-					(a) =>
-						a.action === "play_card" &&
-						!!a.instance_ids &&
-						!placed.includes(a.instance_ids[0]),
-				);
-			const id = action!.instance_ids![0];
-			c.playCard(id);
-			await c.waitForState((s) =>
-				s
-					.getMyCardsInZone("SUPPORTING")
-					.some((card) => card.instance_id === id),
-			);
-			placed.push(id);
-		}
-		return placed;
-	}, count);
-}
 
 test.describe("@nongating gameplay: swap exchanges SUPPORTING ↔ ATTACKING", () => {
 	test("actor swaps a promoted card with a supporting one; both clients see the exchange", async ({
@@ -88,31 +55,13 @@ test.describe("@nongating gameplay: swap exchanges SUPPORTING ↔ ATTACKING", ()
 
 			// End the actor's turn; the opponent passes their whole turn back.
 			await passWholeTurn(actor);
-			await observer.evaluate(() =>
-				window.__creature!.waitForState(() => window.__creature!.isMyTurn()),
-			);
+			await waitForMyTurn(observer);
 			await passWholeTurn(observer);
-			await actor.evaluate(() =>
-				window.__creature!.waitForState(() => window.__creature!.isMyTurn()),
-			);
+			await waitForMyTurn(actor);
 
 			// turn 2: both placed cards are now promotable
 			// PROMOTION: promote one card to ATTACKING.
-			await passToPhase(actor, "PROMOTION");
-			await actor.evaluate(async (id) => {
-				const c = window.__creature!;
-				await c.waitForState(() =>
-					c
-						.validActions()
-						.some((a) => a.action === "promote" && a.instance_id === id),
-				);
-				c.promote(id);
-				await c.waitForState((s) =>
-					s
-						.getMyCardsInZone("ATTACKING")
-						.some((card) => card.instance_id === id),
-				);
-			}, promoteId);
+			await promoteToAttacking(actor, promoteId);
 
 			// Precondition for the swap: promoteId in ATTACKING, swapId in SUPPORTING.
 			expect(

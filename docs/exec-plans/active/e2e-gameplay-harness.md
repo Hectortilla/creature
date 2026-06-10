@@ -327,7 +327,15 @@ Each step is independently shippable and ends at a named gate, for
 - **Gate:** `npm run test:e2e -- --grep @nongating` green.
 
 ### Step 6c — Extend: attack (`@nongating`)
-- [ ] **Status:** not started — Depends on Step 6b
+- [x] **Status:** ✅ done — 2026-06-10 — new `e2e/attack.e2e.ts`: across 3 turns the actor fills SUPPORTING, promotes a *derived* affordable attacker, the opponent fields a target, then the actor `attack`s it via `window.__creature` (real `ActionBuilder.execute` path) and asserts the target's `current_health` dropped on the actor's store **and** on the opponent's own-perspective snapshot (cross-client damage round-trip). Extracted `placeIntoSupporting`/`promoteToAttacking`/`waitForMyTurn` into shared `e2e/harness.ts` (swap.e2e refactored to reuse them). All 5 `@nongating` specs pass. — branch `spec/e2e-gameplay-harness/step-6c/attack-spec` (stacked on step-6b's branch) — PR blocked (same remote-access barrier as steps 1–6b)
+- Notes for next agent:
+  - **PR still blocked by repo remote/Graphite access** (not a code issue) — same as steps 1–6b: `gt submit`/`gh` can't reach the remote under the authed account. The step-6c commit is the tip of `spec/e2e-gameplay-harness/step-6c/attack-spec`, stacked on `spec/e2e-gameplay-harness/step-6b/swap-spec`. Step 7 can `gt checkout spec/e2e-gameplay-harness/step-6c/attack-spec` to stack on it.
+  - **The decisive constraint (cost me the iteration to find — write it down): the engine auto-advances any phase whose active player has no phase-specific valid action.** `event_loop.py:_get_auto_advance_events` runs *inside the same `process_action`* that enters a phase: if `AttackAction.get_valid` returns `[]` (no affordable + targeted attack), ATTACK is auto-passed to TURN_END in one shot, so the client snapshot for the actor's single `pass` already shows the turn ended — you can NEVER stop in an empty ATTACK phase. `_should_skip_phase(ATTACK)` only gates on `can_attack` (deck/zone), NOT affordability, which is why the card shows `can_attack:true` yet the turn still skips ATTACK. So an attack spec MUST guarantee an affordable, targeted attack before reaching ATTACK.
+  - **Affordability is about element CONTRIBUTORS, not turns.** The element pool is restored to `max` each turn-start, and `max` = sum of `element_contribution` over the player's active (non-swapped) SUPPORTING+ATTACKING cards — it does NOT accumulate across turns. So "drive another turn to accrue more elements" (the old feasibility note) is WRONG for single-element-per-card decks: more turns don't raise `max`. The fix is to field MORE contributors: the spec places the full SUPPORTING cap (3) on turn 1, then promotes a *derived* attacker — a placed card whose attack `necessary_force` is covered by the **total** pool (e.g. under `GAME_SEED=42` the actor holds two elem-13 contributors → "Congoja" `{13:2}` becomes affordable). Deriving the attacker (not hard-coding a card id) keeps it robust to seed/deck changes.
+  - **Seeded actor hand (`GAME_SEED=42`), for reference:** card_id 10 Moira (contrib 13:1,6:1; Escarcha `{6:2}`, Congoja `{13:2}`), card_id 4 (contrib 9:1,1:1; **Absorber energía `{9:1}` dmg30 non-dice — self-affordable**), card_id 11 (contrib 13:1,7:1; Congoja `{13:2}`), card_id 16 (contrib 8:1; Filo `{8:2}`). Several non-dice damage attacks; the **derive-from-pool** approach picks whichever is affordable.
+  - The opponent only needs ONE ATTACKING card to be a valid target (place 1 turn 1, promote turn 2). On the actor's turn 2 the opponent has no ATTACKING card yet, so only the no-defender attack is offered — the spec just passes that turn and strikes on turn 3 once the target exists.
+  - **`workers: 1` remains load-bearing** (Step 5's finding) — `attack.e2e.ts` creates its own room.
+- ~~Depends on Step 6b~~ (done).
 - Reuse the multi-turn driver from Step 6b (`passWholeTurn`/`passToPhase` in
   `e2e/harness.ts`). Get **both** players to field an ATTACKING card (each:
   place turn 1 → survive a turn → promote turn 2), then reach the actor's ATTACK
@@ -336,16 +344,19 @@ Each step is independently shippable and ends at a named gate, for
   `attack` valid action(s) — `attack(attackerId, targetId)` — and assert the
   target's `current_health` dropped / it was destroyed (await `cardHealthChanged`
   / `cardDestroyed`) on the store **and** on the opponent's snapshot.
-- **Feasibility note (from Step 6b investigation):** don't predict the deck —
-  derive the attack from `validActions().filter(a => a.action === 'attack')`
-  after the build-up; if the server offers one it is by definition affordable
-  (element pool ≥ `attack.necessary_force`) and valid. The seeded E2E deck has
-  several single-element attacks (e.g. Ether/Water/Flora x1) affordable by
-  turn 2; **Air** has no contributor in the deck, so Air-cost attacks are a trap
-  — relying on `validActions()` sidesteps this. Attack-dice determinism is
-  covered by Step 2's in-place-mutation finding (single seed ⇒ reproducible
-  dice). If after a generic build-up no `attack` is offered, drive another turn
-  to accrue more elements (still deterministic under the fixed seed).
+- **Feasibility note — CORRECTED by the Step 6c implementation:** don't predict
+  the deck — derive the attack from `validActions().filter(a => a.action ===
+  'attack')` *once in ATTACK*; if the server offers one it is affordable and
+  valid. BUT you can only stop in ATTACK if such an action exists — an empty
+  ATTACK phase **auto-advances** to turn-end within the same `pass`
+  (`event_loop._get_auto_advance_events`), so the build-up must guarantee
+  affordability first. Affordability is set by element **contributors**, not by
+  taking more turns (the pool restores to `max` = sum of active cards'
+  `element_contribution` each turn-start; it does NOT accumulate). So field MORE
+  cards (fill SUPPORTING) and promote a *derived* attacker whose cost the total
+  pool covers — see the Step 6c status notes for the mechanism and the seed-42
+  hand. (The old "drive another turn to accrue more elements" advice was wrong
+  for single-contribution decks.)
 - **Gate:** `npm run test:e2e -- --grep @nongating` green.
 
 ### Step 7 — Secondary: real-pointer fidelity smoke (`@nongating`)

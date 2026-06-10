@@ -10,13 +10,31 @@ import { SCENE_TIMEOUT } from "./game-setup";
  * resolves off the BoardController event bus (no sleeps).
  */
 
+/** An element cost / contribution entry (`{element_id, amount}`). */
+export interface ElementAmount {
+	element_id: number;
+	amount: number;
+}
+
+export interface HarnessAttack {
+	attack_id: number;
+	name: string;
+	damage: number;
+	dice_rolls: number;
+	necessary_force: ElementAmount[];
+}
+
 export interface HarnessCard {
 	instance_id: string;
 	card_id: number;
 	zone: string;
-	/** Runtime health (combat assertions, Step 6). */
+	/** Runtime health (combat assertions, Steps 6/6c). */
 	current_health?: number;
 	health?: number;
+	/** Elements this card contributes while active (Step 6c affordability). */
+	element_contribution?: ElementAmount[];
+	/** This card's attacks, with their element costs (Step 6c). */
+	attacks?: HarnessAttack[];
 }
 
 export interface HarnessAction {
@@ -119,5 +137,78 @@ export async function passToPhase(page: Page, target: string): Promise<void> {
 			}
 		},
 		{ target, max: MAX_PHASE_STEPS },
+	);
+}
+
+/**
+ * In PLACEMENT, play `count` distinct hand cards into SUPPORTING (real path); resolve
+ * to their instance ids in order. Caller must be on PLACEMENT with ≥ `count` playable cards.
+ */
+export async function placeIntoSupporting(
+	page: Page,
+	count: number,
+): Promise<string[]> {
+	return page.evaluate(async (n) => {
+		const c = window.__creature!;
+		const placed: string[] = [];
+		for (let i = 0; i < n; i++) {
+			await c.waitForState(() =>
+				c
+					.validActions()
+					.some(
+						(a) =>
+							a.action === "play_card" &&
+							!!a.instance_ids &&
+							!placed.includes(a.instance_ids[0]),
+					),
+			);
+			const action = c
+				.validActions()
+				.find(
+					(a) =>
+						a.action === "play_card" &&
+						!!a.instance_ids &&
+						!placed.includes(a.instance_ids[0]),
+				);
+			const id = action!.instance_ids![0];
+			c.playCard(id);
+			await c.waitForState((s) =>
+				s
+					.getMyCardsInZone("SUPPORTING")
+					.some((card) => card.instance_id === id),
+			);
+			placed.push(id);
+		}
+		return placed;
+	}, count);
+}
+
+/**
+ * Promote a SUPPORTING card to ATTACKING: pass to PROMOTION, `promote` it (real path),
+ * await the move. The card must be promotable (placed ≥1 full turn ago) — call on turn 2+.
+ */
+export async function promoteToAttacking(
+	page: Page,
+	instanceId: string,
+): Promise<void> {
+	await passToPhase(page, "PROMOTION");
+	await page.evaluate(async (id) => {
+		const c = window.__creature!;
+		await c.waitForState(() =>
+			c
+				.validActions()
+				.some((a) => a.action === "promote" && a.instance_id === id),
+		);
+		c.promote(id);
+		await c.waitForState((s) =>
+			s.getMyCardsInZone("ATTACKING").some((card) => card.instance_id === id),
+		);
+	}, instanceId);
+}
+
+/** Block on the active page until it becomes this player's turn again. */
+export async function waitForMyTurn(page: Page): Promise<void> {
+	await page.evaluate(() =>
+		window.__creature!.waitForState(() => window.__creature!.isMyTurn()),
 	);
 }
