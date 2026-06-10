@@ -20,7 +20,7 @@ cd front && npm install
 - Keep PRs small and focused. For anything multi-step, drop a short plan in
   [`docs/exec-plans/active/`](docs/exec-plans/active/) first and move it to
   `completed/` when done.
-- Follow the coding style in [`.cursor/rules/`](.cursor/rules/) (fail-fast; DRY).
+- Follow the coding style in [`.claude/rules/`](.claude/rules/) (fail-fast; DRY).
 - Never hand-edit generated files (`front/src/lib/api/*.gen.ts`,
   `front/src/lib/utils/generated/*`) — change the backend and run
   `cd front && npm run generate`.

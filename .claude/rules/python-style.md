@@ -1,14 +1,12 @@
 ---
-name: python-style
-description: Verbose Python code styling rules with specific examples
-alwaysApply: false
+paths:
+  - "back/**/*.py"
 ---
 
-# Overview
+# Python Style (`back/`)
 
-This is a guide for the Python code styling rules for the vLex Research Assistant backend.
-These rules are **mandatory**.  
-Code that violates them is considered **incorrect**, even if it works.
+Mandatory styling rules for the `creature` backend. Code that violates them is
+considered **incorrect**, even if it works.
 
 ---
 
@@ -299,7 +297,7 @@ Do **not** introduce a variable if it is:
 ```python
 value = compute()
 consume(value)
-````
+```
 
 ✅ Good
 
@@ -430,47 +428,26 @@ run()
 
 ## Comments
 
-### No Obvious Comments
+Minimal — see **Comments & Docstrings** in [`general-style.md`](general-style.md). Python-specific nuance:
 
-Do **not** comment what the code already says.
+### Inline comments for implicit state (allowed)
 
-❌ Bad
-
-```python
-# call api
-res = api.get()
-```
+A one-line, same-line comment is fine when a value encodes **implicit/sentinel state**
+(`None`, `0`, empty list) whose meaning the name doesn't carry.
 
 ✅ Good
 
 ```python
-res = api.get()
-```
-
----
-
-### Inline Comments for Implicit State (Allowed & Encouraged)
-
-Inline one-line comments are **allowed** when a value encodes **implicit or sentinel state**
-(e.g. `None`, `0`, empty list) whose meaning is not explicit in the name.
-
-Prefer **same-line comments** for compactness.
-
-✅ Good
-
-```python
-if cache is None:  # Cache invalidated
+if cache is None:  # cache invalidated
     rebuild()
 ```
 
-❌ Still Bad
+❌ Still bad — restates syntax
 
 ```python
 if x is None:  # x is None
     ...
 ```
-
-Comments must explain **meaning**, not **syntax**.
 
 ---
 
@@ -482,9 +459,9 @@ Comments must explain **meaning**, not **syntax**.
 
 ---
 
-## Cursor Enforcement Heuristic (Mandatory)
+## Enforcement Heuristic (Mandatory)
 
-Before emitting code, Cursor must internally verify:
+Before emitting code, verify:
 
 > “If I change this logic, would I need to update more than one place?”
 

@@ -32,7 +32,7 @@ frontend over an OpenAPI contract and a WebSocket protocol.
 | Work in the backend / engine | [`back/AGENTS.md`](back/AGENTS.md) + [`back/app/game/README.md`](back/app/game/README.md) |
 | Work in the frontend | [`front/AGENTS.md`](front/AGENTS.md) |
 | Contribute / open a PR | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| Coding style | [`.cursor/rules/`](.cursor/rules/) (fail-fast philosophy; Python DRY rules) |
+| Coding style | [`.claude/rules/`](.claude/rules/) — auto-loaded by Claude Code (fail-fast philosophy; minimal comments & docstrings; Python DRY rules) |
 | Plan a multi-step change | drop a plan in [`docs/exec-plans/active/`](docs/exec-plans/active/) |
 
 ## 3. Setup & run

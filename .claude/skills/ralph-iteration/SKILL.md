@@ -119,21 +119,28 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
         mirrors real dependencies; with multiple deps, pick the latest as the base
         (`gt move --onto <branch>` can re-parent later). If a branch isn't tracked
         by Graphite yet, `gt track` it first.
-   2. **Create the stacked branch with one commit.** Stage the step's work **and**
-      your plan edits (`git add -A`), then create the branch — Graphite puts it on
-      top of the base you just checked out and records the commit in one go:
-      `gt create spec/<plan-slug>/step-<N>/<keyword> -m "<type>(<scope>): <summary> (<plan> step <N>)"`,
-      where `<plan-slug>` is the plan filename without `.md`, `<N>` is the step
-      number, and `<keyword>` is a short descriptor — e.g. `gt create
-      spec/e2e-gameplay-harness/step-3/api-seeding -m "test(e2e): seed game state
-      over the API (e2e-gameplay-harness step 3)"`. Conventional Commits (see
-      `CONTRIBUTING.md §4`) — valid types
+   2. **Create the stacked branch with one commit — its body becomes the PR
+      description.** Stage the step's work **and** your plan edits (`git add -A`),
+      then create the branch with `gt create`. On submit Graphite turns the commit
+      **subject into the PR title** and the commit **body into the PR description**,
+      so write both now by passing each paragraph as its own `-m`: first the
+      Conventional-Commits subject `-m "<type>(<scope>): <summary> (<plan> step
+      <N>)"`, then the PR body as two further `-m` paragraphs —
+      `## What problem does this solve?` and `## How does this solve it?` (exact
+      format and example under **PR description** below). `<plan-slug>` is the plan
+      filename without `.md`, `<N>` the step number, `<keyword>` a short descriptor
+      — e.g. branch `spec/e2e-gameplay-harness/step-3/api-seeding`. Conventional
+      Commits (see `CONTRIBUTING.md §4`) — valid types
       `feat`/`fix`/`chore`/`docs`/`refactor`/`test`/`perf`; scope = the area
       touched.
-   3. **Submit / refresh the stack of PRs:** `gt submit --stack` — creates this
-      branch's PR and keeps the bases + descriptions of the whole stack correct.
-      (One-time per machine, the loop needs `gt init` and `gt auth` done first; if
-      `gt submit` reports it's not initialized/authed, do those once, then re-run.)
+   3. **Submit / refresh the stack of PRs:** `gt submit --stack --no-edit` —
+      creates this branch's PR and keeps the bases + titles + descriptions of the
+      whole stack correct. `--no-edit` keeps it non-interactive and tells Graphite
+      to take the PR **title and description straight from the commit message**
+      (step 7.2) instead of opening an editor — essential for an unattended loop,
+      and what lands the two-section description on the PR. (One-time per machine,
+      the loop needs `gt init` and `gt auth` done first; if `gt submit` reports
+      it's not initialized/authed, do those once, then re-run.)
    4. **Record the branch + PR URL** in the step's status line (step 5) so the next
       iteration knows what to stack on.
 
@@ -142,10 +149,48 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
 
    If you just completed the **last** unchecked step, move the plan file to
    `docs/exec-plans/completed/` as your final action (its own commit on the top
-   branch, then `gt submit --stack` to refresh). Then **stop — do not start
+   branch — give it the same two-section body, then `gt submit --stack --no-edit`
+   to refresh). Then **stop — do not start
    another step** — and report: which step you chose and why, what changed, the
    gate / `Verify` output, the **branch + PR URL**, any plan edits you made, and
    any `Notes for next agent`.
+
+## PR description
+
+Each iteration's PR is read by a human in the morning, fast — and a long
+description just doesn't get read. Keep it **short and skimmable**; the one job is
+to communicate the *intention* of the change. Exactly two sections, nothing else:
+
+```
+## What problem does this solve?
+<1–2 plain sentences: what was missing, broken, or blocked before this step.>
+
+## How does this solve it?
+<1–2 sentences, or 2–3 short bullets: the approach taken — not a file-by-file diff.>
+```
+
+This text is the **commit body** (step 7.2); `gt submit --no-edit` publishes it
+verbatim as the PR description. Because it lives in the commit, it stays attached
+to the work even if `gt submit` is deferred or blocked — whenever the PR is
+(re)opened, Graphite uses it. Rules:
+
+- No preamble, no checklist, no changelog, no "as requested" filler.
+- Explain the *why* and the *approach*, not every file you touched — the diff
+  already shows that.
+- A reviewer caveat, if truly needed, gets one line. That's the budget.
+
+Full example (the whole `gt create` from step 7.2):
+
+```
+gt create spec/e2e-gameplay-harness/step-3/api-seeding \
+  -m "test(e2e): seed game state over the API (e2e-gameplay-harness step 3)" \
+  -m "## What problem does this solve?
+E2E tests had no way to put the board in a known state, so gameplay flows
+couldn't be exercised end to end." \
+  -m "## How does this solve it?
+Adds a test-only POST /seed endpoint that loads a fixture board, plus a Playwright
+helper that calls it before each gameplay spec."
+```
 
 ## What a plan should provide
 

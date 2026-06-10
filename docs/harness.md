@@ -25,12 +25,12 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 
 | Control | Kind | Where |
 | ------- | ---- | ----- |
-| Canonical agent guide | doc | [`/AGENTS.md`](../AGENTS.md) → `CLAUDE.md`, `.cursor/` point to it |
+| Canonical agent guide | doc | [`/AGENTS.md`](../AGENTS.md) → `CLAUDE.md` points to it |
 | Scoped guides | doc | [`back/AGENTS.md`](../back/AGENTS.md), [`front/AGENTS.md`](../front/AGENTS.md) |
 | Architecture & boundaries | doc | [`architecture.md`](architecture.md) |
 | Engine reference | doc | [`back/app/game/README.md`](../back/app/game/README.md) |
 | Game-rules / behaviour spec | doc | [`/README.md`](../README.md) |
-| Coding style (fail-fast; Python DRY) | guide | [`.cursor/rules/*.mdc`](../.cursor/rules/) |
+| Coding style (fail-fast; Python DRY) | guide | [`.claude/rules/*.md`](../.claude/rules/) (auto-loaded by Claude Code) |
 | Library notes for LLMs | doc | [`references/`](references/) |
 | Plan-tracking convention | process | [`exec-plans/`](exec-plans/) |
 | Type system (the engine is fully typed) | computational | `back/` mypy-strict on `app.game.*` |
@@ -142,7 +142,7 @@ the harness toward H3.
 The harness is owned and evolved like code: **when an issue recurs, improve the
 control, don't just fix the instance.** A new class of bug → add a sensor (a test,
 a lint rule, a boundary contract). A repeated misunderstanding → improve a guide
-(`AGENTS.md`, a `references/` note, a `.cursor` rule). Coding agents make new
+(`AGENTS.md`, a `references/` note, a `.claude/rules/` entry). Coding agents make new
 controls cheap to build — use them.
 
 ## Follow-up rungs (toward H3)

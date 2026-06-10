@@ -12,6 +12,6 @@ Read it first. Key pointers:
 - **Architecture & boundaries:** [docs/architecture.md](docs/architecture.md).
 - **All quality controls (the "harness") and how to evolve them:**
   [docs/harness.md](docs/harness.md).
-- **Coding style:** [.cursor/rules/](.cursor/rules/).
+- **Coding style:** [.claude/rules/](.claude/rules/) (auto-loaded by Claude Code).
 
 Do not duplicate guidance here — update [AGENTS.md](AGENTS.md) instead.

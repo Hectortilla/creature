@@ -1,8 +1,6 @@
----
-alwaysApply: true
----
+# Coding Style Rules (Strict — Fail-Fast Philosophy)
 
-# Coding Style Rules (Strict - Fail Fast Philosophy)
+Applies repo-wide (`back/` and `front/`).
 
 ## Core Philosophy
 - Write concise, readable, idiomatic code
@@ -25,7 +23,7 @@ This is intentional and REQUIRED.
 ```js
 if (!user) return;
 const name = user?.name;
-````
+```
 
 ### GOOD:
 
@@ -180,6 +178,66 @@ function getUserName(user) {
 
 ---
 
+## ✂️ Comments & Docstrings: Keep Them Tiny (or Delete Them)
+
+Names and structure are the documentation. A comment is a last resort, not a habit.
+
+* DELETE comments that restate the code.
+* No narration, no step-by-step, no changelog, no decorative banners.
+* Rename the variable/function before reaching for a comment.
+* If a comment survives, it explains a non-obvious **why** — in one line.
+* Docstrings: one line. Add args/returns/raises only when the signature can't tell the story. Never pad them.
+
+### BAD:
+
+```js
+// Iterate over each order and add its price to the running total
+let total = 0;
+for (const order of orders) {
+  total += order.price; // add price to total
+}
+```
+
+### GOOD:
+
+```js
+let total = 0;
+for (const order of orders) total += order.price;
+```
+
+### ALLOWED (non-obvious *why*, one line):
+
+```js
+total = Math.max(total, 50); // Stripe rejects charges under 50c
+```
+
+### Docstrings — BAD:
+
+```python
+def slugify(title):
+    """
+    Convert a title into a URL-safe slug.
+
+    This function takes the given title string, lowercases it,
+    replaces spaces with hyphens, strips punctuation, and returns
+    the resulting slug so it can be used safely inside a URL.
+
+    Args:
+        title (str): The title to convert.
+    Returns:
+        str: The slugified title.
+    """
+```
+
+### Docstrings — GOOD:
+
+```python
+def slugify(title: str) -> str:
+    """Lowercase, strip punctuation, hyphenate spaces."""
+```
+
+---
+
 ## ⚠️ Error Philosophy
 
 * Errors are GOOD when they indicate broken assumptions
@@ -215,46 +273,10 @@ If unsure:
 
 Violating these rules is incorrect.
 
-````
-
 ---
 
-# ➕ Add enforcement (important)
+## ⚠️ Boundary Exception: Validate at the Edges
 
-Update your second file too:
+Fail-fast is for **internal, trusted code** — business logic, internal functions, trusted data flows.
 
-```md
----
-alwaysApply: true
----
-
-Before returning code:
-- Remove all unnecessary null/undefined checks
-- Remove optional chaining where data is required
-- Remove defensive guards
-- Ensure fail-fast behavior
-
-If the code would silently handle errors:
-- Rewrite it so errors surface instead
-````
-
----
-
-# ⚠️ Very important reality check
-
-This style is powerful, but it has **a clear boundary**:
-
-### ✅ Use fail-fast inside:
-
-* business logic
-* internal functions
-* trusted data flows
-
-### ❌ Be careful at:
-
-* API boundaries
-* user input
-* external services
-* database responses
-
-There, you *should* validate.
+At **boundaries** — API/user input, external services, database responses — you *should* validate.
