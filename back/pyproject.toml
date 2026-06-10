@@ -240,7 +240,7 @@ DEP003 = ["pydantic", "sqlalchemy", "wtforms", "markupsafe"]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Harness: mutation testing (periodic, not gating). Scoped to the pure, fast
-# engine. Run a full pass with `mutmut run`; surfaced nightly in CI (mutation.yml).
+# engine. Run a full pass with `gt aut run`; surfaced nightly in CI (mutation.yml).
 # ─────────────────────────────────────────────────────────────────────────────
 [tool.mutmut]
 paths_to_mutate = ["app/game/"]
