@@ -32,10 +32,15 @@ export async function selectDeck(
 		name: new RegExp(`E2E Deck \\(${role}\\)`),
 	});
 	await expect(deck).toBeEnabled();
-	await deck.click();
-	await expect(
-		page.getByRole("heading", { name: "Select or Create a Room" }),
-	).toBeVisible();
+	// Deck buttons are server-rendered, so a click can land before hydration
+	// attaches their onclick — a silent no-op (see auth.e2e.ts). Selecting is
+	// idempotent, so retry the click + assertion together.
+	await expect(async () => {
+		await deck.click();
+		await expect(
+			page.getByRole("heading", { name: "Select or Create a Room" }),
+		).toBeVisible({ timeout: 2_000 });
+	}).toPass({ timeout: 15_000 });
 }
 
 /** Wait for the in-game view + a ready, non-zero-size board. */
