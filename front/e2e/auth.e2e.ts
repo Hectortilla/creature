@@ -72,25 +72,48 @@ test.describe("auth smoke", { tag: "@gating" }, () => {
 			page.getByRole("heading", { name: "Game Lobby" }),
 		).toBeVisible();
 
-		// global-setup names the host deck "E2E Deck (host)". A deck that is valid
-		// for playing renders an *enabled* button (disabled is bound to
-		// !is_valid_for_playing); selecting it reveals the room step, which proves
-		// it is genuinely selectable.
+		// global-setup names the host deck "E2E Deck (host)". A valid deck renders
+		// an enabled button; selecting it reveals the room step, which proves it
+		// is genuinely selectable. LobbySelector keeps deck buttons disabled until
+		// hydration attaches onclick, so enabled ⇔ clickable — one click suffices.
+		// Generous timeout: hydration competes with attack.e2e's teardown CPU
+		// load in full-suite runs.
 		const deck = page.getByRole("button", { name: /E2E Deck \(host\)/ });
 		await expect(deck).toBeVisible();
-		await expect(deck).toBeEnabled();
-		// The deck buttons are server-rendered (+page.server.ts fetches decks), so
-		// they are visible and enabled BEFORE Svelte hydration attaches their
-		// onclick — a click in that window is a silent no-op, and the room step
-		// (pure client state, `{#if selectedDeckId}`) never appears. Selecting a
-		// deck is idempotent and the deck list stays rendered, so retry the
-		// click + assertion together until the handler is live.
-		await expect(async () => {
-			await deck.click();
-			await expect(
-				page.getByRole("heading", { name: "Select or Create a Room" }),
-			).toBeVisible({ timeout: 2_000 });
-		}).toPass({ timeout: 15_000 });
+		await expect(deck).toBeEnabled({ timeout: 15_000 });
+		await deck.click();
+		await expect(
+			page.getByRole("heading", { name: "Select or Create a Room" }),
+		).toBeVisible();
+	});
+
+	// Regression guard for the in-suite deck-click flake: deck buttons are
+	// server-rendered, so they paint before hydration attaches their onclick —
+	// a click in that window used to be a silent no-op (LobbySelector now keeps
+	// them disabled until hydrated). Stalling the JS module chunks holds the
+	// page in exactly that painted-but-unhydrated window, deterministically.
+	test("deck buttons stay disabled until hydration attaches their handlers", async ({
+		browser,
+	}) => {
+		const context = await browser.newContext({
+			storageState: path.join(AUTH_DIR, "host.json"),
+		});
+		const page = await context.newPage();
+		await page.route("**/_app/immutable/**/*.js", async (route) => {
+			await new Promise((r) => setTimeout(r, 4_000));
+			await route.continue();
+		});
+		await page.goto("/game", { waitUntil: "commit" });
+
+		const deck = page.getByRole("button", { name: /E2E Deck \(host\)/ });
+		await expect(deck).toBeVisible({ timeout: 15_000 });
+		await expect(deck).toBeDisabled();
+		await expect(deck).toBeEnabled({ timeout: 30_000 });
+		await deck.click();
+		await expect(
+			page.getByRole("heading", { name: "Select or Create a Room" }),
+		).toBeVisible();
+		await context.close();
 	});
 
 	test("invalid credentials surface an inline alert", async ({ page }) => {
