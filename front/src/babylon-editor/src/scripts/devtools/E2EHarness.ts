@@ -3,19 +3,21 @@
  *
  * Implements the shared contract in ./e2e-contract.ts (the Playwright side
  * imports the same file, so the two can't drift; the `CreatureHarness`
- * annotation below is the conformance check). A thin read + drive facade over
- * the game singletons, attached to `window` only when the build-time
- * `PUBLIC_E2E_HOOKS` flag is set (wired from BabylonEditorScene.svelte); unset
- * builds tree-shake it away. It drives actions through the REAL production
- * path (ActionBuilder → GameConnection), so it's no privilege escalation — the
- * socket is authenticated and the server validates every action. Specs read
- * off GameStateStore and await transitions on the BoardController event bus
- * (no sleeps).
+ * annotation below is the conformance check). A THIN facade: every behavior
+ * lives on its owning class — reads on GameStateStore, action queries on
+ * ActionBuilder, waits on BoardController (`once`/`waitForState`), mesh
+ * resolution on CardEntityManager — and this file only adds the harness glue:
+ * singleton lookup, contract-default timeouts, throw-on-missing wrappers, and
+ * the world→page-coordinate projection used by the real-pointer smoke.
+ *
+ * Attached to `window` only when the build-time `PUBLIC_E2E_HOOKS` flag is set
+ * (wired from BabylonEditorScene.svelte); unset builds tree-shake it away. It
+ * drives actions through the REAL production path (ActionBuilder →
+ * GameConnection), so it's no privilege escalation — the socket is
+ * authenticated and the server validates every action.
  */
 
 import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector';
-import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
-import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
 
 import BoardController from '../BoardController';
@@ -24,30 +26,9 @@ import { CardEntityManager } from '../entities/CardEntityManager';
 import { GameStateStore } from '../state/GameStateStore';
 import { ActionBuilder } from '../state/ActionBuilder';
 import type { ValidAction } from '../game/types';
-import type { ClientGameState, Zone } from '../game/models';
+import type { Zone } from '../game/models';
 import type { StateChangeEvents } from '../state/events';
 import type { CreatureHarness, HarnessAction } from './e2e-contract';
-
-/**
- * BoardController events signalling the store may have changed; `waitForState`
- * re-checks its predicate after each. The snapshot is applied to the store BEFORE
- * these fire, so the predicate always observes fresh state.
- */
-const STATE_CHANGE_EVENTS: (keyof StateChangeEvents)[] = [
-	'gameStarted',
-	'cardMoved',
-	'cardsSwapped',
-	'phaseChanged',
-	'turnChanged',
-	'turnEnded',
-	'cardHealthChanged',
-	'cardDestroyed',
-	'cardAssociated',
-	'cardEvolved',
-	'validActionsChanged',
-	'gameOver',
-	'actionFailed',
-];
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -65,24 +46,10 @@ function requireBoard(): BoardController {
 	return board;
 }
 
-// The live Scene, derived from any card mesh so the harness needs no scene wiring.
 function requireScene(): Scene {
-	const mesh = CardEntityManager.instance?.getAllEntities()[0]?.mesh;
-	if (!mesh) throw new Error('E2EHarness: no card meshes to resolve the scene');
-	return mesh.getScene();
-}
-
-/** Walk a picked mesh up to its owning CardEntity instance id (or null). */
-function resolveCardId(picked: AbstractMesh | null): string | null {
-	const manager = CardEntityManager.instance;
-	if (!manager) return null;
-	let current: AbstractMesh | null = picked;
-	while (current) {
-		const entity = manager.getByMesh(current as Mesh);
-		if (entity) return entity.instanceId;
-		current = current.parent as AbstractMesh | null;
-	}
-	return null;
+	const scene = CardEntityManager.instance?.scene;
+	if (!scene) throw new Error('E2EHarness: CardEntityManager not initialized');
+	return scene;
 }
 
 // Cache one ActionBuilder per live connection — a new game gets a fresh one.
@@ -96,11 +63,12 @@ function requireBuilder(): ActionBuilder {
 		cachedBuilder = new ActionBuilder(conn);
 		cachedBuilderConn = conn;
 	}
+	// The builder is store-free by design — feed it the live actions at each use.
+	cachedBuilder.setValidActions(requireStore().validActions);
 	return cachedBuilder;
 }
 
-function findValidAction(match: (a: ValidAction) => boolean, describe: string): ValidAction {
-	const action = requireStore().validActions.find(match);
+function requireAction(action: ValidAction | undefined, describe: string): ValidAction {
 	if (!action) {
 		throw new Error(`E2EHarness: no valid action found for ${describe}`);
 	}
@@ -171,103 +139,72 @@ export function attachE2EHarness(): CreatureHarness {
 			const canvasY = ((y - rect.top) / rect.height) * engine.getRenderHeight();
 			const pick = scene.pick(canvasX, canvasY);
 			if (!pick?.hit || !pick.pickedMesh) return null;
-			return resolveCardId(pick.pickedMesh);
+			return CardEntityManager.instance?.resolveFromMesh(pick.pickedMesh)?.instanceId ?? null;
 		},
 
-		// Drive
+		// Drive — find via ActionBuilder's affordance queries (the same API the
+		// interactive board uses), then execute through the real path.
 		dispatch,
 		playCard: (instanceId) => {
-			// play_card carries `instance_ids: [cid]` (a list), not a scalar `instance_id`.
-			const action = findValidAction(
-				(a) =>
-					a.action === 'play_card' &&
-					Array.isArray(a.instance_ids) &&
-					(a.instance_ids as string[]).includes(instanceId),
+			// play_card references its card via the `instance_ids` list, which
+			// ActionBuilder's _referencesCard already matches.
+			const action = requireAction(
+				requireBuilder()
+					.getActionsForCard(instanceId)
+					.find((a) => a.action === 'play_card'),
 				`play_card ${instanceId}`,
 			);
 			dispatch(action);
 			return action;
 		},
 		pass: () => {
-			const action = findValidAction((a) => a.action === 'pass', 'pass');
+			const action = requireAction(requireBuilder().getPassAction(), 'pass');
 			dispatch(action);
 			return action;
 		},
 		swap: (supportingId, attackingId) => {
-			const action = findValidAction(
-				(a) =>
-					a.action === 'swap' &&
-					a.supporting_card_id === supportingId &&
-					a.attacking_card_id === attackingId,
+			const action = requireAction(
+				requireBuilder()
+					.getActionsForCard(supportingId)
+					.find((a) => a.action === 'swap' && a.attacking_card_id === attackingId),
 				`swap ${supportingId} ↔ ${attackingId}`,
 			);
 			dispatch(action);
 			return action;
 		},
 		attack: (attackerId, targetId) => {
-			const action = findValidAction(
-				(a) =>
-					a.action === 'attack' &&
-					a.attacker_id === attackerId &&
-					(targetId === undefined ? !a.target_card_id : a.target_card_id === targetId),
+			// Falsy target check on purpose: the backend sends "" for no-defender.
+			const action = requireAction(
+				requireBuilder()
+					.getActionsForCard(attackerId)
+					.find(
+						(a) =>
+							a.action === 'attack' &&
+							(targetId === undefined ? !a.target_card_id : a.target_card_id === targetId),
+					),
 				`attack ${attackerId} → ${targetId ?? '(no defender)'}`,
 			);
 			dispatch(action);
 			return action;
 		},
 		promote: (instanceId) => {
-			const action = findValidAction(
-				(a) => a.action === 'promote' && a.instance_id === instanceId,
+			const action = requireAction(
+				requireBuilder()
+					.getActionsForCard(instanceId)
+					.find((a) => a.action === 'promote'),
 				`promote ${instanceId}`,
 			);
 			dispatch(action);
 			return action;
 		},
 
-		// Wait
+		// Wait — BoardController owns the bus and the wait primitives; the
+		// harness only applies the contract's default timeout.
 		waitForState: (predicate, timeout = DEFAULT_TIMEOUT_MS) =>
-			new Promise<ClientGameState | null>((resolve, reject) => {
-				const store = requireStore();
-				if (predicate(store)) {
-					resolve(store.state);
-					return;
-				}
-				const board = requireBoard();
-				const unsubscribe = (): void => {
-					for (const event of STATE_CHANGE_EVENTS) {
-						board.off(event, check as never);
-					}
-				};
-				const timer = setTimeout(() => {
-					unsubscribe();
-					reject(new Error(`E2EHarness: waitForState timed out after ${timeout}ms`));
-				}, timeout);
-				function check(): void {
-					if (!predicate(store)) return;
-					clearTimeout(timer);
-					unsubscribe();
-					resolve(store.state);
-				}
-				for (const event of STATE_CHANGE_EVENTS) {
-					board.on(event, check as never);
-				}
-			}),
+			requireBoard().waitForState(predicate, timeout),
+		// The contract keeps event names as plain strings; the bus is typed.
 		nextEvent: (name, timeout = DEFAULT_TIMEOUT_MS) =>
-			new Promise<unknown>((resolve, reject) => {
-				const board = requireBoard();
-				// The contract keeps event names as plain strings; the bus is typed.
-				const event = name as keyof StateChangeEvents;
-				const timer = setTimeout(() => {
-					board.off(event, handler);
-					reject(new Error(`E2EHarness: nextEvent("${name}") timed out after ${timeout}ms`));
-				}, timeout);
-				function handler(data: unknown): void {
-					clearTimeout(timer);
-					board.off(event, handler);
-					resolve(data);
-				}
-				board.on(event, handler);
-			}),
+			requireBoard().once(name as keyof StateChangeEvents, timeout),
 	};
 
 	window.__creature = harness;

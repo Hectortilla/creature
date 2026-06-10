@@ -1,3 +1,4 @@
+import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
 import { CardEntity } from './CardEntity';
@@ -26,6 +27,11 @@ export class CardEntityManager {
 			CardEntityManager.instance = new CardEntityManager(scene);
 		}
 		return CardEntityManager.instance;
+	}
+
+	/** The Scene this manager (and every card mesh) lives in. */
+	get scene(): Scene {
+		return this._scene;
 	}
 
 	// ── Blueprint Management ─────────────────────────────────────────
@@ -123,6 +129,17 @@ export class CardEntityManager {
 
 	getByMesh(mesh: Mesh): CardEntity | undefined {
 		return this._meshToEntity.get(mesh);
+	}
+
+	/** Walk a picked mesh up its parent chain to the owning CardEntity (or null). */
+	resolveFromMesh(mesh: AbstractMesh | null): CardEntity | null {
+		let current: AbstractMesh | null = mesh;
+		while (current) {
+			const entity = this.getByMesh(current as Mesh);
+			if (entity) return entity;
+			current = current.parent as AbstractMesh | null;
+		}
+		return null;
 	}
 
 	getEntitiesInZone(ownerId: string, zone: Zone): CardEntity[] {
