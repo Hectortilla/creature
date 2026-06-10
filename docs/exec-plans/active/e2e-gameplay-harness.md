@@ -294,13 +294,37 @@ Each step is independently shippable and ends at a named gate, for
   assert on the store **and** on the guest's snapshot (multiplayer round-trip).
 - **Gate:** `npm run test:e2e -- --grep @nongating` green; frontend gate green.
 
-### Step 6 — Extend: pass phase, swap, attack (`@nongating`)
-- [ ] **Status:** not started
-- Specs: pass advances `currentPhase` through the expected sequence; swap
-  exchanges supporting/attacking instance ids; attack drops defender health /
-  destroys it (assert `cardHealthChanged`/`cardDestroyed`). Attack-dice
-  determinism depends on Step 2's state-lifetime finding.
-- **Gate:** `--grep @nongating` green.
+### Step 6 — Extend: `pass` advances the phase/turn machine (`@nongating`)
+- [x] **Status:** ✅ done — 2026-06-10 — new `e2e/phase.e2e.ts` drives `pass` via `window.__creature` (real `ActionBuilder.execute` path) and asserts: seeded first player starts in PLACEMENT; passing only moves FORWARD through the canonical phase order (never revisits an earlier phase); the turn then flips to the opponent who begins in PLACEMENT — observed on the OTHER client's snapshot (cross-client `turnChanged`+`phaseChanged` round-trip). Extracted the duplicated `window.__creature` type mirror + `waitForGameReady` into shared `e2e/harness.ts` (now consumed by `gameplay.e2e.ts` too). — branch `spec/e2e-gameplay-harness/step-6/pass-spec` (stacked on step-5's branch) — PR blocked (same remote-access barrier as steps 1–5)
+- Notes for next agent:
+  - **Scope split (this iteration's reshape):** the original Step 6 bundled pass + swap + attack. Investigation (see §4/§5 + the backend) revealed swap and attack need a **multi-turn board-building setup** that `pass` does not: `swap` requires a SUPPORTING card with `can_promote == True` (i.e. `turns_in_zone >= 1`, so it must survive ≥1 full turn) AND a card in ATTACKING (promoted) — both zones non-empty, in the SWAP phase; `attack` requires turn 2+ (first-turn attack ban) and a card in your ATTACKING zone, plus either an opponent attacker as target or the no-defender path. So they need a generic "drive the game forward across turns" helper (play_card → promote → end turn, alternate players) that `pass` alone doesn't. That orchestration is its own shippable unit → **new Step 6b** below.
+  - **`pass` is auto-skip-heavy on turn 1 (CONFIRMED against running backend):** from PLACEMENT, a single `pass` makes the engine auto-skip PROMOTION (no card has `turns_in_zone >= 1` yet), SWAP (empty zones), ASSOCIATION + EVOLUTION (first-turn bans), and ATTACK (first-turn ban) — so the turn flips straight to the opponent. The spec therefore asserts forward-only phase progression + the turn flip, NOT a rich multi-phase walk (which only exists turn 2+ with a built-up board — Step 6b territory). `back/app/game/actions/turn.py:54-109` (`PassPhaseAction`); phase order `back/app/models/game/enums.py:29-62`.
+  - **Shared `e2e/harness.ts`** now owns the spec-side `window.__creature` type mirror (extended with `pass`/`swap`/`attack`/`promote`/`myPlayerId`/`opponentId`/`nextEvent` + `current_health`/`health` on `HarnessCard` for Step 6b's combat asserts) and `waitForGameReady`. Reuse it; don't re-declare the `Window.__creature` global (TS will conflict).
+  - **`workers: 1` remains load-bearing** (Step 5's finding) — `phase.e2e.ts` creates its own room too, so it relies on serialised specs to avoid the cross-room guest-join race.
+- Spec: drive `pass` from PLACEMENT until the turn flips; assert forward-only
+  phase order + the opponent begins their turn in PLACEMENT on the **other**
+  client's snapshot.
+- **Gate:** `npm run test:e2e -- --grep @nongating` green (3 passed); frontend
+  lint/test/deps:check green.
+
+### Step 6b — Extend: swap + attack (`@nongating`)
+- [ ] **Status:** not started — Depends on Step 6
+- Add a small multi-turn driver helper (in `e2e/harness.ts` or `game-setup.ts`):
+  on the active client, play a card into SUPPORTING and `pass` to end the turn;
+  on the other client `pass` the whole turn; repeat to reach turn 2+ where a
+  turn-1 SUPPORTING card now has `can_promote == True`. Then `promote` it to
+  ATTACKING so both zones are populated.
+- Specs (drive via `window.__creature`, the real path):
+  - **swap** — in the SWAP phase, read the server-offered `swap` valid action
+    (`supporting_card_id`/`attacking_card_id`), `swap(...)`, and assert the two
+    instance ids exchanged zones (SUPPORTING ↔ ATTACKING) on the store **and**
+    on the opponent's snapshot.
+  - **attack** — get both players to field an ATTACKING card, reach the actor's
+    ATTACK phase (turn 2+), `attack(attackerId, targetId)`, and assert the
+    target's `current_health` dropped / it was destroyed (await
+    `cardHealthChanged` / `cardDestroyed`). Attack-dice determinism is covered
+    by Step 2's in-place-mutation finding (single seed ⇒ reproducible dice).
+- **Gate:** `npm run test:e2e -- --grep @nongating` green.
 
 ### Step 7 — Secondary: real-pointer fidelity smoke (`@nongating`)
 - [ ] **Status:** not started

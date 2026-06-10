@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { SCENE_TIMEOUT, startTwoPlayerGame } from "./game-setup";
+import { waitForGameReady } from "./harness";
 
 /**
  * Flow C — first gameplay flow: play_card → SUPPORTING (@nongating).
@@ -12,53 +13,6 @@ import { SCENE_TIMEOUT, startTwoPlayerGame } from "./game-setup";
  * (the build-gated `window.__creature` API, never a side channel). The GAME_SEED
  * deal makes the target stable. Non-gating: shares the flaky two-browser/WebGL path.
  */
-
-/**
- * Minimal mirror of `window.__creature` (the real type is build-gated, outside this
- * tsconfig). Only the members these specs touch are declared.
- */
-interface HarnessCard {
-	instance_id: string;
-	card_id: number;
-	zone: string;
-}
-interface HarnessAction {
-	action: string;
-	player_id: string;
-	/** play_card carries the target(s) as a list, not a scalar instance_id. */
-	instance_ids?: string[];
-}
-interface HarnessStore {
-	getMyCardsInZone(zone: string): HarnessCard[];
-	getOpponentCardsInZone(zone: string): HarnessCard[];
-}
-interface CreatureHarness {
-	isMyTurn(): boolean;
-	phase(): string | null;
-	validActions(): HarnessAction[];
-	cardsInZone(zone: string, perspective?: "my" | "opp"): HarnessCard[];
-	playCard(instanceId: string): HarnessAction;
-	waitForState(
-		predicate: (store: HarnessStore) => boolean,
-		timeout?: number,
-	): Promise<unknown>;
-}
-declare global {
-	interface Window {
-		__creature?: CreatureHarness;
-	}
-}
-
-/**
- * Block until the harness has attached and the first state snapshot is applied.
- * The harness attaches at board-ready, BEFORE the opening WS state arrives, so
- * `phase()` is briefly null — wait for it to populate.
- */
-async function waitForGameReady(page: Page): Promise<void> {
-	await page.waitForFunction(() => window.__creature?.phase() != null, null, {
-		timeout: SCENE_TIMEOUT,
-	});
-}
 
 /**
  * Await the seeded `play_card` the server offers the active player; return its
