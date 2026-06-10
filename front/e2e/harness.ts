@@ -74,3 +74,50 @@ export async function waitForGameReady(page: Page): Promise<void> {
 		timeout: SCENE_TIMEOUT,
 	});
 }
+
+/**
+ * Multi-turn board-building drivers shared by the swap/attack specs (Steps 6b/6c).
+ * Everything drives the REAL path through `window.__creature` and awaits state
+ * changes off the event bus (no sleeps); each is bounded so a stuck transition fails fast.
+ */
+
+/** Upper bound on `pass`es in any single turn (DRAW…ATTACK is 7 phases). */
+const MAX_PHASE_STEPS = 12;
+
+/** Drive `pass` until the active page's turn ends. Must be that player's turn on entry. */
+export async function passWholeTurn(page: Page): Promise<void> {
+	await page.evaluate(async (max) => {
+		const c = window.__creature!;
+		for (let i = 0; i < max && c.isMyTurn(); i++) {
+			const before = c.phase();
+			c.pass();
+			await c.waitForState(() => !c.isMyTurn() || c.phase() !== before);
+		}
+		if (c.isMyTurn()) {
+			throw new Error("passWholeTurn: turn never ended");
+		}
+	}, MAX_PHASE_STEPS);
+}
+
+/**
+ * Drive `pass` until the active page reaches `target` phase, same turn. Throws if the
+ * turn ends first (i.e. `target` was auto-skipped) — only ask for a phase the board enters.
+ */
+export async function passToPhase(page: Page, target: string): Promise<void> {
+	await page.evaluate(
+		async ({ target, max }) => {
+			const c = window.__creature!;
+			for (let i = 0; i < max && c.isMyTurn() && c.phase() !== target; i++) {
+				const before = c.phase();
+				c.pass();
+				await c.waitForState(() => !c.isMyTurn() || c.phase() !== before);
+			}
+			if (c.phase() !== target || !c.isMyTurn()) {
+				throw new Error(
+					`passToPhase: never reached ${target} (phase=${c.phase()}, myTurn=${c.isMyTurn()})`,
+				);
+			}
+		},
+		{ target, max: MAX_PHASE_STEPS },
+	);
+}

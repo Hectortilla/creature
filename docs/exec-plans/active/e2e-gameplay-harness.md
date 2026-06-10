@@ -307,23 +307,45 @@ Each step is independently shippable and ends at a named gate, for
 - **Gate:** `npm run test:e2e -- --grep @nongating` green (3 passed); frontend
   lint/test/deps:check green.
 
-### Step 6b — Extend: swap + attack (`@nongating`)
-- [ ] **Status:** not started — Depends on Step 6
-- Add a small multi-turn driver helper (in `e2e/harness.ts` or `game-setup.ts`):
-  on the active client, play a card into SUPPORTING and `pass` to end the turn;
-  on the other client `pass` the whole turn; repeat to reach turn 2+ where a
-  turn-1 SUPPORTING card now has `can_promote == True`. Then `promote` it to
-  ATTACKING so both zones are populated.
-- Specs (drive via `window.__creature`, the real path):
-  - **swap** — in the SWAP phase, read the server-offered `swap` valid action
-    (`supporting_card_id`/`attacking_card_id`), `swap(...)`, and assert the two
-    instance ids exchanged zones (SUPPORTING ↔ ATTACKING) on the store **and**
-    on the opponent's snapshot.
-  - **attack** — get both players to field an ATTACKING card, reach the actor's
-    ATTACK phase (turn 2+), `attack(attackerId, targetId)`, and assert the
-    target's `current_health` dropped / it was destroyed (await
-    `cardHealthChanged` / `cardDestroyed`). Attack-dice determinism is covered
-    by Step 2's in-place-mutation finding (single seed ⇒ reproducible dice).
+### Step 6b — Extend: swap (`@nongating`)
+- [x] **Status:** ✅ done — 2026-06-10 — added the shared multi-turn driver (`passWholeTurn`/`passToPhase` in `e2e/harness.ts`) and new `e2e/swap.e2e.ts`: actor places two cards into SUPPORTING (turn 1), opponent passes, then on turn 2 the actor promotes one to ATTACKING and `swap`s the still-SUPPORTING card with it; asserts the two ids exchanged zones (SUPPORTING ↔ ATTACKING) on the actor's store **and** on the opponent's OPPONENT-perspective snapshot (cross-client `cardsSwapped` round-trip). All 4 `@nongating` specs pass. — branch `spec/e2e-gameplay-harness/step-6b/swap-spec` (tip = the iteration commit, stacked on step-6's branch) — PR blocked (same remote-access barrier as steps 1–6)
+- Notes for next agent:
+  - **Scope reshape (this iteration):** the original Step 6b bundled swap **and** attack. I split attack into **Step 6c** (below) and shipped swap + the driver here. Why: swap needs only the *actor's own* board (a `can_promote` SUPPORTING card + an ATTACKING card) and no combat, so it's deterministic and clean to verify in one pass; attack additionally needs **both** players to field an ATTACKING card, element affordability, and combat dice/target rules — strictly harder, and its feasibility hinges on which attacks the seeded deck can actually afford (best discovered by driving the real `validActions()`, not predicting the deck). Splitting keeps each iteration small/shippable per the ralph loop. The multi-turn driver built here is the foundation 6c reuses.
+  - **Multi-turn driver lives in `e2e/harness.ts`:** `passWholeTurn(page)` drives `pass` until the player's turn ends; `passToPhase(page, target)` drives `pass` until a target phase, throwing if the turn ends first (i.e. the phase was auto-skipped because its preconditions weren't met — so only ask for a phase the current board actually enters). Both are bounded by a guard count (`MAX_PHASE_STEPS = 12`) so a stuck transition fails fast. Reuse them in 6c.
+  - **The swap board-build sequence (deterministic under `GAME_SEED=42`):** turn 1 the actor places **2** cards into SUPPORTING (max 3 slots; `initial_draw=4` so ≥2 playable); `passWholeTurn(actor)` (turn-1 pass auto-skips to turn end per Step 6); `passWholeTurn(observer)`; back on the actor's turn 2 both placed cards are `can_promote` (`turns_in_zone>=1`) — `passToPhase(actor,'PROMOTION')`, `promote` one → ATTACKING, `passToPhase(actor,'SWAP')`, then `swap(stillSupportingId, promotedId)`. The spec derives the two instance ids from the seeded deal at runtime (no hard-coded card ids), robust to seed/deck changes.
+  - **`workers: 1` remains load-bearing** (Step 5's finding) — `swap.e2e.ts` creates its own room, so it relies on serialised specs to avoid the cross-room guest-join race.
+  - Confirmed contracts used: `play_card` valid action carries `instance_ids: [cid]` (list); `promote` → `instance_id`; `swap` → `supporting_card_id`/`attacking_card_id` and is only offered for a SUPPORTING card with `can_promote==true` paired with each ATTACKING card (`back/app/game/actions/swap.py:63-73`). SUPPORTING cap 3 / ATTACKING cap 2 (`back/app/models/game/zone.py`).
+- Add a small multi-turn driver helper (in `e2e/harness.ts`): on the active
+  client, play cards into SUPPORTING and `pass` to end the turn; on the other
+  client `pass` the whole turn; repeat to reach turn 2+ where a turn-1
+  SUPPORTING card now has `can_promote == True`. Then `promote` it to ATTACKING
+  so both zones are populated.
+- Spec: in the SWAP phase, read the server-offered `swap` valid action
+  (`supporting_card_id`/`attacking_card_id`), `swap(...)`, and assert the two
+  instance ids exchanged zones (SUPPORTING ↔ ATTACKING) on the store **and** on
+  the opponent's snapshot.
+- **Gate:** `npm run test:e2e -- --grep @nongating` green.
+
+### Step 6c — Extend: attack (`@nongating`)
+- [ ] **Status:** not started — Depends on Step 6b
+- Reuse the multi-turn driver from Step 6b (`passWholeTurn`/`passToPhase` in
+  `e2e/harness.ts`). Get **both** players to field an ATTACKING card (each:
+  place turn 1 → survive a turn → promote turn 2), then reach the actor's ATTACK
+  phase (turn 2+, past the first-turn attack ban).
+- Spec (drive via `window.__creature`, the real path): read the server-offered
+  `attack` valid action(s) — `attack(attackerId, targetId)` — and assert the
+  target's `current_health` dropped / it was destroyed (await `cardHealthChanged`
+  / `cardDestroyed`) on the store **and** on the opponent's snapshot.
+- **Feasibility note (from Step 6b investigation):** don't predict the deck —
+  derive the attack from `validActions().filter(a => a.action === 'attack')`
+  after the build-up; if the server offers one it is by definition affordable
+  (element pool ≥ `attack.necessary_force`) and valid. The seeded E2E deck has
+  several single-element attacks (e.g. Ether/Water/Flora x1) affordable by
+  turn 2; **Air** has no contributor in the deck, so Air-cost attacks are a trap
+  — relying on `validActions()` sidesteps this. Attack-dice determinism is
+  covered by Step 2's in-place-mutation finding (single seed ⇒ reproducible
+  dice). If after a generic build-up no `attack` is offered, drive another turn
+  to accrue more elements (still deterministic under the fixed seed).
 - **Gate:** `npm run test:e2e -- --grep @nongating` green.
 
 ### Step 7 — Secondary: real-pointer fidelity smoke (`@nongating`)
