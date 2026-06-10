@@ -116,6 +116,11 @@ jobs:
       - name: Type-check (svelte-check) — non-blocking
         run: npm run check
         continue-on-error: true
+      # The Playwright specs sit outside the SvelteKit tsconfig; this checks them
+      # against the shared window.__creature contract (front/e2e/tsconfig.json).
+      # Clean from day one, so it gates.
+      - name: Type-check (e2e specs)
+        run: npm run check:e2e
       - name: Unit tests (vitest)
         run: npm run test
       - name: Module boundaries (dependency-cruiser)

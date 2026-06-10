@@ -10,7 +10,7 @@ swap, attack) — without trying to read pixels out of the BabylonJS canvas.
 
 The Playwright suite stops at `assertBoardReady()`: it proves the scene boots,
 not that the game *plays*. The follow-up rung in
-[`harness.md`](../harness.md) (lines ~167–168) names exactly this gap —
+[`harness.md`](../../harness.md) (lines ~167–168) names exactly this gap —
 "deeper gameplay flows (play a card, end a turn, resolve an attack)" and "wire
 the E2E harness in as the running-app verifier for autonomous mode."
 
@@ -374,7 +374,10 @@ Each step is independently shippable and ends at a named gate, for
 - **Gate:** `--grep @nongating` green.
 
 ### Step 8 — Docs/harness updates; complete the plan
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-10 — updated `docs/harness.md`: E2E sensor row + Playwright paragraph now name the gameplay flows (play_card/pass/swap/attack) and the two enablers (seeded `GAME_SEED` RNG + build-gated `window.__creature` API); ticked "deeper gameplay flows" in the follow-up rung (struck through, ✅ + cross-link); added the HUD→Svelte/DOM migration as a *separate* future plan; noted the seed + `window.__creature` extend the autonomous-mode probe to "is it *playing*?". Cross-linked this plan from harness.md. Moved this file to `../completed/`. — branch `spec/e2e-gameplay-harness/step-8/docs-harness` (stacked on step-7's branch) — PR blocked (same remote-access barrier as steps 1–7)
+- Notes for next agent:
+  - **PLAN COMPLETE.** All 8 steps done; this file now lives in `docs/exec-plans/completed/`. The whole stack (steps 1–8) is committed on local branches but **no PRs were ever submitted** — `gt submit`/`gh` can't reach the remote under the authed account (`hector-soria-clio`); see step 1's note for the full diagnosis. Whoever has working remote access can `gt submit --stack` from the tip branch `spec/e2e-gameplay-harness/step-8/docs-harness` to open the entire stack of 8 PRs at once.
+  - Gates run for this step: docs link-check (`lychee`) + frontend gate. The harness.md edits are docs-only — no code touched.
 - Update `docs/harness.md`: tick "deeper gameplay flows" in the follow-up rung;
   note the seed + `window.__creature` as the autonomous-mode probe surface;
   cross-link this plan. Note the HUD→Svelte migration as a *separate* future

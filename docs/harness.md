@@ -56,12 +56,14 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **build** | frontend | `npm run build` | CI — gating |
 | **eslint + prettier** | frontend | `npm run lint` | pre-commit · CI — gating (eslint ratcheted) |
 | **svelte-check** | frontend | `npm run check` | CI — non-blocking (pre-existing type debt) |
+| **tsc over `front/e2e/`** (specs vs the `window.__creature` contract) | frontend | `npm run check:e2e` | CI — gating (clean) |
 | **knip** (dead code · unused exports/deps) | frontend | `npm run knip` | CI — non-blocking (baseline) |
-| **Playwright E2E** (running-app smoke, real browser) | frontend + backend (full stack) | `npm run test:e2e` | CI (`e2e` job) — auth flow `@gating`; game-start + 3D-board flow `@nongating` |
+| **Playwright E2E** (running-app smoke, real browser) | frontend + backend (full stack) | `npm run test:e2e` | CI (`e2e` job) — auth flow `@gating`; game-start + 3D-board + gameplay flows (play_card / pass / swap / attack) `@nongating` |
 | **markdown link-check** | docs | `lychee --offline` | CI (`docs.yml`) |
 
 The backend "done" gate is composed as **`make check`**. The frontend "done" gate
-is **`npm run lint && npm run test && npm run deps:check && npm run build`**.
+is **`npm run lint && npm run check:e2e && npm run test && npm run deps:check &&
+npm run build`**.
 `npm run lint` gates: prettier is clean and eslint is "ratcheted" — high-volume
 legacy rules (`no-at-html-tags`, `require-each-key`, `no-explicit-any`,
 `no-navigation-without-resolve`, …) are **warnings**, so the gate blocks new
@@ -70,16 +72,30 @@ check` (svelte-check) stays non-blocking until its pre-existing type debt is cle
 
 The **Playwright E2E** sensor is the only **running-app** control: it boots the
 whole stack (Postgres · Redis · backend · the production frontend build) and
-drives a real Chromium through the core flows — login → lobby (`@gating`) and a
-two-browser game-start with the 3D board rendering (`@nongating`). It is what
+drives a real Chromium through the core flows — login → lobby (`@gating`), a
+two-browser game-start with the 3D board rendering, and deeper gameplay
+(play_card, pass, swap, attack) (`@nongating`). It is what
 makes [`front/AGENTS.md`](../front/AGENTS.md)'s "exercise BabylonJS / 3D through
 the running app instead" instruction executable, and its deterministic
 `[data-scene-ready]` board-ready signal is the probe a future autonomous loop
-will poll. Split gating follows the repo's ratchet pattern: the cheap, stable
-auth flow blocks merges now; the flakier WebGL flow runs `continue-on-error`
-until it settles, then gets promoted. Specs live under `front/e2e/*.e2e.ts`; see
-`front/playwright.config.ts` and the design plan in
-`docs/exec-plans/completed/e2e-verification-harness.md`.
+will poll. Gameplay is made testable by two enablers: a **seeded backend RNG**
+(`GAME_SEED` → a per-game `random.Random`, keeping `app.game` pure) so the deal
+and turn order reproduce, and a **build-gated `window.__creature` test API**
+that reads `GameStateStore` and drives actions through the real
+`ActionBuilder → GameConnection.sendAction` path (tree-shaken out of normal
+builds; on only when `PUBLIC_E2E_HOOKS=1`). That API's surface is declared once
+in an import-free contract
+(`front/src/babylon-editor/src/scripts/devtools/e2e-contract.ts`) that the
+in-page implementation and the Playwright specs both compile against —
+`npm run check:e2e` gates it, since the specs sit outside the SvelteKit
+tsconfig and are otherwise never type-checked. One real-pointer smoke
+(`scene.pick` via `page.mouse.click`) covers the input chain the API skips.
+Split gating follows the repo's ratchet pattern: the cheap, stable
+auth flow blocks merges now; the flakier WebGL/gameplay flows run
+`continue-on-error` until they settle, then get promoted. Specs live under
+`front/e2e/*.e2e.ts`; see `front/playwright.config.ts` and the design plans in
+`docs/exec-plans/completed/e2e-verification-harness.md` (game-start) and
+`docs/exec-plans/completed/e2e-gameplay-harness.md` (gameplay).
 
 ### Architecture-fitness sensors (structural)
 
@@ -161,10 +177,19 @@ Tracked here so they're visible, not lost:
   non-blocking baseline (it surfaces some genuinely dead app/legacy files) —
   triage and clear it, then promote `npm run knip` to gating.
 - **Activate the Claude PR-review workflow** (add the API-key secret).
-- **Promote the E2E game + 3D flow (`@nongating` → `@gating`)** once it proves
-  stable in CI — the next ratchet step for the running-app sensor. Then widen
-  coverage: cross-browser (WebKit), a mobile viewport, and deeper gameplay
-  flows (play a card, end a turn, resolve an attack).
+- **Promote the E2E game + 3D + gameplay flows (`@nongating` → `@gating`)** once
+  they prove stable in CI — the next ratchet step for the running-app sensor.
+  ~~deeper gameplay flows (play a card, end a turn, resolve an attack)~~ ✅ done
+  (`docs/exec-plans/completed/e2e-gameplay-harness.md`). Remaining: widen
+  coverage to cross-browser (WebKit) and a mobile viewport, and extend the
+  screenshot baseline to canonical post-action states.
+- **HUD → Svelte/DOM migration** (a *separate* future exec-plan): the action
+  buttons / phase indicator / attack picker / turn banner are still drawn
+  in-canvas (Babylon GUI), so gameplay specs drive their *actions* via the
+  `window.__creature` API rather than clicking DOM. Once they move to DOM,
+  assert them with `getByRole` and drop the corresponding test-API reliance
+  (plus the accessibility/i18n payoff).
 - **Wire the E2E harness in as the running-app verifier for autonomous mode**
   (the `[data-scene-ready]` / `creature:scene-ready` signal becomes the agent's
-  "is it alive?" probe).
+  "is it alive?" probe; the seeded deal + `window.__creature` extend it to an
+  "is it *playing*?" probe).

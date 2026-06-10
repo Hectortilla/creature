@@ -1,13 +1,16 @@
 /**
  * E2EHarness — build-gated `window.__creature` test API.
  *
- * A thin read + drive facade over the game singletons, attached to `window` only
- * when the build-time `PUBLIC_E2E_HOOKS` flag is set (wired from
- * BabylonEditorScene.svelte); unset builds tree-shake it away. It drives actions
- * through the REAL production path (ActionBuilder → GameConnection), so it's no
- * privilege escalation — the socket is authenticated and the server validates
- * every action. Specs read off GameStateStore and await transitions on the
- * BoardController event bus (no sleeps).
+ * Implements the shared contract in ./e2e-contract.ts (the Playwright side
+ * imports the same file, so the two can't drift; the `CreatureHarness`
+ * annotation below is the conformance check). A thin read + drive facade over
+ * the game singletons, attached to `window` only when the build-time
+ * `PUBLIC_E2E_HOOKS` flag is set (wired from BabylonEditorScene.svelte); unset
+ * builds tree-shake it away. It drives actions through the REAL production
+ * path (ActionBuilder → GameConnection), so it's no privilege escalation — the
+ * socket is authenticated and the server validates every action. Specs read
+ * off GameStateStore and await transitions on the BoardController event bus
+ * (no sleeps).
  */
 
 import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector';
@@ -21,14 +24,9 @@ import { CardEntityManager } from '../entities/CardEntityManager';
 import { GameStateStore } from '../state/GameStateStore';
 import { ActionBuilder } from '../state/ActionBuilder';
 import type { ValidAction } from '../game/types';
-import type { ClientCard, ClientGameState, TurnPhase, Zone } from '../game/models';
+import type { ClientGameState, Zone } from '../game/models';
 import type { StateChangeEvents } from '../state/events';
-
-/** Which player's cards to read in `cardsInZone` — defaults to mine. */
-type Perspective = 'my' | 'opp';
-
-/** Predicate evaluated against the live store in `waitForState`. */
-type StatePredicate = (store: GameStateStore) => boolean;
+import type { CreatureHarness, HarnessAction } from './e2e-contract';
 
 /**
  * BoardController events signalling the store may have changed; `waitForState`
@@ -52,47 +50,6 @@ const STATE_CHANGE_EVENTS: (keyof StateChangeEvents)[] = [
 ];
 
 const DEFAULT_TIMEOUT_MS = 10_000;
-
-export interface E2EHarness {
-	// ── Read (straight off GameStateStore) ──────────────────────────────
-	getState(): ClientGameState | null;
-	validActions(): ValidAction[];
-	phase(): TurnPhase | null;
-	isMyTurn(): boolean;
-	myPlayerId(): string;
-	opponentId(): string | null;
-	cardsInZone(zone: Zone, perspective?: Perspective): ClientCard[];
-
-	// ── Project (real-pointer fidelity smoke, Step 7 / §5.5) ─────────────
-	/** Page coords of a card mesh's centre, for `page.mouse.click(x, y)`. */
-	screenPositionOf(instanceId: string): { x: number; y: number };
-	/**
-	 * Instance id the renderer's `scene.pick` resolves to at the given PAGE coords
-	 * (or null) — lets a spec confirm which overlapping card a click would select.
-	 */
-	cardAtScreenPoint(x: number, y: number): string | null;
-
-	// ── Drive (real path: ActionBuilder.execute → GameConnection) ────────
-	dispatch(action: ValidAction): void;
-	playCard(instanceId: string): ValidAction;
-	pass(): ValidAction;
-	swap(supportingId: string, attackingId: string): ValidAction;
-	attack(attackerId: string, targetId?: string): ValidAction;
-	promote(instanceId: string): ValidAction;
-
-	// ── Wait (off the BoardController event bus — no sleeps) ─────────────
-	waitForState(predicate: StatePredicate, timeout?: number): Promise<ClientGameState | null>;
-	nextEvent<K extends keyof StateChangeEvents>(
-		name: K,
-		timeout?: number,
-	): Promise<StateChangeEvents[K]>;
-}
-
-declare global {
-	interface Window {
-		__creature?: E2EHarness;
-	}
-}
 
 // ── Singleton accessors (resolved lazily, at call time) ────────────────
 
@@ -152,12 +109,12 @@ function findValidAction(match: (a: ValidAction) => boolean, describe: string): 
 
 // ── Harness factory ────────────────────────────────────────────────────
 
-export function attachE2EHarness(): E2EHarness {
-	const dispatch = (action: ValidAction): void => {
+export function attachE2EHarness(): CreatureHarness {
+	const dispatch = (action: HarnessAction): void => {
 		requireBuilder().execute(action);
 	};
 
-	const harness: E2EHarness = {
+	const harness: CreatureHarness = {
 		// Read
 		getState: () => requireStore().state,
 		validActions: () => requireStore().validActions,
@@ -165,10 +122,11 @@ export function attachE2EHarness(): E2EHarness {
 		isMyTurn: () => requireStore().isMyTurn,
 		myPlayerId: () => requireStore().myPlayerId,
 		opponentId: () => requireStore().getOpponentId(),
+		// Specs pass server zone strings; the store API takes the Zone union.
 		cardsInZone: (zone, perspective = 'my') =>
 			perspective === 'opp'
-				? requireStore().getOpponentCardsInZone(zone)
-				: requireStore().getMyCardsInZone(zone),
+				? requireStore().getOpponentCardsInZone(zone as Zone)
+				: requireStore().getMyCardsInZone(zone as Zone),
 
 		// World position of a card mesh → page coords, so a spec can `page.mouse.click`
 		// it and exercise the real scene.pick → InteractionManager chain the drive API skips.
@@ -294,19 +252,21 @@ export function attachE2EHarness(): E2EHarness {
 					board.on(event, check as never);
 				}
 			}),
-		nextEvent: <K extends keyof StateChangeEvents>(name: K, timeout = DEFAULT_TIMEOUT_MS) =>
-			new Promise<StateChangeEvents[K]>((resolve, reject) => {
+		nextEvent: (name, timeout = DEFAULT_TIMEOUT_MS) =>
+			new Promise<unknown>((resolve, reject) => {
 				const board = requireBoard();
+				// The contract keeps event names as plain strings; the bus is typed.
+				const event = name as keyof StateChangeEvents;
 				const timer = setTimeout(() => {
-					board.off(name, handler);
-					reject(new Error(`E2EHarness: nextEvent("${String(name)}") timed out after ${timeout}ms`));
+					board.off(event, handler);
+					reject(new Error(`E2EHarness: nextEvent("${name}") timed out after ${timeout}ms`));
 				}, timeout);
-				function handler(data: StateChangeEvents[K]): void {
+				function handler(data: unknown): void {
 					clearTimeout(timer);
-					board.off(name, handler);
+					board.off(event, handler);
 					resolve(data);
 				}
-				board.on(name, handler);
+				board.on(event, handler);
 			}),
 	};
 

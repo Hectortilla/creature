@@ -21,28 +21,29 @@ The dev client talks to the backend at `PUBLIC_API_URL` (default
 
 ## Command table
 
-| Command                             | What it does                                          |
-| ----------------------------------- | ----------------------------------------------------- |
-| `npm run dev`                       | Vite dev server with HMR                              |
-| `npm run build`                     | Production build (`vite build`)                       |
-| `npm run preview`                   | Serve the built app                                   |
-| `npm run check`                     | `svelte-kit sync` + `svelte-check` (type/diagnostics) |
-| `npm run check:watch`               | `svelte-check` in watch mode                          |
-| `npm run format`                    | `prettier --write .` (fix formatting)                 |
-| `npm run lint`                      | `prettier --check .` + `eslint .`                     |
-| `npm run test`                      | `vitest run` (unit tests, one-shot)                   |
-| `npm run test:watch`                | `vitest` (watch mode)                                 |
-| `npm run test:cov`                  | `vitest run --coverage` (v8 coverage, text + HTML)    |
-| `npm run deps:check`                | `depcruise` — module-boundary sensor (see below)      |
-| `npm run generate`                  | regenerate the API client **and** action metadata     |
-| `npm run generate-client`           | regenerate only the OpenAPI client                    |
-| `npm run generate-action-metadata`  | regenerate only `utils/generated/*`                   |
-| `npm run scene:generate`            | rebuild the BabylonJS scene assets                    |
-| `npm run test:e2e`                  | Playwright running-app smoke (full stack, both flows) |
-| `npm run test:e2e:gating`           | only `@gating` specs (the CI blocking subset)         |
-| `npm run test:e2e:ui`               | Playwright UI mode (local debugging)                  |
-| `npm run test:e2e:headed`           | headed run (local debugging)                          |
-| `npm run test:e2e:update-snapshots` | regenerate the 3D screenshot baseline                 |
+| Command                             | What it does                                             |
+| ----------------------------------- | -------------------------------------------------------- |
+| `npm run dev`                       | Vite dev server with HMR                                 |
+| `npm run build`                     | Production build (`vite build`)                          |
+| `npm run preview`                   | Serve the built app                                      |
+| `npm run check`                     | `svelte-kit sync` + `svelte-check` (type/diagnostics)    |
+| `npm run check:watch`               | `svelte-check` in watch mode                             |
+| `npm run check:e2e`                 | `tsc` over `e2e/` (specs + `window.__creature` contract) |
+| `npm run format`                    | `prettier --write .` (fix formatting)                    |
+| `npm run lint`                      | `prettier --check .` + `eslint .`                        |
+| `npm run test`                      | `vitest run` (unit tests, one-shot)                      |
+| `npm run test:watch`                | `vitest` (watch mode)                                    |
+| `npm run test:cov`                  | `vitest run --coverage` (v8 coverage, text + HTML)       |
+| `npm run deps:check`                | `depcruise` — module-boundary sensor (see below)         |
+| `npm run generate`                  | regenerate the API client **and** action metadata        |
+| `npm run generate-client`           | regenerate only the OpenAPI client                       |
+| `npm run generate-action-metadata`  | regenerate only `utils/generated/*`                      |
+| `npm run scene:generate`            | rebuild the BabylonJS scene assets                       |
+| `npm run test:e2e`                  | Playwright running-app smoke (full stack, both flows)    |
+| `npm run test:e2e:gating`           | only `@gating` specs (the CI blocking subset)            |
+| `npm run test:e2e:ui`               | Playwright UI mode (local debugging)                     |
+| `npm run test:e2e:headed`           | headed run (local debugging)                             |
+| `npm run test:e2e:update-snapshots` | regenerate the 3D screenshot baseline                    |
 
 ## Svelte 5 runes conventions
 
@@ -146,6 +147,13 @@ due to a parser limitation in dependency-cruiser; see the comments in
   game-start with the 3D board rendering. See
   [`../docs/harness.md`](../docs/harness.md) (running-app sensor) and the design
   in [`../docs/exec-plans/completed/e2e-verification-harness.md`](../docs/exec-plans/completed/e2e-verification-harness.md).
+- The specs drive the board through the build-gated `window.__creature` API.
+  Its surface is defined **once**, in the shared contract
+  `src/babylon-editor/src/scripts/devtools/e2e-contract.ts` (serializable types
+  only, zero imports): the in-page implementation (`devtools/E2EHarness.ts`)
+  and the specs (via `e2e/harness.ts`, type-only) both compile against it, and
+  `npm run check:e2e` gates that in CI — extend the contract there, don't
+  re-declare types spec-side.
 - For DOM/component tests, `@testing-library/svelte` + `jsdom` are available.
 - See the exemplars `src/lib/utils/formatHandle.test.ts` and
   `src/lib/utils/getStrenghtsAndWeaknesses.test.ts` for the pattern.
@@ -156,6 +164,7 @@ These **must be green** for a frontend change:
 
 ```bash
 npm run lint        # prettier + eslint (ratcheted; gates on errors)
+npm run check:e2e   # e2e specs vs the window.__creature contract (clean; gates)
 npm run test        # vitest
 npm run deps:check  # module boundaries
 npm run build       # production build

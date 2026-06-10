@@ -1,0 +1,22 @@
+{
+	// Type-checks the Playwright specs (`npm run check:e2e` → `tsc --noEmit -p e2e`).
+	// The e2e dir is outside the SvelteKit tsconfig's include, so without this
+	// project the specs would never be type-checked (Playwright transpiles without
+	// checking). The shared `window.__creature` contract
+	// (../src/babylon-editor/src/scripts/devtools/e2e-contract.ts) enters the
+	// program via harness.ts's type-only re-export, which is what holds specs and
+	// the in-page E2EHarness implementation to the same API.
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"lib": ["ESNext", "DOM"],
+		"strict": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"types": ["node"],
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"include": ["./**/*.ts"]
+}
