@@ -79,10 +79,18 @@ test.describe("auth smoke", { tag: "@gating" }, () => {
 		const deck = page.getByRole("button", { name: /E2E Deck \(host\)/ });
 		await expect(deck).toBeVisible();
 		await expect(deck).toBeEnabled();
-		await deck.click();
-		await expect(
-			page.getByRole("heading", { name: "Select or Create a Room" }),
-		).toBeVisible();
+		// The deck buttons are server-rendered (+page.server.ts fetches decks), so
+		// they are visible and enabled BEFORE Svelte hydration attaches their
+		// onclick — a click in that window is a silent no-op, and the room step
+		// (pure client state, `{#if selectedDeckId}`) never appears. Selecting a
+		// deck is idempotent and the deck list stays rendered, so retry the
+		// click + assertion together until the handler is live.
+		await expect(async () => {
+			await deck.click();
+			await expect(
+				page.getByRole("heading", { name: "Select or Create a Room" }),
+			).toBeVisible({ timeout: 2_000 });
+		}).toPass({ timeout: 15_000 });
 	});
 
 	test("invalid credentials surface an inline alert", async ({ page }) => {

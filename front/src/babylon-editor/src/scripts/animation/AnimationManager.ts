@@ -111,7 +111,6 @@ export default class AnimationManager implements IScript {
 
 	private _subscribe(): void {
 		this._board.on('gameStarted', this._onGameStarted);
-		this._board.on('stateReplaced', this._onStateReplaced);
 		this._board.on('cardsSwapped', this._onCardsSwapped);
 		this._board.on('cardMoved', this._onCardMoved);
 		this._board.on('cardAssociated', this._onCardAssociated);
@@ -126,7 +125,6 @@ export default class AnimationManager implements IScript {
 
 	private _unsubscribe(): void {
 		this._board.off('gameStarted', this._onGameStarted);
-		this._board.off('stateReplaced', this._onStateReplaced);
 		this._board.off('cardsSwapped', this._onCardsSwapped);
 		this._board.off('cardMoved', this._onCardMoved);
 		this._board.off('cardAssociated', this._onCardAssociated);
@@ -156,13 +154,6 @@ export default class AnimationManager implements IScript {
 		this._pendingCardMoves = [];
 		for (const move of pending) this._onCardMoved(move);
 	}
-
-	private _onStateReplaced = (_state: ClientGameState): void => {
-		this._animationPipeline.skipAll();
-		this._pendingCardMoves = [];
-		this._tearDownBoard();
-		this._boardReady = true;
-	};
 
 	private _onCardMoved = (data: CardMovedData): void => {
 		if (!this._boardReady) {
@@ -452,19 +443,6 @@ export default class AnimationManager implements IScript {
 		return [...handIds, ...deckIds].map((id) => state.cards[id]);
 	}
 
-	private _tearDownBoard(): void {
-		for (const entity of this._cardManager.getAllEntities()) {
-			this._cardManager.destroyEntity(entity.instanceId);
-		}
-		for (const renderer of this._zones.values()) renderer.dispose();
-		this._zones.clear();
-		this._swapInProgress.clear();
-		this._destroyInProgress.clear();
-		this._associations.clear();
-		this._evolutions.clear();
-		this._initZoneRenderers();
-	}
-
 	// ====================================================================
 	// Associations
 	// ====================================================================
@@ -586,10 +564,6 @@ export default class AnimationManager implements IScript {
 			if (renderer.getEntities().some((e) => e.instanceId === instanceId)) return renderer;
 		}
 		return undefined;
-	}
-
-	private _rendererContains(renderer: ZoneRenderer | undefined, instanceId: string): boolean {
-		return renderer?.getEntities().some((e) => e.instanceId === instanceId) ?? false;
 	}
 
 	private _isMine(ownerId: string): boolean {

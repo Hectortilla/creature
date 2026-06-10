@@ -10,7 +10,6 @@ contribute to a PassiveQueryResult at validation/damage-calculation time.
 from __future__ import annotations
 
 import math
-import random
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
@@ -475,7 +474,7 @@ class ApplyStatusAtom(EffectAtom):
         events: list[GameEvent] = []
         if params.get("dice_face") is not None:
             faces = int(params.get("faces", 6))
-            roll = random.randint(1, faces)
+            roll = context.state.rng.randint(1, faces)
             events.append(
                 DiceRolledEvent(
                     game_id=context.state.game_id,

@@ -54,9 +54,9 @@ class PlayerState(GameBaseModel):
         """Reset per-turn state at the start of a new turn."""
         self.has_passed_phase = False
 
-    def shuffle_deck(self) -> None:
-        """Shuffle the player's deck."""
-        random.shuffle(self.zones[Zone.DECK.name].card_ids)
+    def shuffle_deck(self, rng: random.Random) -> None:
+        """Shuffle the player's deck using the per-game RNG."""
+        rng.shuffle(self.zones[Zone.DECK.name].card_ids)
 
 
 __all__ = ["PlayerState"]

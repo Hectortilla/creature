@@ -1,6 +1,11 @@
 import { defineConfig } from "@playwright/test";
 
-import { E2E_API_URL, E2E_DATABASE_URL, E2E_REDIS_URL } from "./e2e/config";
+import {
+	E2E_API_URL,
+	E2E_DATABASE_URL,
+	E2E_GAME_SEED,
+	E2E_REDIS_URL,
+} from "./e2e/config";
 
 /**
  * Playwright E2E harness for the running app.
@@ -29,6 +34,14 @@ export default defineConfig({
 	testMatch: "**/*.e2e.ts",
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
+	// Run specs serially. The gameplay/board specs share ONE backend process,
+	// ONE preview server, and ONE pair of seeded users; running spec files in
+	// parallel workers makes their guests race to join each other's freshly
+	// created rooms (greedy "first joinable room" selection), which surfaces as
+	// a backend "Failed to join room" when a room fills/starts mid-join. One
+	// worker isolates each spec's room lifecycle — matching the reliable
+	// single-spec behaviour.
+	workers: 1,
 	reporter: [["html", { open: "never" }], ["list"]],
 	use: {
 		baseURL: "http://localhost:4173",
@@ -65,6 +78,8 @@ export default defineConfig({
 			env: {
 				DATABASE_URL: E2E_DATABASE_URL,
 				REDIS_URL: E2E_REDIS_URL,
+				// Fixed RNG seed → deterministic deal/dice for the gameplay specs.
+				GAME_SEED: E2E_GAME_SEED,
 			},
 		},
 		{
@@ -80,6 +95,8 @@ export default defineConfig({
 			timeout: 180_000,
 			env: {
 				PUBLIC_API_URL: E2E_API_URL,
+				// Build-time flag enabling the `window.__creature` drive API (tree-shaken from prod builds).
+				PUBLIC_E2E_HOOKS: "1",
 			},
 		},
 	],

@@ -15,7 +15,7 @@ import GameConnection from './game/GameConnection';
 import { CardDefinitionCache } from './game/CardDefinitionCache';
 import { GameStateStore } from './state/GameStateStore';
 import type { GameMessage, ValidAction } from './game/types';
-import type { Zone, TurnPhase } from './game/models';
+import type { ClientGameState, Zone, TurnPhase } from './game/models';
 import { CardEntityManager } from './entities/CardEntityManager';
 
 import type {
@@ -23,6 +23,28 @@ import type {
 	StateChangeCallback,
 	GameStartedEventData,
 } from './state/events';
+
+/**
+ * Events emitted after a server snapshot has been applied to the store —
+ * `waitForState` re-checks its predicate after each. Snapshots reach the store
+ * BEFORE these fire (see `_handleRawMessage`), so predicates always observe
+ * fresh state.
+ */
+const STATE_CHANGE_EVENTS: (keyof StateChangeEvents)[] = [
+	'gameStarted',
+	'cardMoved',
+	'cardsSwapped',
+	'phaseChanged',
+	'turnChanged',
+	'turnEnded',
+	'cardHealthChanged',
+	'cardDestroyed',
+	'cardAssociated',
+	'cardEvolved',
+	'validActionsChanged',
+	'gameOver',
+	'actionFailed',
+];
 
 export default class BoardController implements IScript {
 	static instance: BoardController | null = null;
@@ -79,6 +101,61 @@ export default class BoardController implements IScript {
 		cb: StateChangeCallback<StateChangeEvents[K]>,
 	): void {
 		this._listeners.get(event)?.delete(cb);
+	}
+
+	/** Resolve with the next `event` payload; reject after `timeoutMs`. */
+	once<K extends keyof StateChangeEvents>(
+		event: K,
+		timeoutMs: number,
+	): Promise<StateChangeEvents[K]> {
+		return new Promise<StateChangeEvents[K]>((resolve, reject) => {
+			const timer = setTimeout(() => {
+				this.off(event, handler);
+				reject(new Error(`BoardController: once("${String(event)}") timed out after ${timeoutMs}ms`));
+			}, timeoutMs);
+			const handler = (data: StateChangeEvents[K]): void => {
+				clearTimeout(timer);
+				this.off(event, handler);
+				resolve(data);
+			};
+			this.on(event, handler);
+		});
+	}
+
+	/**
+	 * Resolve with the state snapshot once `predicate` holds over the store —
+	 * checked synchronously first, then re-checked after each
+	 * STATE_CHANGE_EVENTS emission. Rejects after `timeoutMs`.
+	 */
+	waitForState(
+		predicate: (store: GameStateStore) => boolean,
+		timeoutMs: number,
+	): Promise<ClientGameState | null> {
+		return new Promise<ClientGameState | null>((resolve, reject) => {
+			const store = this._stateStore;
+			if (predicate(store)) {
+				resolve(store.state);
+				return;
+			}
+			const unsubscribe = (): void => {
+				for (const event of STATE_CHANGE_EVENTS) {
+					this.off(event, check as never);
+				}
+			};
+			const timer = setTimeout(() => {
+				unsubscribe();
+				reject(new Error(`BoardController: waitForState timed out after ${timeoutMs}ms`));
+			}, timeoutMs);
+			const check = (): void => {
+				if (!predicate(store)) return;
+				clearTimeout(timer);
+				unsubscribe();
+				resolve(store.state);
+			};
+			for (const event of STATE_CHANGE_EVENTS) {
+				this.on(event, check as never);
+			}
+		});
 	}
 
 	private _emit<K extends keyof StateChangeEvents>(

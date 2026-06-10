@@ -58,7 +58,7 @@ Run the gate for the side you touched. **These must pass before a change is done
 | Side | Command | Runs |
 | ---- | ------- | ---- |
 | Backend | `cd back && make check` | ruff (lint) · ruff format check · mypy · import-linter · pytest |
-| Frontend (gating) | `cd front && npm run lint && npm run test && npm run deps:check && npm run build` | prettier + eslint (ratcheted) · vitest · dependency boundaries · build |
+| Frontend (gating) | `cd front && npm run lint && npm run check:e2e && npm run test && npm run deps:check && npm run build` | prettier + eslint (ratcheted) · e2e-spec type-check · vitest · dependency boundaries · build |
 | Frontend (non-blocking) | `npm run check` | svelte-check — pre-existing type debt; run it, don't add new errors ([docs/harness.md](docs/harness.md)) |
 | Running-app (core flows) | `cd front && npm run test:e2e` | Playwright real-browser smoke over the full stack — auth flow `@gating`, game-start + 3D `@nongating` ([front/AGENTS.md](front/AGENTS.md)). Run if you touched auth, lobby, game-start, or the 3D board |
 | Both | `make check` (repo root) | fans out to backend + frontend |

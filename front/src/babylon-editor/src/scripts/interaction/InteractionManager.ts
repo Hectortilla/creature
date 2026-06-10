@@ -1,4 +1,3 @@
-import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
 import type { IScript } from 'babylonjs-editor-tools';
 import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
@@ -70,7 +69,7 @@ export default class InteractionManager implements IScript {
 
 		const pickResult = this._scene.pick(this._scene.pointerX, this._scene.pointerY);
 		const entity = pickResult?.hit && pickResult.pickedMesh
-			? this._resolveCardEntity(pickResult.pickedMesh as Mesh)
+			? this._cardManager.resolveFromMesh(pickResult.pickedMesh)
 			: null;
 
 		this._updateHover(entity);
@@ -161,7 +160,7 @@ export default class InteractionManager implements IScript {
 			return;
 		}
 
-		const entity = this._resolveCardEntity(pickResult.pickedMesh as Mesh);
+		const entity = this._cardManager.resolveFromMesh(pickResult.pickedMesh);
 		if (!entity) {
 			this._clearSelection();
 			return;
@@ -390,17 +389,4 @@ export default class InteractionManager implements IScript {
 		this._applyInteractableHighlights();
 	}
 
-	// ====================================================================
-	// Mesh → CardEntity resolution
-	// ====================================================================
-
-	private _resolveCardEntity(mesh: Mesh | null): CardEntity | null {
-		let current: Mesh | null = mesh;
-		while (current) {
-			const entity = this._cardManager.getByMesh(current);
-			if (entity) return entity;
-			current = current.parent as Mesh | null;
-		}
-		return null;
-	}
 }

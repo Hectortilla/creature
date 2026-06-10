@@ -158,7 +158,6 @@ export interface StateChangeEvents {
 	gameStarted: GameStartedEventData;
 	gameOver: GameOverData;
 	validActionsChanged: ValidActionsChangedData;
-	stateReplaced: ClientGameState;
 	attackDeclared: AttackDeclaredData;
 	cardAssociated: CardAssociatedData;
 	cardEvolved: CardEvolvedData;

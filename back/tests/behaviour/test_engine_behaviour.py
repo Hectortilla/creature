@@ -12,7 +12,6 @@ Regenerate intentionally after an *intended* behaviour change:
 
 from __future__ import annotations
 
-import random
 from typing import Any
 
 import pytest
@@ -34,7 +33,6 @@ def _event_types(result: Any) -> list[str]:
 
 def _playthrough(steps: int = 80) -> list[dict[str, Any]]:
     """Run a fixed-seed game and capture a deterministic transcript."""
-    random.seed(1234)
     engine, state = _build_game()
 
     result = engine.start_game(state)
