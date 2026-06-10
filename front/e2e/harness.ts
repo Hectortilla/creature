@@ -64,6 +64,10 @@ export interface CreatureHarness {
 	opponentId(): string | null;
 	validActions(): HarnessAction[];
 	cardsInZone(zone: string, perspective?: "my" | "opp"): HarnessCard[];
+	/** Page coords of a card mesh's centre, for `page.mouse.click` (Step 7). */
+	screenPositionOf(instanceId: string): { x: number; y: number };
+	/** Instance id the renderer's scene.pick resolves to at page coords (Step 7). */
+	cardAtScreenPoint(x: number, y: number): string | null;
 	playCard(instanceId: string): HarnessAction;
 	pass(): HarnessAction;
 	swap(supportingId: string, attackingId: string): HarnessAction;

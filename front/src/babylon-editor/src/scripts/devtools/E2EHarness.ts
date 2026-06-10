@@ -10,8 +10,14 @@
  * BoardController event bus (no sleeps).
  */
 
+import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector';
+import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
+import type { Mesh } from '@babylonjs/core/Meshes/mesh';
+import type { Scene } from '@babylonjs/core/scene';
+
 import BoardController from '../BoardController';
 import GameConnection from '../game/GameConnection';
+import { CardEntityManager } from '../entities/CardEntityManager';
 import { GameStateStore } from '../state/GameStateStore';
 import { ActionBuilder } from '../state/ActionBuilder';
 import type { ValidAction } from '../game/types';
@@ -57,6 +63,15 @@ export interface E2EHarness {
 	opponentId(): string | null;
 	cardsInZone(zone: Zone, perspective?: Perspective): ClientCard[];
 
+	// ── Project (real-pointer fidelity smoke, Step 7 / §5.5) ─────────────
+	/** Page coords of a card mesh's centre, for `page.mouse.click(x, y)`. */
+	screenPositionOf(instanceId: string): { x: number; y: number };
+	/**
+	 * Instance id the renderer's `scene.pick` resolves to at the given PAGE coords
+	 * (or null) — lets a spec confirm which overlapping card a click would select.
+	 */
+	cardAtScreenPoint(x: number, y: number): string | null;
+
 	// ── Drive (real path: ActionBuilder.execute → GameConnection) ────────
 	dispatch(action: ValidAction): void;
 	playCard(instanceId: string): ValidAction;
@@ -91,6 +106,26 @@ function requireBoard(): BoardController {
 	const board = BoardController.instance;
 	if (!board) throw new Error('E2EHarness: BoardController not initialized');
 	return board;
+}
+
+// The live Scene, derived from any card mesh so the harness needs no scene wiring.
+function requireScene(): Scene {
+	const mesh = CardEntityManager.instance?.getAllEntities()[0]?.mesh;
+	if (!mesh) throw new Error('E2EHarness: no card meshes to resolve the scene');
+	return mesh.getScene();
+}
+
+/** Walk a picked mesh up to its owning CardEntity instance id (or null). */
+function resolveCardId(picked: AbstractMesh | null): string | null {
+	const manager = CardEntityManager.instance;
+	if (!manager) return null;
+	let current: AbstractMesh | null = picked;
+	while (current) {
+		const entity = manager.getByMesh(current as Mesh);
+		if (entity) return entity.instanceId;
+		current = current.parent as AbstractMesh | null;
+	}
+	return null;
 }
 
 // Cache one ActionBuilder per live connection — a new game gets a fresh one.
@@ -134,6 +169,52 @@ export function attachE2EHarness(): E2EHarness {
 			perspective === 'opp'
 				? requireStore().getOpponentCardsInZone(zone)
 				: requireStore().getMyCardsInZone(zone),
+
+		// World position of a card mesh → page coords, so a spec can `page.mouse.click`
+		// it and exercise the real scene.pick → InteractionManager chain the drive API skips.
+		screenPositionOf: (instanceId) => {
+			const entity = CardEntityManager.instance?.getByInstanceId(instanceId);
+			if (!entity) {
+				throw new Error(`E2EHarness: no card mesh for ${instanceId}`);
+			}
+			const mesh = entity.mesh;
+			const scene = mesh.getScene();
+			const camera = scene.activeCamera;
+			if (!camera) throw new Error('E2EHarness: scene has no active camera');
+			const engine = scene.getEngine();
+			const renderWidth = engine.getRenderWidth();
+			const renderHeight = engine.getRenderHeight();
+			const canvas = engine.getRenderingCanvas();
+			if (!canvas) throw new Error('E2EHarness: engine has no rendering canvas');
+
+			// Project the mesh centre to render-buffer pixels, then map to page coords
+			// (buffer size can differ from the displayed canvas under devicePixelRatio).
+			mesh.computeWorldMatrix(true);
+			const projected = Vector3.Project(
+				mesh.getAbsolutePosition(),
+				Matrix.Identity(),
+				scene.getTransformMatrix(),
+				camera.viewport.toGlobal(renderWidth, renderHeight),
+			);
+			const rect = canvas.getBoundingClientRect();
+			return {
+				x: rect.left + (projected.x / renderWidth) * rect.width,
+				y: rect.top + (projected.y / renderHeight) * rect.height,
+			};
+		},
+		cardAtScreenPoint: (x, y) => {
+			const scene = requireScene();
+			const engine = scene.getEngine();
+			const canvas = engine.getRenderingCanvas();
+			if (!canvas) throw new Error('E2EHarness: engine has no rendering canvas');
+			const rect = canvas.getBoundingClientRect();
+			// Page coords → render-buffer pixels (the space scene.pick expects).
+			const canvasX = ((x - rect.left) / rect.width) * engine.getRenderWidth();
+			const canvasY = ((y - rect.top) / rect.height) * engine.getRenderHeight();
+			const pick = scene.pick(canvasX, canvasY);
+			if (!pick?.hit || !pick.pickedMesh) return null;
+			return resolveCardId(pick.pickedMesh);
+		},
 
 		// Drive
 		dispatch,
