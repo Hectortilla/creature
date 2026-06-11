@@ -11,16 +11,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const headers = getAuthHeaders(locals);
 
 	const [cardsRes, elementsRes, typesRes, charactersRes] = await Promise.all([
-		getAllCardsCardsGet({ headers }),
-		getAllElementsGet({ headers }),
-		getAllTypesGet({ headers }),
-		getAllCharactersGet({ headers }),
+		getAllCardsCardsGet({ headers, throwOnError: true }),
+		getAllElementsGet({ headers, throwOnError: true }),
+		getAllTypesGet({ headers, throwOnError: true }),
+		getAllCharactersGet({ headers, throwOnError: true }),
 	]);
 
 	return {
-		cards: cardsRes.data ?? [],
-		elements: elementsRes.data ?? [],
-		types: typesRes.data ?? [],
-		characters: charactersRes.data ?? [],
+		cards: cardsRes.data,
+		elements: elementsRes.data,
+		types: typesRes.data,
+		characters: charactersRes.data,
 	};
 };

@@ -31,22 +31,22 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		abilitiesRes,
 		associationsRes,
 	] = await Promise.all([
-		getAllCardsCardsGet({ headers }),
-		getAllElementsGet({ headers }),
-		getAllTypesGet({ headers }),
-		getAllCharactersGet({ headers }),
-		getAllAttacksAttacksGet({ headers }),
-		getAllAbilitiesGet({ headers }),
-		getAllAssociationsGet({ headers }),
+		getAllCardsCardsGet({ headers, throwOnError: true }),
+		getAllElementsGet({ headers, throwOnError: true }),
+		getAllTypesGet({ headers, throwOnError: true }),
+		getAllCharactersGet({ headers, throwOnError: true }),
+		getAllAttacksAttacksGet({ headers, throwOnError: true }),
+		getAllAbilitiesGet({ headers, throwOnError: true }),
+		getAllAssociationsGet({ headers, throwOnError: true }),
 	]);
 
 	return {
-		cards: cardsRes.data ?? [],
-		elements: elementsRes.data ?? [],
-		types: typesRes.data ?? [],
-		characters: charactersRes.data ?? [],
-		attacks: attacksRes.data ?? [],
-		abilities: abilitiesRes.data ?? [],
-		associations: associationsRes.data ?? [],
+		cards: cardsRes.data,
+		elements: elementsRes.data,
+		types: typesRes.data,
+		characters: charactersRes.data,
+		attacks: attacksRes.data,
+		abilities: abilitiesRes.data,
+		associations: associationsRes.data,
 	};
 };

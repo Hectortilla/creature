@@ -5,9 +5,9 @@ import { getAuthHeaders } from "$lib/server/auth";
 export const load: PageServerLoad = async ({ locals }) => {
 	const headers = getAuthHeaders(locals);
 
-	const decksRes = await getAllDecksDecksGet({ headers });
+	const decksRes = await getAllDecksDecksGet({ headers, throwOnError: true });
 
 	return {
-		decks: decksRes.data ?? [],
+		decks: decksRes.data,
 	};
 };

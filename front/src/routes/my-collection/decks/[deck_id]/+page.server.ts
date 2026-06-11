@@ -18,18 +18,22 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const [deckRes, cardsRes, elementsRes, typesRes, charactersRes] =
 		await Promise.all([
-			getDeckDecksDeckIdGet({ path: { deck_id: Number(deck_id) }, headers }),
-			getAllCardsCardsGet({ headers }),
-			getAllElementsGet({ headers }),
-			getAllTypesGet({ headers }),
-			getAllCharactersGet({ headers }),
+			getDeckDecksDeckIdGet({
+				path: { deck_id: Number(deck_id) },
+				headers,
+				throwOnError: true,
+			}),
+			getAllCardsCardsGet({ headers, throwOnError: true }),
+			getAllElementsGet({ headers, throwOnError: true }),
+			getAllTypesGet({ headers, throwOnError: true }),
+			getAllCharactersGet({ headers, throwOnError: true }),
 		]);
 
 	return {
-		deck: deckRes.data ?? [],
-		cards: cardsRes.data ?? [],
-		elements: elementsRes.data ?? [],
-		types: typesRes.data ?? [],
-		characters: charactersRes.data ?? [],
+		deck: deckRes.data,
+		cards: cardsRes.data,
+		elements: elementsRes.data,
+		types: typesRes.data,
+		characters: charactersRes.data,
 	};
 };
