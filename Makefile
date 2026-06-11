@@ -16,6 +16,5 @@ check-back:
 	$(MAKE) -C back check
 
 check-front:
-	cd front && npm run check:e2e && npm run test && npm run deps:check && npm run build
-	-cd front && npm run lint   # non-blocking: pre-existing debt (see docs/harness.md)
-	-cd front && npm run check  # non-blocking: pre-existing debt
+	cd front && npm run lint && npm run check:e2e && npm run test && npm run deps:check && npm run build
+	-cd front && npm run check  # non-blocking: svelte-check type debt (see docs/harness.md)
