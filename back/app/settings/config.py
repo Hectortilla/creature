@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from pydantic_settings import BaseSettings
 
@@ -29,6 +30,11 @@ class Settings(BaseSettings):
     @property
     def broadcast_url(self) -> str:
         return self.redis_url or "memory://"
+
+    @property
+    def channel_namespace(self) -> str:
+        """Pub/sub namespace (the DB name) — isolates channels across stacks sharing one Redis."""
+        return urlparse(self.database_url).path.lstrip("/")
 
     model_config = {
         "env_file": ".env",

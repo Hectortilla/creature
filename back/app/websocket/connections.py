@@ -21,6 +21,12 @@ settings = get_settings()
 
 logger = logging.getLogger(__name__)
 
+CHANNEL_PREFIX = settings.channel_namespace
+
+
+def _player_channel(player_id: str) -> str:
+    return f"{CHANNEL_PREFIX}:player:{player_id}"
+
 
 class PlayerConnections:
     """Tracks open player sockets and pushes messages to them via pub/sub."""
@@ -82,7 +88,7 @@ class PlayerConnections:
             except Exception as e:
                 logger.exception("Error in subscription to channel %s for player %s: %s", channel, player_id, e)
 
-        subscription_task = asyncio.create_task(subscribe(player_id))
+        subscription_task = asyncio.create_task(subscribe(_player_channel(player_id)))
 
         await asyncio.sleep(0)
         ready_event.set()
@@ -129,6 +135,6 @@ class PlayerConnections:
 
     async def send_to_player(self, player_id: str, message: WebSocketMessage):
         await self.broadcast.publish(
-            channel=player_id,
+            channel=_player_channel(player_id),
             message=json.dumps(message.model_dump(mode="json")),
         )
