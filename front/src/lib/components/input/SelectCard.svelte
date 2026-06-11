@@ -35,7 +35,7 @@
     }
 
     let selectedCardName = $derived.by(() => 
-        (cards && group ? cards?.find((cards): cards is CardCreature => 'code' in cards && cards.code === group)?.name ?? "No seleccionado" : "No seleccionado")
+        (group ? cards.find((cards): cards is CardCreature => 'code' in cards && cards.code === group)?.name ?? "No seleccionado" : "No seleccionado")
     );
 
     /**
@@ -44,7 +44,6 @@
     let searchTerm = $state("");
 
     let filteredCards = $derived(() => {
-        if (!cards) return [];
         let filterCards: any[] = cards;
 
         // Search input

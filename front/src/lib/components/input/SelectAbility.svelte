@@ -38,7 +38,7 @@
     }
 
     let selectedAbilityName = $derived.by(() => 
-        (abilities && group ? abilities?.find((abilities): abilities is Ability => 'code' in abilities && abilities.code === group)?.name ?? "No seleccionado" : "No seleccionado")
+        (group ? abilities.find((abilities): abilities is Ability => 'code' in abilities && abilities.code === group)?.name ?? "No seleccionado" : "No seleccionado")
     );
 
     let selectedAbility = $derived.by(() => 
@@ -51,7 +51,6 @@
     let searchTerm = $state("");
 
     let filteredAbilities = $derived(() => {
-        if (!abilities) return [];
         let filterAbilities: any[] = abilities;
 
         // Search input

@@ -38,7 +38,7 @@
     }
 
     let selectedAssociationName = $derived.by(() => 
-        (associations && group ? associations?.find((associations): associations is Association => 'code' in associations && associations.code === group)?.name ?? "No seleccionado" : "No seleccionado")
+        (group ? associations.find((associations): associations is Association => 'code' in associations && associations.code === group)?.name ?? "No seleccionado" : "No seleccionado")
     );
 
     let selectedAssociation = $derived.by(() => 
@@ -51,7 +51,6 @@
     let searchTerm = $state("");
 
     let filteredAssociations = $derived(() => {
-        if (!associations) return [];
         let filterAssociations: any[] = associations;
 
         // Search input

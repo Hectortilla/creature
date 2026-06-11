@@ -85,9 +85,7 @@ class AssociationAction(Action):
         return ValidationResult(valid=True)
 
     def to_events(self, state: GameState) -> list[GameEvent]:
-        assoc_card = state.get_card(self.association_card_id)
-        if not assoc_card:
-            return []
+        assoc_card = state.cards[self.association_card_id]
         return [
             CardAssociatedEvent(
                 game_id=state.game_id,

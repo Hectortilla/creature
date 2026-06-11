@@ -148,7 +148,7 @@
                         </ButtonIcon>
                     </div>
                     <StylishedText text={deck_title} fontSize={46} />
-                    <p>{cards?.length}/{DECK_MAX_LENGTH} Cards</p>
+                    <p>{cards.length}/{DECK_MAX_LENGTH} Cards</p>
                 </div>
                 <IconSelector
                     name="display-view"
@@ -181,7 +181,7 @@
                             class:is-loaded={cardsAreLoaded}
                             style={`
                                 --index:${i + 1};
-                                --index-reverse:${cards ? cards?.length - i : i};
+                                --index-reverse:${cards.length - i};
                                 --rotate-on-scroll:${Math.max(-45, Math.min(45, scrollVelocity))}deg;
                             `}
                         >
@@ -216,7 +216,7 @@
                     <div
                         class="card-item"
                         class:is-loaded={cardsAreLoaded}
-                        style={`--index:${i + 1}; --index-reverse:${cards ? cards?.length - i : i}`}
+                        style={`--index:${i + 1}; --index-reverse:${cards.length - i}`}
                     >
                         <Card360
                             data={card}

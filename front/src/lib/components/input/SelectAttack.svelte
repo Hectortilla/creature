@@ -38,7 +38,7 @@
     }
 
     let selectedAttackName = $derived.by(() => 
-        (attacks && group ? attacks?.find((attacks): attacks is Attack => 'code' in attacks && attacks.code === group)?.name ?? "No seleccionado" : "No seleccionado")
+        (group ? attacks.find((attacks): attacks is Attack => 'code' in attacks && attacks.code === group)?.name ?? "No seleccionado" : "No seleccionado")
     );
 
     let selectedAttack = $derived.by(() => 
@@ -51,7 +51,6 @@
     let searchTerm = $state("");
 
     let filteredAttacks = $derived(() => {
-        if (!attacks) return [];
         let filterAttacks: any[] = attacks;
 
         // Search input

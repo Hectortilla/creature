@@ -106,8 +106,8 @@ def _detach_association(state: GameState, card: GameCard) -> None:
     """Unlink a card from the host it was associated with, if any."""
     if not card.association_target_id:
         return
-    host = state.cards.get(card.association_target_id)
-    if host and card.instance_id in host.associations:
+    host = state.cards[card.association_target_id]
+    if card.instance_id in host.associations:
         host.associations.remove(card.instance_id)
     card.association_target_id = None
 
@@ -120,32 +120,29 @@ def _detach_association(state: GameState, card: GameCard) -> None:
 @_handler(CardDrawnEvent)
 def _apply_card_drawn(state, players, event: CardDrawnEvent) -> None:
     """Move a card from deck to hand."""
-    card = state.cards.get(event.instance_id)
-    if card:
-        _move_zone(players[event.player_id], event.instance_id, Zone.DECK, Zone.HAND)
-        card.zone = Zone.HAND
+    card = state.cards[event.instance_id]
+    _move_zone(players[event.player_id], event.instance_id, Zone.DECK, Zone.HAND)
+    card.zone = Zone.HAND
 
 
 @_handler(CardPlayedEvent)
 def _apply_card_played(state, players, event: CardPlayedEvent) -> None:
     """Move a card from hand to supporting zone."""
-    card = state.cards.get(event.instance_id)
-    if card:
-        _move_zone(players[event.player_id], event.instance_id, Zone.HAND, Zone.SUPPORTING)
-        card.zone = Zone.SUPPORTING
-        card.turns_in_zone = 0
-        _recalculate_elements(state, players, event.player_id)
+    card = state.cards[event.instance_id]
+    _move_zone(players[event.player_id], event.instance_id, Zone.HAND, Zone.SUPPORTING)
+    card.zone = Zone.SUPPORTING
+    card.turns_in_zone = 0
+    _recalculate_elements(state, players, event.player_id)
 
 
 @_handler(CardPromotedEvent)
 def _apply_card_promoted(state, players, event: CardPromotedEvent) -> None:
     """Move a card from supporting to attacking zone."""
-    card = state.cards.get(event.instance_id)
-    if card:
-        _move_zone(players[event.player_id], event.instance_id, Zone.SUPPORTING, Zone.ATTACKING)
-        card.zone = Zone.ATTACKING
-        card.turns_in_zone = 0
-        _recalculate_elements(state, players, event.player_id)
+    card = state.cards[event.instance_id]
+    _move_zone(players[event.player_id], event.instance_id, Zone.SUPPORTING, Zone.ATTACKING)
+    card.zone = Zone.ATTACKING
+    card.turns_in_zone = 0
+    _recalculate_elements(state, players, event.player_id)
 
     # If this promotion resolves a force defend, resume normal game flow
     if state.status == GameStatus.PAUSED and state.pending_action == "force_defend":
@@ -159,21 +156,20 @@ def _apply_card_promoted(state, players, event: CardPromotedEvent) -> None:
 def _apply_card_swapped(state, players, event: CardSwappedEvent) -> None:
     """Swap a supporting card and an attacking card between their zones."""
     player = players[event.player_id]
-    supporting_card = state.cards.get(event.supporting_card_id)
-    attacking_card = state.cards.get(event.attacking_card_id)
+    supporting_card = state.cards[event.supporting_card_id]
+    attacking_card = state.cards[event.attacking_card_id]
 
-    if supporting_card and attacking_card:
-        _move_zone(player, event.supporting_card_id, Zone.SUPPORTING, Zone.ATTACKING)
-        _move_zone(player, event.attacking_card_id, Zone.ATTACKING, Zone.SUPPORTING)
+    _move_zone(player, event.supporting_card_id, Zone.SUPPORTING, Zone.ATTACKING)
+    _move_zone(player, event.attacking_card_id, Zone.ATTACKING, Zone.SUPPORTING)
 
-        # Swapped cards don't contribute elements this turn.
-        supporting_card.zone = Zone.ATTACKING
-        attacking_card.zone = Zone.SUPPORTING
-        for card in (supporting_card, attacking_card):
-            card.swapped_this_turn = True
-            card.turns_in_zone = 0
+    # Swapped cards don't contribute elements this turn.
+    supporting_card.zone = Zone.ATTACKING
+    attacking_card.zone = Zone.SUPPORTING
+    for card in (supporting_card, attacking_card):
+        card.swapped_this_turn = True
+        card.turns_in_zone = 0
 
-        _recalculate_elements(state, players, event.player_id)
+    _recalculate_elements(state, players, event.player_id)
 
     if state.status == GameStatus.PAUSED and state.pending_action == "forced_swap":
         state.status = GameStatus.IN_PROGRESS
@@ -191,45 +187,43 @@ def _apply_card_swapped(state, players, event: CardSwappedEvent) -> None:
 @_handler(CardAssociatedEvent)
 def _apply_card_associated(state, players, event: CardAssociatedEvent) -> None:
     player = players[event.player_id]
-    assoc_card = state.cards.get(event.association_card_id)
-    target_card = state.cards.get(event.target_card_id)
+    assoc_card = state.cards[event.association_card_id]
+    target_card = state.cards[event.target_card_id]
 
-    if assoc_card and target_card:
-        if event.source_zone:
-            _remove_from_zone(player, event.source_zone, event.association_card_id)
-        assoc_card.status = CardStatus.ASSOCIATED
-        assoc_card.association_target_id = target_card.instance_id
-        if event.association_card_id not in target_card.associations:
-            target_card.associations.append(event.association_card_id)
-        _recalculate_elements(state, players, event.player_id)
+    if event.source_zone:
+        _remove_from_zone(player, event.source_zone, event.association_card_id)
+    assoc_card.status = CardStatus.ASSOCIATED
+    assoc_card.association_target_id = target_card.instance_id
+    if event.association_card_id not in target_card.associations:
+        target_card.associations.append(event.association_card_id)
+    _recalculate_elements(state, players, event.player_id)
 
 
 @_handler(CardEvolvedEvent)
 def _apply_card_evolved(state, players, event: CardEvolvedEvent) -> None:
     player = players[event.player_id]
-    base_card = state.cards.get(event.base_card_id)
-    evo_card = state.cards.get(event.evolution_card_id)
+    base_card = state.cards[event.base_card_id]
+    evo_card = state.cards[event.evolution_card_id]
 
-    if base_card and evo_card:
-        target_zone = base_card.zone
+    target_zone = base_card.zone
 
-        _remove_from_zone(player, Zone.HAND, event.evolution_card_id)
-        if target_zone in (Zone.SUPPORTING, Zone.ATTACKING):
-            _remove_from_zone(player, target_zone, event.base_card_id)
+    _remove_from_zone(player, Zone.HAND, event.evolution_card_id)
+    if target_zone in (Zone.SUPPORTING, Zone.ATTACKING):
+        _remove_from_zone(player, target_zone, event.base_card_id)
 
-        # Base goes to the graveyard; the evolution takes its place.
-        _add_to_zone(player, Zone.GRAVEYARD, event.base_card_id)
-        base_card.zone = Zone.GRAVEYARD
+    # Base goes to the graveyard; the evolution takes its place.
+    _add_to_zone(player, Zone.GRAVEYARD, event.base_card_id)
+    base_card.zone = Zone.GRAVEYARD
 
-        _add_to_zone(player, target_zone, event.evolution_card_id)
-        evo_card.zone = target_zone
-        evo_card.turns_in_zone = 0
+    _add_to_zone(player, target_zone, event.evolution_card_id)
+    evo_card.zone = target_zone
+    evo_card.turns_in_zone = 0
 
-        # Transfer associations from base to evolution.
-        evo_card.associations = base_card.associations.copy()
-        base_card.associations.clear()
+    # Transfer associations from base to evolution.
+    evo_card.associations = base_card.associations.copy()
+    base_card.associations.clear()
 
-        _recalculate_elements(state, players, event.player_id)
+    _recalculate_elements(state, players, event.player_id)
 
 
 # ============================================================================
@@ -240,10 +234,9 @@ def _apply_card_evolved(state, players, event: CardEvolvedEvent) -> None:
 @_handler(AttackDeclaredEvent)
 def _apply_attack_declared(state, players, event: AttackDeclaredEvent) -> None:
     """Mark the attacker as having attacked and record cooldown usage."""
-    attacker = state.cards.get(event.attacker_id)
-    if attacker:
-        attacker.has_attacked_this_turn = True
-        attacker.attack_last_used[event.attack_id] = state.turn_number
+    attacker = state.cards[event.attacker_id]
+    attacker.has_attacked_this_turn = True
+    attacker.attack_last_used[event.attack_id] = state.turn_number
 
 
 @_handler(AttackResolvedEvent)
@@ -253,50 +246,45 @@ def _apply_attack_resolved(state, players, event: AttackResolvedEvent) -> None:
 
 @_handler(DamageDealtEvent)
 def _apply_damage_dealt(state, players, event: DamageDealtEvent) -> None:
-    target = state.cards.get(event.target_id)
-    if target and event.final_damage > 0:
+    target = state.cards[event.target_id]
+    if event.final_damage > 0:
         target.current_health -= event.final_damage
 
 
 @_handler(CardHealthChangedEvent)
 def _apply_card_health_changed(state, players, event: CardHealthChangedEvent) -> None:
     """Apply non-combat health changes (DoT, effect damage, effect healing)."""
-    target = state.cards.get(event.target_id)
-    if target:
-        target.current_health = event.new_health if event.new_health else target.current_health + event.delta
+    target = state.cards[event.target_id]
+    target.current_health = event.new_health if event.new_health else target.current_health + event.delta
 
 
 @_handler(HealingAppliedEvent)
 def _apply_healing_applied(state, players, event: HealingAppliedEvent) -> None:
-    target = state.cards.get(event.target_id)
-    if target:
-        target.current_health = min(target.health, event.new_health)
+    target = state.cards[event.target_id]
+    target.current_health = min(target.health, event.new_health)
 
 
 @_handler(StatusAppliedEvent)
 def _apply_status_applied(state, players, event: StatusAppliedEvent) -> None:
     """Attach a runtime status to a card."""
-    target = state.cards.get(event.target_id)
-    if target:
-        target.active_statuses.append(
-            ActiveStatus(
-                status_type=event.status_type,
-                source_card_id=event.source_card_id,
-                source_atom_id=event.source_atom_id,
-                remaining_turns=event.duration_turns,
-                tick_on=event.tick_on,
-                expires_on=event.expires_on,
-                payload=dict(event.payload),
-            )
+    target = state.cards[event.target_id]
+    target.active_statuses.append(
+        ActiveStatus(
+            status_type=event.status_type,
+            source_card_id=event.source_card_id,
+            source_atom_id=event.source_atom_id,
+            remaining_turns=event.duration_turns,
+            tick_on=event.tick_on,
+            expires_on=event.expires_on,
+            payload=dict(event.payload),
         )
+    )
 
 
 @_handler(StatusTickedEvent)
 def _apply_status_ticked(state, players, event: StatusTickedEvent) -> None:
     """Consume one tick of a status: count down its delay first, then duration."""
-    target = state.cards.get(event.target_id)
-    if not target:
-        return
+    target = state.cards[event.target_id]
     for status in target.active_statuses:
         if status.status_id != event.status_id:
             continue
@@ -309,24 +297,22 @@ def _apply_status_ticked(state, players, event: StatusTickedEvent) -> None:
 
 @_handler(StatusExpiredEvent)
 def _apply_status_expired(state, players, event: StatusExpiredEvent) -> None:
-    target = state.cards.get(event.target_id)
-    if target:
-        target.active_statuses = [s for s in target.active_statuses if s.status_id != event.status_id]
+    target = state.cards[event.target_id]
+    target.active_statuses = [s for s in target.active_statuses if s.status_id != event.status_id]
 
 
 @_handler(CardExiledEvent)
 def _apply_card_exiled(state, players, event: CardExiledEvent) -> None:
     """Move a card out of all normal zones into EXILED."""
     player = players[event.owner_id]
-    card = state.cards.get(event.instance_id)
-    if card:
-        for zone in Zone:
-            _remove_from_zone(player, zone, event.instance_id)
-        _add_to_zone(player, Zone.EXILED, event.instance_id)
-        card.zone = Zone.EXILED
-        card.status = CardStatus.READY
-        _detach_association(state, card)
-        _recalculate_elements(state, players, event.owner_id)
+    card = state.cards[event.instance_id]
+    for zone in Zone:
+        _remove_from_zone(player, zone, event.instance_id)
+    _add_to_zone(player, Zone.EXILED, event.instance_id)
+    card.zone = Zone.EXILED
+    card.status = CardStatus.READY
+    _detach_association(state, card)
+    _recalculate_elements(state, players, event.owner_id)
 
 
 @_handler(ForcedSwapRequestedEvent)
@@ -342,9 +328,9 @@ def _apply_forced_swap_requested(state, players, event: ForcedSwapRequestedEvent
 def _apply_card_revived(state, players, event: CardRevivedEvent) -> None:
     """Swap a graveyard card back into the source card's active zone."""
     player = players[event.player_id]
-    source = state.cards.get(event.source_card_id)
-    revived = state.cards.get(event.revived_card_id)
-    if source and revived and event.revived_card_id in player.zones[Zone.GRAVEYARD.name].card_ids:
+    source = state.cards[event.source_card_id]
+    revived = state.cards[event.revived_card_id]
+    if event.revived_card_id in player.zones[Zone.GRAVEYARD.name].card_ids:
         source_zone = source.zone
         _move_zone(player, source.instance_id, source_zone, Zone.GRAVEYARD)
         source.zone = Zone.GRAVEYARD
@@ -358,14 +344,13 @@ def _apply_card_revived(state, players, event: CardRevivedEvent) -> None:
 def _apply_card_destroyed(state, players, event: CardDestroyedEvent) -> None:
     """Move a destroyed card to the graveyard."""
     player = players[event.owner_id]
-    card = state.cards.get(event.instance_id)
-    if card:
-        if card.zone in (Zone.SUPPORTING, Zone.ATTACKING):
-            _remove_from_zone(player, card.zone, event.instance_id)
-        _add_to_zone(player, Zone.GRAVEYARD, event.instance_id)
-        card.zone = Zone.GRAVEYARD
-        _detach_association(state, card)
-        _recalculate_elements(state, players, event.owner_id)
+    card = state.cards[event.instance_id]
+    if card.zone in (Zone.SUPPORTING, Zone.ATTACKING):
+        _remove_from_zone(player, card.zone, event.instance_id)
+    _add_to_zone(player, Zone.GRAVEYARD, event.instance_id)
+    card.zone = Zone.GRAVEYARD
+    _detach_association(state, card)
+    _recalculate_elements(state, players, event.owner_id)
 
 
 # ============================================================================
@@ -398,21 +383,19 @@ def _apply_turn_started(state, players, event: TurnStartedEvent) -> None:
     player = players[event.player_id]
     player.has_passed_phase = False
     for card_id in player.get_active_cards():
-        card = state.cards.get(card_id)
-        if card:
-            card.has_attacked_this_turn = False
-            card.swapped_this_turn = False
-            if card.status == CardStatus.SWAPPED:
-                card.status = CardStatus.READY
+        card = state.cards[card_id]
+        card.has_attacked_this_turn = False
+        card.swapped_this_turn = False
+        if card.status == CardStatus.SWAPPED:
+            card.status = CardStatus.READY
 
 
 @_handler(TurnEndedEvent)
 def _apply_turn_ended(state, players, event: TurnEndedEvent) -> None:
     player = players[event.player_id]
     for card_id in player.get_active_cards():
-        card = state.cards.get(card_id)
-        if card:
-            card.turns_in_zone += 1
+        card = state.cards[card_id]
+        card.turns_in_zone += 1
     player.turn_count += 1
 
 
@@ -476,8 +459,8 @@ def _recalculate_elements(state: GameState, players: dict[str, PlayerState], pla
     # New max from current contributors (swapped/associated cards don't contribute).
     new_max: dict[int, int] = {}
     for card_id in player.get_active_cards():
-        card = state.cards.get(card_id)
-        if not card or card.zone not in (Zone.SUPPORTING, Zone.ATTACKING):
+        card = state.cards[card_id]
+        if card.zone not in (Zone.SUPPORTING, Zone.ATTACKING):
             continue
         if card.swapped_this_turn or card.status == CardStatus.ASSOCIATED:
             continue

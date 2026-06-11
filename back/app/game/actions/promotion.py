@@ -38,9 +38,7 @@ class PromoteAction(Action):
         return ValidationResult(valid=True)
 
     def to_events(self, state: GameState) -> list[GameEvent]:
-        card = state.get_card(self.instance_id)
-        if not card:
-            return []
+        card = state.cards[self.instance_id]
         return [
             CardPromotedEvent(
                 game_id=state.game_id,

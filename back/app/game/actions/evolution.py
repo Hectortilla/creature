@@ -57,10 +57,8 @@ class EvolutionAction(Action):
         return ValidationResult(valid=True)
 
     def to_events(self, state: GameState) -> list[GameEvent]:
-        base_card = state.get_card(self.target_card_id)
-        evo_card = state.get_card(self.evolution_card_id)
-        if not base_card or not evo_card:
-            return []
+        base_card = state.cards[self.target_card_id]
+        evo_card = state.cards[self.evolution_card_id]
         return [
             CardEvolvedEvent(
                 game_id=state.game_id,

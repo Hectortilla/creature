@@ -59,17 +59,16 @@ class PlayCardAction(Action):
     def to_events(self, state: GameState) -> list[GameEvent]:
         events: list[GameEvent] = []
         for instance_id in self.instance_ids:
-            card = state.get_card(instance_id)
-            if card:
-                events.append(
-                    CardPlayedEvent(
-                        game_id=state.game_id,
-                        player_id=self.player_id,
-                        instance_id=instance_id,
-                        card_id=card.card_id,
-                        card_name=card.name,
-                    )
+            card = state.cards[instance_id]
+            events.append(
+                CardPlayedEvent(
+                    game_id=state.game_id,
+                    player_id=self.player_id,
+                    instance_id=instance_id,
+                    card_id=card.card_id,
+                    card_name=card.name,
                 )
+            )
         return events
 
     @classmethod

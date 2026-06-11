@@ -244,12 +244,8 @@ class AttackAction(Action):
 
     def to_events(self, state: GameState) -> list[GameEvent]:
         opponent = state.room.get_opponent(self.player_id)
-        attacker = state.get_card(self.attacker_id)
-        if not attacker:
-            return []
-        attack = next((a for a in attacker.attacks if a.attack_id == self.attack_id), None)
-        if not attack:
-            return []
+        attacker = state.cards[self.attacker_id]
+        attack = next(a for a in attacker.attacks if a.attack_id == self.attack_id)
 
         dice_events, dice_can_continue = self._dice_lock_events(attacker, state)
         if not dice_can_continue:
@@ -302,9 +298,7 @@ class AttackAction(Action):
                     ),
                 ]
 
-        target = state.get_card(self.target_card_id)
-        if not target:
-            return []
+        target = state.cards[self.target_card_id]
         targets = [target]
         consume_first_only = True
         if attack_has_multi_target(attacker, attack.attack_id):
@@ -553,9 +547,7 @@ class ReviveFromGraveyardAction(Action):
         return ValidationResult(valid=True)
 
     def to_events(self, state: GameState) -> list[GameEvent]:
-        source = state.get_card(self.source_card_id)
-        if not source:
-            return []
+        source = state.cards[self.source_card_id]
         return [
             CardRevivedEvent(
                 game_id=state.game_id,
