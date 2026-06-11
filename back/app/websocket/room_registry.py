@@ -47,7 +47,10 @@ class RoomRegistry:
         rooms = await self.redis.smembers(f"player:{player_id}")
         if not rooms:
             return None
-        return next(iter(rooms)).decode()
+        if len(rooms) > 1:
+            # Membership must be single; log the breach and pick deterministically.
+            logger.warning("Player %s is a member of multiple rooms: %s", player_id, rooms)
+        return min(rooms).decode()
 
     async def send_to_room(self, room_id: str, message: WebSocketMessage) -> None:
         """Send the same message to every player in a room."""

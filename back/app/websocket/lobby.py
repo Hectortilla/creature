@@ -42,11 +42,11 @@ class Lobby:
             room_id=str(uuid4()),
             host_id=player.player_id,
         )
-        await self.registry.add(player.player_id, room.room_id)
-
         room.add_player(player)
-
         self.rooms[room.room_id] = room
+
+        # Redis last: a failed in-memory seat must not leave a dangling player entry.
+        await self.registry.add(player.player_id, room.room_id)
 
         return room
 
@@ -62,8 +62,9 @@ class Lobby:
             await self._send_join_error(player.player_id)
             return None
 
-        await self.registry.add(player.player_id, room_id)
+        # Redis last: if two joiners race, add_player raises and the loser stays out of Redis.
         room.add_player(player)
+        await self.registry.add(player.player_id, room_id)
 
         await self.connections.send_to_player(player.player_id, GameJoinedMessage(data=GameJoinedData(room=room)))
 
@@ -81,13 +82,15 @@ class Lobby:
         return room
 
     async def leave_room(self, player_id: str, room_id: str) -> None:
-        """Leave a game room."""
+        """Leave a room; always drops Redis membership, even with no in-memory seat."""
+        await self.registry.remove(player_id, room_id)
+
         room = self.rooms.get(room_id)
         if not room:
             return
 
-        room.remove_player(player_id)
-        await self.registry.remove(player_id, room_id)
+        if player_id in room.players:
+            room.remove_player(player_id)
 
         await self.registry.send_to_room(
             room_id,

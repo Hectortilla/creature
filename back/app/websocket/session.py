@@ -48,20 +48,20 @@ class GameSession:
         3. Process incoming messages
         4. Handle disconnection and cleanup
         """
-        await self.connections.connect(websocket, player)
-
-        if room_id:
-            room = await self.lobby.join_room(player, room_id)
-            if room is None:
-                return
-        else:
-            room = await self.lobby.create_room(player)
-
-        # Joining can complete a room (e.g. the second player), so start then.
-        if room.game_ready_to_start():
-            await self.game_runner.start_game(room)
-
         try:
+            await self.connections.connect(websocket, player)
+
+            if room_id:
+                room = await self.lobby.join_room(player, room_id)
+                if room is None:
+                    return
+            else:
+                room = await self.lobby.create_room(player)
+
+            # Joining can complete a room (e.g. the second player), so start then.
+            if room.game_ready_to_start():
+                await self.game_runner.start_game(room)
+
             while True:
                 data = await websocket.receive_json()
                 await self.router.handle_message(player.player_id, data)
@@ -70,10 +70,17 @@ class GameSession:
         except Exception:
             logger.exception(f"Error in game session: {traceback.format_exc()}")
         finally:
-            current_room = await self.lobby.get_player_room(player.player_id)
-            if current_room:
-                await self.lobby.leave_room(player.player_id, current_room)
-            await self.connections.disconnect(player.player_id, websocket)
+            await self._cleanup(websocket, player.player_id)
 
+    async def _cleanup(self, websocket: WebSocket, player_id: str) -> None:
+        """Disconnect and close run even if leaving the room fails."""
+        try:
+            current_room = await self.lobby.get_player_room(player_id)
+            if current_room:
+                await self.lobby.leave_room(player_id, current_room)
+        except Exception:
+            logger.exception("Error leaving room during session cleanup")
+        finally:
+            await self.connections.disconnect(player_id, websocket)
             if websocket.client_state == WebSocketState.CONNECTED:
                 await websocket.close()
