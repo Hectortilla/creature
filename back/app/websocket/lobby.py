@@ -10,7 +10,7 @@ import traceback
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from app.models.game.room import GameRoom
+from app.models.game.room import GameRoom, RoomSummary
 from app.models.schemas.websocket.server import (
     ErrorData,
     ErrorMessage,
@@ -114,8 +114,12 @@ class Lobby:
         return await self.registry.room_of(player_id)
 
     def list_rooms(self) -> list[GameRoom]:
-        """List all rooms."""
+        """List all live rooms."""
         return list(self.rooms.values())
+
+    def list_room_summaries(self) -> list[RoomSummary]:
+        """Public room summaries for the lobby listing — never exposes hands or zones."""
+        return [room.to_summary() for room in self.list_rooms()]
 
     async def _send_join_error(self, player_id: str) -> None:
         """Send a join error to a player."""

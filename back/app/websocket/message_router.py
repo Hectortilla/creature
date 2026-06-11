@@ -96,7 +96,7 @@ class MessageRouter:
                 )
 
             elif msg_type == ListRoomsMessage.type:
-                rooms = self.lobby.list_rooms()
+                rooms = self.lobby.list_room_summaries()
                 await self.connections.send_to_player(player_id, RoomsListMessage(data=RoomsListData(rooms=rooms)))
 
             elif msg_type == ActionMessage.type:

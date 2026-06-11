@@ -26,8 +26,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	if (roomsRes.data) {
-		const roomsData = roomsRes.data as { rooms?: RoomSummary[] };
-		rooms = roomsData.rooms || [];
+		rooms = roomsRes.data as RoomSummary[];
 	}
 
 	return {

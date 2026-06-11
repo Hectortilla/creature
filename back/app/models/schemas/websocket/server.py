@@ -9,7 +9,7 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import BaseModel, Field, SkipValidation
 
 from app.models.game.events import GameEventUnion
-from app.models.game.room import GameRoom
+from app.models.game.room import GameRoom, RoomSummary
 from app.models.game.state import GameState, GameStateForPlayer
 
 # Import WebSocketMessage - defined in __init__.py
@@ -92,7 +92,7 @@ class ValidActionsData(BaseModel):
 class RoomsListData(BaseModel):
     """Data for rooms_list message."""
 
-    rooms: Annotated[list[GameRoom], SkipValidation]
+    rooms: list[RoomSummary]
 
 
 class GameLeftData(BaseModel):

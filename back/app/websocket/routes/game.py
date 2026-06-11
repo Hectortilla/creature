@@ -11,6 +11,7 @@ from fastapi import APIRouter, Query, WebSocket, WebSocketException, status
 
 from app.auth.dependencies import WebSocketUser
 from app.database import get_db_session
+from app.models.game.room import RoomSummary
 from app.services.player_state import build_player_state
 from app.settings import lifespan
 
@@ -47,12 +48,7 @@ async def game_websocket(
     await lifespan.game_session.run(websocket, player, room_id=room_id)
 
 
-@router.get("/rooms")
-def list_rooms():
-    """
-    List all available game rooms (HTTP endpoint for convenience).
-
-    Returns rooms that haven't started yet.
-    """
-    rooms = lifespan.lobby.list_rooms() if lifespan.lobby else []
-    return {"rooms": [room.model_dump(mode="json") for room in rooms]}
+@router.get("/rooms", response_model=list[RoomSummary])
+def list_rooms() -> list[RoomSummary]:
+    """List all game rooms as public summaries (no hands, zones, or decks)."""
+    return lifespan.lobby.list_room_summaries()

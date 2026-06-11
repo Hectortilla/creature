@@ -151,13 +151,10 @@
 										</span>
 									</div>
 									<div class="room-players">
-										Players: {Object.keys(room.players).length}/2
-										{#if room.player1_name}
-											<span class="player-name">• {room.player1_name}</span>
-										{/if}
-										{#if room.player2_name}
-											<span class="player-name">• {room.player2_name}</span>
-										{/if}
+										Players: {room.players.length}/2
+										{#each room.players as player}
+											<span class="player-name">• {player.name}</span>
+										{/each}
 									</div>
 								</button>
 							{/each}

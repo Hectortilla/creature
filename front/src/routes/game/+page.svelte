@@ -51,8 +51,7 @@
 			});
 
 			if (response.ok) {
-				const fetchedData = await response.json();
-				rooms = fetchedData.rooms || [];
+				rooms = await response.json();
 			}
 		} catch (error) {
 			console.error('Error fetching rooms:', error);

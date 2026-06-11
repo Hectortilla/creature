@@ -17,6 +17,25 @@ from app.models.game.state import GameState
 from app.utils.time import utcnow
 
 
+class RoomPlayerSummary(GameBaseModel):
+    """A player as seen from the lobby: identity only, never their cards."""
+
+    player_id: str
+    name: str
+
+
+class RoomSummary(GameBaseModel):
+    """Public lobby view of a room: identity, flags, and player names — never hands, zones, or decks."""
+
+    room_id: str
+    host_id: str
+    created_at: str
+    players: list[RoomPlayerSummary]
+    is_full: bool
+    is_started: bool
+    can_join: bool
+
+
 class GameRoom(GameBaseModel):
     """
     Represents a game room/lobby.
@@ -48,6 +67,18 @@ class GameRoom(GameBaseModel):
     @property
     def can_join(self) -> bool:
         return not self.is_full and not self.is_started
+
+    def to_summary(self) -> RoomSummary:
+        """Public lobby summary: never exposes hands, zones, decks, or element pools."""
+        return RoomSummary(
+            room_id=self.room_id,
+            host_id=self.host_id,
+            created_at=self.created_at.isoformat(),
+            players=[RoomPlayerSummary(player_id=p.player_id, name=p.name) for p in self.players.values()],
+            is_full=self.is_full,
+            is_started=self.is_started,
+            can_join=self.can_join,
+        )
 
     def get_player(self, player_id: str) -> PlayerState:
         """Get a player's state."""
