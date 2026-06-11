@@ -428,7 +428,7 @@ run()
 
 ## Comments
 
-Minimal — see **Comments & Docstrings** in [`general-style.md`](general-style.md). Python-specific nuance:
+**Default to ONE line per comment and docstring; deleting it is often better. Only genuinely complex code may run a tiny bit longer, and only rarely** — see the 🔥 CRITICAL RULE in [`general-style.md`](general-style.md). Python-specific nuance:
 
 ### Inline comments for implicit state (allowed)
 

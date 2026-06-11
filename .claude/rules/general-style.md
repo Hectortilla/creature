@@ -178,15 +178,23 @@ function getUserName(user) {
 
 ---
 
-## ✂️ Comments & Docstrings: Keep Them Tiny (or Delete Them)
+## 🔥 CRITICAL RULE: COMMENTS & DOCSTRINGS ARE ONE LINE — OR DELETED
+
+**Default: every comment and every docstring is ONE line. Deleting it entirely is always valid — and is often the best choice.**
+
+A multi-line block comment, a multi-line docstring, or a paragraph above a function is almost always a STYLE VIOLATION, not a nicety. Before writing one, ask whether deleting it is clearer — usually it is.
+
+**Rare exception:** genuinely complex or subtle logic — a non-obvious algorithm, a sharp-edged invariant, a hard-won workaround — may run a *tiny bit* past one line when a single line truly can't carry the *why*. This must be **so much the exception** that you almost never reach for it; if you use it more than rarely, you're abusing it.
 
 Names and structure are the documentation. A comment is a last resort, not a habit.
 
-* DELETE comments that restate the code.
+* DELETE comments that restate the code — deletion beats shortening.
 * No narration, no step-by-step, no changelog, no decorative banners.
 * Rename the variable/function before reaching for a comment.
-* If a comment survives, it explains a non-obvious **why** — in one line.
-* Docstrings: one line. Add args/returns/raises only when the signature can't tell the story. Never pad them.
+* If a comment survives, it explains a non-obvious **why** — in **one line** (rarely, a touch more for genuinely complex code).
+* Docstrings: **one line.** Add args/returns/raises ONLY when the signature can't tell the story. Never pad them.
+
+> **Memory anchor:** One line or none — and *none* is often best. More than one line is the rare exception you must earn.
 
 ### BAD:
 
