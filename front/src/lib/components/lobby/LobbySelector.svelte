@@ -30,6 +30,13 @@
 		onRefreshRooms,
 		onConnect
 	}: Props = $props();
+
+	// Deck buttons are server-rendered; until hydration attaches onclick, a
+	// click is a silent no-op — keep them disabled so it can't happen.
+	let hydrated = $state(false);
+	$effect(() => {
+		hydrated = true;
+	});
 </script>
 
 <div class="lobby-selector">
@@ -55,7 +62,7 @@
 								onDeckSelect(deck.id);
 							}
 						}}
-						disabled={!deck.is_valid_for_playing}
+						disabled={!hydrated || !deck.is_valid_for_playing}
 					>
 						<div class="deck-info">
 							<span class="deck-name">{deck.name}</span>
