@@ -62,6 +62,7 @@ Run the gate for the side you touched. **These must pass before a change is done
 | Frontend (non-blocking) | `npm run check` | svelte-check — pre-existing type debt; run it, don't add new errors ([docs/harness.md](docs/harness.md)) |
 | Running-app (core flows) | `cd front && npm run test:e2e` | Playwright real-browser smoke over the full stack — auth flow `@gating`, game-start + 3D `@nongating` ([front/AGENTS.md](front/AGENTS.md)). Run if you touched auth, lobby, game-start, or the 3D board |
 | Both | `make check` (repo root) | fans out to backend + frontend |
+| Autonomy / loop gate | `make verify` (repo root) | `make check` **plus** the running-app Playwright suite, run *unconditionally* — auth `@gating` blocks, gameplay `@nongating` report-only. What the ralph loop runs every iteration, so the e2e sensor never hides behind a judgment call. Needs `make up`. |
 
 Local hooks run the fast subset on every commit (see `.pre-commit-config.yaml`);
 CI runs the full gate on every PR. Don't bypass these — fix the design instead.

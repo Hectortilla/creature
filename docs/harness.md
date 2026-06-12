@@ -58,7 +58,7 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **svelte-check** | frontend | `npm run check` | CI — non-blocking (pre-existing type debt) |
 | **tsc over `front/e2e/`** (specs vs the `window.__creature` contract) | frontend | `npm run check:e2e` | CI — gating (clean) |
 | **knip** (dead code · unused exports/deps) | frontend | `npm run knip` | CI — non-blocking (baseline) |
-| **Playwright E2E** (running-app smoke, real browser) | frontend + backend (full stack) | `npm run test:e2e` | CI (`e2e` job) — auth flow `@gating`; game-start + 3D-board + gameplay flows (play_card / pass / swap / attack) `@nongating` |
+| **Playwright E2E** (running-app smoke, real browser) | frontend + backend (full stack) | `npm run test:e2e` (loop: `make verify`) | CI (`e2e` job) **and** the ralph loop every iteration — auth flow `@gating` (blocks); game-start + 3D-board + gameplay flows (play_card / pass / swap / attack) `@nongating` (report-only) |
 | **markdown link-check** | docs | `lychee --offline` | CI (`docs.yml`) |
 
 The backend "done" gate is composed as **`make check`**. The frontend "done" gate
@@ -77,8 +77,8 @@ two-browser game-start with the 3D board rendering, and deeper gameplay
 (play_card, pass, swap, attack) (`@nongating`). It is what
 makes [`front/AGENTS.md`](../front/AGENTS.md)'s "exercise BabylonJS / 3D through
 the running app instead" instruction executable, and its deterministic
-`[data-scene-ready]` board-ready signal is the probe a future autonomous loop
-will poll. Gameplay is made testable by two enablers: a **seeded backend RNG**
+`[data-scene-ready]` board-ready signal is the probe the ralph loop polls every
+iteration via `make verify`. Gameplay is made testable by two enablers: a **seeded backend RNG**
 (`GAME_SEED` → a per-game `random.Random`, keeping `app.game` pure) so the deal
 and turn order reproduce, and a **build-gated `window.__creature` test API**
 that reads `GameStateStore` and drives actions through the real
@@ -92,7 +92,13 @@ tsconfig and are otherwise never type-checked. One real-pointer smoke
 (`scene.pick` via `page.mouse.click`) covers the input chain the API skips.
 Split gating follows the repo's ratchet pattern: the cheap, stable
 auth flow blocks merges now; the flakier WebGL/gameplay flows run
-`continue-on-error` until they settle, then get promoted. Specs live under
+`continue-on-error` until they earn promotion. **Promotion criterion (the
+"green streak"):** the `@nongating` e2e step has passed on **≥ 10 consecutive
+`main` CI runs** with no flaky-retry passes (check via `gh run list --workflow
+CI --branch main` plus the run's `e2e` step / uploaded `playwright-report`), and
+the ralph loop's report-only `@nongating` leg has flagged no failure across that
+window — then execute the queued
+`docs/exec-plans/active/e2e-gating-promotion.md`. Specs live under
 `front/e2e/*.e2e.ts`; see `front/playwright.config.ts` and the design plans in
 `docs/exec-plans/completed/e2e-verification-harness.md` (game-start) and
 `docs/exec-plans/completed/e2e-gameplay-harness.md` (gameplay).
@@ -178,7 +184,10 @@ Tracked here so they're visible, not lost:
   triage and clear it, then promote `npm run knip` to gating.
 - **Activate the Claude PR-review workflow** (add the API-key secret).
 - **Promote the E2E game + 3D + gameplay flows (`@nongating` → `@gating`)** once
-  they prove stable in CI — the next ratchet step for the running-app sensor.
+  they hit the green-streak bar above — now a *queued, executable* step at
+  `docs/exec-plans/active/e2e-gating-promotion.md` (commit the missing Linux
+  screenshot baseline, then flip the tags + drop CI's `continue-on-error`, gated
+  on the streak), not a someday-bullet.
   ~~deeper gameplay flows (play a card, end a turn, resolve an attack)~~ ✅ done
   (`docs/exec-plans/completed/e2e-gameplay-harness.md`). Remaining: widen
   coverage to cross-browser (WebKit) and a mobile viewport, and extend the
@@ -189,7 +198,9 @@ Tracked here so they're visible, not lost:
   `window.__creature` API rather than clicking DOM. Once they move to DOM,
   assert them with `getByRole` and drop the corresponding test-API reliance
   (plus the accessibility/i18n payoff).
-- **Wire the E2E harness in as the running-app verifier for autonomous mode**
+- ~~**Wire the E2E harness in as the running-app verifier for autonomous mode**
   (the `[data-scene-ready]` / `creature:scene-ready` signal becomes the agent's
   "is it alive?" probe; the seeded deal + `window.__creature` extend it to an
-  "is it *playing*?" probe).
+  "is it *playing*?" probe).~~ ✅ done — the ralph loop runs the full suite every
+  iteration via root `make verify` (auth `@gating` blocks, gameplay `@nongating`
+  report-only); see `AGENTS.md §4` and the `ralph-iteration` skill.

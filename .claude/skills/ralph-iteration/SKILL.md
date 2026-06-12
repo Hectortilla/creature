@@ -67,20 +67,29 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
 
 3. **Implement only that step.** Do exactly what its `Do` list specifies and
    nothing more. Follow the repo rules: never hand-edit generated files, match
-   existing conventions, and leave the relevant **done-gate green** before you
-   consider the step finished:
-   - backend changes → `cd back && make check`
-   - frontend changes → `cd front && npm run lint && npm run test && npm run deps:check && npm run build`
+   existing conventions, and leave the **done-gate green** before you consider
+   the step finished. The iteration's authoritative gate is **`make verify`**
+   (repo root): it runs both deterministic gates (`make check`) **and** the
+   running-app Playwright suite every iteration, so the e2e sensor is no longer
+   a judgment call. Auth (`@gating`) must pass; gameplay (`@nongating`) runs
+   report-only. Prerequisite: services up (`make up`) and the sandbox off.
+   - For *fast* feedback while iterating you may run just the side you touched —
+     `cd back && make check`, or the frontend gate `cd front && npm run lint &&
+     npm run test && npm run deps:check && npm run build` — but the step is not
+     done until **`make verify`** is green.
    - (see `AGENTS.md §4` for the authoritative gates)
 
-   Also run any `Verify` commands the step itself lists; they must pass.
+   Also run any `Verify` commands the step itself lists; they must pass. A
+   failing report-only `@nongating` e2e leg does **not** block the iteration, but
+   record it in the PR body / `Notes for next agent` — it's the signal the
+   `@nongating → @gating` ratchet consumes (see `docs/harness.md`).
 
 4. **If the step is under-specified, blocked, or wrong, stop and report** what's
    missing rather than guessing or forcing it. A step you cannot verify is a step
    you cannot mark done. (Reshaping the plan is expected — see step 6 — but bail
    rather than fabricate a result.)
 
-5. **Mark your step complete — only once the gate and `Verify` are green:**
+5. **Mark your step complete — only once the gate (`make verify`) and `Verify` are green:**
    - tick the box: `[ ]` → `[x]`;
    - set or append the step's status line, using today's date:
      `✅ done — <YYYY-MM-DD> — <one-line summary> — branch <branch> — commit <sha> — PR <url>`
