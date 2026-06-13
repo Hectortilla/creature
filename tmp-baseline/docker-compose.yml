@@ -1,0 +1,42 @@
+name: creature-baseline
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: creature
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  runner:
+    image: mcr.microsoft.com/playwright:v1.60.0-jammy
+    platform: linux/amd64
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    working_dir: /work
+    environment:
+      E2E_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/creature_e2e
+      E2E_REDIS_URL: redis://redis:6379/1
+      NODE_OPTIONS: --max-old-space-size=4096
+    volumes:
+      - /Users/hectorsoriavillalva/Dev/creature:/work
+      - /Users/hectorsoriavillalva/Dev/creature/tmp-baseline/entrypoint.sh:/entrypoint.sh:ro
+      - front_node_modules:/work/front/node_modules
+      - back_venv:/work/back/.venv
+    entrypoint: ["bash", "/entrypoint.sh"]
+volumes:
+  front_node_modules:
+  back_venv:
