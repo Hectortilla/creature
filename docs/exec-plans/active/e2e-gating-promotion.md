@@ -80,9 +80,24 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: none.
 
 ### Step 2 — Flip the 6 gameplay specs to `@gating` (CI + loop)
-- [ ] **Status:** not started
+- [ ] **Status:** blocked — green streak = **0** as of 2026-06-13. Cannot proceed.
 - **First, confirm the green streak (§2).** If unmet, bail and report — do not
   proceed.
+- **Measured 2026-06-13 (bail, do not flip):** streak is **0**, blocked on Step 1
+  not being merged. Step 1's `board-chromium-linux.png` is **not on `origin/main`**
+  (`git ls-tree origin/main front/e2e/game.e2e.ts-snapshots/` shows only
+  `-darwin.png`) because Step 1's PR is still unpushed (1Password SSH agent locked
+  — see Step 1 status, no agent-side workaround). **Consequence:** every Linux
+  `main` CI run fails `game.e2e` on the missing baseline, so the streak cannot
+  even *begin* to accrue until Step 1 lands. Proof on the latest `main` CI run
+  (sha `6f0c9c9`, run `27452719351`, e2e job `81151162071`): the `@nongating`
+  Playwright summary is **`1 failed, 5 passed`** — `game.e2e` `toHaveScreenshot`
+  failed on all 3 attempts (`Snapshot: board.png` missing) — even though the e2e
+  job *conclusion* is `success` (the §2 `continue-on-error` masking trap). The
+  other 5 gameplay specs passed clean. **Order of operations for the next agent:**
+  (1) get Step 1's PR pushed + merged to `main` (needs the user to unlock
+  1Password), (2) *then* start counting the §2 streak from the first post-merge
+  `main` run, (3) only flip once ≥10 consecutive clean runs hold.
 - Then make the promotion in one change:
   1. **Tags** — flip `@nongating` → `@gating` in the `describe` of all six:
      `front/e2e/{attack,game,gameplay,phase,pointer,swap}.e2e.ts`. Prefer
@@ -112,6 +127,21 @@ flaky-retry passes). A green step conclusion alone is not evidence.
   ticked and no stale `@nongating` references remain in the docs.
 - **Gate:** docs link-check green (`lychee --offline`).
 - Depends on: Step 2.
+
+## Changelog
+
+- **2026-06-13** — Ralph iteration: bailed on Step 2 per skill step 4 (cannot
+  satisfy → cannot mark done). Measured the §2 streak = **0** (latest `main` run
+  `6f0c9c9` shows `@nongating` `game.e2e` failing on the missing Linux baseline,
+  masked by `continue-on-error`). Root cause unchanged: Step 1's baseline is
+  unpushed (1Password SSH agent locked). Recorded the measurement + order-of-ops
+  on Step 2 so the next iteration doesn't re-derive it. No tags/CI/Makefile/docs
+  touched — flipping prematurely would gate a spec that currently fails on Linux.
+  These edits are committed on branch
+  `spec/e2e-gating-promotion/step-2/blocked-streak-note` (stacked on Step 1's
+  branch); **its PR is pending on the same 1Password SSH blocker** — `gt submit
+  --stack` push fails with `Permission denied (publickey)`. Unlock 1Password,
+  then `GRAPHITE_PROFILE=pers gt submit --stack --no-edit` pushes both branches.
 
 ## Notes / decisions
 

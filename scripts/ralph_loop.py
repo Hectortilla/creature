@@ -630,7 +630,7 @@ class RalphLoop:
                 self.iterations_run = iteration
                 before_head = self._git("rev-parse", "HEAD") or "none"
                 before_boxes = self.count_unchecked()
-                iter_log = self.log_dir / f"iter-{iteration:03d}.log"
+                iter_log = self.log_dir / f"iter-{iteration:03d}.log.md"
 
                 c = self.c
                 cap = f"/{self.cfg.max_iter}" if self.cfg.max_iter != 0 else ""
