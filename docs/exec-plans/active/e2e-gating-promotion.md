@@ -80,7 +80,18 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: none.
 
 ### Step 2 — Flip the 6 gameplay specs to `@gating` (CI + loop)
-- [ ] **Status:** blocked — green streak = **1 / 10** as of 2026-06-13. Cannot proceed.
+- [ ] **Status:** blocked — green streak = **1 / 10** as of 2026-06-13 (re-confirmed, 4th iteration). Cannot proceed.
+- **Re-measured 2026-06-13 (4th iteration — still bail):** streak unchanged at **1/10**.
+  `origin/main`'s tip is still `a538545` (run `27464331154`), whose e2e job
+  (`81183867858`) Playwright summary is clean — `auth smoke (gating) 3 passed` +
+  `game + 3D smoke (non-gating) 6 passed`, no failed/flaky. No **new** `main` CI
+  run has landed since the prior iteration: the stacked ralph doc-PRs (#6 and
+  this one) are open but unmerged, so `main` hasn't advanced and the streak can't
+  have grown. **The streak only advances when these stacked PRs merge to `main`** —
+  each merge is a fresh full-suite `main` run (the loop is the streak generator,
+  per §"Notes / decisions"). Need ~9 more clean merged `main` runs. **Next agent:**
+  re-list `gh run list --branch main` for CI runs newer than `27464331154`; each
+  clean completed one is +1; flip only at ≥10; until then bail.
 - **First, confirm the green streak (§2).** If unmet, bail and report — do not
   proceed.
 - **Measured 2026-06-13 (bail, do not flip):** streak is **1 of 10**. Step 1 is
@@ -133,6 +144,17 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## Changelog
 
+- **2026-06-13** — Ralph iteration (4th): re-measured the §2 streak — **still
+  1/10, no change**. `origin/main`'s tip is unchanged (`a538545`, run
+  `27464331154`); its e2e job's Playwright summary is still clean (`gating 3
+  passed` + `non-gating 6 passed`, no failed/flaky). No new completed `main` CI
+  run exists since the 3rd iteration because the stacked doc-PRs (#6 + this one)
+  haven't merged yet, so `main` hasn't advanced. Clarified on Step 2 that the
+  streak advances **only** as these stacked PRs merge to `main` (each = one fresh
+  full-suite `main` run), and that ~9 more are needed. Bailed on the flip again
+  (1 ≪ 10). No tags/CI/Makefile/docs touched — plan-doc edits only — branch
+  `spec/e2e-gating-promotion/step-2/streak-recheck-1-of-10`, PR
+  **https://github.com/Hectortilla/creature/pull/7**.
 - **2026-06-13** — Ralph iteration (3rd): Step 1 is now **fully merged** to
   `main` (PRs #3/#4/#5 all merged; squash commit `1a66b6f` carries the Linux
   baseline — `origin/main` now has both `-darwin.png` and `-linux.png`). Verified
