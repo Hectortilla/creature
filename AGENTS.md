@@ -101,11 +101,11 @@ CI runs the full gate on every PR. Don't bypass these — fix the design instead
 
 - Branch off `main`; never commit straight to `main`. The team uses **Graphite**
   for stacked PRs.
-- Run every `gt` command with `GRAPHITE_PROFILE=pers` (this machine has two
-  Graphite accounts; `pers` is the one for this repo). Claude Code sets it
-  automatically via the `env` block in `.claude/settings.json`; other tools
   must prefix it manually.
 - Conventional-commit style subjects (`feat:`, `fix:`, `chore:`, `docs:`, …).
+- Every PR you open must have a description filling out
+  [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) —
+  never push a PR with an empty or template-only body.
 - Keep PRs small and gate-green. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## 9. When you're stuck
