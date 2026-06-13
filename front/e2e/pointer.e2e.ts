@@ -18,12 +18,6 @@ import { waitForGameReady } from "./harness";
  * Non-gating: shares the flaky two-browser/WebGL path.
  */
 
-interface ClickableCard {
-	instanceId: string;
-	x: number;
-	y: number;
-}
-
 test.describe("@nongating gameplay: real-pointer play_card → SUPPORTING", () => {
 	test("clicking a hand card's projected mesh plays it through scene.pick → InteractionManager", async ({
 		browser,
@@ -47,11 +41,27 @@ test.describe("@nongating gameplay: real-pointer play_card → SUPPORTING", () =
 				"PLACEMENT",
 			);
 
-			// Find a playable hand card whose projected centre scene.pick resolves back to a
-			// (still) playable card. Polling/toPass absorbs the post-deal fan-in animation.
-			let clickable: ClickableCard | null = null;
+			const handBefore = await actor.evaluate(() =>
+				window.__creature!.cardsInZone("HAND").map((c) => c.instance_id),
+			);
+
+			// Fan-in-race-proof real click: re-project + re-pick + click + short outcome-wait per
+			// retry, so a click that misses the still-animating mesh re-projects and clicks again.
+			const clicked: string[] = [];
+			let landed: string | null = null;
 			await expect(async () => {
-				clickable = await actor.evaluate(() => {
+				landed = await actor.evaluate((ids) => {
+					const supporting = new Set(
+						window
+							.__creature!.cardsInZone("SUPPORTING")
+							.map((c) => c.instance_id),
+					);
+					return ids.find((id) => supporting.has(id)) ?? null;
+				}, clicked);
+				if (landed) return;
+
+				// Pick a playable card whose projected centre resolves back to itself, so the click point is unambiguous while cards overlap mid-fan.
+				const candidate = await actor.evaluate(() => {
 					const c = window.__creature!;
 					const playable = new Set(
 						c
@@ -61,50 +71,55 @@ test.describe("@nongating gameplay: real-pointer play_card → SUPPORTING", () =
 					);
 					for (const id of playable) {
 						const p = c.screenPositionOf(id);
-						const picked = c.cardAtScreenPoint(p.x, p.y);
-						if (picked && playable.has(picked)) {
-							return { instanceId: picked, x: p.x, y: p.y };
+						if (c.cardAtScreenPoint(p.x, p.y) === id) {
+							return { instanceId: id, x: p.x, y: p.y };
 						}
 					}
 					return null;
 				});
 				expect(
-					clickable,
-					"a playable hand card should project to a pickable on-screen point",
+					candidate,
+					"a playable hand card should project to a self-pickable point",
 				).not.toBeNull();
-			}).toPass({ timeout: 20_000, intervals: [500] });
 
-			const target = clickable!;
+				await actor.mouse.click(candidate!.x, candidate!.y);
+				clicked.push(candidate!.instanceId);
 
-			// Precondition: the resolved card starts in HAND, not yet SUPPORTING.
-			const handBefore = await actor.evaluate(() =>
-				window.__creature!.cardsInZone("HAND").map((c) => c.instance_id),
-			);
-			expect(handBefore).toContain(target.instanceId);
+				// `.then(…, …)` turns the wait's timeout into a re-project retry, not a throw.
+				landed = await actor.evaluate(
+					(id) =>
+						window
+							.__creature!.waitForState(
+								(s) =>
+									s
+										.getMyCardsInZone("SUPPORTING")
+										.some((c) => c.instance_id === id),
+								5_000,
+							)
+							.then(
+								() => id,
+								() => null,
+							),
+					candidate!.instanceId,
+				);
+				expect(landed, "clicked card should reach SUPPORTING").not.toBeNull();
+			}).toPass({ timeout: 45_000, intervals: [250] });
 
-			// THE real interaction: a genuine canvas click → scene.pick → InteractionManager
-			// selects the card → since play_card is instant, dispatches ActionBuilder.execute.
-			await actor.mouse.click(target.x, target.y);
+			const targetId = landed!;
+			expect(handBefore).toContain(targetId);
 
 			// Same outcome as Step 5: HAND → SUPPORTING on the actor's store.
-			await actor.evaluate(
-				(id) =>
-					window.__creature!.waitForState((s) =>
-						s.getMyCardsInZone("SUPPORTING").some((c) => c.instance_id === id),
-					),
-				target.instanceId,
-			);
 			const actorSupporting = await actor.evaluate(() =>
 				window.__creature!.cardsInZone("SUPPORTING").map((c) => c.instance_id),
 			);
 			expect(
 				actorSupporting,
 				"clicked hand card should now be in the actor's SUPPORTING zone",
-			).toContain(target.instanceId);
+			).toContain(targetId);
 			const actorHandAfter = await actor.evaluate(() =>
 				window.__creature!.cardsInZone("HAND").map((c) => c.instance_id),
 			);
-			expect(actorHandAfter).not.toContain(target.instanceId);
+			expect(actorHandAfter).not.toContain(targetId);
 
 			// Round-trip sanity: the observer sees it in its OPPONENT's SUPPORTING.
 			await observer.evaluate(
@@ -114,14 +129,14 @@ test.describe("@nongating gameplay: real-pointer play_card → SUPPORTING", () =
 							.getOpponentCardsInZone("SUPPORTING")
 							.some((c) => c.instance_id === id),
 					),
-				target.instanceId,
+				targetId,
 			);
 			const observerView = await observer.evaluate(() =>
 				window
 					.__creature!.cardsInZone("SUPPORTING", "opp")
 					.map((c) => c.instance_id),
 			);
-			expect(observerView).toContain(target.instanceId);
+			expect(observerView).toContain(targetId);
 		} finally {
 			await close();
 		}

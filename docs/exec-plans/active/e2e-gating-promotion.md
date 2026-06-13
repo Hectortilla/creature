@@ -83,12 +83,28 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: none.
 
 ### Step 1.5 — Stabilize the flaky `pointer.e2e.ts` real-pointer spec
-- [ ] **Status:** not started — **this is the live blocker for the §2 green
-  streak** (discovered 2026-06-13, 6th iteration). Across the 11 completed `main`
-  CI runs measured this iteration, **every** streak-resetting event was this one
-  spec: `front/e2e/pointer.e2e.ts:28` flaked or hard-failed in **5 of 11 runs
-  (~45%)**; the other five gameplay specs were clean in all 11. The promotion
-  cannot earn 10 consecutive clean runs until this spec is settled.
+- [x] **Status:** ✅ done — 2026-06-13 (7th iteration) — folded the real click's
+  *projection + pick + click + outcome-wait* into one `toPass` retry so a click
+  that misses the still-animating fan-in mesh re-projects on the card's CURRENT
+  position and re-clicks, instead of failing the fixed 10 s `waitForState`. Each
+  attempt re-resolves a playable card whose projected centre picks back to itself,
+  clicks it, then waits ≤5 s for it to reach SUPPORTING (`.then(…, …)` turns that
+  wait's timeout into a re-project retry, not a throw); a `clicked` set
+  short-circuits once any prior click lands so we don't keep playing cards while a
+  WS confirmation is in flight. `make verify` green (auth `@gating` 3 passed; all
+  6 `@nongating` passed incl. `pointer.e2e.ts` ✓ 14.5 s); local `npm run test:e2e
+  -- --grep pointer` green (18.2 s, no flaky-retry). Touches only
+  `front/e2e/pointer.e2e.ts`. — branch
+  `spec/e2e-gating-promotion/step-1.5/stabilize-pointer` — commit `12bc545` —
+  PR **https://github.com/Hectortilla/creature/pull/10**
+- **Notes for next agent:** the macOS CI flake won't reproduce locally, so green
+  here proves *no regression*, not the fix — the proof is the §2 streak now
+  accruing on `main` **without** `pointer.e2e.ts` resetting it. **The pre-fix
+  streak measurements below (Step 2 table, 1/10) are now stale**: the fix only
+  lands on `main` once this PR (and the Step 2 doc-stack) merge, so the streak
+  re-baselines to 0 at that merge and must reach **10 consecutive clean `main`
+  runs with the fix in place** before Step 2's flip. Re-measure from the first
+  post-merge `main` run forward, not from the old reference.
 - **Root cause (grounded in the CI logs).** The failure is always
   `page.evaluate: Error: BoardController: waitForState timed out after 10000ms`
   at `pointer.e2e.ts:90–96` — i.e. after the real `actor.mouse.click(target.x,
@@ -118,14 +134,14 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: none (independent test fix; unblocks the §2 streak for Step 2).
 
 ### Step 2 — Flip the 6 gameplay specs to `@gating` (CI + loop)
-- [ ] **Status:** ⛔ **BLOCKED on Step 1.5** — green streak = **1 / 10** as of
-  2026-06-13 (6th iteration). **The old "circular loop / `main` never advances"
-  parking rationale is now DISPROVEN:** `origin/main` *has* advanced — there are
-  10+ new completed `main` CI runs since the reference (an automated cadence is
-  dispatching CI on `main` ~every 15–20 min, and the stacked doc-PRs are merging).
-  The streak is fully measurable; it just keeps **resetting on one flaky spec,
-  `pointer.e2e.ts`** (see new Step 1.5). Stabilise that first, then this flip
-  becomes reachable.
+- [ ] **Status:** ⛔ **BLOCKED on the §2 green streak only** (Step 1.5 is now
+  ✅ done — `pointer.e2e.ts` was the sole streak-resetting spec and is fixed). As
+  of 2026-06-13 (7th iteration) the streak is **0 / 10 against the post-fix
+  baseline**: the fix is not yet on `main`, so no post-fix `main` run exists. The
+  pre-fix table below (1/10, ~45% pointer flake) is **historical** — the streak
+  must now re-accrue from the first `main` run that carries the Step 1.5 fix. Once
+  this PR-stack merges, re-measure from that run forward; flip only when **10
+  consecutive clean `main` runs with the fix in place** hold.
 - **🛑 Before spending an iteration here, re-measure the §2 streak from the actual
   Playwright summaries** (not the `continue-on-error`-masked conclusions). One
   pass that prints the per-run verdict:
@@ -205,6 +221,20 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## Changelog
 
+- **2026-06-13** — Ralph iteration (7th): **did Step 1.5 — stabilised
+  `pointer.e2e.ts`**, the spec the 6th iteration proved was the sole §2
+  streak-resetter (~45% CI flake, always `BoardController: waitForState timed out`
+  after a real click missed the still-animating fan-in mesh). Fix: folded the
+  click's *projection + pick + click + a short ≤5 s outcome-wait* into one
+  `toPass` retry, so a missed click re-projects on the card's current position and
+  re-clicks rather than failing a fixed 10 s wait; a `clicked` set short-circuits
+  once any click lands. `make verify` green end-to-end (backend check, frontend
+  unit 8 passed, auth `@gating` 3 passed, all 6 `@nongating` passed incl.
+  `pointer.e2e.ts` ✓); local `--grep pointer` green. Marked Step 2 blocked **only**
+  on the streak now (Step 1.5 cleared); noted the pre-fix 1/10 table is historical
+  and the streak re-baselines to 0 at merge. Code change touches only
+  `front/e2e/pointer.e2e.ts`. — branch
+  `spec/e2e-gating-promotion/step-1.5/stabilize-pointer`, PR **https://github.com/Hectortilla/creature/pull/10**.
 - **2026-06-13** — Ralph iteration (6th): **un-parked Step 2 and found the real
   blocker.** `origin/main` *has* advanced (tip now `c27583f`, 10+ new completed
   CI runs since the reference) — so the prior "circular loop, `main` never
