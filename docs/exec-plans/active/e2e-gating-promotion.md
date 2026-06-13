@@ -80,25 +80,27 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: none.
 
 ### Step 2 — Flip the 6 gameplay specs to `@gating` (CI + loop)
-- [ ] **Status:** blocked — green streak = **0** as of 2026-06-13. Cannot proceed.
+- [ ] **Status:** blocked — green streak = **1 / 10** as of 2026-06-13. Cannot proceed.
 - **First, confirm the green streak (§2).** If unmet, bail and report — do not
   proceed.
-- **Measured 2026-06-13 (bail, do not flip):** streak is **0**, blocked on Step 1
-  not being **merged** to `main`. Update from the earlier measurement: the push
-  blocker is **gone** — Step 1's branch is on `origin` and PR #3 is open — but
-  PR #3 is still a **DRAFT** and `136dcee` is **not on `origin/main`**
-  (`git ls-tree origin/main front/e2e/game.e2e.ts-snapshots/` shows only
-  `-darwin.png`; `git merge-base --is-ancestor 136dcee origin/main` → NO). The
-  latest `main` CI run is still sha `6f0c9c9` (run `27452719351`), which predates
-  the baseline, so `main`'s `game.e2e` still fails on the missing Linux snapshot
-  and the streak hasn't begun. **Good news for the next agent:** PR #3's own CI
-  proves the baseline works on Linux — run `27462428028`, e2e job `81178599568`,
-  Playwright summary `auth (gating) 3 passed` + `game+3D (non-gating) 6 passed`
-  incl. `game.e2e › board render ✓` (read the summary, not the masked
-  conclusion). So once PR #3 merges, `main` runs should go green and the streak
-  can start accruing. **Order of operations for the next agent:** (1) human marks
-  PR #3 ready + merges to `main`, (2) *then* count the §2 streak from the first
-  post-merge `main` run, (3) flip only once ≥10 consecutive clean runs hold.
+- **Measured 2026-06-13 (bail, do not flip):** streak is **1 of 10**. Step 1 is
+  now **merged** to `main` — PR #3 merged at 10:32Z (squash commit `1a66b6f`),
+  and `git merge-base --is-ancestor 136dcee origin/main` → YES;
+  `front/e2e/game.e2e.ts-snapshots/` on `origin/main` now carries **both**
+  `-darwin.png` **and** `-linux.png`. The prior "DRAFT / awaiting human merge"
+  blocker is **gone**. The first post-merge `main` CI run carrying the baseline
+  (sha `a53854561849`, run `27464331154`, e2e job `81183867858`) is **clean** —
+  Playwright summary `auth smoke (gating) 3 passed` + `game + 3D smoke
+  (non-gating) 6 passed`, **no** failed/flaky (read the summary, not the
+  `continue-on-error`-masked `success` conclusion). So the baseline matches on
+  `main` itself, not just on PR #3's branch — the streak has **started** and
+  stands at **1/10**. (The two intermediate post-merge runs — `1a66b6f` #3 and
+  `91367db` #4 — were **cancelled** by superseding pushes within ~3 min, so they
+  neither count nor break the chain; `a5385456` #5 is the first that ran to
+  completion.) **Order of operations for the next agent:** (1) count the §2
+  streak forward from run `27464331154` — each new clean `main` run is +1; (2)
+  flip only once ≥10 consecutive clean completed `main` runs hold (no
+  failed/flaky in the Playwright summary); (3) until then, bail per skill step 4.
 - Then make the promotion in one change:
   1. **Tags** — flip `@nongating` → `@gating` in the `describe` of all six:
      `front/e2e/{attack,game,gameplay,phase,pointer,swap}.e2e.ts`. Prefer
@@ -131,6 +133,18 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## Changelog
 
+- **2026-06-13** — Ralph iteration (3rd): Step 1 is now **fully merged** to
+  `main` (PRs #3/#4/#5 all merged; squash commit `1a66b6f` carries the Linux
+  baseline — `origin/main` now has both `-darwin.png` and `-linux.png`). Verified
+  the **first post-merge `main` CI run** carrying the baseline (sha `a5385456`,
+  run `27464331154`, e2e job `81183867858`) is clean: Playwright summary `auth
+  (gating) 3 passed` + `game+3D (non-gating) 6 passed`, no failed/flaky — so the
+  baseline matches on `main`, not just PR #3's branch. The §2 streak has
+  **started: 1/10**. Bailed on Step 2 again (1 ≪ 10), but corrected its blocker
+  from "PR #3 awaiting human merge" → "merged; streak accruing, 1/10" and rewrote
+  the order-of-ops accordingly. No tags/CI/Makefile/docs touched — plan-doc edits
+  only — branch `spec/e2e-gating-promotion/step-2/streak-1-of-10`, PR
+  **https://github.com/Hectortilla/creature/pull/6**.
 - **2026-06-13** — Ralph iteration (2nd): the push blocker that dominated this
   plan is **resolved** — Step 1's branch is on `origin`, PR #3 (and Step 2's note
   PR #4) are open. Verified Step 1's previously-unconfirmable CI gate: PR #3's
