@@ -1,9 +1,11 @@
 """Exemplar API smoke test using FastAPI's ``TestClient``.
 
-Boots the ASGI app and asserts the health endpoint responds. With default
-settings the broadcaster is in-memory and the DB engine connects lazily, so
-this route needs no Redis/Postgres. New endpoint tests follow this shape;
-DB-backed ones live in ``tests/integration/`` behind the ``integration`` marker.
+Boots the ASGI app and asserts the health endpoint responds. Entering the
+``TestClient`` context runs the lifespan, which connects the broadcaster — a
+real Redis connection whenever ``REDIS_URL`` is set (CI's backend job provides
+one). The DB engine still connects lazily, so this route needs no Postgres.
+New endpoint tests follow this shape; DB-backed ones live in
+``tests/integration/`` behind the ``integration`` marker.
 """
 
 from __future__ import annotations
