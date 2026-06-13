@@ -21,12 +21,23 @@ sequence rather than a someday-bullet.
 ## 2. Promotion criterion (the "green streak") — the gate on Step 2
 
 Defined in [`../../harness.md`](../../harness.md): the `@nongating` e2e step has
-passed on **≥ 10 consecutive `main` CI runs** with no flaky-retry passes — check
-with `gh run list --workflow CI --branch main` and the run's `e2e` step /
-uploaded `playwright-report` — and the ralph loop's report-only `@nongating` leg
-has flagged no failure across that window. **Step 2 must not be done until this
-holds.** If it doesn't, bail per `ralph-iteration` skill step 4 (a step you
-cannot satisfy is a step you cannot mark done) and report the current streak.
+passed on **≥ 10 consecutive `main` CI runs** with no flaky-retry passes — and
+the ralph loop's report-only `@nongating` leg has flagged no failure across that
+window. **Step 2 must not be done until this holds.** If it doesn't, bail per
+`ralph-iteration` skill step 4 (a step you cannot satisfy is a step you cannot
+mark done) and report the current streak.
+
+**How to measure (read the Playwright summary, not the step conclusion).** The
+`@nongating` step runs under `continue-on-error: true`, which rewrites its
+conclusion to `success` even when Playwright failed — so `gh run list` and the
+step/job status are *blind* to a `@nongating` regression and must not be used to
+judge the streak. Instead, per run on `main`, read the actual Playwright result:
+- `gh run view <id> --log` (or `--job <e2e-job-id> --log`) and parse the final
+  Playwright summary line (`N passed` with **no** `failed`/`flaky`), **or**
+- `gh run download <id> -n playwright-report` and read the report's results.
+
+A run counts toward the streak only when that summary is clean (no failures, no
+flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## 3. What's in the way (constraints)
 
