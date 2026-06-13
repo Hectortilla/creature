@@ -94,11 +94,14 @@ Split gating follows the repo's ratchet pattern: the cheap, stable
 auth flow blocks merges now; the flakier WebGL/gameplay flows run
 `continue-on-error` until they earn promotion. **Promotion criterion (the
 "green streak"):** the `@nongating` e2e step has passed on **≥ 10 consecutive
-`main` CI runs** with no flaky-retry passes (check via `gh run list --workflow
-CI --branch main` plus the run's `e2e` step / uploaded `playwright-report`), and
-the ralph loop's report-only `@nongating` leg has flagged no failure across that
-window — then execute the queued
-`docs/exec-plans/active/e2e-gating-promotion.md`. Specs live under
+`main` CI runs** with no flaky-retry passes, and the ralph loop's report-only
+`@nongating` leg has flagged no failure across that window. **Measure the streak
+by the Playwright summary, not the step conclusion:** `continue-on-error` rewrites
+the `@nongating` step's conclusion to `success` even when it failed, so
+`gh run list` / the step status are blind to a regression — a masked-conclusion
+trap our own steering-loop rule warns against. Read the real result per run via
+`gh run view <id> --log` (parse the final `N passed`, no `failed`/`flaky`) or
+`gh run download <id> -n playwright-report`. Specs live under
 `front/e2e/*.e2e.ts`; see `front/playwright.config.ts` and the design plans in
 `docs/exec-plans/completed/e2e-verification-harness.md` (game-start) and
 `docs/exec-plans/completed/e2e-gameplay-harness.md` (gameplay).
