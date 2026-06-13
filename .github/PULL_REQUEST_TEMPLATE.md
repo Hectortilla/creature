@@ -1,10 +1,8 @@
-## What & why
+### What problem does this solve?
 
-<!-- What does this change do, and why? Link any issues (e.g. Closes #123). -->
 
-## How it was verified
+### How does this solve it?
 
-<!-- Commands you ran, manual testing, screenshots / trace or log excerpts. -->
 
 ## Checklist
 

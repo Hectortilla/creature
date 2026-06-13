@@ -55,11 +55,11 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 ## Steps
 
 ### Step 1 — Commit the Linux `game.e2e` screenshot baseline
-- [x] **Status:** ✅ done — 2026-06-13 — generated + committed `board-chromium-linux.png` via the Dockerized Playwright image (`v1.60.0-jammy`, amd64) with `--update-snapshots`; a clean verify run inside Docker re-matched it (no drift). `make verify` green on macOS (auth `@gating` 3 passed; all 6 `@nongating` passed incl. `game.e2e` darwin). — branch `spec/e2e-gating-promotion/step-1/linux-baseline` — commit on branch tip — **PR still pending (re-confirmed 2026-06-13): push blocked on the 1Password SSH-agent ("communication with agent failed" → `Permission denied (publickey)`). HTTPS fallback also fails — the `gh` token account (`hector-soria-clio`) lacks write to `Hectortilla/creature` (403), so the ONLY push path is the 1Password-backed SSH key. Action: unlock 1Password, then `GRAPHITE_PROFILE=pers gt submit --stack --no-edit` (sandbox off). No agent-side workaround exists.**
+- [x] **Status:** ✅ done — 2026-06-13 — generated + committed `board-chromium-linux.png` via the Dockerized Playwright image (`v1.60.0-jammy`, amd64) with `--update-snapshots`; a clean verify run inside Docker re-matched it (no drift). `make verify` green on macOS (auth `@gating` 3 passed; all 6 `@nongating` passed incl. `game.e2e` darwin). — branch `spec/e2e-gating-promotion/step-1/linux-baseline` — commit `136dcee` — PR **https://github.com/Hectortilla/creature/pull/3** (DRAFT, awaiting merge). **Push blocker RESOLVED (2026-06-13): the branch is on `origin` and PR #3 is open. Its CI `e2e` job (run `27462428028`, job `81178599568`) is GREEN, and the actual Playwright summary — not the `continue-on-error`-masked conclusion — confirms the gate: `auth smoke (gating) 3 passed` + `game + 3D smoke (non-gating) 6 passed`, including `game.e2e.ts › board render ✓` on Linux. So the committed `-linux.png` matches on Linux CI with no diff. The remaining action is a human one: mark PR #3 ready and merge it to `main` (it's a draft for morning review).**
 - **Notes for next agent:**
   - **A per-call `timeout: 30_000` on `game.e2e.ts`'s `toHaveScreenshot` was required and is now committed.** Under software-WebGL the canvas needs >5 s (the default) to hold two stable frames, so the baseline-write *and every comparison* (CI included) need the longer budget. A prior attempt put `expect: { toHaveScreenshot: { timeout } }` in `playwright.config.ts` — that key does **not** exist on the config type (only `threshold`/`maxDiff*`/`animations`/…), so it was a silent no-op; the per-call option is the correct, type-checked place. Step 2 inherits this fix automatically.
   - The Dockerized build OOMs at Node's ~2 GB default heap (babylon-editor + fluentui bundle); set `NODE_OPTIONS=--max-old-space-size=4096` if regenerating in a container.
-  - Confirm on this PR's CI `e2e` job artifact that `game.e2e`'s screenshot now matches on Linux (no diff) before flipping in Step 2.
+  - ✅ Confirmed (2026-06-13) on PR #3's CI `e2e` job (run `27462428028`): `game.e2e`'s screenshot matches on Linux (no diff) — Playwright summary `6 passed` non-gating incl. `board render ✓`. Safe to flip in Step 2 once PR #3 merges and the §2 streak accrues.
 - Generate and commit `front/e2e/game.e2e.ts-snapshots/board-chromium-linux.png`
   so `game.e2e`'s `toHaveScreenshot` can pass on Linux CI. Two viable routes:
   - **Docker (preferred, reproducible locally):** run the `@nongating` suite
@@ -84,20 +84,21 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - **First, confirm the green streak (§2).** If unmet, bail and report — do not
   proceed.
 - **Measured 2026-06-13 (bail, do not flip):** streak is **0**, blocked on Step 1
-  not being merged. Step 1's `board-chromium-linux.png` is **not on `origin/main`**
+  not being **merged** to `main`. Update from the earlier measurement: the push
+  blocker is **gone** — Step 1's branch is on `origin` and PR #3 is open — but
+  PR #3 is still a **DRAFT** and `136dcee` is **not on `origin/main`**
   (`git ls-tree origin/main front/e2e/game.e2e.ts-snapshots/` shows only
-  `-darwin.png`) because Step 1's PR is still unpushed (1Password SSH agent locked
-  — see Step 1 status, no agent-side workaround). **Consequence:** every Linux
-  `main` CI run fails `game.e2e` on the missing baseline, so the streak cannot
-  even *begin* to accrue until Step 1 lands. Proof on the latest `main` CI run
-  (sha `6f0c9c9`, run `27452719351`, e2e job `81151162071`): the `@nongating`
-  Playwright summary is **`1 failed, 5 passed`** — `game.e2e` `toHaveScreenshot`
-  failed on all 3 attempts (`Snapshot: board.png` missing) — even though the e2e
-  job *conclusion* is `success` (the §2 `continue-on-error` masking trap). The
-  other 5 gameplay specs passed clean. **Order of operations for the next agent:**
-  (1) get Step 1's PR pushed + merged to `main` (needs the user to unlock
-  1Password), (2) *then* start counting the §2 streak from the first post-merge
-  `main` run, (3) only flip once ≥10 consecutive clean runs hold.
+  `-darwin.png`; `git merge-base --is-ancestor 136dcee origin/main` → NO). The
+  latest `main` CI run is still sha `6f0c9c9` (run `27452719351`), which predates
+  the baseline, so `main`'s `game.e2e` still fails on the missing Linux snapshot
+  and the streak hasn't begun. **Good news for the next agent:** PR #3's own CI
+  proves the baseline works on Linux — run `27462428028`, e2e job `81178599568`,
+  Playwright summary `auth (gating) 3 passed` + `game+3D (non-gating) 6 passed`
+  incl. `game.e2e › board render ✓` (read the summary, not the masked
+  conclusion). So once PR #3 merges, `main` runs should go green and the streak
+  can start accruing. **Order of operations for the next agent:** (1) human marks
+  PR #3 ready + merges to `main`, (2) *then* count the §2 streak from the first
+  post-merge `main` run, (3) flip only once ≥10 consecutive clean runs hold.
 - Then make the promotion in one change:
   1. **Tags** — flip `@nongating` → `@gating` in the `describe` of all six:
      `front/e2e/{attack,game,gameplay,phase,pointer,swap}.e2e.ts`. Prefer
@@ -130,6 +131,18 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## Changelog
 
+- **2026-06-13** — Ralph iteration (2nd): the push blocker that dominated this
+  plan is **resolved** — Step 1's branch is on `origin`, PR #3 (and Step 2's note
+  PR #4) are open. Verified Step 1's previously-unconfirmable CI gate: PR #3's
+  `e2e` job (run `27462428028`) is green and its Playwright summary is clean on
+  Linux (`game.e2e › board render ✓`, 6 non-gating passed, 3 gating passed) — the
+  committed `-linux.png` matches CI with no diff. Re-measured the §2 streak = **0**
+  (Step 1 still a DRAFT, `136dcee` not on `origin/main`, latest `main` run still
+  predates the baseline). Bailed on Step 2 again, but corrected its blocker from
+  "unpushed/1Password locked" → "PR #3 awaiting human merge". No tags/CI/Makefile/
+  docs touched. Plan-doc edits only — branch
+  `spec/e2e-gating-promotion/step-2/ci-gate-confirmed` (stacked on Step 2's note
+  branch), commit `5b8a6a3`, PR **https://github.com/Hectortilla/creature/pull/5**.
 - **2026-06-13** — Ralph iteration: bailed on Step 2 per skill step 4 (cannot
   satisfy → cannot mark done). Measured the §2 streak = **0** (latest `main` run
   `6f0c9c9` shows `@nongating` `game.e2e` failing on the missing Linux baseline,
