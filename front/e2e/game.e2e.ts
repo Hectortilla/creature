@@ -41,6 +41,9 @@ test.describe("@nongating game start + board render", () => {
 				"board.png",
 				{
 					maxDiffPixelRatio: 0.1,
+					// Software-WebGL renders far slower than a GPU, so the default 5s
+					// budget expires before the canvas holds two stable frames on Linux.
+					timeout: 30_000,
 					mask: [
 						hostPage.locator(".hovered-card-overlay"),
 						hostPage.locator(".element-pools-overlay"),

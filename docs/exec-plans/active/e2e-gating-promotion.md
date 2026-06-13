@@ -41,12 +41,10 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## 3. What's in the way (constraints)
 
-- **`game.e2e` has no Linux screenshot baseline.** Only
-  `front/e2e/game.e2e.ts-snapshots/board-chromium-darwin.png` is committed; the
-  `toHaveScreenshot` at `front/e2e/game.e2e.ts:40` has no `*-linux.png`. On Linux
-  CI that comparison currently fails (masked by `continue-on-error`). Promoting
-  `game.e2e` to `@gating` without a Linux baseline would block every PR — so the
-  baseline is a hard prerequisite (Step 1).
+- ~~**`game.e2e` has no Linux screenshot baseline.**~~ ✅ resolved by Step 1:
+  `front/e2e/game.e2e.ts-snapshots/board-chromium-linux.png` is now committed, and
+  `game.e2e.ts`'s `toHaveScreenshot` carries a per-call `timeout: 30_000` so the
+  software-WebGL canvas stabilises within budget on Linux CI as well.
 - **You can't generate a `-linux.png` on macOS** — Playwright suffixes baselines
   by platform, so a Mac run only ever writes `-darwin.png`. Step 1 must run on
   Linux (Docker or CI).
@@ -57,7 +55,11 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 ## Steps
 
 ### Step 1 — Commit the Linux `game.e2e` screenshot baseline
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-13 — generated + committed `board-chromium-linux.png` via the Dockerized Playwright image (`v1.60.0-jammy`, amd64) with `--update-snapshots`; a clean verify run inside Docker re-matched it (no drift). `make verify` green on macOS (auth `@gating` 3 passed; all 6 `@nongating` passed incl. `game.e2e` darwin). — branch `spec/e2e-gating-promotion/step-1/linux-baseline` — commit on branch tip — **PR still pending (re-confirmed 2026-06-13): push blocked on the 1Password SSH-agent ("communication with agent failed" → `Permission denied (publickey)`). HTTPS fallback also fails — the `gh` token account (`hector-soria-clio`) lacks write to `Hectortilla/creature` (403), so the ONLY push path is the 1Password-backed SSH key. Action: unlock 1Password, then `GRAPHITE_PROFILE=pers gt submit --stack --no-edit` (sandbox off). No agent-side workaround exists.**
+- **Notes for next agent:**
+  - **A per-call `timeout: 30_000` on `game.e2e.ts`'s `toHaveScreenshot` was required and is now committed.** Under software-WebGL the canvas needs >5 s (the default) to hold two stable frames, so the baseline-write *and every comparison* (CI included) need the longer budget. A prior attempt put `expect: { toHaveScreenshot: { timeout } }` in `playwright.config.ts` — that key does **not** exist on the config type (only `threshold`/`maxDiff*`/`animations`/…), so it was a silent no-op; the per-call option is the correct, type-checked place. Step 2 inherits this fix automatically.
+  - The Dockerized build OOMs at Node's ~2 GB default heap (babylon-editor + fluentui bundle); set `NODE_OPTIONS=--max-old-space-size=4096` if regenerating in a container.
+  - Confirm on this PR's CI `e2e` job artifact that `game.e2e`'s screenshot now matches on Linux (no diff) before flipping in Step 2.
 - Generate and commit `front/e2e/game.e2e.ts-snapshots/board-chromium-linux.png`
   so `game.e2e`'s `toHaveScreenshot` can pass on Linux CI. Two viable routes:
   - **Docker (preferred, reproducible locally):** run the `@nongating` suite
