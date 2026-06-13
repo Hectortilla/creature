@@ -113,6 +113,9 @@ jobs:
     defaults:
       run:
         working-directory: front
+    env:
+      # Inlined into the production build (npm run build), same as the e2e job.
+      PUBLIC_API_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
