@@ -51,6 +51,9 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - **Tag form.** The 6 gameplay specs carry the tag inside the `describe` *title*
   (e.g. `test.describe("@nongating game start + board render", …)`), whereas
   `auth.e2e.ts` uses the option form `{ tag: "@gating" }`. `--grep` matches both.
+- **`pointer.e2e.ts` is the live blocker (~45% CI flake).** Measured 2026-06-13:
+  it is the *only* gameplay spec resetting the §2 streak. New **Step 1.5** must
+  settle it before Step 2 is reachable.
 
 ## Steps
 
@@ -79,51 +82,96 @@ flaky-retry passes). A green step conclusion alone is not evidence.
   Linux (no diff) — confirm on the resulting PR's `e2e` job artifact.
 - Depends on: none.
 
+### Step 1.5 — Stabilize the flaky `pointer.e2e.ts` real-pointer spec
+- [ ] **Status:** not started — **this is the live blocker for the §2 green
+  streak** (discovered 2026-06-13, 6th iteration). Across the 11 completed `main`
+  CI runs measured this iteration, **every** streak-resetting event was this one
+  spec: `front/e2e/pointer.e2e.ts:28` flaked or hard-failed in **5 of 11 runs
+  (~45%)**; the other five gameplay specs were clean in all 11. The promotion
+  cannot earn 10 consecutive clean runs until this spec is settled.
+- **Root cause (grounded in the CI logs).** The failure is always
+  `page.evaluate: Error: BoardController: waitForState timed out after 10000ms`
+  at `pointer.e2e.ts:90–96` — i.e. after the real `actor.mouse.click(target.x,
+  target.y)` (line 87) the clicked card never reaches `SUPPORTING`, so the in-page
+  `waitForState` (default `DEFAULT_TIMEOUT_MS = 10_000`, `E2EHarness.ts:33`) times
+  out. The likely mechanism: `target` (the projected screen point) is resolved
+  inside the `toPass` block at lines 53–75, but the post-deal fan-in animation is
+  still moving the hand meshes; under CI's slow software-WebGL the mesh drifts
+  between *resolve* and *click*, so `scene.pick` misses (or picks a non-playable
+  card), `play_card` never dispatches, and the wait times out. In the hard-fail
+  run it missed on all 3 retries (run `27469376648`), so it is not mere slowness —
+  bumping the `waitForState` timeout alone will **not** fix it.
+- **Do** — make the real click resilient to the fan-in race. Prefer the minimal
+  robust option; do not just raise the timeout:
+  1. Wrap the *click + outcome* in a single `toPass` retry: re-project
+     (`screenPositionOf`) and re-pick (`cardAtScreenPoint`) the target, click, then
+     check `SUPPORTING` within a short per-attempt `waitForState`, so a missed
+     click re-projects and re-clicks instead of failing; **or**
+  2. wait for the hand fan-in to settle (scene idle / a stable-coords poll) before
+     projecting, so the resolved coords are still valid at click time.
+- **Acceptance:** the spec stops resetting the streak — `pointer.e2e.ts` passes
+  with **no** flaky-retry across the §2 window of consecutive `main` runs. Locally
+  it must stay green (the CI flake won't reproduce on macOS, but a regression
+  would): `cd front && npm run test:e2e -- --grep pointer`.
+- **Gate:** `make verify` green; the change touches only `front/e2e/pointer.e2e.ts`
+  (and, if option 2 needs it, a scene-idle helper in `front/e2e/`).
+- Depends on: none (independent test fix; unblocks the §2 streak for Step 2).
+
 ### Step 2 — Flip the 6 gameplay specs to `@gating` (CI + loop)
-- [ ] **Status:** ⏸️ **PARKED** — green streak = **1 / 10** as of 2026-06-13 (re-confirmed, 5th iteration); cannot proceed, and re-running the loop on this step is now wasted work until a precondition changes (see guard below).
-- **🛑 Precondition gate before spending another iteration here.** Run exactly:
-  `git fetch -q origin main && gh run list --branch main --workflow CI --limit 1 --json databaseId,headSha,conclusion`.
-  If the newest `main` CI run's `databaseId` is still **`27464331154`** (sha
-  `a53854561849`), `origin/main` has **not** advanced — the streak is provably
-  still 1/10, there is nothing to measure, and you must **not** create another
-  recheck PR. Stop and say so in one line. Only when a *newer* completed `main`
-  CI run exists is there real work: parse its Playwright summary (per §2), add
-  +1 per clean run, and flip only at ≥10.
-- **Why this is parked, not just blocked (the loop is circular).** The §2 streak
-  only advances when PRs merge to `main` (each merge = one fresh full-suite `main`
-  run). But the *only* PRs this ralph loop produces are streak-rechecks that don't
-  themselves merge automatically (they're drafts awaiting human review: #6, #7,
-  and counting). So each iteration that re-measures an unchanged `origin/main`
-  produces a new draft PR whose content is identical to the last — pure churn that
-  never moves the streak. The streak is meant to accrue from **real** PRs landing
-  on `main` through normal development (the harness ratchet), not from
-  self-referential recheck PRs. **Human action that actually unblocks this:** let
-  normal development merge to `main` (or merge the open stacked doc-PRs) so fresh
-  clean `main` runs accumulate; this plan can resume once ~9 more exist.
-- **Reference run (immutable, unchanged since 3rd iteration):** `origin/main` tip
-  `a538545`, CI run `27464331154`, e2e job `81183867858` — Playwright summary
-  clean: `auth smoke (gating) 3 passed` + `game + 3D smoke (non-gating) 6 passed`,
-  no failed/flaky. This is streak entry **1/10**.
-- **First, confirm the green streak (§2).** If unmet, bail and report — do not
-  proceed.
-- **Measured 2026-06-13 (bail, do not flip):** streak is **1 of 10**. Step 1 is
-  now **merged** to `main` — PR #3 merged at 10:32Z (squash commit `1a66b6f`),
-  and `git merge-base --is-ancestor 136dcee origin/main` → YES;
-  `front/e2e/game.e2e.ts-snapshots/` on `origin/main` now carries **both**
-  `-darwin.png` **and** `-linux.png`. The prior "DRAFT / awaiting human merge"
-  blocker is **gone**. The first post-merge `main` CI run carrying the baseline
-  (sha `a53854561849`, run `27464331154`, e2e job `81183867858`) is **clean** —
-  Playwright summary `auth smoke (gating) 3 passed` + `game + 3D smoke
-  (non-gating) 6 passed`, **no** failed/flaky (read the summary, not the
-  `continue-on-error`-masked `success` conclusion). So the baseline matches on
-  `main` itself, not just on PR #3's branch — the streak has **started** and
-  stands at **1/10**. (The two intermediate post-merge runs — `1a66b6f` #3 and
-  `91367db` #4 — were **cancelled** by superseding pushes within ~3 min, so they
-  neither count nor break the chain; `a5385456` #5 is the first that ran to
-  completion.) **Order of operations for the next agent:** (1) count the §2
-  streak forward from run `27464331154` — each new clean `main` run is +1; (2)
-  flip only once ≥10 consecutive clean completed `main` runs hold (no
-  failed/flaky in the Playwright summary); (3) until then, bail per skill step 4.
+- [ ] **Status:** ⛔ **BLOCKED on Step 1.5** — green streak = **1 / 10** as of
+  2026-06-13 (6th iteration). **The old "circular loop / `main` never advances"
+  parking rationale is now DISPROVEN:** `origin/main` *has* advanced — there are
+  10+ new completed `main` CI runs since the reference (an automated cadence is
+  dispatching CI on `main` ~every 15–20 min, and the stacked doc-PRs are merging).
+  The streak is fully measurable; it just keeps **resetting on one flaky spec,
+  `pointer.e2e.ts`** (see new Step 1.5). Stabilise that first, then this flip
+  becomes reachable.
+- **🛑 Before spending an iteration here, re-measure the §2 streak from the actual
+  Playwright summaries** (not the `continue-on-error`-masked conclusions). One
+  pass that prints the per-run verdict:
+  ```
+  git fetch -q origin main
+  for id in $(gh run list --branch main --workflow CI --limit 30 \
+        --json databaseId,conclusion --jq '.[]|select(.conclusion=="success").databaseId'); do
+    job=$(gh run view "$id" --json jobs --jq '.jobs[]|select(.name=="e2e").databaseId')
+    echo "$id: $(gh run view "$id" --job "$job" --log | grep -oiE '[0-9]+ (passed|failed|flaky)' | tr '\n' ' ')"
+  done
+  ```
+  A run counts toward the streak **only** if its summary is `3 passed … 6 passed`
+  with **no** `failed` and **no** `flaky`. Cancelled runs neither count nor break
+  the chain. Flip only once ≥10 *consecutive* clean completed `main` runs hold.
+- **Measured 2026-06-13 (bail, do not flip) — streak 1/10, blocker identified.**
+  Read the actual Playwright summary of the 11 completed `main` runs from the
+  reference forward; chronological verdicts:
+  | # | run | e2e job | verdict |
+  |---|-----|---------|---------|
+  | 1 | 27464331154 | 81183867858 | ✅ 3+6 clean |
+  | 2 | 27465971910 | 81188272440 | ❌ pointer **failed** (3 retries) |
+  | 3 | 27466148166 | 81188713171 | ⚠️ pointer **flaky** |
+  | 4 | 27466439604 | 81189480499 | ⚠️ pointer **flaky** |
+  | 5 | 27466680211 | 81190124526 | ✅ 3+6 clean |
+  | 6 | 27467103085 | 81191271127 | ✅ 3+6 clean |
+  | 7 | 27467489913 | 81192315332 | ✅ 3+6 clean |
+  | 8 | 27467924307 | 81193472137 | ⚠️ pointer **flaky** |
+  | 9 | 27468460028 | 81194910942 | ✅ 3+6 clean |
+  | 10 | 27469376648 | 81197401449 | ❌ pointer **failed** (3 retries) |
+  | 11 (tip) | 27470147237 | 81199497284 | ✅ 3+6 clean |
+
+  Run #10 (immediately before the tip) hard-failed, so the **consecutive** clean
+  streak ending at the tip is **1**; the longest clean sub-run anywhere in the
+  window is 3 (runs #5–7). Every reset is `pointer.e2e.ts` — the other five specs
+  passed in all 11 runs. **Order of operations for the next agent:** (1) do
+  Step 1.5 to stop `pointer.e2e.ts` resetting the streak; (2) re-measure per the
+  command above; (3) flip only once ≥10 consecutive clean `main` runs hold; (4)
+  until then, bail per skill step 4.
+- **Decision / fallback to weigh (grounded in the data above).** `pointer.e2e.ts`
+  is ~45% flaky and is a hard WebGL/two-browser timing flake; if Step 1.5 does not
+  settle it within a couple of iterations, consider **splitting the promotion**:
+  flip the five provably-stable specs (`attack, game, gameplay, phase, swap`) to
+  `@gating` now and keep `pointer.e2e.ts` `@nongating` until it is fixed. This
+  delivers most of the gate value immediately. Not done unilaterally here because
+  it changes the plan's "no `@nongating` tier remains" end-state; flag for the
+  human if Step 1.5 stalls.
 - Then make the promotion in one change:
   1. **Tags** — flip `@nongating` → `@gating` in the `describe` of all six:
      `front/e2e/{attack,game,gameplay,phase,pointer,swap}.e2e.ts`. Prefer
@@ -145,7 +193,8 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - **Gate:** `make verify` hard-gates the whole suite (a forced gameplay failure
   blocks it); CI `e2e` job is green and blocking; `grep -rn "@nongating" front/e2e`
   returns nothing.
-- Depends on: Step 1 **and** the green-streak criterion (§2).
+- Depends on: Step 1, **Step 1.5** (stabilise `pointer.e2e.ts`), **and** the
+  green-streak criterion (§2).
 
 ### Step 3 — Complete the plan
 - [ ] **Status:** not started
@@ -155,6 +204,23 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: Step 2.
 
 ## Changelog
+
+- **2026-06-13** — Ralph iteration (6th): **un-parked Step 2 and found the real
+  blocker.** `origin/main` *has* advanced (tip now `c27583f`, 10+ new completed
+  CI runs since the reference) — so the prior "circular loop, `main` never
+  advances" parking rationale was wrong. Measured the §2 streak from the **actual
+  Playwright summaries** of the 11 completed `main` runs from the reference
+  forward: **1/10** (run #10, immediately before the tip, hard-failed; longest
+  clean sub-run is 3). Every single reset is one spec — `pointer.e2e.ts:28`
+  flaked/failed in **5 of 11 runs (~45%)** with `BoardController: waitForState
+  timed out after 10000ms`; the other five gameplay specs passed in all 11. Added
+  **Step 1.5** (stabilise `pointer.e2e.ts` — the fan-in coordinate race makes the
+  real `scene.pick` click miss under CI software-WebGL) as the new unblocked,
+  highest-leverage work, and made Step 2 depend on it. Recorded a split-promotion
+  fallback (gate the 5 stable specs, keep pointer `@nongating`) if Step 1.5 stalls.
+  Bailed on the flip (1 ≪ 10). Plan-doc edits only — branch
+  `spec/e2e-gating-promotion/step-2/pointer-flake-blocker`, PR
+  **https://github.com/Hectortilla/creature/pull/9**.
 
 - **2026-06-13** — Ralph iteration (5th): re-measured the §2 streak — **still
   1/10, `origin/main` unchanged** (tip `a538545`, newest CI run still
