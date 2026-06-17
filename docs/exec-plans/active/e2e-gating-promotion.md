@@ -105,6 +105,16 @@ flaky-retry passes). A green step conclusion alone is not evidence.
   re-baselines to 0 at that merge and must reach **10 consecutive clean `main`
   runs with the fix in place** before Step 2's flip. Re-measure from the first
   post-merge `main` run forward, not from the old reference.
+  - **✅ First Linux-CI confirmation the fix holds (2026-06-13, 8th iteration).**
+    PR #10's own CI run `27472476991` (e2e job `81205799715`, sha `90a48c9`) ran
+    the still-`@nongating` suite on Linux software-WebGL and came back **clean, no
+    flaky-retry**: `auth (gating) 3 passed` + `game+3D (non-gating) 6 passed`,
+    incl. `pointer.e2e.ts:22 › real-pointer play_card → SUPPORTING ✓ (25.8s)`.
+    That's the *same Linux environment* that flaked ~45% pre-fix, so it's the
+    first real evidence the `toPass`-wrapped click works — not just macOS
+    no-regression. It is **one** clean Linux run, not the §2 streak (still needs
+    10 consecutive clean `main` runs with the fix merged), but it materially
+    de-risks Step 2 and the merge.
 - **Root cause (grounded in the CI logs).** The failure is always
   `page.evaluate: Error: BoardController: waitForState timed out after 10000ms`
   at `pointer.e2e.ts:90–96` — i.e. after the real `actor.mouse.click(target.x,
@@ -134,14 +144,20 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: none (independent test fix; unblocks the §2 streak for Step 2).
 
 ### Step 2 — Flip the 6 gameplay specs to `@gating` (CI + loop)
-- [ ] **Status:** ⛔ **BLOCKED on the §2 green streak only** (Step 1.5 is now
-  ✅ done — `pointer.e2e.ts` was the sole streak-resetting spec and is fixed). As
-  of 2026-06-13 (7th iteration) the streak is **0 / 10 against the post-fix
-  baseline**: the fix is not yet on `main`, so no post-fix `main` run exists. The
-  pre-fix table below (1/10, ~45% pointer flake) is **historical** — the streak
-  must now re-accrue from the first `main` run that carries the Step 1.5 fix. Once
-  this PR-stack merges, re-measure from that run forward; flip only when **10
-  consecutive clean `main` runs with the fix in place** hold.
+- [ ] **Status:** ⛔ **BLOCKED on a human merge → then the §2 green streak**
+  (Step 1.5 is ✅ done — `pointer.e2e.ts` was the sole streak-resetting spec and
+  is fixed, and as of the 8th iteration the fix is **confirmed clean on Linux CI**
+  via PR #10's run `27472476991`; see Step 1.5 notes). As of 2026-06-13 (8th
+  iteration) the streak is **0 / 10 against the post-fix baseline**: the fix is
+  not yet on `main` (PR #10 + the #9 doc-base are open **drafts**), so no post-fix
+  `main` run exists and `main` is unchanged at `c27583f` with the same 11 runs as
+  iteration 7. **The only action that can advance this plan now is a human: mark
+  PRs #9 + #10 ready and merge them to `main`.** Until then the loop can only
+  re-confirm an unchanged state (churn) — do not spend iterations here. After the
+  merge, the streak re-baselines to 0; re-measure from the first post-merge `main`
+  run forward and flip only when **10 consecutive clean `main` runs with the fix
+  in place** hold. The pre-fix table below (1/10, ~45% pointer flake) is
+  **historical**.
 - **🛑 Before spending an iteration here, re-measure the §2 streak from the actual
   Playwright summaries** (not the `continue-on-error`-masked conclusions). One
   pass that prints the per-run verdict:
@@ -221,6 +237,20 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## Changelog
 
+- **2026-06-13** — Ralph iteration (8th): **confirmed the Step 1.5 fix holds on
+  Linux CI, and pinned the plan's true blocker — a human merge.** No step was
+  flippable: `main` is unchanged at `c27583f` with the *same 11 runs* iteration 7
+  measured, and the Step 1.5 fix (`90a48c9`) is not on `main` (PRs #9 + #10 are
+  open **drafts**), so the §2 streak is 0/10 and cannot accrue. New, decision-
+  relevant evidence: PR #10's own CI run `27472476991` (e2e job `81205799715`)
+  ran the suite on Linux software-WebGL **clean, no flaky-retry** —
+  `pointer.e2e.ts ✓ (25.8s)`, the first non-macOS proof the `toPass`-wrapped click
+  works (the ~45%-flake environment now passes). Recorded that proof on Step 1.5,
+  and rewrote Step 2's status to say the *only* plan-advancing action left is a
+  human merging the #9/#10 stack to `main` — the loop can otherwise only re-confirm
+  an unchanged state. Bailed on the flip per skill step 4 (0 ≪ 10). Plan-doc edits
+  only — branch `spec/e2e-gating-promotion/step-2/pointer-fix-ci-confirmed`, PR
+  **https://github.com/Hectortilla/creature/pull/11**.
 - **2026-06-13** — Ralph iteration (7th): **did Step 1.5 — stabilised
   `pointer.e2e.ts`**, the spec the 6th iteration proved was the sole §2
   streak-resetter (~45% CI flake, always `BoardController: waitForState timed out`
