@@ -21,5 +21,4 @@ check-front:
 
 # Autonomy / loop gate: `make check` + the running-app e2e suite. See AGENTS.md §4.
 verify: check
-	cd front && npm run test:e2e:gating -- --retries=2  # auth + 5 stable gameplay specs (blocking)
-	-cd front && npm run test:e2e -- --grep @nongating --retries=2  # @nongating: pointer.e2e only, report-only
+	cd front && npm run test:e2e -- --retries=2  # whole e2e suite, all @gating (blocking)

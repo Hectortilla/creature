@@ -58,7 +58,7 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **svelte-check** | frontend | `npm run check` | CI — non-blocking (pre-existing type debt) |
 | **tsc over `front/e2e/`** (specs vs the `window.__creature` contract) | frontend | `npm run check:e2e` | CI — gating (clean) |
 | **knip** (dead code · unused exports/deps) | frontend | `npm run knip` | CI — non-blocking (baseline) |
-| **Playwright E2E** (running-app smoke, real browser) | frontend + backend (full stack) | `npm run test:e2e` (loop: `make verify`) | CI (`e2e` job) **and** the ralph loop every iteration — auth + the five stable gameplay flows (game-start / play_card / pass / swap / attack) `@gating` (block); only the real-pointer spec `@nongating` (report-only) |
+| **Playwright E2E** (running-app smoke, real browser) | frontend + backend (full stack) | `npm run test:e2e` (loop: `make verify`) | CI (`e2e` job) **and** the ralph loop every iteration — auth + all gameplay flows (game-start / play_card / pass / swap / attack / real-pointer) `@gating` (block); no `@nongating` tier remains |
 | **markdown link-check** | docs | `lychee --offline` | CI (`docs.yml`) |
 
 The backend "done" gate is composed as **`make check`**. The frontend "done" gate
@@ -74,8 +74,7 @@ The **Playwright E2E** sensor is the only **running-app** control: it boots the
 whole stack (Postgres · Redis · backend · the production frontend build) and
 drives a real Chromium through the core flows — login → lobby, a two-browser
 game-start with the 3D board rendering, and deeper gameplay (play_card, pass,
-swap, attack), all now `@gating`; only the real-pointer smoke stays
-`@nongating`. It is what
+swap, attack, real-pointer), all now `@gating`; no `@nongating` tier remains. It is what
 makes [`front/AGENTS.md`](../front/AGENTS.md)'s "exercise BabylonJS / 3D through
 the running app instead" instruction executable, and its deterministic
 `[data-scene-ready]` board-ready signal is the probe the ralph loop polls every
@@ -91,22 +90,20 @@ in-page implementation and the Playwright specs both compile against —
 `npm run check:e2e` gates it, since the specs sit outside the SvelteKit
 tsconfig and are otherwise never type-checked. One real-pointer smoke
 (`scene.pick` via `page.mouse.click`) covers the input chain the API skips.
-Split gating follows the repo's ratchet pattern: a flow blocks merges once a
+Split gating followed the repo's ratchet pattern: a flow blocks merges once a
 green streak proves it stable, and runs `continue-on-error` until then. Auth
 gated first; the five gameplay flows (game-start, play_card, pass, swap, attack)
-were **promoted to `@gating`** after passing clean across every measured `main`
-run, leaving only the real-pointer spec (`pointer.e2e.ts`) `@nongating` until it
-earns its own promotion (it was the sole streak-resetter, since fixed in
-`docs/exec-plans/active/e2e-gating-promotion.md` Step 1.5). **Promotion criterion
-(the "green streak"):** the `@nongating` e2e step has passed on **≥ 10
-consecutive `main` CI runs** with no flaky-retry passes, and the ralph loop's
-report-only `@nongating` leg has flagged no failure across that window. **Measure the streak
-by the Playwright summary, not the step conclusion:** `continue-on-error` rewrites
-the `@nongating` step's conclusion to `success` even when it failed, so
-`gh run list` / the step status are blind to a regression — a masked-conclusion
-trap our own steering-loop rule warns against. Read the real result per run via
-`gh run view <id> --log` (parse the final `N passed`, no `failed`/`flaky`) or
-`gh run download <id> -n playwright-report`. Specs live under
+were promoted after passing clean across every measured `main` run; the
+real-pointer spec (`pointer.e2e.ts`) — the sole streak-resetter, fixed in
+`docs/exec-plans/active/e2e-gating-promotion.md` Step 1.5 — was promoted last
+on the strength of that merged fix. **The ratchet is now complete: every e2e
+spec is `@gating` and the whole suite blocks; no `@nongating` tier remains.**
+(Historical promotion criterion — the "green streak": a `@nongating` step had to
+pass on **≥ 10 consecutive `main` CI runs** with no flaky-retry passes. Because
+`continue-on-error` rewrote a failing `@nongating` step's conclusion to `success`,
+the streak had to be read from the Playwright summary — `gh run view <id> --log`,
+parse `N passed` with no `failed`/`flaky` — not the masked step conclusion.)
+Specs live under
 `front/e2e/*.e2e.ts`; see `front/playwright.config.ts` and the design plans in
 `docs/exec-plans/completed/e2e-verification-harness.md` (game-start) and
 `docs/exec-plans/completed/e2e-gameplay-harness.md` (gameplay).
@@ -191,12 +188,11 @@ Tracked here so they're visible, not lost:
   non-blocking baseline (it surfaces some genuinely dead app/legacy files) —
   triage and clear it, then promote `npm run knip` to gating.
 - **Activate the Claude PR-review workflow** (add the API-key secret).
-- **Promote the E2E game + 3D + gameplay flows (`@nongating` → `@gating`)** —
-  ✅ five of six promoted (split-promotion, `docs/exec-plans/active/e2e-gating-promotion.md`
-  Step 2): game-start, play_card, pass, swap, attack now gate, having passed
-  clean across every measured `main` run. **Remaining:** promote the real-pointer
-  spec (`pointer.e2e.ts`) once its own green streak holds — it stays `@nongating`
-  for now (was the sole streak-resetter; fix in Step 1.5).
+- ~~**Promote the E2E game + 3D + gameplay flows (`@nongating` → `@gating`)**~~ ✅
+  done (`docs/exec-plans/active/e2e-gating-promotion.md`): all six specs now
+  gate — game-start, play_card, pass, swap, attack (split-promotion, Step 2) and
+  the real-pointer spec (`pointer.e2e.ts`, Step 2b, on the strength of its Step 1.5
+  fix). No `@nongating` tier remains.
   ~~deeper gameplay flows (play a card, end a turn, resolve an attack)~~ ✅ done
   (`docs/exec-plans/completed/e2e-gameplay-harness.md`). Remaining: widen
   coverage to cross-browser (WebKit) and a mobile viewport, and extend the
@@ -211,6 +207,5 @@ Tracked here so they're visible, not lost:
   (the `[data-scene-ready]` / `creature:scene-ready` signal becomes the agent's
   "is it alive?" probe; the seeded deal + `window.__creature` extend it to an
   "is it *playing*?" probe).~~ ✅ done — the ralph loop runs the full suite every
-  iteration via root `make verify` (auth + the five stable gameplay specs
-  `@gating` block, the real-pointer spec `@nongating` report-only); see
-  `AGENTS.md §4` and the `ralph-iteration` skill.
+  iteration via root `make verify` (the whole e2e suite is `@gating` and blocks);
+  see `AGENTS.md §4` and the `ralph-iteration` skill.
