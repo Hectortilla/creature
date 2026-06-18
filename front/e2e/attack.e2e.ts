@@ -11,7 +11,7 @@ import {
 } from "./harness";
 
 /**
- * Gameplay flow: `attack` damages an opponent's ATTACKING card (@nongating).
+ * Gameplay flow: `attack` damages an opponent's ATTACKING card (@gating).
  *
  * Like the other gameplay specs, this proves WIRING, not rules: an `attack` intent
  * round-trips the WebSocket, combat resolves server-side, and the health drop reaches
@@ -21,13 +21,13 @@ import {
  * attacker can AFFORD an attack (else the ATTACK phase is empty and auto-skipped). The
  * driver builds that over three turns (GAME_SEED); the attacker and attack are DERIVED
  * from the seeded deal, not hard-coded. Asserts the target's `current_health` dropped
- * (or it was destroyed) on the actor's store AND the opponent's snapshot. Non-gating.
+ * (or it was destroyed) on the actor's store AND the opponent's snapshot. Gating.
  */
 
 /** SUPPORTING zone cap — the most cards (hence elements) the actor can field. */
 const SUPPORTING_CAP = 3;
 
-test.describe("@nongating gameplay: attack damages an opponent's card", () => {
+test.describe("@gating gameplay: attack damages an opponent's card", () => {
 	test("actor attacks a defending card; both clients see the health drop", async ({
 		browser,
 	}) => {

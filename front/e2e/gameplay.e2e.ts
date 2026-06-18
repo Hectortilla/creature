@@ -4,14 +4,14 @@ import { SCENE_TIMEOUT, startTwoPlayerGame } from "./game-setup";
 import { waitForGameReady } from "./harness";
 
 /**
- * Flow C — first gameplay flow: play_card → SUPPORTING (@nongating).
+ * Flow C — first gameplay flow: play_card → SUPPORTING (@gating).
  *
  * The first spec to drive ACTUAL gameplay past board-ready. It doesn't re-test
  * game rules (the engine's pytest suites own that) — it proves the *wiring*: an
  * intent builds the right action, round-trips the WebSocket, and the server
  * snapshot reaches BOTH clients' caches, all through the real production path
  * (the build-gated `window.__creature` API, never a side channel). The GAME_SEED
- * deal makes the target stable. Non-gating: shares the flaky two-browser/WebGL path.
+ * deal makes the target stable. Gating: promoted after the §2 green streak.
  */
 
 /**
@@ -30,7 +30,7 @@ async function awaitPlayableHandCard(page: Page): Promise<string | null> {
 	});
 }
 
-test.describe("@nongating gameplay: play_card → SUPPORTING", () => {
+test.describe("@gating gameplay: play_card → SUPPORTING", () => {
 	test("active player plays a hand card; it lands in SUPPORTING for both clients", async ({
 		browser,
 	}) => {

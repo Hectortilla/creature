@@ -153,9 +153,10 @@ jobs:
         continue-on-error: true
 
   # Running-app E2E smoke (Playwright). Exercises the integrated stack in a real
-  # browser. Split gating (plan D3): the auth flow GATES (blocking), the
-  # game-start + 3D flow is NON-GATING (continue-on-error) so flaky WebGL /
-  # two-browser timing can settle before it can block unrelated PRs.
+  # browser. Split gating: auth + the five stable gameplay specs GATE (blocking,
+  # @gating); only the real-pointer spec (pointer.e2e.ts, @nongating) stays
+  # continue-on-error until it earns its own promotion (the others passed clean
+  # across every measured `main` run; pointer was the sole streak-resetter).
   # Playwright's webServer (reuseExistingServer: !CI) boots BOTH the backend
   # (uvicorn :8000) and the production preview build (:4173) itself — see
   # front/playwright.config.ts — so no manual server start / build step here.
@@ -214,14 +215,15 @@ jobs:
       - name: Install Playwright Chromium
         working-directory: front
         run: npx playwright install --with-deps chromium
-      # Step A — auth smoke. BLOCKING: a failure here fails the job and ci-ok.
-      - name: E2E auth smoke (gating)
+      # Step A — gating suite (auth + the five stable gameplay specs). BLOCKING:
+      # a failure here fails the job and ci-ok.
+      - name: E2E gating suite (auth + gameplay)
         working-directory: front
         run: npm run test:e2e:gating
-      # Step B — game start + 3D board render. NON-BLOCKING: continue-on-error so
-      # WebGL/two-browser flake (and the not-yet-generated linux screenshot
-      # baseline) surface as a diff, not a blocked merge. Mirrors knip/svelte-check.
-      - name: E2E game + 3D smoke (non-gating)
+      # Step B — real-pointer spec only (pointer.e2e.ts). NON-BLOCKING:
+      # continue-on-error so its residual WebGL/two-browser pick flake surfaces as
+      # a diff, not a blocked merge, until it earns promotion. Mirrors knip/svelte-check.
+      - name: E2E real-pointer smoke (non-gating)
         working-directory: front
         run: npm run test:e2e -- --grep @nongating
         continue-on-error: true
