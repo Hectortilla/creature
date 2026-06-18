@@ -1,9 +1,9 @@
 # Promote the gameplay E2E flows `@nongating` → `@gating`
 
 The next ratchet rung for the running-app sensor, after
-[`../completed/e2e-verification-harness.md`](../completed/e2e-verification-harness.md)
+[`./e2e-verification-harness.md`](./e2e-verification-harness.md)
 (game start + 3D board) and
-[`../completed/e2e-gameplay-harness.md`](../completed/e2e-gameplay-harness.md)
+[`./e2e-gameplay-harness.md`](./e2e-gameplay-harness.md)
 (play_card / pass / swap / attack). Those plans deliberately left all 6 gameplay
 specs `@nongating` — run everywhere, block nowhere — until they prove stable.
 This plan flips them to `@gating` so a gameplay regression blocks merges (and the
@@ -322,8 +322,17 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: Step 2; **and** `pointer.e2e.ts`'s green-streak (§2).
 
 ### Step 3 — Complete the plan
-- [ ] **Status:** not started — **now unblocked** (Step 2b done 2026-06-18). This
-  is the last step: move the file to `../completed/` and run the link-check.
+- [x] **Status:** ✅ **done — 2026-06-18 (12th iteration)** — moved this plan to
+  `../completed/` (the ratchet is complete: all e2e specs `@gating`, no
+  `@nongating` tier remains). Fixed the two now-relative links the move would have
+  broken (`../completed/e2e-{verification,gameplay}-harness.md` → `./…`, same
+  directory after the move) and re-pointed harness.md's two `active/…` mentions of
+  this plan (lines 98, 192) at `completed/…`. Confirmed harness.md's promotion rung
+  is ticked (✅, line 191) and `grep -rn "@nongating" front/e2e` returns nothing.
+  Link-check: `lychee` isn't installed locally (CI runs it via `docs.yml`); ran it
+  through the official Docker image `--offline` over the moved file + harness.md —
+  green, no broken links. — branch `spec/e2e-gating-promotion/step-3/complete-plan`
+  — PR **https://github.com/Hectortilla/creature/pull/15**.
 - Move this file to `../completed/`. Confirm the harness.md promotion rung is
   ticked and no stale `@nongating` references remain in the docs.
 - **Gate:** docs link-check green (`lychee --offline`).
@@ -333,6 +342,15 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## Changelog
 
+- **2026-06-18** — Ralph iteration (12th): **did Step 3 — completed the plan.**
+  Moved the file to `../completed/`; the ratchet is done (every e2e spec `@gating`,
+  no `@nongating` tier remains). Pre-move link fixes so nothing breaks: the plan's
+  two intra-folder links (`../completed/e2e-{verification,gameplay}-harness.md` →
+  `./…`) and harness.md's two `active/…` references to this plan (lines 98, 192) →
+  `completed/…`. Verified harness.md's promotion rung is ticked and
+  `grep -rn "@nongating" front/e2e` is empty. Ran `lychee --offline` via Docker
+  (not installed locally; CI runs it in `docs.yml`) over the moved file + harness.md
+  — green. Branch `spec/e2e-gating-promotion/step-3/complete-plan`.
 - **2026-06-18** — Ralph iteration (11th): **did Step 2b — promoted the last
   `@nongating` spec (`pointer.e2e.ts`) → `@gating` and collapsed the split.** CI's
   two e2e steps → one blocking `npm run test:e2e`; `make verify`'s e2e line → a
