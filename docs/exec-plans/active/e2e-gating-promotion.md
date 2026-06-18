@@ -51,9 +51,16 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - **Tag form.** The 6 gameplay specs carry the tag inside the `describe` *title*
   (e.g. `test.describe("@nongating game start + board render", …)`), whereas
   `auth.e2e.ts` uses the option form `{ tag: "@gating" }`. `--grep` matches both.
-- **`pointer.e2e.ts` is the live blocker (~45% CI flake).** Measured 2026-06-13:
-  it is the *only* gameplay spec resetting the §2 streak. New **Step 1.5** must
-  settle it before Step 2 is reachable.
+- ~~**`pointer.e2e.ts` is the live blocker (~45% CI flake).**~~ ✅ resolved by
+  Step 1.5 (fix merged to `main` 2026-06-17, commit `6b61a25`). It was the *only*
+  gameplay spec resetting the §2 streak.
+- **CI skips e2e on docs-only changes, so the loop can't accrue the §2 streak.**
+  The `e2e` job runs only when `front/**`/`back/**` changed
+  (`.github/workflows/ci.yml` line 164, `dorny/paths-filter`). Every ralph PR is
+  docs-only → e2e skipped → zero streak fuel. Combined with `cancel-in-progress`
+  killing the one post-fix front-touching run and `workflow_dispatch` needing
+  admin, **§2 as written is unsatisfiable unattended** — Step 2 now needs a human
+  decision (see its Decision block), not more streak-watching iterations.
 
 ## Steps
 
@@ -144,20 +151,38 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 - Depends on: none (independent test fix; unblocks the §2 streak for Step 2).
 
 ### Step 2 — Flip the 6 gameplay specs to `@gating` (CI + loop)
-- [ ] **Status:** ⛔ **BLOCKED on a human merge → then the §2 green streak**
-  (Step 1.5 is ✅ done — `pointer.e2e.ts` was the sole streak-resetting spec and
-  is fixed, and as of the 8th iteration the fix is **confirmed clean on Linux CI**
-  via PR #10's run `27472476991`; see Step 1.5 notes). As of 2026-06-13 (8th
-  iteration) the streak is **0 / 10 against the post-fix baseline**: the fix is
-  not yet on `main` (PR #10 + the #9 doc-base are open **drafts**), so no post-fix
-  `main` run exists and `main` is unchanged at `c27583f` with the same 11 runs as
-  iteration 7. **The only action that can advance this plan now is a human: mark
-  PRs #9 + #10 ready and merge them to `main`.** Until then the loop can only
-  re-confirm an unchanged state (churn) — do not spend iterations here. After the
-  merge, the streak re-baselines to 0; re-measure from the first post-merge `main`
-  run forward and flip only when **10 consecutive clean `main` runs with the fix
-  in place** hold. The pre-fix table below (1/10, ~45% pointer flake) is
-  **historical**.
+- [ ] **Status:** ⛔ **BLOCKED — needs a human DECISION, not more waiting.** The
+  §2 green-streak criterion as written is **structurally unsatisfiable by this
+  loop** (proven 2026-06-18, 9th iteration). The human merged the Step 1.5 fix on
+  2026-06-17 (PRs #9/#10/#11 → `main`, pointer fix at commit `6b61a25`), so the
+  fix is now on `main`. But the streak cannot accrue, for three compounding
+  reasons discovered this iteration:
+  1. **CI skips e2e on docs-only changes.** The `e2e` job is gated on
+     `needs.changes.outputs.frontend|backend == 'true'` (`.github/workflows/ci.yml`
+     line 164, via `dorny/paths-filter` on `front/**`/`back/**`). Every PR this
+     ralph loop produces touches only `docs/exec-plans/**` → e2e is **skipped** →
+     contributes **nothing** to the streak. Confirmed: the three 2026-06-17 merge
+     runs all show `e2e: skipped` or `cancelled` (runs `27679007855`, `27678767990`
+     skipped; `27678877964` cancelled).
+  2. **The one post-fix run that *would* have exercised e2e was cancelled.** PR #10
+     (which touched `front/e2e/pointer.e2e.ts`) merged as `33d3d7c`; its `main` run
+     `27678877964` was killed by `cancel-in-progress` (ci.yml line 9–11) when #11
+     merged ~2 min later. So **zero** completed post-fix `main` runs have run the
+     gameplay e2e suite.
+  3. **No way to force one.** `workflow_dispatch` on `main` returns HTTP 403
+     ("Must have admin rights"); and no non-ralph `front/**`/`back/**` development
+     is landing on `main` (it sat static at `c27583f` 06-13→06-17). So the only
+     fuel for the streak — clean *main* e2e runs containing the fix — is never
+     produced.
+  → **Post-fix streak = 0/10, and it cannot grow through this loop.** Eight prior
+  iterations spun on "wait for the streak"; this one shows *why* it will never
+  converge unattended. **Positive evidence the fix works exists regardless:** the
+  `toPass`-wrapped click ran clean on the exact ~45%-flake Linux software-WebGL
+  environment in PR #10's own branch run `27472476991` (`pointer.e2e.ts ✓ 25.8s`),
+  and the other five specs (`attack, game, gameplay, phase, swap`) never flaked
+  across all 11 historical `main` runs. **A human must now choose the unblock**
+  (see the Decision block below) — the loop cannot satisfy §2 on its own. The
+  pre-fix table below (1/10, ~45% pointer flake) is **historical**.
 - **🛑 Before spending an iteration here, re-measure the §2 streak from the actual
   Playwright summaries** (not the `continue-on-error`-masked conclusions). One
   pass that prints the per-run verdict:
@@ -196,14 +221,25 @@ flaky-retry passes). A green step conclusion alone is not evidence.
   Step 1.5 to stop `pointer.e2e.ts` resetting the streak; (2) re-measure per the
   command above; (3) flip only once ≥10 consecutive clean `main` runs hold; (4)
   until then, bail per skill step 4.
-- **Decision / fallback to weigh (grounded in the data above).** `pointer.e2e.ts`
-  is ~45% flaky and is a hard WebGL/two-browser timing flake; if Step 1.5 does not
-  settle it within a couple of iterations, consider **splitting the promotion**:
-  flip the five provably-stable specs (`attack, game, gameplay, phase, swap`) to
-  `@gating` now and keep `pointer.e2e.ts` `@nongating` until it is fixed. This
-  delivers most of the gate value immediately. Not done unilaterally here because
-  it changes the plan's "no `@nongating` tier remains" end-state; flag for the
-  human if Step 1.5 stalls.
+- **DECISION NEEDED (human) — the streak is unaccruable, so pick the unblock.**
+  Step 1.5 is done and the fix is merged; the blocker is no longer flake but the
+  §2 measurement mechanics (above). Options, **recommended first**:
+  1. **Split-promotion (recommended).** Flip the five provably-stable specs
+     (`attack, game, gameplay, phase, swap`) to `@gating` now; keep
+     `pointer.e2e.ts` `@nongating` until it earns promotion. These five never
+     flaked across all 11 historical `main` runs, so the risk is low and it
+     delivers most of the gate value immediately. Cost: the plan's "no `@nongating`
+     tier remains" end-state is deferred until `pointer` is promoted separately.
+  2. **Relax §2** to count clean *PR-branch* e2e runs (or accept the confirmed
+     Linux evidence), since `main` almost never runs e2e in this repo. Then flip
+     all 6 against the redefined bar.
+  3. **Flip all 6 now** on the strength of the confirmed-clean Linux run + repeated
+     local green — highest risk if `pointer` flake recurs (would block all merges).
+  4. **Keep waiting** — only viable if a human dispatches ≥10 `main` CI runs (needs
+     admin) or real `front/**`/`back/**` PRs start landing on `main`.
+  Not executed unilaterally here because every option changes CI gating behaviour
+  and/or the plan's end-state — flag for the human. (A 9th-iteration `AskUser
+  Question` was dismissed without an answer, so no option was chosen this run.)
 - Then make the promotion in one change:
   1. **Tags** — flip `@nongating` → `@gating` in the `describe` of all six:
      `front/e2e/{attack,game,gameplay,phase,pointer,swap}.e2e.ts`. Prefer
@@ -237,6 +273,23 @@ flaky-retry passes). A green step conclusion alone is not evidence.
 
 ## Changelog
 
+- **2026-06-18** — Ralph iteration (9th): **the human merged the Step 1.5 fix
+  (PRs #9/#10/#11 → `main` on 2026-06-17, pointer fix at `6b61a25`) — and this
+  iteration proved the §2 streak is structurally unsatisfiable by the loop.** CI's
+  `changes` path-filter (`ci.yml:164`) runs `e2e` only on `front/**`/`back/**`
+  changes, so the docs-only PRs this loop produces **skip e2e** and add zero
+  streak fuel; the one post-fix `main` run that touched `front/**` (`33d3d7c`, #10)
+  was **cancelled** by `cancel-in-progress` when #11 merged 2 min later; and
+  `workflow_dispatch` on `main` is **403 (admin-only)**. So post-fix `main` e2e
+  runs = **0** and cannot grow via this loop. Reframed Step 2 from "wait for the
+  streak" to "needs a human decision," recorded the unsatisfiability finding as a
+  new constraint, and laid out four unblock options (recommend **split-promotion**:
+  gate the 5 never-flaked specs now, keep `pointer` `@nongating`). An
+  `AskUserQuestion` posing the decision was dismissed unanswered, so no flip was
+  made (would change CI gating + end-state — not done unilaterally per the plan).
+  Bailed on the flip per skill step 4. Plan-doc edits only — branch
+  `spec/e2e-gating-promotion/step-2/streak-unaccruable-decision`, PR
+  **https://github.com/Hectortilla/creature/pull/12**.
 - **2026-06-13** — Ralph iteration (8th): **confirmed the Step 1.5 fix holds on
   Linux CI, and pinned the plan's true blocker — a human merge.** No step was
   flippable: `main` is unchanged at `c27583f` with the *same 11 runs* iteration 7
