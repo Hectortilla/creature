@@ -167,7 +167,11 @@ label.
 - **Depends on:** none.
 
 ### Step 4a — Pin engine numbers: direct unit tests for damage / element math + validator rejections
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — added `back/tests/unit/test_damage_math.py`: table-driven equality asserts over `get_element_bonus`/`get_total_element_bonus` (directional, stacking, cancelling, neutral), `calculate_damage` (element bonus before defense, physical-vs-magical defense selection, effect modifier, overkill-reflection floor) + a no-drift guard, plus three `RuleValidator` rejection asserts (game-not-in-progress, not-your-turn, wrong-phase). `cd back && make check` green (49 passed, coverage 66.95%, no golden touched) — branch `spec/harness-overnight-trust/step-4a/pin-engine-numbers` — commit 73ce90a — PR https://app.graphite.com/github/pr/Hectortilla/creature/17
+- **Notes for next agent:**
+  - These are pure-engine tests — **no golden / threshold / harness path touched**, so this PR does *not* need the `harness-change` label (unlike Step 4b, which regenerates the `.ambr`).
+  - `calculate_damage(attack, attacker, target, effect_modifier)` ignores `attacker` for the base math — the bonus comes from `attack.element_id` vs `target.element_ids`; effect modifiers are summed by the caller (`build_combat_events`) and passed in, not computed here. Step 4b's numeric fingerprint should pin the *combined* result (attacker/target passive mods + incoming-damage mod) since that's where the real per-step numbers live.
+  - The overkill-reflection branch lives in `DamageCalculation.__post_init__` (floors `final_damage` at 0, sets `reflected_damage = abs(...)`); pinned via the `damage 10 / defense 20` row.
 - **Why / failure mode closed:** the single most damaging silent class — wrong
   damage, element-bonus sign, defense subtraction, status duration — ships green
   because the event *types* are unchanged. A hand-pinned `assert
