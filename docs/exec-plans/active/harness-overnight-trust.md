@@ -225,7 +225,13 @@ label.
   merged).
 
 ### Step 5 — Close the "skipped is green" merge hole (paths-filter + ci-ok)
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — added a `harness` paths-filter (root `Makefile`, `scripts/**`, `.claude/skills/**`) and a `harness-smoke` job that compiles `scripts/ralph_loop.py` + parses the root `Makefile`, wired into `ci-ok`'s `needs` (+ its result loop). A PR touching only harness/loop paths now runs a real job instead of going vacuously green. Part 2 ("require e2e on backend contract change") was **already satisfied** — `e2e`'s `if` is `frontend || backend`, so any `back/**` change already triggers it; no globs added. Documented the closed hole in `docs/harness.md`. `cd back && make check` green (54 passed, coverage 67.45%), `ci.yml` validated as well-formed YAML, smoke commands verified locally — branch `spec/harness-overnight-trust/step-5/ci-smoke-hole` — commit e317c68 — PR https://app.graphite.com/github/pr/Hectortilla/creature/22
+- **Notes for next agent:**
+  - **Plan correction:** Step 5's second bullet ("Require the `e2e` job whenever backend contract surfaces change") was a no-op — `e2e` already runs on any `back/**` change (`ci.yml` `if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true'`). The audit note predates that broadened condition. So I did **not** add contract globs / a `contract` filter; the only real gap was the harness-smoke hole.
+  - **docs-only PRs still skip every job** (by design) — `docs/**` matches no filter, so `ci-ok` is still green-on-skip for pure docs changes. That's intended: docs can't break the code gate. The hole the plan cared about (harness/**loop** paths running zero jobs) is what's now closed.
+  - The `harness-smoke` job is deliberately light (py_compile + `make -n`); it's a signal-that-something-ran, not a full harness test. If the loop driver grows importable deps worth checking, upgrade it to `uv run python -c "import ..."`.
+  - This PR touches `ci.yml` (protected → `.github/workflows/**`) → its `harness-guard` check is **red until a human applies the `harness-change` label**. Expected.
+  - **Branch protection (the HUMAN ACTION below) is still unset** and is the single activation that makes `harness-smoke` + `harness-guard` + `ci-ok` actually enforced at merge. Until then this is all advisory.
 - **Why / failure mode closed:** a PR that edits root `Makefile`, `scripts/**`,
   `docs/**`, or `.claude/**` runs **zero** substantive CI jobs, yet `ci-ok`
   (`ci.yml:234-247`, "skipped is OK") goes green — so harness/loop changes merge

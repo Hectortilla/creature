@@ -151,6 +151,15 @@ applying the label flips it green without re-running the rest of CI. Because
 `needs:` can't span workflows, branch protection must require **both** `ci-ok`
 and `harness-guard` as status checks for this to be enforced at merge.
 
+A PR touching only harness/loop paths (root `Makefile`, `scripts/**`,
+`.claude/skills/**`) matches neither the backend nor frontend `paths-filter`, so
+it would run zero substantive jobs and `ci-ok` ("skipped is OK") would go
+**vacuously green**. The `harness-smoke` job (`ci.yml`) closes that hole: a
+`harness` filter triggers it, it compiles `scripts/ralph_loop.py` and parses the
+root `Makefile`, and it is in `ci-ok`'s `needs`, so such PRs now carry a real
+pass/fail signal. (The cross-stack `e2e` job already triggers on any `back/**`
+change, so a backend contract change can't skip it.)
+
 ---
 
 ## Observability (so agents can reproduce bugs)
