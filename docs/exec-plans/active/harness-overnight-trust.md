@@ -147,7 +147,10 @@ label.
 - **Depends on:** none (independent of Step 1, but pairs with it thematically).
 
 ### Step 3 — Two config fixes: drop the loop-gate retry mask + delete stale `@nongating` text
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — `Makefile:24` `verify` target no longer forces `-- --retries=2`; it now runs `npm run test:e2e -- --max-failures=1`, so the commit-deciding loop gate inherits Playwright's `retries: CI ? 2 : 0` (0 locally) and never masks a flake (CI keeps its own 2 retries for cross-machine noise). `SKILL.md` rewritten: the stale "auth `@gating` / gameplay `@nongating` runs report-only" lines now state the **whole** e2e suite is `@gating` and blocking and that any e2e failure fails the iteration. Gate green: `make verify` ran the full suite with 0 retries → **9 e2e passed (1.9m)**, `make check` green — branch `spec/harness-overnight-trust/step-3/drop-retry-mask` — commit acd4bcd — PR https://app.graphite.com/github/pr/Hectortilla/creature/19
+- **Notes for next agent:**
+  - The full e2e suite (9 specs, auth + every gameplay flow) passes with **0 local retries** — no flake masking was happening, so dropping the retries surfaced no hidden flake. If a future iteration sees an e2e flake without retries, fix or report it; do not re-add `--retries`.
+  - This PR touches `Makefile` + `.claude/skills/**` (protected) → its `harness-guard` check is **red until a human applies the `harness-change` label**. Expected — it's the tripwire.
 - **Why / failure mode closed:** (a) `Makefile:24` forces `npm run test:e2e --
   --retries=2` in the **commit-deciding** loop gate, so a real intermittent race
   passes 1-in-3 and the loop records green — the documented flaky-retry footgun.

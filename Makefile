@@ -21,4 +21,4 @@ check-front:
 
 # Autonomy / loop gate: `make check` + the running-app e2e suite. See AGENTS.md §4.
 verify: check
-	cd front && npm run test:e2e -- --retries=2  # whole e2e suite, all @gating (blocking)
+	cd front && npm run test:e2e -- --max-failures=1  # whole e2e suite, all @gating; 0 retries (Playwright config: CI=2, local=0) so the commit-deciding gate never masks a flake
