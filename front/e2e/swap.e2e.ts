@@ -11,7 +11,7 @@ import {
 } from "./harness";
 
 /**
- * Gameplay flow: `swap` exchanges a SUPPORTING and an ATTACKING card (@nongating).
+ * Gameplay flow: `swap` exchanges a SUPPORTING and an ATTACKING card (@gating).
  *
  * Like the play_card / pass specs, this proves WIRING, not rules: a `swap` intent
  * round-trips the WebSocket and the zone exchange reaches BOTH clients' caches, via
@@ -20,10 +20,10 @@ import {
  * places two cards into SUPPORTING and ends the turn; turn 2 it promotes one to
  * ATTACKING, then swaps the still-SUPPORTING card with it. Asserts the two ids have
  * exchanged zones on the actor's store AND the opponent's snapshot (cross-client
- * cardsSwapped round-trip). Non-gating: shares the flaky two-browser/WebGL path.
+ * cardsSwapped round-trip). Gating: promoted after the §2 green streak.
  */
 
-test.describe("@nongating gameplay: swap exchanges SUPPORTING ↔ ATTACKING", () => {
+test.describe("@gating gameplay: swap exchanges SUPPORTING ↔ ATTACKING", () => {
 	test("actor swaps a promoted card with a supporting one; both clients see the exchange", async ({
 		browser,
 	}) => {

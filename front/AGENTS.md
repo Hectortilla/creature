@@ -39,7 +39,7 @@ The dev client talks to the backend at `PUBLIC_API_URL` (default
 | `npm run generate-client`           | regenerate only the OpenAPI client                       |
 | `npm run generate-action-metadata`  | regenerate only `utils/generated/*`                      |
 | `npm run scene:generate`            | rebuild the BabylonJS scene assets                       |
-| `npm run test:e2e`                  | Playwright running-app smoke (full stack, both flows)    |
+| `npm run test:e2e`                  | Playwright running-app smoke (full stack, all flows)     |
 | `npm run test:e2e:gating`           | only `@gating` specs (the CI blocking subset)            |
 | `npm run test:e2e:ui`               | Playwright UI mode (local debugging)                     |
 | `npm run test:e2e:headed`           | headed run (local debugging)                             |
@@ -179,12 +179,13 @@ in [`../docs/harness.md`](../docs/harness.md).
 
 If you touched a core flow (auth, lobby, game-start, or the 3D board), also run
 the **running-app** harness — `npm run test:e2e` (full stack up; see
-`../AGENTS.md §3`). Its CI `e2e` job gates only the auth flow (`@gating`); the
-game-start + 3D flow is `@nongating` for now. This is the only sensor that
-exercises the app actually running in a browser. The ralph autonomous loop runs
-this harness **unconditionally** every iteration via root `make verify` (auth
-`@gating` blocks, gameplay `@nongating` report-only) — the judgment call above is
-for humans.
+`../AGENTS.md §3`). Its CI `e2e` job gates the auth flow plus the five stable
+gameplay specs (`@gating`); only the real-pointer spec (`pointer.e2e.ts`) is
+`@nongating` for now. This is the only sensor that exercises the app actually
+running in a browser. The ralph autonomous loop runs this harness
+**unconditionally** every iteration via root `make verify` (auth + the five
+gameplay specs `@gating` block, the real-pointer spec `@nongating` report-only) —
+the judgment call above is for humans.
 
 Don't bypass a sensor — fix the design. If a sensor itself is wrong, that's a
 harness bug: fix the sensor (and note it here / in the root guide).

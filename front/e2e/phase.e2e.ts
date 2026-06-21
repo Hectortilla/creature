@@ -4,7 +4,7 @@ import { SCENE_TIMEOUT, startTwoPlayerGame } from "./game-setup";
 import { waitForGameReady } from "./harness";
 
 /**
- * Gameplay flow: `pass` drives the phase/turn state machine (@nongating).
+ * Gameplay flow: `pass` drives the phase/turn state machine (@gating).
  *
  * Like gameplay.e2e.ts, this proves WIRING, not rules: a `pass` round-trips the
  * WebSocket and the phase/turn transition reaches BOTH clients' caches, via the
@@ -13,8 +13,8 @@ import { waitForGameReady } from "./harness";
  * the canonical phase order (turn one auto-skips phases whose preconditions aren't
  * met); then the turn flips to the opponent, who begins in PLACEMENT — observed on
  * the OTHER client (the cross-client turnChanged + phaseChanged round-trip). A
- * richer multi-phase sequence needs multi-turn setup — that's Step 6b. Non-gating:
- * shares the flaky two-browser/WebGL path.
+ * richer multi-phase sequence needs multi-turn setup — that's Step 6b. Gating:
+ * promoted after the §2 green streak.
  */
 
 /** Canonical forward phase order within a turn (back/app/models/game/enums.py). */
@@ -28,7 +28,7 @@ const PHASE_ORDER = [
 	"ATTACK",
 ];
 
-test.describe("@nongating gameplay: pass advances the phase/turn machine", () => {
+test.describe("@gating gameplay: pass advances the phase/turn machine", () => {
 	test("passing moves the turn forward and hands PLACEMENT to the opponent for both clients", async ({
 		browser,
 	}) => {
