@@ -314,7 +314,7 @@ label.
 - **Depends on:** none.
 
 ### Step 8 — Frontend: un-exclude the pure game-client TS + add a vitest threshold
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — `front/vitest.config.ts` now collects the Babylon editor's pure-logic dirs (`src/babylon-editor/src/scripts/!(state|game)/**` is the only exclusion left under `scripts/`, so `state/` + `game/` are testable) instead of blanket-excluding `babylon-editor/**`; `node_modules` exclusion broadened to `**/node_modules/**` so the sub-project's own `node_modules` can't leak specs. Added glob-keyed coverage `thresholds` for the two unit-tested files (ActionBuilder ≥95/90/90/95, GameStateStore ≥95/85/90/95) — the rest of `src/lib` stays ungated (no top-level threshold). New tests: `ActionBuilder.test.ts` (target-highlight set + no-defender flag, card/source-id queries, attack lookups, pass/concede, the `STRIP_FIELDS` wire payload) and `GameStateStore.test.ts` (the faceUp hidden-info rule — opponent cards never expose a real `card_id`, plus zone/turn/lifecycle queries). Measured: ActionBuilder 100/96.8/100/100, GameStateStore 98.6/93.9/100/98.6 → threshold gate exits 0. Frontend gate green: `lint` 0 errors, `test` 27 passed, `deps:check` no violations, `build` ok — branch `spec/harness-overnight-trust/step-8/front-game-client-coverage` — commit TBD — PR TBD
 - **Why / failure mode closed:** `front/vitest.config.ts` excludes
   `src/babylon-editor/**`, so the pure-TS game client (`ActionBuilder` target/attack
   queries, `GameStateStore.applyServerState` faceUp derivation, `toActionData` wire
