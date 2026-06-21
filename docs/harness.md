@@ -95,7 +95,7 @@ green streak proves it stable, and runs `continue-on-error` until then. Auth
 gated first; the five gameplay flows (game-start, play_card, pass, swap, attack)
 were promoted after passing clean across every measured `main` run; the
 real-pointer spec (`pointer.e2e.ts`) — the sole streak-resetter, fixed in
-`docs/exec-plans/active/e2e-gating-promotion.md` Step 1.5 — was promoted last
+`docs/exec-plans/completed/e2e-gating-promotion.md` Step 1.5 — was promoted last
 on the strength of that merged fix. **The ratchet is now complete: every e2e
 spec is `@gating` and the whole suite blocks; no `@nongating` tier remains.**
 (Historical promotion criterion — the "green streak": a `@nongating` step had to
@@ -189,7 +189,7 @@ Tracked here so they're visible, not lost:
   triage and clear it, then promote `npm run knip` to gating.
 - **Activate the Claude PR-review workflow** (add the API-key secret).
 - ~~**Promote the E2E game + 3D + gameplay flows (`@nongating` → `@gating`)**~~ ✅
-  done (`docs/exec-plans/active/e2e-gating-promotion.md`): all six specs now
+  done (`docs/exec-plans/completed/e2e-gating-promotion.md`): all six specs now
   gate — game-start, play_card, pass, swap, attack (split-promotion, Step 2) and
   the real-pointer spec (`pointer.e2e.ts`, Step 2b, on the strength of its Step 1.5
   fix). No `@nongating` tier remains.
