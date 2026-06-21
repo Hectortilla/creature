@@ -131,6 +131,26 @@ cycles.
 | Claude PR review | `.github/workflows/claude-review.yml` | **opt-in** — inert until an `ANTHROPIC_API_KEY` secret is added |
 | On-demand `/code-review`, `/security-review` | Claude Code skills | available now |
 
+### Tamper-evidence (the harness-guard tripwire)
+
+A sensor is only worth as much as the agent's inability to silently disable it.
+`.github/workflows/harness-guard.yml` runs on **every** PR (no paths-filter) and
+**hard-fails** if the PR changes a harness-defining path **and** does not carry a
+human-applied **`harness-change` label**. Protected paths: the behaviour goldens
+(`back/tests/behaviour/__snapshots__/*.ambr`), `back/pyproject.toml`, both
+`Makefile`s, `.github/workflows/**`, `front/vitest.config.ts`,
+`front/playwright.config.ts`, `front/e2e/**`, `scripts/ralph_loop.py`,
+`.claude/skills/**`, and `.pre-commit-config.yaml`. The same set is mirrored in
+`.github/CODEOWNERS`.
+
+So a legitimate harness change (regenerating a golden, retuning a threshold,
+editing a gate) is **expected to show red** until a human reviews it and applies
+the label — that red *is* the morning tripwire, not a bug; don't revert a real
+harness change to make it green. The guard re-runs on `labeled`/`unlabeled`, so
+applying the label flips it green without re-running the rest of CI. Because
+`needs:` can't span workflows, branch protection must require **both** `ci-ok`
+and `harness-guard` as status checks for this to be enforced at merge.
+
 ---
 
 ## Observability (so agents can reproduce bugs)

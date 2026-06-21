@@ -11,3 +11,13 @@
 /back/pyproject.toml    @andrsabril @hectortilla
 /.github/               @andrsabril @hectortilla
 /docs/harness.md        @andrsabril @hectortilla
+
+# Protected harness paths (the harness-guard tripwire watches these too).
+/back/tests/behaviour/__snapshots__/    @andrsabril @hectortilla
+/Makefile                               @andrsabril @hectortilla
+/back/Makefile                          @andrsabril @hectortilla
+/front/vitest.config.ts                 @andrsabril @hectortilla
+/front/playwright.config.ts             @andrsabril @hectortilla
+/front/e2e/                             @andrsabril @hectortilla
+/scripts/                               @andrsabril @hectortilla
+/.claude/skills/                        @andrsabril @hectortilla

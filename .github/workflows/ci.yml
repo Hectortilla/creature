@@ -231,6 +231,10 @@ jobs:
           retention-days: 7
 
   # Aggregate status so branch protection can require a single check.
+  # The tamper tripwire lives in a separate workflow (harness-guard.yml) so it can
+  # re-run on label changes without re-running this whole suite — `needs:` can't
+  # span workflows, so branch protection must require BOTH `ci-ok` and
+  # `harness-guard` (see docs/harness.md and the plan's Step 5 human action).
   ci-ok:
     needs: [backend, backend-integration, frontend, e2e]
     if: always()

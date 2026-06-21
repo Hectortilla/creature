@@ -1,0 +1,57 @@
+name: Harness guard
+
+# Tamper-evidence for the overnight loop: any PR that edits a harness-defining
+# path (the gates, goldens, thresholds, loop driver, or this guard itself) must
+# carry the `harness-change` label, applied by a human. No paths-filter — this
+# runs on every PR so a harness edit can never slip through on a skipped job.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  harness-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fail if protected harness paths change without the `harness-change` label
+        env:
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'harness-change') }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          changed=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          echo "Changed files:"; echo "$changed"
+
+          protected=$(echo "$changed" | grep -E \
+            -e '^back/tests/behaviour/__snapshots__/.*\.ambr$' \
+            -e '^back/pyproject\.toml$' \
+            -e '^back/Makefile$' \
+            -e '^Makefile$' \
+            -e '^\.github/workflows/' \
+            -e '^front/vitest\.config\.ts$' \
+            -e '^front/playwright\.config\.ts$' \
+            -e '^front/e2e/' \
+            -e '^scripts/ralph_loop\.py$' \
+            -e '^\.claude/skills/' \
+            -e '^\.pre-commit-config\.yaml$' \
+            || true)
+
+          if [ -z "$protected" ]; then
+            echo "No protected harness paths touched — guard passes."
+            exit 0
+          fi
+
+          echo "Protected harness paths changed in this PR:"; echo "$protected"
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "PR carries the 'harness-change' label — a human has signed off. Guard passes."
+            exit 0
+          fi
+
+          echo "::error::This PR edits harness-defining paths but lacks the 'harness-change' label."
+          echo "A human must review and apply the 'harness-change' label before this can merge."
+          echo "Do NOT make the gate green by editing the gate — see .claude/skills/ralph-iteration/SKILL.md."
+          exit 1
