@@ -1,3 +1,4 @@
 {
-    "python.defaultInterpreterPath": "${workspaceFolder}/back/.venv/bin/python"
+    "python.defaultInterpreterPath": "${workspaceFolder}/back/.venv/bin/python",
+    "python.terminal.activateEnvironment": false
 }

@@ -60,6 +60,21 @@
             "type": "node-terminal",
             "request": "launch",
             "cwd": "${workspaceFolder}/front",
+        },
+        {
+            "name": "Ralph loop (opus, $40, 20 iter)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/ralph_loop.py",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+                "--model", "claude-opus-4-8",
+                "--max-budget-usd", "40",
+                "--verbose",
+                "--max-iter", "20",
+                "--yes"
+            ]
         }
     ],
     "inputs": [
