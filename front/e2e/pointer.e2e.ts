@@ -4,7 +4,7 @@ import { SCENE_TIMEOUT, startTwoPlayerGame } from "./game-setup";
 import { waitForGameReady } from "./harness";
 
 /**
- * Flow G — real-pointer fidelity smoke (@nongating).
+ * Flow G — real-pointer fidelity smoke (@gating).
  *
  * Every other gameplay spec drives via `window.__creature` → `ActionBuilder.execute`,
  * proving the action→WS→store wiring but SKIPPING the `scene.pick → InteractionManager`
@@ -15,10 +15,10 @@ import { waitForGameReady } from "./harness";
  * hit we ask the renderer (`cardAtScreenPoint`) which playable card the click resolves
  * to, then assert THAT card moves (polling absorbs the post-deal fan-in). Kept to one
  * interaction: projection is the brittle layer; the drive API carries action breadth.
- * Non-gating: shares the flaky two-browser/WebGL path.
+ * Gating: the Step 1.5 toPass-wrapped click settled the two-browser/WebGL pick flake.
  */
 
-test.describe("@nongating gameplay: real-pointer play_card → SUPPORTING", () => {
+test.describe("@gating gameplay: real-pointer play_card → SUPPORTING", () => {
 	test("clicking a hand card's projected mesh plays it through scene.pick → InteractionManager", async ({
 		browser,
 	}) => {

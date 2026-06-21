@@ -215,18 +215,11 @@ jobs:
       - name: Install Playwright Chromium
         working-directory: front
         run: npx playwright install --with-deps chromium
-      # Step A — gating suite (auth + the five stable gameplay specs). BLOCKING:
-      # a failure here fails the job and ci-ok.
-      - name: E2E gating suite (auth + gameplay)
+      # Whole e2e suite — all specs now @gating (no @nongating tier remains).
+      # BLOCKING: any failure fails the job and ci-ok.
+      - name: E2E suite (auth + gameplay)
         working-directory: front
-        run: npm run test:e2e:gating
-      # Step B — real-pointer spec only (pointer.e2e.ts). NON-BLOCKING:
-      # continue-on-error so its residual WebGL/two-browser pick flake surfaces as
-      # a diff, not a blocked merge, until it earns promotion. Mirrors knip/svelte-check.
-      - name: E2E real-pointer smoke (non-gating)
-        working-directory: front
-        run: npm run test:e2e -- --grep @nongating
-        continue-on-error: true
+        run: npm run test:e2e
       - name: Upload Playwright report + traces
         if: always()
         uses: actions/upload-artifact@v4

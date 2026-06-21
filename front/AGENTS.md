@@ -179,13 +179,12 @@ in [`../docs/harness.md`](../docs/harness.md).
 
 If you touched a core flow (auth, lobby, game-start, or the 3D board), also run
 the **running-app** harness — `npm run test:e2e` (full stack up; see
-`../AGENTS.md §3`). Its CI `e2e` job gates the auth flow plus the five stable
-gameplay specs (`@gating`); only the real-pointer spec (`pointer.e2e.ts`) is
-`@nongating` for now. This is the only sensor that exercises the app actually
+`../AGENTS.md §3`). Its CI `e2e` job gates the auth flow plus all gameplay specs
+(`@gating`, including the real-pointer spec `pointer.e2e.ts`); no `@nongating`
+tier remains. This is the only sensor that exercises the app actually
 running in a browser. The ralph autonomous loop runs this harness
-**unconditionally** every iteration via root `make verify` (auth + the five
-gameplay specs `@gating` block, the real-pointer spec `@nongating` report-only) —
-the judgment call above is for humans.
+**unconditionally** every iteration via root `make verify` (the whole e2e suite
+is `@gating` and blocks) — the judgment call above is for humans.
 
 Don't bypass a sensor — fix the design. If a sensor itself is wrong, that's a
 harness bug: fix the sensor (and note it here / in the root guide).
