@@ -151,6 +151,9 @@ front/e2e/.auth/
 .coverage.*
 htmlcov/
 
+# mutmut mutation sandbox + stats (back/, regenerated each run; nightly mutation.yml)
+back/mutants/
+
 # Local DB / cache dumps & artifacts (never commit — may contain real data)
 dump.rdb
 *.rdb

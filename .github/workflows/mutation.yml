@@ -1,8 +1,9 @@
 name: Mutation (nightly)
 
-# Mutation testing is slow, so it doesn't gate PRs — it runs nightly (and on
-# demand) over the pure, fast game engine and surfaces the surviving-mutant score
-# as an informational report. Tighten tests where mutants survive.
+# Mutation testing is slow, so it runs nightly (and on demand) over the pure,
+# fast game engine. It surfaces the surviving-mutant score in the job summary
+# and ratchets: the run fails if the score regresses below the committed
+# baseline (back/mutation-baseline.json). Tighten tests where mutants survive.
 on:
   schedule:
     - cron: "0 4 * * *" # 04:00 UTC daily
@@ -25,10 +26,14 @@ jobs:
           enable-cache: true
       - run: uv python install 3.12
       - run: uv sync --frozen
-      # Scoped to app/game/ via [tool.mutmut] in pyproject.toml. Non-blocking:
-      # the score is a signal, not a gate.
+      # Scoped to app/game/ via [tool.mutmut] in pyproject.toml. `mutmut run`
+      # exits 0 even with survivors, so a non-zero exit here is a real failure
+      # (broken import / failing clean test) and should fail the job.
       - name: Mutation run (engine)
-        run: uv run mutmut run || true
-      - name: Mutation results
-        if: always()
-        run: uv run mutmut results || true
+        run: uv run mutmut run
+      - name: Export CI/CD stats
+        run: uv run mutmut export-cicd-stats
+      # Surfaces the score to the job summary and fails on regression below the
+      # committed baseline (the ratchet).
+      - name: Score + ratchet
+        run: uv run python scripts/mutation_gate.py

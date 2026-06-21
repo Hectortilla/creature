@@ -1,0 +1,4 @@
+{
+  "min_score": 45.0,
+  "comment": "Engine mutation-score floor (caught / viable %, no_tests excluded), enforced nightly by scripts/mutation_gate.py. Measured 52.5% on 2026-06-22 (1310 killed + 85 timeout / 2658 viable); floor set below it to absorb timeout-timing variance. Ratchet upward as engine tests strengthen; lower only behind the harness-change label."
+}

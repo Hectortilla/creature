@@ -50,7 +50,7 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **pytest** (integration, Postgres/Redis) | backend | `pytest -m integration` | CI (services) |
 | **pytest** (behaviour, syrupy goldens) | backend | `make test` | CI — gating |
 | **vulture + deptry** (dead code · dep drift) | backend | `make deadcode` | CI — gating |
-| **mutmut** (mutation, engine) | backend | `mutmut run` | nightly (`mutation.yml`) — non-gating |
+| **mutmut** (mutation, engine) | backend | `mutmut run` | nightly (`mutation.yml`) — ratchets on the score, see below |
 | **vitest** | frontend | `npm run test` | CI — gating |
 | **dependency-cruiser** (boundaries) | frontend | `npm run deps:check` | CI — gating |
 | **build** | frontend | `npm run build` | CI — gating |
@@ -150,6 +150,21 @@ harness change to make it green. The guard re-runs on `labeled`/`unlabeled`, so
 applying the label flips it green without re-running the rest of CI. Because
 `needs:` can't span workflows, branch protection must require **both** `ci-ok`
 and `harness-guard` as status checks for this to be enforced at merge.
+
+### Mutation score (the test-strength ratchet)
+
+Line coverage can hold steady while *test strength* erodes — a weakened assertion
+still runs the line. `mutation.yml` guards against that: nightly, `mutmut run`
+mutates the pure engine (`app/game/`), `mutmut export-cicd-stats` writes the
+counts, and `back/scripts/mutation_gate.py` computes the score, posts it to the
+job summary, and **fails the run if it regresses below the committed floor**
+(`back/mutation-baseline.json`, currently 45%). The score is *coverage-conditioned*
+— `(killed + timeout) / (killed + timeout + survived + suspicious)`, with uncovered
+(`no_tests`) mutants excluded — so it tracks how strong the tests are, not how much
+code they touch (that's `fail_under`'s job). The corpus is scoped to the
+pure-engine tests in `[tool.mutmut]`; raise the floor as tests strengthen, and
+lower it only behind the `harness-change` label (both `mutation.yml` and
+`pyproject.toml` are protected paths).
 
 A PR touching only harness/loop paths (root `Makefile`, `scripts/**`,
 `.claude/skills/**`) matches neither the backend nor frontend `paths-filter`, so

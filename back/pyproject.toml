@@ -240,8 +240,22 @@ DEP003 = ["pydantic", "sqlalchemy", "wtforms", "markupsafe"]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Harness: mutation testing (periodic, not gating). Scoped to the pure, fast
-# engine. Run a full pass with `gt aut run`; surfaced nightly in CI (mutation.yml).
+# engine. Run a full pass with `mutmut run`; surfaced nightly in CI (mutation.yml).
 # ─────────────────────────────────────────────────────────────────────────────
 [tool.mutmut]
 paths_to_mutate = ["app/game/"]
-tests_dir = ["tests/unit/", "tests/behaviour/"]
+# Corpus = the pure-engine tests only. The other tests/unit/ files exercise the
+# API/websocket/service layers and need a live Redis/DB, which would break
+# mutmut's hermetic clean-test pass; add new pure-engine unit files here.
+tests_dir = [
+    "tests/behaviour/",
+    "tests/unit/test_damage_math.py",
+    "tests/unit/test_effects.py",
+    "tests/unit/test_engine_smoke.py",
+    "tests/unit/test_rng_determinism.py",
+    "tests/unit/test_rng_multi_action.py",
+]
+# Only app/game/ is mutated, but the engine + its tests import the rest of the
+# package (app.models, …), so copy all of app/ into the mutant sandbox or every
+# run dies at import with ModuleNotFoundError.
+also_copy = ["app/"]
