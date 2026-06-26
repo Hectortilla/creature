@@ -72,7 +72,10 @@ label.
 ## Steps
 
 ### Step 1 — Make the harness tamper-evident (CI guard + CODEOWNERS + anti-tamper rule)
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — added `harness-guard.yml` (no-paths-filter PR guard that hard-fails harness-path edits lacking the `harness-change` label), extended CODEOWNERS to the protected set, added the anti-tamper clause to the ralph SKILL, documented the tripwire + label in `docs/harness.md` — branch `spec/harness-overnight-trust/step-1/tamper-evident` — commit 848ad2e — PR https://app.graphite.com/github/pr/Hectortilla/creature/16
+- **Notes for next agent:**
+  - **Correction to the `Do` text:** the plan said "add `harness-guard` to `ci-ok`'s `needs`", but GitHub `needs:` can't span workflows and the guard must re-trigger on `labeled`/`unlabeled` (which we don't want to force on the whole CI suite). So `harness-guard` is a **standalone workflow** — enforcement at merge requires branch protection to list **both** `ci-ok` **and** `harness-guard` as required checks. Updated Step 5's human action accordingly.
+  - This PR itself touches protected paths (`.github/workflows/**`, `.claude/skills/**`) → its own `harness-guard` check will be **red until a human applies the `harness-change` label**. Expected — it's the tripwire proving itself.
 - **Why / failure mode closed:** the agent makes a red check green by regenerating
   the `.ambr` golden, lowering `fail_under`, deleting/`xfail`-ing a test, flipping
   `continue-on-error`, or widening an import-linter contract — and the loop banks
@@ -216,8 +219,9 @@ label.
 - **Do:**
   - Broaden `dorny/paths-filter` (`ci.yml:14-31`) so harness/loop paths
     (root `Makefile`, `scripts/**`, `.claude/skills/**`) trigger at least a smoke
-    job, and ensure the Step 1 `harness-guard` is in `ci-ok`'s `needs` so an
-    unlabeled harness PR can never be green.
+    job. Note: `harness-guard` is a **separate workflow** (cross-workflow `needs`
+    is impossible), so it can't be wired into `ci-ok`'s `needs`; instead the
+    branch-protection human action below must require it as its own check.
   - Require the `e2e` job whenever backend contract surfaces change (add the
     relevant `back/app/**` event/schema/router globs to the frontend filter, or a
     dedicated `contract` filter that gates `e2e`).
@@ -226,10 +230,12 @@ label.
   Touches `ci.yml` (protected → `harness-change` label).
 - **Depends on:** Step 1 (so `harness-guard` exists to wire into `ci-ok`).
 - **HUMAN ACTION (not a ralph step), do ASAP:** enable **branch protection** on
-  `main` making `ci-ok` a **required** status check (today REST `protection` → 404,
-  `rulesets` → `[]`, so every in-repo gate is advisory at merge). Until this is
-  set, none of the above is enforced at merge. The loop cannot do this — it needs
-  repo-admin.
+  `main` making **both** `ci-ok` **and** `harness-guard` **required** status checks
+  (today REST `protection` → 404, `rulesets` → `[]`, so every in-repo gate is
+  advisory at merge). `harness-guard` is a separate workflow and is *not* aggregated
+  by `ci-ok`, so it must be listed as its own required check or the Step 1 tripwire
+  is bypassable at merge. Until this is set, none of the above is enforced at merge.
+  The loop cannot do this — it needs repo-admin.
 
 ### Step 6 — Surface + baseline the mutation score (track before gating)
 - [ ] **Status:** _not started_

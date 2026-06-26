@@ -78,6 +78,14 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
      npm run test && npm run deps:check && npm run build` — but the step is not
      done until **`make verify`** is green.
    - (see `AGENTS.md §4` for the authoritative gates)
+   - **Never tamper with the gate to make it pass.** Never delete, skip, or
+     `xfail` a test; never weaken an assertion; never lower a threshold
+     (`fail_under`, vitest `thresholds`); never regenerate a golden/snapshot,
+     widen an import-linter contract, or set `continue-on-error` in order to make
+     the gate pass. If a gate is red, fix the code — or stop and report. Making
+     the gate green by editing the gate is a **failed iteration**. (Legitimate
+     harness changes are made deliberately, as their own step, and merge only
+     behind the `harness-change` label — see `docs/harness.md`.)
 
    Also run any `Verify` commands the step itself lists; they must pass. A
    failing report-only `@nongating` e2e leg does **not** block the iteration, but
