@@ -269,7 +269,7 @@ label.
   would just baseline near-zero. Sequence after the numeric tests exist.
 
 ### Step 7 — Two service/websocket invariant tests (authorization + desync)
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — added two invariant sensors. `back/tests/integration/test_deck_ownership.py` (marker `integration`): asserts `DeckService.get_user_deck` returns the deck for its owner but `None` for an intruder, and `get_user_decks` is empty for the intruder — so a dropped `user_id` filter (any user plays another's deck) fails the gate. `back/tests/unit/test_event_visibility.py` (marker `unit`): asserts `serialize_events_for_player` masks the opponent's `CardDrawnEvent.card_id` to 0 while keeping the player's own and the `instance_id`, the secret id never appears in the player's JSON payload, and a control proving unfiltered `serialize_events` *does* expose it. `cd back && make check` green (54 passed, was 51); integration test verified against real Postgres (`alembic upgrade head` + `pytest -m integration` → 1 passed) — branch `spec/harness-overnight-trust/step-7/service-invariants` — commit 9705365 — PR https://app.graphite.com/github/pr/Hectortilla/creature/21
 - **Why / failure mode closed:** `app.services.*` / `app.websocket.*` (~1.75k LOC)
   carry `ignore_errors=true` (mypy-blind) **and** have zero unit tests; integration
   is one `SELECT 1`. The highest-severity bugs here are an ownership filter dropping
@@ -285,6 +285,19 @@ label.
   - **Scope to invariants, not the whole layer.** Optional cheap rider: re-enable
     mypy (drop `ignore_errors`) on just `game_runner.py` + `serialization.py` if
     they pass clean.
+- **Notes for next agent:**
+  - **mypy rider skipped, why:** dropping `ignore_errors` lives in the **protected**
+    `back/pyproject.toml`, so the rider would have forced this otherwise-clean PR to
+    need a `harness-change` label for marginal gain. The two invariant tests are the
+    high-leverage core; left the mypy expansion to the dedicated harness rung in
+    `docs/harness.md`. This PR touches **no protected path** → no label needed.
+  - The integration test uses `db.flush()` (not `commit`) so the `db_session`
+    fixture's `with Session(...)` rolls it back on close — no DB pollution. It needs
+    `DATABASE_URL` set + `alembic upgrade head` (CI's `backend-integration` job does
+    both); `make check` alone does **not** run it (the `integration` marker is
+    deselected), so the morning CI integration job is the enforcing sensor.
+  - `serialize_events_for_player` only filters `CardDrawnEvent`; if other
+    hidden-info events are added later, extend the mask **and** the test together.
 - **Gate:** `cd back && make check` (+ the integration job's Postgres+Redis for the
   ownership test; marker `integration`).
 - **Depends on:** none.
