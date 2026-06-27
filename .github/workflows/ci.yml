@@ -17,6 +17,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      harness: ${{ steps.filter.outputs.harness }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -29,6 +30,12 @@ jobs:
             frontend:
               - 'front/**'
               - '.github/workflows/ci.yml'
+            # Harness/loop paths that match neither back nor front: without this
+            # a PR touching only these runs zero substantive jobs (harness-smoke).
+            harness:
+              - 'Makefile'
+              - 'scripts/**'
+              - '.claude/skills/**'
 
   # Backend "done" gate: ruff (lint + format), mypy, import-linter, unit tests.
   backend:
@@ -230,19 +237,35 @@ jobs:
             front/test-results/
           retention-days: 7
 
+  # Harness/loop paths (root Makefile, scripts/**, .claude/skills/**) match neither
+  # the backend nor frontend filter, so a PR touching only those would run zero
+  # substantive jobs and ci-ok would go vacuously green. This smoke gives such PRs
+  # a real pass/fail signal — distinct from harness-guard, which only checks for
+  # the human `harness-change` label, not that the loop driver still works.
+  harness-smoke:
+    needs: changes
+    if: ${{ needs.changes.outputs.harness == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Loop driver compiles
+        run: python3 -m py_compile scripts/ralph_loop.py
+      - name: Root Makefile parses
+        run: make -n up >/dev/null
+
   # Aggregate status so branch protection can require a single check.
   # The tamper tripwire lives in a separate workflow (harness-guard.yml) so it can
   # re-run on label changes without re-running this whole suite — `needs:` can't
   # span workflows, so branch protection must require BOTH `ci-ok` and
   # `harness-guard` (see docs/harness.md and the plan's Step 5 human action).
   ci-ok:
-    needs: [backend, backend-integration, frontend, e2e]
+    needs: [backend, backend-integration, frontend, e2e, harness-smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs succeeded (skipped is OK)
         run: |
-          for r in "${{ needs.backend.result }}" "${{ needs.backend-integration.result }}" "${{ needs.frontend.result }}" "${{ needs.e2e.result }}"; do
+          for r in "${{ needs.backend.result }}" "${{ needs.backend-integration.result }}" "${{ needs.frontend.result }}" "${{ needs.e2e.result }}" "${{ needs.harness-smoke.result }}"; do
             if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
               echo "A required job failed: $r"; exit 1
             fi
