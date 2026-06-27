@@ -51,16 +51,18 @@ class GameRunner:
         room.state = state
 
         result = self.engine.start_game(state)
+        assert result.state is not None and result.final_players is not None
+        game_state = result.state
 
-        if result.success and result.state:
-            room.state = result.state
+        if result.success:
+            room.state = game_state
             room.state.room.players = result.final_players
 
         def build(player_id: str) -> GameStartedMessage:
             return GameStartedMessage(
                 data=GameStartedData(
                     success=True,
-                    game_state=result.state.serialize_for_player(player_id),
+                    game_state=game_state.serialize_for_player(player_id),
                     events=serialize_events_for_player(result.events, player_id),
                     valid_actions=result.valid_actions,
                 )

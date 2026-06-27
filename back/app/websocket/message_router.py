@@ -9,6 +9,7 @@ import logging
 
 from pydantic import ValidationError
 
+from app.models.schemas.websocket import WebSocketMessage
 from app.models.schemas.websocket.client import (
     ActionMessage,
     GetStateMessage,
@@ -57,7 +58,7 @@ class MessageRouter:
         data = message.get("data", {})
 
         # Map message types to their Pydantic models for validation
-        message_validators = {
+        message_validators: dict[str, type[WebSocketMessage]] = {
             JoinGameMessage.type: JoinGameMessage,
             ListRoomsMessage.type: ListRoomsMessage,
             ActionMessage.type: ActionMessage,

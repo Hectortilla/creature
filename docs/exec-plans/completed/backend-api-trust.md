@@ -502,7 +502,12 @@ not a failure.
   red until `harness-change` applied.
 
 ### Step 11 — Re-enable strict mypy on `app.websocket.*`; finish the rung; complete the plan
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — dropped `app.websocket.*` from `ignore_errors`; fixed all 25 surfaced errors (lifespan globals + engine-result optionals narrowed with asserts, redis-url assert, explicit `dict[str, type[WebSocketMessage]]`, broadcaster `Subscriber.__aiter__` mis-type pinned with `# type: ignore[union-attr]`, codegen-only dummy endpoints → `raise NotImplementedError`). **PLAN COMPLETE** — moved to `../completed/` — branch `spec/backend-api-trust/step-11/mypy-websocket` — PR https://app.graphite.com/github/pr/Hectortilla/creature/35
+- **Notes for next agent:**
+  - **PLAN COMPLETE.** All 11 steps done; this file now lives in `docs/exec-plans/completed/`. Both `ignore_errors` boundary packages (`services`, `websocket`) are cleared; only `app.settings.*` remains (framework glue, explicitly out of scope — see Follow-up).
+  - **broadcaster ships inline types but mis-annotates `Subscriber.__aiter__` as `AsyncGenerator[... | None] | None`** — it only ever yields `Event`s (the sentinel `None` raises `Unsubscribed` inside `.get()`). Two narrow `# type: ignore[union-attr]` in `connections.py` document this; revisit if broadcaster fixes the annotation.
+  - **Lifespan globals (`lifespan.lobby`/`lifespan.game_session`) and engine `ActionResult.state`/`.final_players` are `... | None`** but non-None by the time the websocket routes/`GameRunner.start_game` use them — narrowed with `assert ... is not None`, which makes the pre-existing implicit contract explicit (the closures already dereferenced them unconditionally). No behaviour change.
+  - The codegen-only dummy endpoints in `routes/types.py` (never called — exist solely to expose schemas in the OpenAPI spec) now `raise NotImplementedError` uniformly; this is in coverage `exclude_lines`, so websocket coverage rose to 72.76%.
 - **Why / failure mode closed:** `app.websocket.*` is the last `ignore_errors`
   boundary package; the async/Redis-adjacent code is exactly where a wrong type
   slips through. Closing it completes the deferred rung.
