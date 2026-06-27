@@ -275,7 +275,11 @@ not a failure.
 - **Label:** none (test files only).
 
 ### Step 4 — Router tests: `decks.py` (ownership + add/remove-card edges)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — `tests/integration/test_router_decks.py` (11 tests): CRUD happy paths, cross-user 404 on GET/PUT/DELETE + list/summaries scoped to owner, add/remove-card, non-owned-deck 404, missing-card 404, card-not-in-deck 404, deck-full 400 — branch `spec/backend-api-trust/step-4/router-decks` — PR https://app.graphite.com/github/pr/Hectortilla/creature/28
+- **Notes for next agent:**
+  - **Cross-user deck access returns 404, not 403** — `DeckService` scopes every read by `user_id`, so a non-owned deck reads as "not found"; there is no distinct 403 path. The plan text "404/403" resolves to 404 for decks.
+  - **The `cards` table holds pre-seeded reference rows** (e.g. `code=1` exists) that are NOT in the rollback session. Seed test cards with high codes to avoid `cards_code_key` unique-violation — the local `make_card` fixture hands out `9_000_001+`. Reuse this for Step 5's card/attack seeding.
+  - **Deck full = 22 cards** (`GameConfiguration().deck_size`); seed `DeckCard` rows directly via `session` then POST one more → 400 "Deck is full".
 - **Why / failure mode closed:** `DeckService` is the most authz-sensitive
   surface (user-scoped CRUD + `add_card_to_deck`/`remove_card_from_deck` raising
   `HTTPException`). A dropped owner check lets one user mutate another's decks.
