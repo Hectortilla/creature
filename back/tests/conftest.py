@@ -12,6 +12,7 @@ import os
 from collections.abc import Callable, Iterator
 
 import pytest
+from sqlalchemy import event
 from sqlalchemy.exc import OperationalError
 from sqlmodel import Session
 
@@ -87,3 +88,109 @@ def db_session() -> Iterator[Session]:
 
     with Session(engine) as session:
         yield session
+
+
+@pytest.fixture
+def session() -> Iterator[Session]:
+    """Transactional DB session that rolls back even when routers ``.commit()``.
+
+    Joins a ``Session`` to an external transaction over a single connection and
+    restarts a SAVEPOINT after each in-request commit, so the outer transaction
+    can be rolled back wholesale on teardown — no row ever reaches Postgres.
+    """
+    if not os.environ.get("DATABASE_URL"):
+        pytest.skip("integration test requires DATABASE_URL")
+
+    from app.database import engine
+
+    try:
+        connection = engine.connect()
+    except OperationalError as exc:  # pragma: no cover - environment dependent
+        pytest.skip(f"database not reachable: {exc}")
+
+    trans = connection.begin()
+    db = Session(bind=connection)
+    db.begin_nested()
+
+    @event.listens_for(db, "after_transaction_end")
+    def _restart_savepoint(sess: Session, transaction: object) -> None:
+        if connection.in_nested_transaction():
+            return
+        connection.begin_nested()
+
+    try:
+        yield db
+    finally:
+        event.remove(db, "after_transaction_end", _restart_savepoint)
+        db.close()
+        trans.rollback()
+        connection.close()
+
+
+@pytest.fixture
+def client(session: Session) -> Iterator[object]:
+    """``TestClient`` over the rollback ``session``, with NO auth override.
+
+    The real ``oauth2_scheme`` → ``get_current_user`` chain runs, so negative
+    auth paths (401/403/400) and real-token cross-user tests are reachable.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.database import get_db_session
+    from app.main import app
+
+    app.dependency_overrides[get_db_session] = lambda: session
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def make_user(session: Session) -> Callable[..., object]:
+    """Factory inserting a ``User`` with a real password hash into ``session``."""
+    from app.auth.security import get_password_hash
+    from app.models.db.user import User
+
+    def _make(
+        username: str = "user",
+        password: str = "secret",
+        *,
+        email: str | None = None,
+        disabled: bool = False,
+    ) -> User:
+        user = User(
+            username=username,
+            email=email,
+            disabled=disabled,
+            hashed_password=get_password_hash(password),
+        )
+        session.add(user)
+        session.flush()
+        return user
+
+    return _make
+
+
+@pytest.fixture
+def auth_token() -> Callable[[object], dict[str, str]]:
+    """Build a real ``Authorization: Bearer`` header for a given user."""
+    from app.auth.security import create_access_token
+
+    def _header(user: object) -> dict[str, str]:
+        return {"Authorization": f"Bearer {create_access_token({'sub': user.username})}"}
+
+    return _header
+
+
+@pytest.fixture
+def auth_client(client: object, make_user: Callable[..., object]) -> object:
+    """Happy-path convenience: ``client`` with ``get_current_active_user`` forced.
+
+    Do NOT use for 401/403 tests — it makes every negative auth path unreachable.
+    """
+    from app.auth.dependencies import get_current_active_user
+    from app.main import app
+
+    user = make_user("happy-path-user")
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    return client
