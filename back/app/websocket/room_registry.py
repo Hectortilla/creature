@@ -26,6 +26,7 @@ class RoomRegistry:
 
     def __init__(self, connections: PlayerConnections):
         self.connections = connections
+        assert settings.redis_url, "redis_url must be set for the RoomRegistry"
         self.redis = redis.Redis.from_url(settings.redis_url)
 
     async def add(self, player_id: str, room_id: str) -> None:

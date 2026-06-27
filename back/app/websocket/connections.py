@@ -81,8 +81,9 @@ class PlayerConnections:
         async def subscribe(channel: str):
             try:
                 async with self.broadcast.subscribe(channel=channel) as subscriber:
-                    async for event in subscriber:
-                        queue.put_nowait(event.message)
+                    # broadcaster mis-types Subscriber.__aiter__ as `... | None`; it only ever yields Events.
+                    async for event in subscriber:  # type: ignore[union-attr]
+                        queue.put_nowait(event.message)  # type: ignore[union-attr]
             except asyncio.CancelledError:
                 raise
             except Exception as e:

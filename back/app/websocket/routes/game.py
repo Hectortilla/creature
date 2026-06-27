@@ -45,10 +45,12 @@ async def game_websocket(
     finally:
         db.close()
 
+    assert lifespan.game_session is not None
     await lifespan.game_session.run(websocket, player, room_id=room_id)
 
 
 @router.get("/rooms", response_model=list[RoomSummary])
 def list_rooms() -> list[RoomSummary]:
     """List all game rooms as public summaries (no hands, zones, or decks)."""
+    assert lifespan.lobby is not None
     return lifespan.lobby.list_room_summaries()
