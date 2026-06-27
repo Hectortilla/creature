@@ -327,7 +327,12 @@ not a failure.
 - **Label:** none (test files only).
 
 ### Step 6 — Service-layer tests: `users`, `cards`, `attacks`, `decks`, `base`, `player_state`
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — `tests/integration/test_services_{users,decks,cards,attacks,base,player_state}.py` (20 integration tests: password-hash + authenticate accept/reject, deck user-scoping + ctor assert + add/remove-card 404/400 edges, card/attack enrichment + unknown-returns-none/empty, ElementService CRUD) plus `tests/unit/test_services_pure.py` (4 unit tests: `format_handle` slugify + `serialize_deck_for_game([])`, lift `make check`) — branch `spec/backend-api-trust/step-6/service-tests` — PR https://app.graphite.com/github/pr/Hectortilla/creature/30
+- **Notes for next agent:**
+  - **`DeckService(db, user_id)` asserts `user_id is not None`** — passing `None` raises `AssertionError`, not an `HTTPException`. The add/remove-card edges raise `HTTPException` with 404 (missing deck / missing card / card-not-in-deck) and 400 (deck full).
+  - **`CardService.get_enriched` returns a LIST** (empty `[]` for unknown); **`AttackService.get_enriched` returns a single object or `None`**. `enrich` aggregates strengths/weaknesses from *both* card elements into a set (order not guaranteed — assert with `set(...)`).
+  - **`build_player_state` raises `ValueError`** (not HTTPException): "...does not belong to user" for unknown/cross-user deck, "...not valid for playing" for a deck with the wrong card count. A full happy-path test needs a valid 22-card deck with full card relations — deferred; the three negatives cover the guard branches.
+  - Pure helpers (`format_handle`, `serialize_deck_for_game([])`) are **unit**-marked in `tests/unit/test_services_pure.py` so they lift `make check`; everything taking a live `Session` is `integration`. The `make_card`/`codes` high-code seeding pattern (Steps 4–5) is reused per-file.
 - **Why / failure mode closed:** services hold the real business logic (password
   hashing in `UserService.create`, enrichment in `CardService`/`AttackService`,
   user-scoping + size limits in `DeckService`, deck validation in
