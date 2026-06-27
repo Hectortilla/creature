@@ -213,7 +213,11 @@ not a failure.
 - **Label:** none (test files only).
 
 ### Step 2 — Auth-layer tests: pure security primitives (unit) + dependency negatives (integration)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — `tests/unit/test_auth_security.py` (6 pure JWT/password tests, lifts `app.auth`) + `tests/integration/test_auth_dependencies.py` (6 HTTP-chain negatives: missing/malformed/expired/wrong-sig → 401, disabled → 400, unknown user → 401) — branch `spec/backend-api-trust/step-2/auth-tests` — PR https://app.graphite.com/github/pr/Hectortilla/creature/26
+- **Notes for next agent:**
+  - **Local integration run:** `make up` (brew Postgres 14 + Redis already start), then `export DATABASE_URL="postgresql://hectorsoriavillalva@localhost:5432/creature" REDIS_URL="redis://localhost:6379/0"`, `uv run alembic upgrade head`, `uv run pytest -m integration`. The default `database_url` (`postgres:postgres@…`) does NOT auth against local brew Postgres — pass the username-only URL above. All `uv run`/`make` need the sandbox OFF.
+  - `decode_access_token` returns `None` (never raises) for expired/malformed/wrong-sig; a token missing `sub` decodes to a dict **without** a `sub` key (the `sub` check lives in `_validate_token`, not `decode_access_token`).
+  - Confirmed live: missing header / bad-or-unknown bearer → **401**, disabled user → **400** (the Step 1 note holds).
 - **Why / failure mode closed:** an agent weakens JWT validation (accepts
   expired/wrong-signature tokens), drops the `disabled`-user check, or lets a
   valid-signature token for a non-existent user through — and stays green. The
