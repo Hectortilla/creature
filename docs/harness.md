@@ -51,6 +51,7 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **pytest** (behaviour, syrupy goldens) | backend | `make test` | CI — gating |
 | **vulture + deptry** (dead code · dep drift) | backend | `make deadcode` | CI — gating |
 | **mutmut** (mutation, engine) | backend | `mutmut run` | nightly (`mutation.yml`) — ratchets on the score, see below |
+| **per-package coverage gate** (boundary floors) | backend | `python scripts/coverage_gate.py` | CI (`backend-integration`, full suite) — ratchets per package, see below |
 | **vitest** | frontend | `npm run test` | CI — gating |
 | **dependency-cruiser** (boundaries) | frontend | `npm run deps:check` | CI — gating |
 | **build** | frontend | `npm run build` | CI — gating |
@@ -165,6 +166,23 @@ code they touch (that's `fail_under`'s job). The corpus is scoped to the
 pure-engine tests in `[tool.mutmut]`; raise the floor as tests strengthen, and
 lower it only behind the `harness-change` label (both `mutation.yml` and
 `pyproject.toml` are protected paths).
+
+### Per-package coverage (the boundary-coverage ratchet)
+
+`make check`'s single global `fail_under` is met by the pure engine alone, so the
+HTTP/auth/service/websocket *boundary* could lose all its tests and stay green.
+`back/scripts/coverage_gate.py` closes that, mirroring the mutation gate: it runs
+in the **`backend-integration`** job (the one runner with Postgres + Redis +
+migrations), which executes the **full suite** (`unit` **and** `integration`) once
+with `--cov-report=json:cov.json`, then scores **per-package** branch-aware
+coverage for `app.routers`/`app.auth`/`app.services`/`app.websocket` from that
+single `cov.json`, posts a table to the job summary, and **fails if any package
+regresses below its floor** in `back/coverage-baseline.json` (`+1e-9` tolerance).
+There is no `coverage combine` and no cross-job artifact — the gate runs where the
+infra already is. `make check`'s `fail_under` is untouched; this gate is additive
+and CI-only. Raise the floors as boundary tests grow; lower one only behind the
+`harness-change` label (`coverage-baseline.json` is unprotected, but the CI wiring
+in `ci.yml` is).
 
 A PR touching only harness/loop paths (root `Makefile`, `scripts/**`,
 `.claude/skills/**`) matches neither the backend nor frontend `paths-filter`, so

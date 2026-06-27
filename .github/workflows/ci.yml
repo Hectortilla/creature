@@ -110,8 +110,14 @@ jobs:
       - run: uv sync --frozen
       - name: Apply migrations
         run: uv run alembic upgrade head
-      - name: Integration tests
-        run: uv run pytest -m integration
+      # This is the only DB+Redis-equipped runner, so it scores boundary coverage:
+      # run the FULL suite (both markers) once with a JSON report, then ratchet.
+      - name: Full suite + coverage JSON
+        run: uv run pytest --cov=app --cov-report=json:cov.json
+      # Per-package coverage ratchet (mirrors mutation_gate.py): fails if
+      # app.routers/auth/services/websocket regress below coverage-baseline.json.
+      - name: Per-package coverage gate
+        run: uv run python scripts/coverage_gate.py
 
   # Frontend "done" gate: prettier + eslint, svelte-check, vitest, boundaries, build.
   frontend:
