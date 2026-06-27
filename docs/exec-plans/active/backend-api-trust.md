@@ -441,7 +441,12 @@ not a failure.
 - **Label:** none (new `back/scripts/*` + `back/coverage-baseline.json` only).
 
 ### Step 9 — Wire the per-package coverage gate into CI
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — in `ci.yml`'s `backend-integration` job, replaced `pytest -m integration` with the full-suite `pytest --cov=app --cov-report=json:cov.json` + `python scripts/coverage_gate.py`; documented the boundary-coverage ratchet in `docs/harness.md` (sensor table + a new section); gitignored `cov.json`. Full suite green (76.72%), gate exits 0 (routers 100/auth 78.05/services 95.62/websocket 69.94), ratchet proven (websocket floor→80 → exit 1 → restored), `make check` green — branch `spec/backend-api-trust/step-9/wire-coverage-gate` — PR https://app.graphite.com/github/pr/Hectortilla/creature/33
+- **Notes for next agent:**
+  - **LABEL REQUIRED tripwire fired as designed:** this PR edits `.github/workflows/ci.yml` (protected), so `harness-guard` is red until a human applies `harness-change`. `docs/harness.md` and `.gitignore` are unprotected.
+  - The integration-only CI step is **gone** — the full-suite run (both markers) supersedes it and produces the `cov.json` the gate scores; no separate `-m integration` step remains. `make check`'s `fail_under` is untouched (still 62, met by the engine).
+  - `cov.json` is now gitignored (build artifact); regenerate per run with `uv run pytest --cov=app --cov-report=json:cov.json` from `back/`.
+  - Steps 10–11 (mypy re-enable) are next and both edit `back/pyproject.toml` → also LABEL REQUIRED. Step 10 (services) unblocked now; Step 11 needs Step 10 first.
 - **Why / failure mode closed:** the gate from Step 8 only protects anything once
   CI runs it. This wires it into the one job that has the infra to measure
   boundary coverage honestly.

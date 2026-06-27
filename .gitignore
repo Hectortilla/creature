@@ -150,6 +150,7 @@ front/e2e/.auth/
 .coverage
 .coverage.*
 htmlcov/
+cov.json
 
 # mutmut mutation sandbox + stats (back/, regenerated each run; nightly mutation.yml)
 back/mutants/
