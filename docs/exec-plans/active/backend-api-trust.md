@@ -249,7 +249,11 @@ not a failure.
 - **Label:** none (test files only).
 
 ### Step 3 — Router tests: `auth.py` + the cross-user authz-isolation pattern
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — `tests/integration/test_router_auth.py` (9 tests): register happy/dup-username 400/dup-email 400, token good→bearer / bad-pass 401 / unknown 401, `/auth/me` real bearer → caller, no-auth → 401, plus the two-user token-isolation pattern — branch `spec/backend-api-trust/step-3/router-auth` — PR https://app.graphite.com/github/pr/Hectortilla/creature/27
+- **Notes for next agent:**
+  - **Authz-isolation pattern to reuse in Steps 4–5:** seed users via `make_user`, build a real per-user header with `auth_token(user)`, drive the un-overridden `client`, and assert each token only ever sees its own data. See `test_me_isolates_users_by_token`.
+  - **Register error codes are 400, not 403/409:** duplicate username → `400 "Username already registered"`, duplicate email → `400 "Email already registered"` (the router raises `HTTP_400_BAD_REQUEST`). Register success is **201** with a `UserRead` (no `password`/`hashed_password` field).
+  - `POST /auth/token` is form-encoded (`data=`, OAuth2PasswordRequestForm), not JSON; bad password and unknown user both → 401.
 - **Why / failure mode closed:** registration/login regressions (duplicate
   username/email silently accepted, wrong status codes) and — critically —
   **cross-user data leakage** at the HTTP layer go unnoticed.
