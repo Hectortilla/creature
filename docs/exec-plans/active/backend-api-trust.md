@@ -472,7 +472,15 @@ not a failure.
   human applies `harness-change`**; that is the designed tripwire.
 
 ### Step 10 — Re-enable strict mypy on `app.services.*`
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — dropped `app.services.*` from `ignore_errors`; fixed all 23 surfaced errors with real annotations/idioms (no `ignore_errors`, no `# type: ignore`) — branch `spec/backend-api-trust/step-10/mypy-services` — PR https://app.graphite.com/github/pr/Hectortilla/creature/34
+- **Notes for next agent:**
+  - **`sqlmodel.col()` is the idiomatic fix for the "dynamic-SQLAlchemy" errors** (no `disable_error_code` needed): SQLModel/pydantic type a `code: int` field as plain `int`, so `Card.handle.ilike(...)`, `Card.ability.has(...)`, `func.count(DeckCard.card_id)`, `select(...).join(..., A.id == B.x)`, and `order_by(Model.col)` all fail attr-defined/arg-type. Wrap the model attribute in `col(...)` to recover the `InstrumentedAttribute` — including the inner comparison: `col(Card.first_attack).has(col(Attack.code) == x)`. Reuse this same pattern for Step 11's websocket SQLAlchemy spots if any surface.
+  - **`Session.get(self.model, id)`** replaced the `select(...).where(self.model.id == id)` in `BaseService.delete` — cleaner and avoids `type[T]` attr-defined + ruff B009 (no `getattr(self.model, "id")`).
+  - **`enrich_attack` is now non-optional** (`(attack: Attack) -> AttackReadWithElement`); the two card.py call sites + `AttackService.get_enriched` guard `None` themselves (`enrich_attack(x) if x else None`). Behaviour identical.
+  - **`list(...)` wraps `.exec(...).all()`** where the signature promises `list[T]` (SQLAlchemy returns `Sequence`). `deck.id` (PK `int | None`) passed to a strict-`int` arg uses an `assert ... is not None` (matches the existing `DeckService.__init__` pattern).
+  - **Watch the autofix hook:** adding a `from sqlmodel import col` import *before* its usages exist gets it stripped as unused by `ruff --fix`; add the usages first or in the same pass.
+  - **De-flaked one pre-existing test (bundled here because it intermittently reddened `make check`, this step's gate):** `tests/unit/test_event_visibility.py::test_opponent_card_id_never_appears_in_player_payload` scanned the whole JSON blob for `str(99)` — the auto-generated `timestamp` microseconds coincidentally contain `"99"` ~5% of runs (proven: 1/20 fails before, 30/30 + 30/30 after). Fix drops the volatile `timestamp` from each event before the scan (asserts the real no-leak invariant, not a substring false-positive). Unrelated to the mypy change; surfaced while running the full suite.
+  - **Step 11 is next** (mypy `app.websocket.*`) — also LABEL REQUIRED (edits `back/pyproject.toml`); it's the last step and completes/moves the plan.
 - **Why / failure mode closed:** `app.services.*` carries `ignore_errors = true`
   (pyproject.toml lines ~103–109), so type regressions in the business layer are
   invisible. This is the first half of the deferred **Backend type coverage** rung.

@@ -97,12 +97,11 @@ disable_error_code = ["override", "prop-decorator"]
 module = ["app.models.schemas.*"]
 disable_error_code = ["prop-decorator"]
 
-# Remaining type-coverage rung (see docs/harness.md): services and the websocket
-# transport still lean on dynamic SQLAlchemy/async patterns; app.settings is
-# framework glue (sqladmin/otel/structlog) plus codegen-only dummy endpoints.
+# Remaining type-coverage rung (see docs/harness.md): the websocket transport
+# still leans on dynamic async patterns; app.settings is framework glue
+# (sqladmin/otel/structlog) plus codegen-only dummy endpoints.
 [[tool.mypy.overrides]]
 module = [
-    "app.services.*",
     "app.websocket.*",
     "app.settings.*",
 ]

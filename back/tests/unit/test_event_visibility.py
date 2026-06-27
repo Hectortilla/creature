@@ -35,8 +35,10 @@ def test_opponent_drawn_card_id_is_masked():
 
 
 def test_opponent_card_id_never_appears_in_player_payload():
-    blob = json.dumps(serialize_events_for_player(_draws(), "p1"))
-    assert str(OPPONENT_CARD_ID) not in blob
+    serialized = serialize_events_for_player(_draws(), "p1")
+    for event in serialized:
+        del event["timestamp"]  # volatile microseconds coincidentally contain the id digits
+    assert str(OPPONENT_CARD_ID) not in json.dumps(serialized)
 
 
 def test_unfiltered_serialization_does_expose_both():

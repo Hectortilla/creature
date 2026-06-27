@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.models.db.card import Card
 from app.models.db.deck import Deck
@@ -29,7 +29,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
 
     def get_user_decks(self) -> list[Deck]:
         """Get all decks for the current user."""
-        return self.db.exec(select(Deck).where(Deck.user_id == self.user_id)).all()
+        return list(self.db.exec(select(Deck).where(Deck.user_id == self.user_id)).all())
 
     def get_user_deck(self, deck_id: int) -> Deck | None:
         """Get a specific deck for the current user."""
@@ -79,7 +79,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
 
     def get_deck_card_count(self, deck_id: int) -> int:
         """Get the number of cards in a deck."""
-        result = self.db.exec(select(func.count(DeckCard.card_id)).where(DeckCard.deck_id == deck_id)).one()
+        result = self.db.exec(select(func.count(col(DeckCard.card_id))).where(DeckCard.deck_id == deck_id)).one()
         return result or 0
 
     def add_card_to_deck(self, deck_id: int, card_id: int, position: int | None = None) -> bool:
@@ -143,9 +143,9 @@ class DeckService(BaseService[Deck, DeckCreate]):
         # This gets all cards including duplicates by joining through deck_cards
         cards_query = self.db.exec(
             select(Card)
-            .join(DeckCard, Card.id == DeckCard.card_id)
+            .join(DeckCard, col(Card.id) == col(DeckCard.card_id))
             .where(DeckCard.deck_id == deck.id)
-            .order_by(DeckCard.id)  # Preserve insertion order
+            .order_by(col(DeckCard.id))  # Preserve insertion order
         )
 
         # Enrich each card with full relations for game serialization
@@ -167,7 +167,7 @@ class DeckService(BaseService[Deck, DeckCreate]):
         decks = self.get_user_decks()
         summaries = []
         for deck in decks:
-            # Count cards without loading them
+            assert deck.id is not None  # persisted deck always has its PK set
             card_count = self.get_deck_card_count(deck.id)
             summaries.append(
                 DeckReadSummary(
