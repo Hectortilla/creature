@@ -28,23 +28,44 @@ export default defineConfig({
 		// jsdom so component / DOM-touching units (e.g. changeThemeTo) can run.
 		environment: "jsdom",
 		include: ["src/**/*.{test,spec}.{js,ts}"],
-		// The Babylon editor sub-project has its own toolchain; never collect it.
 		// `e2e/**` holds Playwright specs (`*.e2e.ts`) driven by playwright.config.ts,
 		// not Vitest — exclude it so the two runners never fight over spec files.
-		exclude: ["src/babylon-editor/**", "node_modules/**", "e2e/**"],
+		// The Babylon editor's 3D toolchain has its own runtime; only its pure-logic
+		// dirs (`state/`, `game/`) are unit-testable here, so collect those and skip
+		// the rest of `scripts/`.
+		exclude: [
+			"**/node_modules/**",
+			"e2e/**",
+			"src/babylon-editor/src/scripts/!(state|game)/**",
+		],
 		globals: true,
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "html"],
-			// Only measure our own first-party source; exclude generated + 3D.
-			include: ["src/lib/**"],
+			// Measure our own first-party source + the pure game-client logic.
+			include: ["src/lib/**", "src/babylon-editor/src/scripts/state/**"],
 			exclude: [
 				"src/lib/api/**", // generated OpenAPI client
 				"src/lib/utils/generated/**", // generated action metadata
-				"src/babylon-editor/**",
 				"**/*.svelte", // component coverage is out of scope for now
 				"**/*.d.ts",
 			],
+			// Glob-keyed floors so the unit-tested game-client logic must stay
+			// covered; the rest of src/lib is left ungated (no top-level threshold).
+			thresholds: {
+				"src/babylon-editor/src/scripts/state/ActionBuilder.ts": {
+					statements: 95,
+					branches: 90,
+					functions: 90,
+					lines: 95,
+				},
+				"src/babylon-editor/src/scripts/state/GameStateStore.ts": {
+					statements: 95,
+					branches: 85,
+					functions: 90,
+					lines: 95,
+				},
+			},
 		},
 	},
 });
