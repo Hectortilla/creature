@@ -199,7 +199,11 @@ label.
 - **Depends on:** none.
 
 ### Step 4b — Pin numbers in the 80-step playthrough + drive a game to terminal (win/lose)
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — added a numeric fingerprint (`_event_numbers`) to the playthrough golden: every step now serializes the load-bearing int payload per event (base/element/defense/final damage, remaining/new health, healing amount, status `duration_turns`) plus stable player-id fields (`winner_id`/`loser_id`); per-run uuid instance-ids are excluded so the golden stays deterministic (verified equal across two runs). Regenerated the `.ambr` deliberately (+522 lines, numbers on all 81 steps). Added two terminal tests: `test_concede_drives_game_to_terminal` (concede → single `GameEndedEvent`, `winner_id`/`loser_id` correct, `game_over`) and `test_check_game_end_awards_win_when_board_empty` (empty deck/hand/active → `check_game_end()` returns the opponent). `cd back && make check` green (51 passed, coverage 67.20%) — branch `spec/harness-overnight-trust/step-4b/pin-numbers-terminal` — commit 6ee1093 — PR https://app.graphite.com/github/pr/Hectortilla/creature/20
+- **Notes for next agent:**
+  - The 80-step fixed-seed playthrough does **not** reach game-over (stops at turn 17, 28/81 steps carry numbers), so the terminal paths (`GameEndedEvent`, concede, `check_game_end`) are covered by the two dedicated tests, not the playthrough golden — that's why the golden has no `GameEndedEvent` numbers row.
+  - `instance_id`/card `*_id` are `uuid.uuid4()` (os-random, independent of the game seed) → never put them in a golden; only ints + player ids (`p1`/`p2`) are stable.
+  - This PR **regenerates the `.ambr` golden** under `back/tests/behaviour/__snapshots__/*.ambr`, a **protected** path → its `harness-guard` check is **red until a human applies the `harness-change` label**. Expected — a golden change is exactly what deserves human eyes.
 - **Why / failure mode closed:** the existing playthrough fingerprints only event
   class names; numeric payload changes pass silently. And **no test ever reaches
   game-over** — `check_game_end`, `GameEndedEvent`, and the concede path are

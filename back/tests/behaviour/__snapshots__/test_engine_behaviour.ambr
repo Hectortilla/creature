@@ -9,6 +9,8 @@
         'PhaseChangedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+      ]),
       'step': 0,
     }),
     dict({
@@ -16,6 +18,8 @@
       'actor': 'p2',
       'events': list([
         'CardPlayedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
@@ -27,6 +31,8 @@
       'actor': 'p2',
       'events': list([
         'CardPlayedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
@@ -44,6 +50,8 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 3,
@@ -55,6 +63,8 @@
       'events': list([
         'CardPlayedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 4,
@@ -65,6 +75,8 @@
       'actor': 'p1',
       'events': list([
         'CardPlayedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
@@ -82,6 +94,8 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
       'step': 6,
@@ -92,6 +106,8 @@
       'actor': 'p2',
       'events': list([
         'CardPromotedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
@@ -105,6 +121,8 @@
         'CardPromotedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 8,
@@ -117,6 +135,8 @@
         'CardSwappedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
       'step': 9,
@@ -127,6 +147,8 @@
       'actor': 'p2',
       'events': list([
         'NoDefenderEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'PAUSED',
@@ -141,6 +163,20 @@
         'AttackResolvedEvent',
         'CardPromotedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 15,
+          'remaining_health': 45,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 15,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -160,6 +196,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 15,
+          'remaining_health': 30,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 15,
+        }),
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 12,
@@ -171,6 +221,8 @@
       'events': list([
         'CardPlayedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
@@ -184,6 +236,8 @@
         'CardPromotedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 14,
@@ -195,6 +249,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -208,6 +264,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 15,
+          'remaining_health': 45,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 15,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -227,6 +297,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 18,
+          'remaining_health': 27,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 18,
+        }),
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 17,
@@ -237,6 +321,8 @@
       'actor': 'p2',
       'events': list([
         'CardPlayedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
@@ -250,6 +336,8 @@
         'CardPlayedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 19,
@@ -261,6 +349,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -274,6 +364,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': 35,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -293,6 +397,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 28,
+          'remaining_health': 7,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 28,
+        }),
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 22,
@@ -305,6 +423,8 @@
         'CardPlayedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 23,
@@ -315,6 +435,8 @@
       'actor': 'p1',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -328,6 +450,8 @@
         'CardSwappedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
       'step': 25,
@@ -340,6 +464,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 18,
+          'remaining_health': 42,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 18,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -362,6 +500,28 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 15,
+          'remaining_health': 27,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 15,
+        }),
+        dict({
+          'duration_turns': 2,
+          'event': 'StatusAppliedEvent',
+        }),
+        dict({
+          'event': 'CardHealthChangedEvent',
+          'new_health': 22,
+        }),
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 27,
@@ -373,6 +533,8 @@
       'events': list([
         'CardSwappedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 28,
@@ -383,6 +545,8 @@
       'actor': 'p2',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -396,6 +560,8 @@
         'CardSwappedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
       'step': 30,
@@ -408,6 +574,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': -3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 22,
+          'remaining_health': 38,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 22,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -427,6 +607,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': -3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 22,
+          'remaining_health': 16,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 22,
+        }),
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 32,
@@ -438,6 +632,8 @@
       'events': list([
         'CardSwappedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 33,
@@ -448,6 +644,8 @@
       'actor': 'p1',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -461,6 +659,8 @@
         'CardSwappedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
       'step': 35,
@@ -473,6 +673,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 15,
+          'remaining_health': 45,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 15,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -495,6 +709,24 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 18,
+          'remaining_health': 27,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 18,
+        }),
+        dict({
+          'event': 'CardHealthChangedEvent',
+          'new_health': 17,
+        }),
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 37,
@@ -505,6 +737,8 @@
       'actor': 'p2',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -517,6 +751,8 @@
       'events': list([
         'CardSwappedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 39,
@@ -528,6 +764,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -542,6 +780,20 @@
         'AttackResolvedEvent',
         'CardDestroyedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 28,
+          'remaining_health': -21,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 28,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -561,6 +813,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': 35,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
+      ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
       'step': 42,
@@ -573,6 +839,8 @@
         'CardPromotedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 43,
@@ -583,6 +851,8 @@
       'actor': 'p1',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -595,6 +865,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -609,6 +881,24 @@
         'AttackResolvedEvent',
         'DamageDealtEvent',
         'StatusAppliedEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': -3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 12,
+          'remaining_health': 48,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 12,
+        }),
+        dict({
+          'duration_turns': 2,
+          'event': 'StatusAppliedEvent',
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -629,6 +919,24 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': -3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 12,
+          'remaining_health': 36,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 12,
+        }),
+        dict({
+          'event': 'CardHealthChangedEvent',
+          'new_health': 31,
+        }),
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 47,
@@ -640,6 +948,8 @@
       'events': list([
         'CardSwappedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 48,
@@ -650,6 +960,8 @@
       'actor': 'p2',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -663,6 +975,8 @@
         'CardSwappedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
       'step': 50,
@@ -675,6 +989,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': 5,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -694,6 +1022,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': -20,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 52,
@@ -705,6 +1047,8 @@
       'events': list([
         'CardPlayedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
@@ -718,6 +1062,8 @@
         'CardPromotedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 54,
@@ -729,6 +1075,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -742,6 +1090,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 18,
+          'remaining_health': 9,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 18,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -764,6 +1126,24 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 18,
+          'remaining_health': -9,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 18,
+        }),
+        dict({
+          'event': 'CardHealthChangedEvent',
+          'new_health': 26,
+        }),
+      ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
       'step': 57,
@@ -776,6 +1156,8 @@
         'CardPromotedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 58,
@@ -786,6 +1168,8 @@
       'actor': 'p2',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -799,6 +1183,8 @@
         'CardSwappedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
       'step': 60,
@@ -811,6 +1197,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': 10,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -830,6 +1230,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': -3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 22,
+          'remaining_health': -12,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 22,
+        }),
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 62,
@@ -841,6 +1255,8 @@
       'events': list([
         'CardPlayedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
@@ -854,6 +1270,8 @@
         'CardPromotedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 64,
@@ -865,6 +1283,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -878,6 +1298,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': 35,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -896,6 +1330,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': -3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 22,
+          'remaining_health': 13,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 22,
+        }),
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 67,
@@ -908,6 +1356,8 @@
         'CardPlayedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 68,
@@ -918,6 +1368,8 @@
       'actor': 'p2',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -931,6 +1383,8 @@
         'CardSwappedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
       'step': 70,
@@ -943,6 +1397,20 @@
         'AttackDeclaredEvent',
         'AttackResolvedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': -3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 22,
+          'remaining_health': 38,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 22,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -961,6 +1429,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': 13,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
+      ]),
       'phase': 'PLACEMENT',
       'status': 'IN_PROGRESS',
       'step': 72,
@@ -973,6 +1455,8 @@
         'CardPlayedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 73,
@@ -983,6 +1467,8 @@
       'actor': 'p1',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -995,6 +1481,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -1009,6 +1497,20 @@
         'AttackResolvedEvent',
         'CardDestroyedEvent',
         'DamageDealtEvent',
+      ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 3,
+          'event': 'DamageDealtEvent',
+          'final_damage': 28,
+          'remaining_health': -11,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 28,
+        }),
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
@@ -1027,6 +1529,20 @@
         'TurnEndedEvent',
         'TurnStartedEvent',
       ]),
+      'numbers': list([
+        dict({
+          'base_damage': 20,
+          'defense_reduction': 5,
+          'element_bonus': 0,
+          'event': 'DamageDealtEvent',
+          'final_damage': 25,
+          'remaining_health': 1,
+        }),
+        dict({
+          'event': 'AttackResolvedEvent',
+          'final_damage': 25,
+        }),
+      ]),
       'phase': 'PROMOTION',
       'status': 'IN_PROGRESS',
       'step': 77,
@@ -1039,6 +1555,8 @@
         'CardPromotedEvent',
         'PhaseChangedEvent',
       ]),
+      'numbers': list([
+      ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
       'step': 78,
@@ -1049,6 +1567,8 @@
       'actor': 'p2',
       'events': list([
         'CardSwappedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'SWAP',
       'status': 'IN_PROGRESS',
@@ -1061,6 +1581,8 @@
       'events': list([
         'CardSwappedEvent',
         'PhaseChangedEvent',
+      ]),
+      'numbers': list([
       ]),
       'phase': 'ATTACK',
       'status': 'IN_PROGRESS',
