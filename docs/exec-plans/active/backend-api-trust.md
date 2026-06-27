@@ -396,7 +396,12 @@ not a failure.
 - **Label:** none (test files only).
 
 ### Step 8 — Per-package coverage gate: script + baseline (label-free)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — `back/scripts/coverage_gate.py` (mirrors `mutation_gate.py`: reads `cov.json`, buckets per-file `summary` counts into `app.routers`/`app.auth`/`app.services`/`app.websocket`, branch-aware percent, GitHub-summary table, `+1e-9` tolerance, `::error::`+exit-1 on regression) + `back/coverage-baseline.json` (floors 99/78/95/69). Gate exits 0 against the full-suite cov.json; ratchet proven (bump websocket→80 → exit 1 → restored) — branch `spec/backend-api-trust/step-8/coverage-gate` — PR https://app.graphite.com/github/pr/Hectortilla/creature/32
+- **Notes for next agent:**
+  - **Measured floors (full suite, services up, 2026-06-27):** `app.routers` 100.00%, `app.auth` 78.05%, `app.services` 95.62%, `app.websocket` 69.94%. Floors set just below each to absorb minor variance; ratchet up only.
+  - **`coverage json` has no package rollup** — it is keyed per file (`app/routers/auth.py`). The gate sums `summary.covered_lines+covered_branches` over `summary.num_statements+num_branches` per path-prefix bucket, matching coverage's own branch-aware metric (`branch = true` in pyproject).
+  - **`cov.json` is a build artifact** — generate it fresh per run (`uv run pytest --cov=app --cov-report=json:cov.json`), do not commit it. The script reads `cov.json`/`coverage-baseline.json` relative to cwd (`back/`).
+  - **Step 9 is next and is LABEL REQUIRED** — wiring this into the `backend-integration` job edits `.github/workflows/ci.yml` (replace `uv run pytest -m integration` at ci.yml:114 with the full-suite `--cov-report=json:cov.json` run + `uv run python scripts/coverage_gate.py`). Expect `harness-guard` red until `harness-change` is applied.
 - **Why / failure mode closed:** with the test layer in place, the *floor* must
   lock it in. Today one global `fail_under = 62` is met by the engine alone, so
   the new boundary coverage can silently erode. This adds the gate **mechanism**

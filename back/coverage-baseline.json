@@ -1,0 +1,9 @@
+{
+  "packages": {
+    "app.routers": 99.0,
+    "app.auth": 78.0,
+    "app.services": 95.0,
+    "app.websocket": 69.0
+  },
+  "comment": "Per-package branch-aware coverage floors, enforced in the backend-integration CI job by scripts/coverage_gate.py over the full suite (unit + integration) cov.json. Measured 2026-06-27: app.routers 100.00%, app.auth 78.05%, app.services 95.62%, app.websocket 69.94%. Floors set just below measured to absorb minor variance; ratchet upward as tests grow, lower only behind the harness-change label."
+}
