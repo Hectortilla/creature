@@ -42,7 +42,7 @@ export default defineConfig({
 	// worker isolates each spec's room lifecycle — matching the reliable
 	// single-spec behaviour.
 	workers: 1,
-	reporter: [["html", { open: "never" }], ["list"]],
+	reporter: [["html", { open: "never" }], ["dot"]],
 	use: {
 		baseURL: "http://localhost:4173",
 		trace: "on-first-retry",

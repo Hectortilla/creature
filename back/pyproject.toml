@@ -122,7 +122,7 @@ ignore_errors = true
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "-ra -q --strict-markers"
+addopts = "-ra -q --no-header --strict-markers"
 markers = [
     "unit: pure in-memory engine/model tests (no DB/Redis)",
     "integration: requires Postgres and/or Redis",

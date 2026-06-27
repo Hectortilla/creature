@@ -21,6 +21,7 @@ Usage:  scripts/ralph_loop.py [PLAN] [options]      (see --help)
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import re
@@ -123,6 +124,7 @@ class Config:
     assume_yes: bool = False
     dry_run: bool = False
     verbose: bool = False
+    show_thinking: bool = True
     use_color: bool = True
     extra_args: list[str] = field(default_factory=list)
 
@@ -163,6 +165,9 @@ NOTES
     tests, git and `gt` unattended. Run this in a trusted repo; you'll be asked to confirm
     once (use -y to skip). Ralph is best run in a sandbox/container.
   - Logs land under a gitignored .ralph/ dir so the skill's commits never sweep them.
+  - Each iteration's reasoning (thinking blocks, assistant text, tool calls) is
+    streamed by default via claude's stream-json mode; the log keeps raw JSON.
+    Pass --no-show-thinking to fall back to plain text output.
   - Ralph burns tokens. --max-budget-usd caps EACH iteration, not the run — worst-case
     total is roughly (--max-budget-usd x --max-iterations); set both deliberately.
 """
@@ -286,6 +291,15 @@ def parse_args(argv: list[str]) -> Config:
         "-v", "--verbose", action="store_true", help="Pass --verbose to claude."
     )
     parser.add_argument(
+        "--no-show-thinking",
+        dest="show_thinking",
+        action="store_false",
+        help="Disable the default reasoning stream and use plain text output. "
+        "By default each iteration runs claude with --output-format stream-json "
+        "--verbose and pretty-prints thinking, assistant text, and tool calls "
+        "(raw JSON still saved to the log).",
+    )
+    parser.add_argument(
         "-y",
         "--yes",
         dest="assume_yes",
@@ -337,6 +351,7 @@ def parse_args(argv: list[str]) -> Config:
         assume_yes=ns.assume_yes,
         dry_run=ns.dry_run,
         verbose=ns.verbose,
+        show_thinking=ns.show_thinking,
         use_color=ns.use_color,
         extra_args=extra,
     )
@@ -444,7 +459,9 @@ class RalphLoop:
             cmd += ["--dangerously-skip-permissions"]
         if self.cfg.max_budget:
             cmd += ["--max-budget-usd", self.cfg.max_budget]
-        if self.cfg.verbose:
+        if self.cfg.show_thinking:
+            cmd += ["--output-format", "stream-json", "--verbose"]
+        elif self.cfg.verbose:
             cmd += ["--verbose"]
         cmd += self.cfg.extra_args
         self.claude_cmd = cmd
@@ -551,13 +568,42 @@ class RalphLoop:
         try:
             with iter_log.open("w", encoding="utf-8") as logf:
                 assert self._proc.stdout is not None
+                render = (
+                    self._render_stream_json
+                    if self.cfg.show_thinking
+                    else self._tee
+                )
                 for line in self._proc.stdout:
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
-                    logf.write(line)
+                    render(line, logf)
             return self._proc.wait()
         finally:
             self._proc = None
+
+    @staticmethod
+    def _tee(line: str, logf) -> None:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        logf.write(line)
+
+    def _render_stream_json(self, line: str, logf) -> None:
+        """Save raw JSON to the log; pretty-print thinking/text/tool_use to the console."""
+        logf.write(line)  # full fidelity stays in the log
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            return  # non-JSON noise (e.g. a stray warning line)
+        if event["type"] != "assistant":
+            return
+        c = self.c
+        for block in event["message"]["content"]:
+            kind = block["type"]
+            if kind == "thinking":
+                sys.stdout.write(f"{c.DIM}{c.YEL}🧠 {block['thinking']}{c.RST}\n")
+            elif kind == "text":
+                sys.stdout.write(f"{block['text']}\n")
+            elif kind == "tool_use":
+                sys.stdout.write(f"{c.CYN}⚙ {block['name']}{c.RST}\n")
+        sys.stdout.flush()
 
     # -- driver-side gate (the machine fact, not the agent's self-report) ----
     def _changed_paths(self, before: str, after: str) -> list[str]:
