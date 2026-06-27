@@ -71,8 +71,9 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
    the step finished. The iteration's authoritative gate is **`make verify`**
    (repo root): it runs both deterministic gates (`make check`) **and** the
    running-app Playwright suite every iteration, so the e2e sensor is no longer
-   a judgment call. Auth (`@gating`) must pass; gameplay (`@nongating`) runs
-   report-only. Prerequisite: services up (`make up`) and the sandbox off.
+   a judgment call. The **whole** e2e suite is `@gating` and blocking (no
+   `@nongating` tier remains) — auth *and* every gameplay flow must pass.
+   Prerequisite: services up (`make up`) and the sandbox off.
    - For *fast* feedback while iterating you may run just the side you touched —
      `cd back && make check`, or the frontend gate `cd front && npm run lint &&
      npm run test && npm run deps:check && npm run build` — but the step is not
@@ -87,10 +88,11 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
      harness changes are made deliberately, as their own step, and merge only
      behind the `harness-change` label — see `docs/harness.md`.)
 
-   Also run any `Verify` commands the step itself lists; they must pass. A
-   failing report-only `@nongating` e2e leg does **not** block the iteration, but
-   record it in the PR body / `Notes for next agent` — it's the signal the
-   `@nongating → @gating` ratchet consumes (see `docs/harness.md`).
+   Also run any `Verify` commands the step itself lists; they must pass. The
+   whole e2e suite is `@gating` and blocking: **any** e2e failure fails the
+   iteration — do not wave one through as "flaky" or "report-only" (see
+   `docs/harness.md`). If a spec flakes without retries, that's a real flake to
+   fix or report, not to mask.
 
 4. **If the step is under-specified, blocked, or wrong, stop and report** what's
    missing rather than guessing or forcing it. A step you cannot verify is a step
