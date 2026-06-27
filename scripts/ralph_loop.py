@@ -117,6 +117,8 @@ class Config:
     bypass: bool = True
     max_budget: str = ""
     prompt_override: str = ""
+    gate: str = "make verify"
+    abort_on_gate_fail: bool = False
     log_dir: str = ""
     assume_yes: bool = False
     dry_run: bool = False
@@ -150,9 +152,10 @@ NOTES
   - The /ralph-iteration skill STACKS each step on the previous via Graphite (`gt`) and
     opens/updates a PR per iteration, so a full run leaves a reviewable stack of PRs.
     Graphite must be set up once on this machine (`gt init` + `gt auth`).
-  - The gate the skill must leave green is `cd back && make check` (backend) or the
-    `cd front && npm run …` test/build gate (frontend); `make check` at the repo root runs
-    both. Postgres + Redis come from `make up` (only integration tests need them).
+  - After every commit the DRIVER itself re-runs the gate (`--gate`, default `make verify`)
+    as a machine fact — a red gate fails the iteration (no progress counted), independent of
+    what the agent claimed. Docs-only commits (docs/**/*.md) skip it. Postgres + Redis come
+    from `make up`; `make verify` also runs the e2e suite, so keep services up and sandbox off.
   - --dangerously-skip-permissions is ON by default because the skill must run builds,
     tests, git and `gt` unattended. Run this in a trusted repo; you'll be asked to confirm
     once (use -y to skip). Ralph is best run in a sandbox/container.
@@ -254,6 +257,23 @@ def parse_args(argv: list[str]) -> Config:
         help="Full custom per-iteration prompt (must reference the plan itself).",
     )
     parser.add_argument(
+        "--gate",
+        default="make verify",
+        metavar="CMD",
+        help="Gate the DRIVER re-runs after each commit, as a machine fact "
+        "(shell command, run at the repo root). A non-zero exit fails the "
+        "iteration: no progress is counted. Skipped only for docs-only "
+        "(docs/**/*.md) commits. (default: 'make verify'; use 'make check' "
+        "for faster backend-only loops)",
+    )
+    parser.add_argument(
+        "--abort-on-gate-fail",
+        dest="abort_on_gate_fail",
+        action="store_true",
+        help="Stop the whole loop the first time the driver gate fails "
+        "(default: count it as a stall and keep going until --max-stalls).",
+    )
+    parser.add_argument(
         "--log-dir",
         default="",
         metavar="DIR",
@@ -308,6 +328,8 @@ def parse_args(argv: list[str]) -> Config:
         bypass=ns.bypass,
         max_budget=ns.max_budget,
         prompt_override=ns.prompt_override,
+        gate=ns.gate,
+        abort_on_gate_fail=ns.abort_on_gate_fail,
         log_dir=ns.log_dir,
         assume_yes=ns.assume_yes,
         dry_run=ns.dry_run,
@@ -465,6 +487,7 @@ class RalphLoop:
         log.info(f"{c.BOLD}{c.CYN}Ralph loop{c.RST} — {self.plan_rel}")
         log.info(f"  {c.DIM}prompt{c.RST}        {self.prompt}")
         log.info(f"  {c.DIM}model{c.RST}         {self.cfg.model or '(default)'}")
+        log.info(f"  {c.DIM}gate{c.RST}          {self.cfg.gate}")
         log.info(f"  {c.DIM}max-iter{c.RST}      {max_iter}")
         log.info(f"  {c.DIM}max-stalls{c.RST}    {max_stalls}")
         log.info(f"  {c.DIM}sleep{c.RST}         {self.cfg.sleep_secs}s")
@@ -532,6 +555,41 @@ class RalphLoop:
             return self._proc.wait()
         finally:
             self._proc = None
+
+    # -- driver-side gate (the machine fact, not the agent's self-report) ----
+    def _changed_paths(self, before: str, after: str) -> list[str]:
+        out = self._git("diff", "--name-only", f"{before}..{after}")
+        return [p for p in out.splitlines() if p.strip()]
+
+    @staticmethod
+    def is_docs_only(paths: list[str]) -> bool:
+        """True only if every changed path is a Markdown file under docs/."""
+        return bool(paths) and all(
+            p.startswith("docs/") and p.endswith(".md") for p in paths
+        )
+
+    def run_gate(self, iter_log: Path) -> int:
+        """Run the configured gate at the repo root; tee output to console + iter_log. Returns rc."""
+        c = self.c
+        log.info(f"  {c.DIM}driver gate{c.RST}   {self.cfg.gate}")
+        proc = subprocess.Popen(
+            self.cfg.gate,
+            shell=True,
+            cwd=str(self.repo_root),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        with iter_log.open("a", encoding="utf-8") as logf:
+            logf.write(f"\n\n----- driver gate: {self.cfg.gate} -----\n")
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                logf.write(line)
+        return proc.wait()
 
     # -- main ---------------------------------------------------------------
     def setup(self) -> None:
@@ -646,14 +704,29 @@ class RalphLoop:
                 after_head = self._git("rev-parse", "HEAD") or "none"
                 after_boxes = self.count_unchecked()
 
-                progressed = False
+                committed = after_head != before_head
                 commit_note = ""
-                if after_head != before_head:
-                    progressed = True
+                if committed:
                     last_commit = self._git("log", "-1", "--format=%h %s") or after_head
                     self.commits.append(last_commit)
                     commit_note = f" {last_commit} ·"
-                if after_boxes < before_boxes:
+
+                # The gate is a MACHINE FACT, not the agent's prose: when a commit
+                # lands the driver re-runs it (unless the commit is docs-only).
+                # A red gate fails the iteration — the commit does NOT count as
+                # progress, no matter what the agent ticked.
+                gate_failed = False
+                if committed:
+                    changed = self._changed_paths(before_head, after_head)
+                    if self.is_docs_only(changed):
+                        log.info(f"  {c.DIM}driver gate{c.RST}   skipped (docs-only)")
+                    else:
+                        gate_failed = self.run_gate(iter_log) != 0
+
+                progressed = False
+                if committed and not gate_failed:
+                    progressed = True
+                if after_boxes < before_boxes and not gate_failed:
                     progressed = True
                 if not self.plan_abs.exists():  # moved to completed/
                     progressed = True
@@ -665,6 +738,8 @@ class RalphLoop:
                     status_color, status = c.YEL, f"claude exit {rc}"
                 if not progressed:
                     status_color, status = c.YEL, "no progress"
+                if gate_failed:
+                    status_color, status = c.RED, "gate failed (red)"
                 stall_note = (
                     f" · stall {stalls}/{self.cfg.max_stalls}" if stalls > 0 else ""
                 )
@@ -673,7 +748,11 @@ class RalphLoop:
                     f"{c.DIM}·{commit_note} {after_boxes} boxes left{stall_note}{c.RST}"
                 )
 
-                if self.is_complete():
+                if gate_failed and self.cfg.abort_on_gate_fail:
+                    self.stop_reason = "aborted — driver gate failed (red)"
+                    break
+                # A red gate vetoes "complete": don't let a ticked box mask it.
+                if not gate_failed and self.is_complete():
                     self.stop_reason = "plan complete"
                     break
                 if self.cfg.max_stalls != 0 and stalls >= self.cfg.max_stalls:

@@ -113,7 +113,11 @@ label.
 - **Depends on:** none.
 
 ### Step 2 — Make the loop driver execute the gate itself (kill the self-report)
-- [ ] **Status:** _not started_
+- [x] **Status:** ✅ done — 2026-06-22 — `scripts/ralph_loop.py` now re-runs the gate itself after every commit as a machine fact: a non-zero exit sets `gate_failed`, which vetoes `progressed` (the commit/ticked-box no longer counts), increments stalls, surfaces the gate output in the iter log, vetoes "plan complete", and (with `--abort-on-gate-fail`) stops the loop. Gate defaults to `make verify`, overridable via `--gate` (e.g. `make check`). Docs-only commits (every path matches `docs/**/*.md`) skip the gate via a hard allowlist — Makefile/scripts/.claude/code are not docs-only. Verified functionally in a temp git repo (passing gate → progress; failing gate → no progress; docs-only → skipped); `cd back && make check` green (unaffected, 49 passed) — branch `spec/harness-overnight-trust/step-2/driver-runs-gate` — commit 893494b — PR https://app.graphite.com/github/pr/Hectortilla/creature/18
+- **Notes for next agent:**
+  - **ruff rider — noted why not:** `scripts/` lives at the repo root, outside `back/` where ruff/pytest run (`[tool.ruff]` in `back/pyproject.toml`, `extend-exclude` for alembic/.venv). Wiring `../scripts` into back's ruff would touch the **protected** `back/pyproject.toml` (needs `harness-change` label) for marginal gain on a non-app file. The driver passes `ruff check` cleanly except a **pre-existing** `F821 NoReturn` on line 101 (a lazily-evaluated string annotation already carrying `# type: ignore[name-defined]`) — untouched by this step.
+  - The driver gate is intentionally **redundant** with the agent's in-iteration `make verify`: the point is to make "is it green" a machine fact independent of the agent's prose, not to replace the agent's own run.
+  - This PR touches `scripts/ralph_loop.py` (protected) → its `harness-guard` check is **red until a human applies the `harness-change` label**. Expected.
 - **Why / failure mode closed:** the agent commits code that was never
   gate-verified, or mislabels a real change as "docs-only" and skips `make verify`
   — and the driver counts it as progress anyway. This makes "is it green" a
