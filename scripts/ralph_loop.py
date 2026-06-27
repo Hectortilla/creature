@@ -151,7 +151,10 @@ NOTES
   - Each iteration is a fresh `claude -p` run — that clean context is the point of Ralph.
   - The /ralph-iteration skill STACKS each step on the previous via Graphite (`gt`) and
     opens/updates a PR per iteration, so a full run leaves a reviewable stack of PRs.
-    Graphite must be set up once on this machine (`gt init` + `gt auth`).
+    Graphite must be set up once on this machine: `gt init`, `gt auth`, and
+    `gt user submit-body --include-commit-messages --exclude-templates` (without that
+    last one, Graphite publishes the empty PR template instead of the commit body, so
+    PRs land with no description).
   - After every commit the DRIVER itself re-runs the gate (`--gate`, default `make verify`)
     as a machine fact — a red gate fails the iteration (no progress counted), independent of
     what the agent claimed. Docs-only commits (docs/**/*.md) skip it. Postgres + Redis come
@@ -617,8 +620,10 @@ class RalphLoop:
         ):
             log.warning(
                 "'gt' (Graphite) not found on PATH — the /ralph-iteration skill "
-                "needs it to stack branches/PRs. Install it and run `gt init` "
-                "+ `gt auth`."
+                "needs it to stack branches/PRs. Install it, then run `gt init`, "
+                "`gt auth`, and `gt user submit-body --include-commit-messages "
+                "--exclude-templates` (the last makes PRs use the commit body, not "
+                "the empty PR template)."
             )
 
         self.resolve_plan()

@@ -154,12 +154,20 @@ If no plan is named, list the plans in `docs/exec-plans/active/` (ignore
       touched.
    3. **Submit / refresh the stack of PRs:** `gt submit --stack --no-edit` —
       creates this branch's PR and keeps the bases + titles + descriptions of the
-      whole stack correct. `--no-edit` keeps it non-interactive and tells Graphite
-      to take the PR **title and description straight from the commit message**
-      (step 7.2) instead of opening an editor — essential for an unattended loop,
-      and what lands the two-section description on the PR. (One-time per machine,
-      the loop needs `gt init` and `gt auth` done first; if `gt submit` reports
-      it's not initialized/authed, do those once, then re-run.)
+      whole stack correct. `--no-edit` only keeps it non-interactive (no editor); it
+      does **not** by itself put the commit body on the PR. Graphite's default is to
+      publish the repo's `.github/PULL_REQUEST_TEMPLATE.md` as the PR body and ignore
+      the commit message — so without the one-time machine config below, the PR gets
+      the **empty template** and your two-section description is silently dropped.
+      (One-time per machine, the loop needs three things done first: `gt init`,
+      `gt auth`, and the submit-body config that makes Graphite use the commit
+      message as the PR body and skip the template —
+      `gt user submit-body --include-commit-messages --exclude-templates` (these are
+      the "submit body" options under `gt config`; persisted in
+      `~/.config/graphite/user_config` as `submitIncludeCommitMessages` +
+      `excludeTemplatesWithCommitMessages`). If `gt submit` reports it's not
+      initialized/authed, or PRs come out with the empty template, fix the config
+      once, then re-run.)
    4. **Record the branch + PR URL** in the step's status line (step 5) so the next
       iteration knows what to stack on.
 
@@ -188,10 +196,12 @@ to communicate the *intention* of the change. Exactly two sections, nothing else
 <1–2 sentences, or 2–3 short bullets: the approach taken — not a file-by-file diff.>
 ```
 
-This text is the **commit body** (step 7.2); `gt submit --no-edit` publishes it
-verbatim as the PR description. Because it lives in the commit, it stays attached
-to the work even if `gt submit` is deferred or blocked — whenever the PR is
-(re)opened, Graphite uses it. Rules:
+This text is the **commit body** (step 7.2); once Graphite is configured to use the
+commit message as the PR body and skip the template (the `gt user submit-body
+--include-commit-messages --exclude-templates` setup in step 7.3), `gt submit
+--no-edit` publishes it as the PR description. Because it lives in the commit, it
+stays attached to the work even if `gt submit` is deferred or blocked — whenever the
+PR is (re)opened, Graphite uses it. Rules:
 
 - No preamble, no checklist, no changelog, no "as requested" filler.
 - Explain the *why* and the *approach*, not every file you touched — the diff
