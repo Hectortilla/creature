@@ -361,7 +361,13 @@ not a failure.
 - **Label:** none (test files only).
 
 ### Step 7 — Websocket routing/dispatch unit tests (in-memory fakes, no Redis)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-06-27 — `tests/unit/test_message_router.py` (12 tests: every known type routes/replies, unknown → ErrorMessage, malformed action data → "Invalid message format" + loop survives, action-while-not-in-room → "Not in a game", mid-session join rejected, internal-error caught) + `tests/unit/test_game_runner.py` (10 tests: start_game/process_action fan-out one message per player + update room.state, the three process_action ValueError guards, get_valid_actions/get_game_state query logic) — both **unit**, no Redis, lift `make check` (message_router 95%, game_runner 97%) — branch `spec/backend-api-trust/step-7/websocket-unit-tests` — PR https://app.graphite.com/github/pr/Hectortilla/creature/31
+- **Notes for next agent:**
+  - **Serialization masking is already covered** by `tests/unit/test_event_visibility.py` (`test_opponent_drawn_card_id_is_masked`); `serialization.py` reads 100% — no extra serialization test was needed (the plan's "extend if branches remain" resolved to nothing to do).
+  - **`GameStateForPlayer(game_id="g1")` is the cheap stub** — only `game_id` is required, every other field defaults. Use it as the return of a fake `serialize_for_player` so `GameStartedData`/`ActionResultData` validate.
+  - **`process_action` reads `room.state.game_id`** (structlog `bound_contextvars`) and uses `get_tracer()` (a no-op tracer with no provider configured) — a fake state needs a `game_id` attr; no external service is touched.
+  - **`MessageRouter` validates the full message dict** but `type` is a `ClassVar` (not a field), so validators don't require it; a malformed `action` (missing `action_type`) trips the `ValidationError` → `ErrorMessage` branch and `handle_message` returns normally (loop survives).
+  - Step 8 (coverage gate) is now unblocked — all of Steps 2–7 are done; measure the floors from a full-suite `cov.json` (services up).
 - **Why / failure mode closed:** `MessageRouter.handle_message` is the websocket
   trust boundary — it validates client frames and routes to lobby/runner. A
   malformed frame that crashes the loop, an unknown type that isn't rejected, an
