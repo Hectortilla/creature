@@ -239,9 +239,11 @@ controls cheap to build — use them.
 Tracked here so they're visible, not lost:
 
 - **Backend type coverage** — `auth`, `database`, `utils`, `routers`,
-  `models.db`, and `models.schemas` are now type-checked; `services`, `websocket`,
-  and `settings` still carry `ignore_errors` (dynamic SQLAlchemy/async patterns).
-  Drop those next; eventually `disallow_untyped_defs`.
+  `models.db`, `models.schemas`, and `services` are now type-checked; only
+  `websocket` and `settings` still carry `ignore_errors`
+  (async/framework-glue patterns). Drop `websocket` next; eventually
+  `disallow_untyped_defs`. (`services` cleared via `backend-api-trust` step 10 —
+  dynamic-SQLAlchemy column/relationship expressions resolved with `sqlmodel.col`.)
 - **Frontend type debt**: `npm run lint` (prettier + ratcheted eslint) now gates
   in CI and pre-commit. Remaining: ~55 `svelte-check` type errors (incl.
   `babylon-editor/src` and active routes) — clear them, then promote

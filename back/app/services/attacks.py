@@ -10,16 +10,8 @@ from app.models.schemas.element import ElementRead
 from app.services.base import BaseService
 
 
-def enrich_attack(attack) -> AttackReadWithElement | None:
-    """
-    Enrich attack with computed properties.
-
-    Standalone function to allow reuse across services.
-    Works with both Attack DB model and attack-like objects with same attributes.
-    """
-    if not attack:
-        return None
-
+def enrich_attack(attack: Attack) -> AttackReadWithElement:
+    """Enrich an attack with its element's computed strengths/weaknesses."""
     element_read = None
     strengths = None
     weaknesses = None
@@ -66,4 +58,5 @@ class AttackService(BaseService[Attack, AttackCreate]):
 
     def get_enriched(self, value: int | str) -> AttackReadWithElement | None:
         """Get attack by code or name with enriched data."""
-        return enrich_attack(self.get(value))
+        attack = self.get(value)
+        return enrich_attack(attack) if attack else None

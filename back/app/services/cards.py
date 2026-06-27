@@ -4,7 +4,7 @@ Card Service
 CRUD operations for cards with enrichment logic.
 """
 
-from sqlmodel import or_, select
+from sqlmodel import col, or_, select
 
 from app.models.db.ability import Ability
 from app.models.db.association import Association
@@ -83,7 +83,7 @@ class CardService(BaseService[Card, CardCreate]):
             select(Effect)
             .where(Effect.enabled == True)  # noqa: E712
             .where(or_(*owner_filters))
-            .order_by(Effect.owner_kind, Effect.owner_id, Effect.sort_order, Effect.id)
+            .order_by(col(Effect.owner_kind), col(Effect.owner_id), col(Effect.sort_order), col(Effect.id))
         ).all()
         return [EffectRead.model_validate(row) for row in rows]
 
@@ -94,7 +94,7 @@ class CardService(BaseService[Card, CardCreate]):
 
         # Return minimal response for circular references
         if card.code in visited:
-            return self._to_card_read(card)
+            return CardReadWithRelations.model_validate(self._to_card_read(card))
 
         visited.add(card.code)
 
@@ -130,8 +130,8 @@ class CardService(BaseService[Card, CardCreate]):
             second_element=ElementRead.model_validate(card.second_element) if card.second_element else None,
             type=TypeRead.model_validate(card.type) if card.type else None,
             character=CharacterRead.model_validate(card.character) if card.character else None,
-            first_attack=enrich_attack(card.first_attack),
-            second_attack=enrich_attack(card.second_attack),
+            first_attack=enrich_attack(card.first_attack) if card.first_attack else None,
+            second_attack=enrich_attack(card.second_attack) if card.second_attack else None,
             ability=AbilityRead.model_validate(card.ability) if card.ability else None,
             association=AssociationRead.model_validate(card.association) if card.association else None,
             is_evolution=is_evolution_read,
@@ -151,7 +151,9 @@ class CardService(BaseService[Card, CardCreate]):
         if isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
             cards = self.db.exec(select(Card).where(Card.code == int(value))).all()
         else:
-            cards = self.db.exec(select(Card).where(or_(Card.handle.ilike(value), Card.name.ilike(value)))).all()
+            cards = self.db.exec(
+                select(Card).where(or_(col(Card.handle).ilike(value), col(Card.name).ilike(value)))
+            ).all()
 
         return [self.enrich(card) for card in cards]
 
@@ -160,8 +162,8 @@ class CardService(BaseService[Card, CardCreate]):
         cards = self.db.exec(
             select(Card).where(
                 or_(
-                    Card.first_attack.has(Attack.code == attack_code),
-                    Card.second_attack.has(Attack.code == attack_code),
+                    col(Card.first_attack).has(col(Attack.code) == attack_code),
+                    col(Card.second_attack).has(col(Attack.code) == attack_code),
                 )
             )
         ).all()
@@ -169,10 +171,12 @@ class CardService(BaseService[Card, CardCreate]):
 
     def get_by_ability(self, ability_code: int) -> list[CardReadWithRelations]:
         """Get all cards that have a specific ability."""
-        cards = self.db.exec(select(Card).where(Card.ability.has(Ability.code == ability_code))).all()
+        cards = self.db.exec(select(Card).where(col(Card.ability).has(col(Ability.code) == ability_code))).all()
         return [self.enrich(card) for card in cards]
 
     def get_by_association(self, association_code: int) -> list[CardReadWithRelations]:
         """Get all cards that have a specific association."""
-        cards = self.db.exec(select(Card).where(Card.association.has(Association.code == association_code))).all()
+        cards = self.db.exec(
+            select(Card).where(col(Card.association).has(col(Association.code) == association_code))
+        ).all()
         return [self.enrich(card) for card in cards]

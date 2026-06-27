@@ -44,7 +44,7 @@ class BaseService(ABC, Generic[T, C]):
 
     def get_all(self) -> list[T]:
         """Get all records."""
-        return self.db.exec(select(self.model)).all()
+        return list(self.db.exec(select(self.model)).all())
 
     def get(self, value: int | str) -> T | None:
         """Get record by id/code (numeric) or label/name (string)."""
@@ -58,8 +58,8 @@ class BaseService(ABC, Generic[T, C]):
     def create(self, data: C) -> T:
         """Create a new record."""
         if self.has_handle:
-            handle = format_handle(data.name)
-            db_obj = self.model(**data.model_dump(), handle=handle)
+            dumped = data.model_dump()
+            db_obj = self.model(**dumped, handle=format_handle(dumped["name"]))
         else:
             db_obj = self.model.model_validate(data)
 
@@ -70,7 +70,7 @@ class BaseService(ABC, Generic[T, C]):
 
     def delete(self, id: int) -> bool:
         """Delete a record by ID."""
-        obj = self.db.exec(select(self.model).where(self.model.id == id)).first()
+        obj = self.db.get(self.model, id)
 
         if obj:
             self.db.delete(obj)
