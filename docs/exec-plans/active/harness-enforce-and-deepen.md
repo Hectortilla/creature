@@ -117,7 +117,11 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 - **Depends on:** none. HA-3 turns it on after this merges.
 
 ### Step 2 — Add Hypothesis + a first engine invariant suite (Tier 2)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — added `hypothesis` dev dep + `tests/unit/test_engine_properties.py` (structural + determinism invariants over Hypothesis-generated legal action sequences) — branch `test/harness-enforce-and-deepen/step-2/engine-invariants` — commit 940fc9b — PR https://app.graphite.com/github/pr/Hectortilla/creature/36
+- **Notes for next agent:**
+  - Two invariants from the menu were **dropped as genuinely false / risky and must not be re-added blind:** `current_health >= 0` is false (`GameCard.apply_damage` and the `DamageDealtEvent` reducer subtract past zero; `is_alive` = `current_health > 0`), and `current_health <= health` was left out because effect deltas via `CardHealthChangedEvent` aren't provably clamped. The suite asserts the solid ones: **card-instance conservation, zone/no-duplication (each card in exactly its `(owner, zone)` list), turn-ownership, and same-seed+choices determinism** (compared via event-type stream + per-zone census, since `instance_id`s are non-reproducible uuids).
+  - **Engine wart surfaced by the property run (not fixed here, out of scope):** while the game is PAUSED for `force_defend`/`forced_swap`, `GameEngine.get_valid_actions` still appends the *active* player's Pass/Concede, but the validator rejects any action except the defender's forced response ("Game is paused, waiting for forced defend action"). So `valid_actions` over-offers illegal actions during a pause. The test models a legal sequence by restricting choices to the required actor (`pending_defender_id or active_player_id`). Worth a follow-up: `get_valid_actions` should not list actions the validator will reject.
+  - The suite uses `_build_game` from `test_engine_smoke` (seeded real deck) rather than the empty-deck `empty_state` fixture, because a legal *action sequence* needs a deck to draw from.
 - **Why / failure mode closed:** the engine is pure and seeded — ideal for
   property tests — yet there are none. Example tests only pin inputs we imagined;
   the overnight risk is the bug nobody wrote a test for. Invariants catch that
@@ -186,6 +190,11 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
     below the new measured value (leave the documented timeout-variance margin).
     Update the `comment` with the new measurement + date.
   - Do this as the **last** Tier-2 step so the floor reflects all the new tests.
+  - **Decision to make (from Step 2):** whether to add `tests/unit/test_engine_properties.py`
+    to `[tool.mutmut].tests_dir`. Pro: property tests are strong mutant killers. Con:
+    the randomized Hypothesis suite is slower and a mutant killed on only some examples
+    classifies nondeterministically across mutmut runs — which can destabilize the floor.
+    If added, pin its examples (fixed seed / `derandomize`) so classification is stable.
 - **Gate:** the mutation gate script exits 0 at the new floor; `cd back && make
   check` unaffected. `mutation-baseline.json` is **unprotected** (no label); do
   **not** also edit `mutation.yml` (protected) unless necessary.
