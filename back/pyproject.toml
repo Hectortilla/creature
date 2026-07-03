@@ -245,8 +245,11 @@ paths_to_mutate = ["app/game/"]
 # mutmut's hermetic clean-test pass; add new pure-engine unit files here.
 tests_dir = [
     "tests/behaviour/",
+    "tests/unit/test_actions.py",
     "tests/unit/test_damage_math.py",
+    "tests/unit/test_damage_properties.py",
     "tests/unit/test_effects.py",
+    "tests/unit/test_engine_properties.py",
     "tests/unit/test_engine_smoke.py",
     "tests/unit/test_rng_determinism.py",
     "tests/unit/test_rng_multi_action.py",

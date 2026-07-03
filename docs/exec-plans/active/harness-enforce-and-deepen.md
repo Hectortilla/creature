@@ -189,7 +189,14 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 - **Depends on:** none (independent of 2/3; can interleave).
 
 ### Step 5 — Ratchet the engine mutation floor after the new tests land (Tier 2)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — re-ran the full engine mutation pass with the Step 2–4 suites in the corpus; the score **fell** to 50.99% (from 52.5%), so the floor was **held at 45** rather than ratcheted, added the property + action suites to `[tool.mutmut].tests_dir` (with a global `derandomize` Hypothesis profile in `conftest.py` for stable classification), and recorded the finding in `mutation-baseline.json` — branch `test/harness-enforce-and-deepen/step-5/mutation-corpus` — commit 3838a6d — PR https://app.graphite.com/github/pr/Hectortilla/creature/39
+- **Notes for next agent:**
+  - **The plan's premise was wrong and this is the key finding:** the score did **not** rise. Full local run = **50.99%** (1540 killed + 0 timeout / 3020 viable; **663 no_tests**, down from 1025). Absolute kills rose (1310→1540) but the *ratio* fell (52.5%→50.99%) because Step 4 covered `actions/`, moving ~362 mutants out of `no_tests` into the viable denominator — and **804 of the 1480 survivors now live in `actions/`** (the happy-path/rejection tests cover those files but kill few of their mutants). The mutation sensor is working as designed: it surfaced that `actions/` is *covered but weakly tested*.
+  - **Floor HELD at 45, not ratcheted.** Ratcheting up on a score that fell (and on a local-only measurement) would be unjustified. Anti-tamper cuts both ways — no fabricated ratchet.
+  - **Local `timeout=0` vs CI's 85:** this local (darwin) run killed everything fast; in CI slower mutants time out and count as *caught*, so the CI score is likely **higher** than 50.99% — do **not** treat 50.99% as the CI number. Re-measure in CI (`mutation.yml` `workflow_dispatch`) before any future ratchet.
+  - **`derandomize` is global** (registered/loaded in `conftest.py`), not mutmut-only: every Hypothesis test now uses a fixed seed each run — stable mutant classification + no property-test flakes, at the cost of cross-run input exploration. `max_examples` breadth per run is unchanged.
+  - **What unblocks a real ratchet → Step 7.** Kill the `actions/` survivors first (804), then re-measure in CI and raise `min_score` to sit just below it.
+  - Touches protected `back/pyproject.toml` (`tests_dir`) → this PR's `harness-guard` is **red until a human applies the `harness-change` label** (intended tripwire). `mutation-baseline.json` and `conftest.py` are unprotected.
 - **Why / failure mode closed:** Steps 2–4 should kill currently-surviving
   mutants; the floor (45%) must move up to *lock in* that strength, else it can
   silently erode back down.
@@ -220,12 +227,36 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
   - Update `docs/harness.md`: branch protection now requires `ci-ok` +
     `harness-guard` (HA-1); the Claude reviewer is the active inferential sensor
     (advisory/gating per HA-3 + Step 1); property-based testing is now part of the
-    engine corpus; bump the mutation-score paragraph to the new floor. If the
-    enforcement is fully on, note the maturity move toward **H3**.
+    engine corpus; note the mutation floor stays at 45 (Step 5 found the ratio fell
+    when `actions/` coverage entered the denominator — ratchet deferred to Step 7).
+    If the enforcement is fully on, note the maturity move toward **H3**.
 - **Gate:** docs-only (`docs/**/*.md`) → driver skips the gate; markdown
   link-check (`docs.yml`) stays green. **No** label.
 - **Depends on:** HA-1/HA-3 done and Steps 1–5 merged (so the doc states facts,
   not intentions).
+
+### Step 7 — Strengthen `actions/` mutation tests, then ratchet the floor (Tier 2)
+- [ ] **Status:** not started
+- **Why / failure mode closed:** Step 5 surfaced that `actions/` is now *covered
+  but weakly mutation-tested* — **804 of 1480 survivors** live there, and covering
+  it dropped the coverage-conditioned ratio (52.5%→50.99%). Killing those survivors
+  is what actually raises test *strength*; only then can the floor ratchet up
+  honestly (Step 5 correctly refused to ratchet on a score that fell).
+- **Do:**
+  - Inspect the surviving `actions/` mutants (`cd back && uv run mutmut results |
+    grep actions`, `uv run mutmut show <id>`), and extend `tests/unit/test_actions.py`
+    with equality/boundary asserts that kill the load-bearing ones (arithmetic,
+    comparison, and constant mutants in `validate` / `to_events` / `get_valid`).
+    Target the two rejection branches Step 4 left uncovered too
+    (`ASSOCIATION_TARGET_FILTER`, direct-from-hand association source).
+  - Re-measure **in CI** (`mutation.yml` `workflow_dispatch`) — not just locally,
+    since local `timeout=0` understates the CI score — confirm the ratio rose, then
+    raise `min_score` in `back/mutation-baseline.json` to sit just below the new CI
+    value (keep the documented timeout-variance margin) and refresh the comment.
+- **Gate:** `cd back && make check` green; mutation gate exits 0 at the new floor.
+  Tests + `mutation-baseline.json` only → **no** label (do not touch
+  `pyproject.toml`/`mutation.yml`).
+- **Depends on:** Step 5.
 
 ## Notes / decisions
 
