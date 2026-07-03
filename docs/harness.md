@@ -152,6 +152,15 @@ applying the label flips it green without re-running the rest of CI. Because
 `needs:` can't span workflows, branch protection must require **both** `ci-ok`
 and `harness-guard` as status checks for this to be enforced at merge.
 
+Enforced via a repository **ruleset** on `refs/heads/main` (not the classic
+branch-protection API, which stays 404 and is not the source of truth here):
+required status checks `ci-ok` + `harness-guard`, `enforcement: active`,
+`current_user_can_bypass: never`, plus **`required_approving_review_count: 1`**
+— every PR, including the ralph loop's, needs an actual human-approved review
+before it can merge. That review gate is what makes "leave a clean stack of
+PRs to review in the morning" (see the `ralph-iteration` skill) a hard
+guarantee instead of a habit.
+
 ### Mutation score (the test-strength ratchet)
 
 Line coverage can hold steady while *test strength* erodes — a weakened assertion
