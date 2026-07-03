@@ -1,14 +1,16 @@
 name: Claude PR Review
 
-# Inferential feedback sensor (see docs/harness.md). OPT-IN and inert by default:
-# this job runs only when the repo variable ENABLE_CLAUDE_REVIEW == 'true'. To turn
-# it on:
+# Inferential (semantic) feedback sensor — see docs/harness.md. OPT-IN and inert by
+# default: this job runs only when the repo variable ENABLE_CLAUDE_REVIEW == 'true'.
+# To turn it on:
 #   gh secret set ANTHROPIC_API_KEY --body "<your-key>"
 #   gh variable set ENABLE_CLAUDE_REVIEW --body "true"
-# When enabling, pin and verify the action version/inputs against current docs:
-# https://github.com/anthropics/claude-code-action
-# Until then this workflow is a no-op. Meanwhile use the on-demand /code-review and
+# Advisory only: this workflow is NOT in ci-ok's needs, so it never blocks merge.
+# Promote it to a required check only after a green/low-noise streak (mirror the e2e
+# ratchet). Until enabled it is a no-op; meanwhile use the on-demand /code-review and
 # /security-review Claude Code skills.
+# The action is pinned to a commit SHA (v1.0.164); re-verify inputs against
+# https://github.com/anthropics/claude-code-action before bumping it.
 
 on:
   pull_request:
@@ -27,12 +29,23 @@ jobs:
         with:
           fetch-depth: 0
       - name: Claude review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@01872ccc02bf66740207fb338a783ce028216758 # v1.0.164
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Review this pull request for correctness bugs, security issues, and
-            violations of the conventions in AGENTS.md and docs/architecture.md —
-            especially the game-engine purity boundary (app/game must stay free of
-            I/O, DB, web, and service imports). Be concise and high-signal; prefer
-            a few high-confidence findings over many speculative ones.
+            Review this pull request for THIS repo's highest-value failure classes.
+            Report only a few high-confidence findings; skip nits and style opinions.
+            Read AGENTS.md, docs/architecture.md, and .claude/rules/ for the rules.
+
+            Prioritise, in order:
+            1. Engine purity boundary — app/game must stay pure: no imports of I/O,
+               DB, web/HTTP, redis, or service-layer modules. Flag any new such import.
+            2. Hidden-information leaks — per-player event visibility. Flag any change
+               that sends a player state or events they should not see (opponent hand,
+               deck contents, face-down cards).
+            3. Spec fidelity — does the change implement the game rules as described in
+               README.md? Flag divergences from the documented behaviour.
+            4. Fail-fast / minimal-comment rules from .claude/rules/ — flag added
+               null-defense guards, defensive fallbacks, or multi-line comments/docstrings
+               that the style rules forbid.
+            5. Correctness bugs and security issues in the changed code.

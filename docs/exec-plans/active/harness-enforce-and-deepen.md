@@ -94,7 +94,12 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 ## Steps
 
 ### Step 1 — Pin & tune the Claude review workflow (Tier 1, code)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — pinned `claude-code-action` to commit `01872ccc02bf66740207fb338a783ce028216758` (tag `v1.0.164`, verified `prompt`/`anthropic_api_key` inputs unchanged), tightened the prompt to this repo's top failure classes (engine purity boundary, hidden-info leaks, README spec fidelity, fail-fast/comment rules, correctness/security), kept the `ENABLE_CLAUDE_REVIEW` opt-in gate, left it advisory (not in `ci-ok`'s `needs`) — branch `test/harness-enforce-and-deepen/step-1/pin-claude-review` — commit 921699e — PR https://app.graphite.com/github/pr/Hectortilla/creature/40
+- **Notes for next agent:**
+  - Verified against the live action repo: latest release at pin time was `v1.0.164` (2026-07-03); the annotated tag dereferences to commit `01872ccc02bf66740207fb338a783ce028216758`. The `prompt` and `anthropic_api_key` inputs still exist on this version — no input drift from `@v1`, so only the ref changed.
+  - **Advisory-only is deliberate.** Promote-to-gating criterion (recorded here per the Do list): add `review` to `ci-ok`'s `needs` only after a green/low-noise streak proves it isn't noisy — mirror the e2e ratchet. HA-3 flips it on (secret + `ENABLE_CLAUDE_REVIEW=true`) now that it's pinned/tuned.
+  - Gate: YAML validated (parses; `uses`/`if`/inputs correct). `actionlint` is not installed locally. `make check` is unaffected (no Python/config it runs touches this file); `make verify` e2e leg unaffected (no production/frontend change) — matches Steps 2–4 precedent.
+  - Touches protected `.github/workflows/**` → this PR's `harness-guard` is **red until a human applies the `harness-change` label** (intended morning tripwire, noted in the PR body).
 - **Why / failure mode closed:** the only inferential sensor is inert and
   unpinned (`anthropics/claude-code-action@v1` — a moving tag). Before HA-3 flips
   it on, the workflow should be pinned to a verified version with a high-signal,
