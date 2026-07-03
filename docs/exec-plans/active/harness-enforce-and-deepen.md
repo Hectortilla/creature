@@ -145,7 +145,12 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 - **Depends on:** none.
 
 ### Step 3 — Property tests for the damage / element math (Tier 2)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — added `tests/unit/test_damage_properties.py` (7 property/exhaustive tests) over `calculate_damage`, `get_element_bonus`, `get_total_element_bonus`: final-damage floor + reflection-is-the-shortfall, element-bonus-before-defense, defense monotonicity, damage-type→defense selection, exhaustive matrix consistency (values in {-3,0,3} + directional antisymmetry), and total-bonus = sum-of-pairwise — branch `test/harness-enforce-and-deepen/step-3/damage-properties` — commit b070cf8 — PR https://app.graphite.com/github/pr/Hectortilla/creature/38
+- **Notes for next agent:**
+  - Gate run: `cd back && make check` green (all 7 stages). `make verify`'s e2e leg was **not** run — pure backend unit-test file only, no production/frontend/config change, so it can't affect the running-app suite (matches Step 2/Step 4 precedent). Tests-only → **no** `harness-change` label.
+  - Two menu properties were **narrowed to what's actually true, don't re-widen blind:** the element matrix is **not** fully reciprocal-negative (A strong vs B does *not* imply B weak vs A in every cell), and it has **self-relationships** — `MENTAL` lists itself in both strengths and weaknesses so `(MENTAL,MENTAL) = -3`, and `(TOXIC,TOXIC) = +3`. So the antisymmetry assert is guarded on `attacker != defender` and only forbids the both-strong case (`bonus==3 ⇒ reverse != 3`), which is the real inconsistency to catch. Every cell is exhaustively checked to be in `{-3,0,3}`.
+  - `calculate_damage(attack, attacker, target, effect_modifier)` ignores `attacker` (formula only reads the attack + target); a single module-level `_ATTACKER` dummy is reused.
+  - **For Step 5's `tests_dir` decision:** there are now **two** randomized Hypothesis suites (`test_engine_properties.py` *and* `test_damage_properties.py`). If either is added to `[tool.mutmut].tests_dir`, pin examples (`derandomize`/fixed seed) so mutant classification is stable — same caveat, now applies to both.
 - **Why / failure mode closed:** `test_damage_math.py` pins a handful of rows; a
   sign flip or off-by-one outside those rows ships green. Properties pin the whole
   surface.
@@ -195,11 +200,12 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
     below the new measured value (leave the documented timeout-variance margin).
     Update the `comment` with the new measurement + date.
   - Do this as the **last** Tier-2 step so the floor reflects all the new tests.
-  - **Decision to make (from Step 2):** whether to add `tests/unit/test_engine_properties.py`
+  - **Decision to make (from Steps 2–3):** whether to add the Hypothesis suites
+    (`tests/unit/test_engine_properties.py` **and** `tests/unit/test_damage_properties.py`)
     to `[tool.mutmut].tests_dir`. Pro: property tests are strong mutant killers. Con:
-    the randomized Hypothesis suite is slower and a mutant killed on only some examples
+    the randomized Hypothesis suites are slower and a mutant killed on only some examples
     classifies nondeterministically across mutmut runs — which can destabilize the floor.
-    If added, pin its examples (fixed seed / `derandomize`) so classification is stable.
+    If added, pin their examples (fixed seed / `derandomize`) so classification is stable.
 - **Gate:** the mutation gate script exits 0 at the new floor; `cd back && make
   check` unaffected. `mutation-baseline.json` is **unprotected** (no label); do
   **not** also edit `mutation.yml` (protected) unless necessary.
