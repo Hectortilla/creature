@@ -16,7 +16,7 @@ import pytest
 from app.game.actions.association import AssociationAction
 from app.game.actions.evolution import EvolutionAction
 from app.game.actions.promotion import PromoteAction
-from app.game.validators import RuleValidator
+from app.game.validators import RuleValidator, ValidationResult
 from app.models.game.card import EffectSpec, GameCard
 from app.models.game.enums import GameStatus, TurnPhase, Zone
 from app.models.game.events import CardAssociatedEvent, CardEvolvedEvent, CardPromotedEvent
@@ -31,6 +31,11 @@ def _in_hand(place_card: PlaceCard, state: GameState, owner_id: str, **fields: o
     card = place_card(state, owner_id, Zone.HAND, **fields)
     state.room.players[owner_id].zones[Zone.HAND.name].card_ids.append(card.instance_id)
     return card
+
+
+def _assert_rejected(result: ValidationResult, error_code: str) -> None:
+    assert result.valid is False
+    assert result.error_code == error_code
 
 
 def _past_first_turns(state: GameState, player_id: str = "p1") -> None:
@@ -51,6 +56,8 @@ def test_promote_happy_path_and_event(empty_state: GameState, place_card: PlaceC
     assert len(events) == 1
     event = events[0]
     assert isinstance(event, CardPromotedEvent)
+    assert event.game_id == empty_state.game_id
+    assert event.player_id == "p1"
     assert event.instance_id == card.instance_id
     assert event.card_id == 7
     assert event.card_name == "rookie"
@@ -58,9 +65,9 @@ def test_promote_happy_path_and_event(empty_state: GameState, place_card: PlaceC
 
 def test_promote_rejects_card_not_in_supporting(empty_state: GameState, place_card: PlaceCard) -> None:
     card = place_card(empty_state, "p1", Zone.ATTACKING, name="fighter", turns_in_zone=1)
-    result = PromoteAction(player_id="p1", instance_id=card.instance_id).validate(empty_state)
-    assert not result.valid
-    assert result.error_code == "CARD_NOT_IN_SUPPORTING"
+    _assert_rejected(
+        PromoteAction(player_id="p1", instance_id=card.instance_id).validate(empty_state), "CARD_NOT_IN_SUPPORTING"
+    )
 
 
 def test_promote_rejects_when_attacking_full(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -68,16 +75,16 @@ def test_promote_rejects_when_attacking_full(empty_state: GameState, place_card:
     place_card(empty_state, "p1", Zone.ATTACKING, name="a2", turns_in_zone=1)
     ready = place_card(empty_state, "p1", Zone.SUPPORTING, name="ready", turns_in_zone=1)
 
-    result = PromoteAction(player_id="p1", instance_id=ready.instance_id).validate(empty_state)
-    assert not result.valid
-    assert result.error_code == "ATTACKING_ZONE_FULL"
+    _assert_rejected(
+        PromoteAction(player_id="p1", instance_id=ready.instance_id).validate(empty_state), "ATTACKING_ZONE_FULL"
+    )
 
 
 def test_promote_rejects_card_not_ready(empty_state: GameState, place_card: PlaceCard) -> None:
     fresh = place_card(empty_state, "p1", Zone.SUPPORTING, name="fresh", turns_in_zone=0)
-    result = PromoteAction(player_id="p1", instance_id=fresh.instance_id).validate(empty_state)
-    assert not result.valid
-    assert result.error_code == "CARD_NOT_READY"
+    _assert_rejected(
+        PromoteAction(player_id="p1", instance_id=fresh.instance_id).validate(empty_state), "CARD_NOT_READY"
+    )
 
 
 def test_promote_get_valid_lists_only_ready_supporting_cards(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -103,8 +110,7 @@ def test_promote_wrong_phase_rejected_by_validator(empty_state: GameState, place
     empty_state.current_phase = TurnPhase.ATTACK
 
     result = RuleValidator().validate(empty_state, PromoteAction(player_id="p1", instance_id=card.instance_id))
-    assert not result.valid
-    assert result.error_code == "WRONG_PHASE"
+    _assert_rejected(result, "WRONG_PHASE")
 
 
 # ── Evolution ──────────────────────────────────────────────────────────────
@@ -127,6 +133,8 @@ def test_evolve_happy_path_and_event(empty_state: GameState, place_card: PlaceCa
     assert len(events) == 1
     event = events[0]
     assert isinstance(event, CardEvolvedEvent)
+    assert event.game_id == empty_state.game_id
+    assert event.player_id == "p1"
     assert event.base_card_id == base.instance_id
     assert event.evolution_card_id == evo.instance_id
     assert event.card_id == 99
@@ -140,7 +148,7 @@ def test_evolve_rejects_first_turn(empty_state: GameState, place_card: PlaceCard
     result = EvolutionAction(
         player_id="p1", evolution_card_id=evo.instance_id, target_card_id=base.instance_id
     ).validate(empty_state)
-    assert result.error_code == "FIRST_TURN_RESTRICTION"
+    _assert_rejected(result, "FIRST_TURN_RESTRICTION")
 
 
 def test_evolve_rejects_second_turn(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -149,7 +157,7 @@ def test_evolve_rejects_second_turn(empty_state: GameState, place_card: PlaceCar
     result = EvolutionAction(
         player_id="p1", evolution_card_id=evo.instance_id, target_card_id=base.instance_id
     ).validate(empty_state)
-    assert result.error_code == "SECOND_TURN_RESTRICTION"
+    _assert_rejected(result, "SECOND_TURN_RESTRICTION")
 
 
 def test_evolve_rejects_card_not_in_hand(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -159,7 +167,7 @@ def test_evolve_rejects_card_not_in_hand(empty_state: GameState, place_card: Pla
     result = EvolutionAction(
         player_id="p1", evolution_card_id=stray.instance_id, target_card_id=base.instance_id
     ).validate(empty_state)
-    assert result.error_code == "CARD_NOT_IN_HAND"
+    _assert_rejected(result, "CARD_NOT_IN_HAND")
 
 
 def test_evolve_rejects_target_not_active(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -169,7 +177,7 @@ def test_evolve_rejects_target_not_active(empty_state: GameState, place_card: Pl
     result = EvolutionAction(
         player_id="p1", evolution_card_id=evo.instance_id, target_card_id=stray_target.instance_id
     ).validate(empty_state)
-    assert result.error_code == "INVALID_TARGET"
+    _assert_rejected(result, "INVALID_TARGET")
 
 
 def test_evolve_rejects_non_evolution_card(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -179,7 +187,7 @@ def test_evolve_rejects_non_evolution_card(empty_state: GameState, place_card: P
     result = EvolutionAction(
         player_id="p1", evolution_card_id=plain.instance_id, target_card_id=base.instance_id
     ).validate(empty_state)
-    assert result.error_code == "NOT_EVOLUTION_CARD"
+    _assert_rejected(result, "NOT_EVOLUTION_CARD")
 
 
 def test_evolve_rejects_target_not_found(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -189,7 +197,7 @@ def test_evolve_rejects_target_not_found(empty_state: GameState, place_card: Pla
     result = EvolutionAction(player_id="p1", evolution_card_id=evo.instance_id, target_card_id="ghost").validate(
         empty_state
     )
-    assert result.error_code == "TARGET_NOT_FOUND"
+    _assert_rejected(result, "TARGET_NOT_FOUND")
 
 
 def test_evolve_rejects_mismatch(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -199,7 +207,7 @@ def test_evolve_rejects_mismatch(empty_state: GameState, place_card: PlaceCard) 
     result = EvolutionAction(
         player_id="p1", evolution_card_id=evo.instance_id, target_card_id=base.instance_id
     ).validate(empty_state)
-    assert result.error_code == "EVOLUTION_MISMATCH"
+    _assert_rejected(result, "EVOLUTION_MISMATCH")
 
 
 def test_evolve_rejects_target_not_ready(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -209,7 +217,7 @@ def test_evolve_rejects_target_not_ready(empty_state: GameState, place_card: Pla
     result = EvolutionAction(
         player_id="p1", evolution_card_id=evo.instance_id, target_card_id=base.instance_id
     ).validate(empty_state)
-    assert result.error_code == "TARGET_NOT_READY"
+    _assert_rejected(result, "TARGET_NOT_READY")
 
 
 def test_evolve_get_valid_pairs_matching_hand_evolutions(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -235,6 +243,8 @@ def test_associate_happy_path_and_event(empty_state: GameState, place_card: Plac
     assert len(events) == 1
     event = events[0]
     assert isinstance(event, CardAssociatedEvent)
+    assert event.game_id == empty_state.game_id
+    assert event.player_id == "p1"
     assert event.association_card_id == assoc.instance_id
     assert event.target_card_id == target.instance_id
     assert event.card_id == 55
@@ -248,7 +258,7 @@ def test_associate_rejects_first_turn(empty_state: GameState, place_card: PlaceC
     result = AssociationAction(
         player_id="p1", association_card_id=assoc.instance_id, target_card_id=target.instance_id
     ).validate(empty_state)
-    assert result.error_code == "FIRST_TURN_RESTRICTION"
+    _assert_rejected(result, "FIRST_TURN_RESTRICTION")
 
 
 def test_associate_rejects_self_association(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -257,7 +267,7 @@ def test_associate_rejects_self_association(empty_state: GameState, place_card: 
     result = AssociationAction(
         player_id="p1", association_card_id=assoc.instance_id, target_card_id=assoc.instance_id
     ).validate(empty_state)
-    assert result.error_code == "SELF_ASSOCIATION"
+    _assert_rejected(result, "SELF_ASSOCIATION")
 
 
 def test_associate_rejects_invalid_source(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -267,7 +277,7 @@ def test_associate_rejects_invalid_source(empty_state: GameState, place_card: Pl
     result = AssociationAction(
         player_id="p1", association_card_id=stray.instance_id, target_card_id=target.instance_id
     ).validate(empty_state)
-    assert result.error_code == "INVALID_ASSOCIATION_SOURCE"
+    _assert_rejected(result, "INVALID_ASSOCIATION_SOURCE")
 
 
 def test_associate_rejects_invalid_target(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -277,7 +287,7 @@ def test_associate_rejects_invalid_target(empty_state: GameState, place_card: Pl
     result = AssociationAction(
         player_id="p1", association_card_id=assoc.instance_id, target_card_id=stray_target.instance_id
     ).validate(empty_state)
-    assert result.error_code == "INVALID_TARGET"
+    _assert_rejected(result, "INVALID_TARGET")
 
 
 def test_associate_rejects_non_association_card(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -287,7 +297,7 @@ def test_associate_rejects_non_association_card(empty_state: GameState, place_ca
     result = AssociationAction(
         player_id="p1", association_card_id=plain.instance_id, target_card_id=target.instance_id
     ).validate(empty_state)
-    assert result.error_code == "NOT_ASSOCIATION_CARD"
+    _assert_rejected(result, "NOT_ASSOCIATION_CARD")
 
 
 def test_associate_rejects_when_limit_reached(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -298,7 +308,7 @@ def test_associate_rejects_when_limit_reached(empty_state: GameState, place_card
     result = AssociationAction(
         player_id="p1", association_card_id=assoc.instance_id, target_card_id=target.instance_id
     ).validate(empty_state)
-    assert result.error_code == "ASSOCIATION_LIMIT_REACHED"
+    _assert_rejected(result, "ASSOCIATION_LIMIT_REACHED")
 
 
 def test_associate_rejects_when_forbidden(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -324,7 +334,7 @@ def test_associate_rejects_when_forbidden(empty_state: GameState, place_card: Pl
     result = AssociationAction(
         player_id="p1", association_card_id=assoc.instance_id, target_card_id=target.instance_id
     ).validate(empty_state)
-    assert result.error_code == "ASSOCIATIONS_FORBIDDEN"
+    _assert_rejected(result, "ASSOCIATIONS_FORBIDDEN")
 
 
 def test_associate_rejects_swap_target_not_attacking(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -338,7 +348,7 @@ def test_associate_rejects_swap_target_not_attacking(empty_state: GameState, pla
         target_card_id=target.instance_id,
         swap_with_supporting_card_id=other.instance_id,
     ).validate(empty_state)
-    assert result.error_code == "INVALID_SWAP_ASSOCIATION_TARGET"
+    _assert_rejected(result, "INVALID_SWAP_ASSOCIATION_TARGET")
 
 
 def test_associate_rejects_swap_card_not_in_supporting(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -351,7 +361,7 @@ def test_associate_rejects_swap_card_not_in_supporting(empty_state: GameState, p
         target_card_id=target.instance_id,
         swap_with_supporting_card_id="not-a-real-card",
     ).validate(empty_state)
-    assert result.error_code == "INVALID_SWAP_CARD"
+    _assert_rejected(result, "INVALID_SWAP_CARD")
 
 
 def test_associate_get_valid_enumerates_source_target_pairs(empty_state: GameState, place_card: PlaceCard) -> None:
@@ -362,3 +372,70 @@ def test_associate_get_valid_enumerates_source_target_pairs(empty_state: GameSta
 
     actions = AssociationAction.get_valid(empty_state, "p1")
     assert [(a.association_card_id, a.target_card_id) for a in actions] == [(assoc.instance_id, target.instance_id)]
+
+
+def test_associate_rejects_target_failing_filter(empty_state: GameState, place_card: PlaceCard) -> None:
+    _past_first_turns(empty_state)
+    target = place_card(empty_state, "p1", Zone.ATTACKING, name="host", turns_in_zone=1)  # type_id None ≠ 99
+    assoc = place_card(
+        empty_state,
+        "p1",
+        Zone.SUPPORTING,
+        name="buff",
+        association_ids=[700],
+        specs=[
+            EffectSpec(
+                id=6,
+                owner_kind="association",
+                owner_id=700,
+                atom_type="association-target-filter",
+                params={"target_filter_type_id": 99},
+            ),
+        ],
+    )
+    result = AssociationAction(
+        player_id="p1", association_card_id=assoc.instance_id, target_card_id=target.instance_id
+    ).validate(empty_state)
+    _assert_rejected(result, "ASSOCIATION_TARGET_FILTER")
+
+
+def test_associate_swap_event_carries_swap_card(empty_state: GameState, place_card: PlaceCard) -> None:
+    _past_first_turns(empty_state)
+    target = place_card(empty_state, "p1", Zone.ATTACKING, name="host", turns_in_zone=1)
+    swap = place_card(empty_state, "p1", Zone.SUPPORTING, name="bench")
+    assoc = place_card(empty_state, "p1", Zone.SUPPORTING, name="buff", card_id=55, association_ids=[700])
+    action = AssociationAction(
+        player_id="p1",
+        association_card_id=assoc.instance_id,
+        target_card_id=target.instance_id,
+        swap_with_supporting_card_id=swap.instance_id,
+    )
+
+    assert action.validate(empty_state).valid is True
+    assert action.to_events(empty_state)[0].swap_with_supporting_card_id == swap.instance_id
+
+
+def _direct_from_hand_spec() -> EffectSpec:
+    return EffectSpec(id=7, owner_kind="association", owner_id=700, atom_type="script", script_id="cambio_de_guardia")
+
+
+def test_associate_direct_from_hand_source_allowed(empty_state: GameState, place_card: PlaceCard) -> None:
+    _past_first_turns(empty_state)
+    target = place_card(empty_state, "p1", Zone.ATTACKING, name="host", turns_in_zone=1)
+    assoc = _in_hand(
+        place_card, empty_state, "p1", name="swap", association_ids=[700], specs=[_direct_from_hand_spec()]
+    )
+    result = AssociationAction(
+        player_id="p1", association_card_id=assoc.instance_id, target_card_id=target.instance_id
+    ).validate(empty_state)
+    assert result.valid is True
+
+
+def test_associate_rejects_plain_card_in_hand_source(empty_state: GameState, place_card: PlaceCard) -> None:
+    _past_first_turns(empty_state)
+    target = place_card(empty_state, "p1", Zone.ATTACKING, name="host", turns_in_zone=1)
+    assoc = _in_hand(place_card, empty_state, "p1", name="buff", association_ids=[700])  # no direct-from-hand atom
+    result = AssociationAction(
+        player_id="p1", association_card_id=assoc.instance_id, target_card_id=target.instance_id
+    ).validate(empty_state)
+    _assert_rejected(result, "INVALID_ASSOCIATION_SOURCE")

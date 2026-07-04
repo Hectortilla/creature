@@ -94,7 +94,12 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 ## Steps
 
 ### Step 1 — Pin & tune the Claude review workflow (Tier 1, code)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — pinned `claude-code-action` to commit `01872ccc02bf66740207fb338a783ce028216758` (tag `v1.0.164`, verified `prompt`/`anthropic_api_key` inputs unchanged), tightened the prompt to this repo's top failure classes (engine purity boundary, hidden-info leaks, README spec fidelity, fail-fast/comment rules, correctness/security), kept the `ENABLE_CLAUDE_REVIEW` opt-in gate, left it advisory (not in `ci-ok`'s `needs`) — branch `test/harness-enforce-and-deepen/step-1/pin-claude-review` — commit 921699e — PR https://app.graphite.com/github/pr/Hectortilla/creature/40
+- **Notes for next agent:**
+  - Verified against the live action repo: latest release at pin time was `v1.0.164` (2026-07-03); the annotated tag dereferences to commit `01872ccc02bf66740207fb338a783ce028216758`. The `prompt` and `anthropic_api_key` inputs still exist on this version — no input drift from `@v1`, so only the ref changed.
+  - **Advisory-only is deliberate.** Promote-to-gating criterion (recorded here per the Do list): add `review` to `ci-ok`'s `needs` only after a green/low-noise streak proves it isn't noisy — mirror the e2e ratchet. HA-3 flips it on (secret + `ENABLE_CLAUDE_REVIEW=true`) now that it's pinned/tuned.
+  - Gate: YAML validated (parses; `uses`/`if`/inputs correct). `actionlint` is not installed locally. `make check` is unaffected (no Python/config it runs touches this file); `make verify` e2e leg unaffected (no production/frontend change) — matches Steps 2–4 precedent.
+  - Touches protected `.github/workflows/**` → this PR's `harness-guard` is **red until a human applies the `harness-change` label** (intended morning tripwire, noted in the PR body).
 - **Why / failure mode closed:** the only inferential sensor is inert and
   unpinned (`anthropics/claude-code-action@v1` — a moving tag). Before HA-3 flips
   it on, the workflow should be pinned to a verified version with a high-signal,
@@ -236,7 +241,13 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
   not intentions).
 
 ### Step 7 — Strengthen `actions/` mutation tests, then ratchet the floor (Tier 2)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — strengthened `tests/unit/test_actions.py` (asserted `valid is False` on every rejection via a `_assert_rejected` helper, event `game_id`/`player_id` on the 3 happy paths, a swap-carrying event, and the two branches Step 4 left uncovered: `ASSOCIATION_TARGET_FILTER` + direct-from-hand source); killed ~30 load-bearing `actions/` survivors, local ratio rose 50.99%→**54.06%**; ratcheted `min_score` 45→**50** (safe because CI≥local) — branch `test/harness-enforce-and-deepen/step-7/actions-mutation` — commit 468cf35 — PR https://app.graphite.com/github/pr/Hectortilla/creature/41
+- **Notes for next agent:**
+  - **The ratio ROSE this time** (unlike Step 5): 50.99%→54.06% local (1638 killed / 3030 viable; 653 no_tests, down from 663). Killing the covered-but-weakly-tested `actions/` survivors is exactly what raised strength — Step 5's diagnosis was right.
+  - **Floor ratcheted 45→50, not up to 54.** Rationale: local `timeout=0` kills slow mutants CI counts as caught, so CI≥local; a floor *below* the local 54.06% is guaranteed safe in CI. Left a ~4pp margin rather than sitting at 53 because this is a local-only number — a CI `workflow_dispatch` re-measure can justify a tighter floor later. Anti-tamper honoured: no CI number was fabricated.
+  - **24 `actions/` survivors deliberately left alive** — they are cosmetic `error="…"` *message* string mutations (killing them needs brittle exact-message asserts) and `state=None`/`target=None` arg no-ops (behaviourally equivalent with no limit/filter-changing passive in scope). Not load-bearing; skip unless a message contract is ever asserted.
+  - Only `test_actions.py` (unprotected) + `mutation-baseline.json` (unprotected) changed → **no** `harness-change` label; `pyproject.toml`/`mutation.yml` untouched.
+  - Gate: `cd back && make check` green (all 7 stages); `mutation_gate.py` exits 0 at floor 50. `make verify` e2e leg not run — no production/frontend/config change, so it can't affect the running-app suite (Steps 2–4 precedent).
 - **Why / failure mode closed:** Step 5 surfaced that `actions/` is now *covered
   but weakly mutation-tested* — **804 of 1480 survivors** live there, and covering
   it dropped the coverage-conditioned ratio (52.5%→50.99%). Killing those survivors
