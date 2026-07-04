@@ -12,6 +12,7 @@ import os
 from collections.abc import Callable, Iterator
 
 import pytest
+from hypothesis import settings as hypothesis_settings
 from sqlalchemy import event
 from sqlalchemy.exc import OperationalError
 from sqlmodel import Session
@@ -22,6 +23,10 @@ from app.models.game.enums import Zone
 from app.models.game.player import PlayerState
 from app.models.game.room import GameRoom
 from app.models.game.state import GameState
+
+# derandomize → same examples every run, so mutmut classifies each mutant stably.
+hypothesis_settings.register_profile("deterministic", derandomize=True)
+hypothesis_settings.load_profile("deterministic")
 
 
 @pytest.fixture
