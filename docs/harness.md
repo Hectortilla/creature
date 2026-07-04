@@ -129,8 +129,21 @@ cycles.
 
 | Sensor | Where | Status |
 | ------ | ----- | ------ |
-| Claude PR review | `.github/workflows/claude-review.yml` | **opt-in** — inert until an `ANTHROPIC_API_KEY` secret is added |
+| Claude PR review | `.github/workflows/claude-review.yml` | **active & gating** — `ENABLE_CLAUDE_REVIEW=true` + `ANTHROPIC_API_KEY` set; the `review` check is required on the `main` ruleset (see below) |
 | On-demand `/code-review`, `/security-review` | Claude Code skills | available now |
+
+The Claude reviewer is the harness's only **semantic** sensor — it catches the
+"passes every deterministic gate but implements the wrong thing" class the
+computational sensors structurally cannot. It runs on every PR
+(`opened`/`synchronize`/`reopened`) with a repo-specific prompt (engine-purity
+boundary, hidden-info leaks, README spec fidelity, fail-fast/comment rules,
+correctness/security). It is **gating**: the `review` check is required on the
+`main` ruleset. Two properties to keep in mind — (1) because it's a required
+check *and* guarded by `if: vars.ENABLE_CLAUDE_REVIEW == 'true'`, that variable
+is load-bearing: unset it and the job skips, and a skipped required check blocks
+every PR; (2) `claude-code-action` exits 0 on findings (it posts review
+comments), so the gate proves the reviewer *ran*, not that it approved — the
+required 1-approval human review is where its comments are acted on.
 
 ### Tamper-evidence (the harness-guard tripwire)
 
@@ -154,7 +167,8 @@ and `harness-guard` as status checks for this to be enforced at merge.
 
 Enforced via a repository **ruleset** on `refs/heads/main` (not the classic
 branch-protection API, which stays 404 and is not the source of truth here):
-required status checks `ci-ok` + `harness-guard`, `enforcement: active`,
+required status checks `ci-ok` + `harness-guard` + `review` (the Claude PR
+reviewer — now gating, see the inferential section), `enforcement: active`,
 `current_user_can_bypass: never`, plus **`required_approving_review_count: 1`**
 — every PR, including the ralph loop's, needs an actual human-approved review
 before it can merge. That review gate is what makes "leave a clean stack of
@@ -262,7 +276,9 @@ Tracked here so they're visible, not lost:
 - **Tune `knip`**: the frontend dead-code/unused-exports sensor runs as a
   non-blocking baseline (it surfaces some genuinely dead app/legacy files) —
   triage and clear it, then promote `npm run knip` to gating.
-- **Activate the Claude PR-review workflow** (add the API-key secret).
+- ~~**Activate the Claude PR-review workflow** (add the API-key secret).~~ ✅ done
+  — enabled (`ENABLE_CLAUDE_REVIEW=true` + `ANTHROPIC_API_KEY`) and promoted to
+  **gating** (the `review` check is required on the `main` ruleset).
 - ~~**Promote the E2E game + 3D + gameplay flows (`@nongating` → `@gating`)**~~ ✅
   done (`docs/exec-plans/completed/e2e-gating-promotion.md`): all six specs now
   gate — game-start, play_card, pass, swap, attack (split-promotion, Step 2) and

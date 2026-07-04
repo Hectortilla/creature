@@ -1,14 +1,16 @@
 name: Claude PR Review
 
-# Inferential (semantic) feedback sensor — see docs/harness.md. OPT-IN and inert by
-# default: this job runs only when the repo variable ENABLE_CLAUDE_REVIEW == 'true'.
-# To turn it on:
+# Inferential (semantic) feedback sensor — see docs/harness.md. Enabled via the repo
+# variable ENABLE_CLAUDE_REVIEW == 'true' (+ the ANTHROPIC_API_KEY secret):
 #   gh secret set ANTHROPIC_API_KEY --body "<your-key>"
 #   gh variable set ENABLE_CLAUDE_REVIEW --body "true"
-# Advisory only: this workflow is NOT in ci-ok's needs, so it never blocks merge.
-# Promote it to a required check only after a green/low-noise streak (mirror the e2e
-# ratchet). Until enabled it is a no-op; meanwhile use the on-demand /code-review and
-# /security-review Claude Code skills.
+# GATING: the `review` check is a required status check on the `main` ruleset (its
+# own workflow — `needs:` can't span workflows, so it's listed in the ruleset
+# alongside ci-ok/harness-guard, not in ci-ok's needs). Because it's required, the
+# ENABLE_CLAUDE_REVIEW variable is load-bearing: unset it and the job skips, and a
+# skipped required check blocks every PR. The action exits 0 on findings (it posts
+# review comments), so this gate proves the reviewer *ran*, not that it found nothing —
+# the required 1-approval review is where a human acts on its comments.
 # The action is pinned to a commit SHA (v1.0.164); re-verify inputs against
 # https://github.com/anthropics/claude-code-action before bumping it.
 
