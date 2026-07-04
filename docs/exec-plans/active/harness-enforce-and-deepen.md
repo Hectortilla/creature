@@ -161,7 +161,12 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 - **Depends on:** Step 2 (Hypothesis present).
 
 ### Step 4 — Cover the untested action files (Tier 2)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — added `tests/unit/test_actions.py` (28 tests) driving `promotion`/`evolution`/`association` action classes directly: happy-path `validate` + `to_events` field asserts, every rejection `error_code`, `get_valid` enumeration, and the promote `WRONG_PHASE` path via `RuleValidator` — branch `test/harness-enforce-and-deepen/step-4/action-coverage` — commit a55a22b — PR https://app.graphite.com/github/pr/Hectortilla/creature/37
+- **Notes for next agent:**
+  - Gate run: `cd back && make check` green (all 7 stages). `make verify`'s e2e leg was **not** run: this step adds only a pure backend unit-test file (no production/frontend/config change), so it cannot affect the running-app suite; matches Step 2's precedent and this step's own scoped gate. Tests-only file → **no** `harness-change` label needed.
+  - The `place_card` fixture only appends to SUPPORTING/ATTACKING zone lists; HAND/DECK cards must be added to the hand `card_ids` manually — the module's `_in_hand(place_card, state, owner_id, **fields)` helper does this. Reuse it for Step 5 measurements.
+  - Two rejection branches were intentionally left uncovered as low-value/hard-to-craft: association's `ASSOCIATION_TARGET_FILTER` (needs a filter-atom that emits errors) and the direct-from-hand association source path (`association_allows_direct_from_hand`, needs a `cambio_de_guardia`/`playable_directly_from_hand` script atom). Worth adding in a follow-up if Step 5's mutation run shows survivors there.
+  - Step 5 can now measure these three files; expect the `no_tests` bucket for `actions/{association,evolution,promotion}.py` to shrink and surviving/killed counts to appear.
 - **Why / failure mode closed:** `back/app/game/actions/{association,evolution,
   promotion}.py` are in the `no_tests` bucket (part of the 1,025 uncovered
   mutants) — their rules can break completely and silently. Coverage here both
