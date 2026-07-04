@@ -224,7 +224,13 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 - **Depends on:** Steps 2–4.
 
 ### Step 6 — Record the enforced end-state in `docs/harness.md` (close the loop)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — updated `docs/harness.md` to the verified live state: enforcement is now live at merge (ruleset already documented, plus a Maturity note that a red gate now blocks); the Claude reviewer row now says pinned/tuned but still opt-in/inert (HA-3 not yet flipped); added a Hypothesis property-test sensor row; corrected the mutation floor 45%→**50%** (Step 7) and noted the property/action suites are in the mutmut corpus — branch `test/harness-enforce-and-deepen/step-6/record-end-state` — commit 8bdee64 — PR https://app.graphite.com/github/pr/Hectortilla/creature/42
+- **Notes for next agent:**
+  - **Two plan-vs-reality corrections made (the doc states verified facts, not the plan's older intentions):**
+    - **HA-3 is NOT done yet.** Every `claude-review.yml` run shows `skipped` — `vars.ENABLE_CLAUDE_REVIEW` is not `true` (secret/var unreadable from the work token, 403). So the reviewer is *pinned & tuned* (Step 1) but still **inert/opt-in**, NOT the "active inferential sensor" the Step 6 Do text assumed. The doc says exactly that. When HA-3 is finally flipped on (+ a low-noise streak), update the reviewer row and the Maturity note to "active/advisory" then "gating".
+    - **Mutation floor is 50, not 45.** Step 6's Do text ("floor stays at 45") predates Step 7, which ratcheted 45→50. The doc now says 50 (matches `mutation-baseline.json`).
+  - **HA-1 + HA-2 verified done:** ruleset `main` is `enforcement: active`, requires `ci-ok` + `harness-guard` + `required_approving_review_count: 1`; the `harness-change` label exists. The classic branch-protection API stays 404 by design (ruleset is the source of truth) — `harness.md` lines ~155-162 already stated this (added in base commit `02e5e81`), so no change was needed there.
+  - Docs-only (`docs/**`) → not a protected path, **no** `harness-change` label; `make check`/`make verify` unaffected (no code/config), markdown link-check unaffected (no new URLs). This is the **last** step — plan moved to `docs/exec-plans/completed/`.
 - **Why / failure mode closed:** the harness is owned like code — when the
   enforcement switches and the new sensor class land, the doc must say so, or the
   next agent re-discovers the gap.

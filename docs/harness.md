@@ -47,6 +47,7 @@ and commit; fuller checks run in CI; the rest is monitored over time.
 | **mypy** (engine-strict) | backend | `make typecheck` | CI (pre-push) |
 | **import-linter** (boundaries) | backend | `make arch` | CI |
 | **pytest** (unit) | backend | `make test` | CI |
+| **hypothesis** (property-based engine invariants) | backend | `make test` | CI — gating |
 | **pytest** (integration, Postgres/Redis) | backend | `pytest -m integration` | CI (services) |
 | **pytest** (behaviour, syrupy goldens) | backend | `make test` | CI — gating |
 | **vulture + deptry** (dead code · dep drift) | backend | `make deadcode` | CI — gating |
@@ -129,7 +130,7 @@ cycles.
 
 | Sensor | Where | Status |
 | ------ | ----- | ------ |
-| Claude PR review | `.github/workflows/claude-review.yml` | **opt-in** — inert until an `ANTHROPIC_API_KEY` secret is added |
+| Claude PR review | `.github/workflows/claude-review.yml` | **opt-in** — pinned to a released `claude-code-action` SHA with a repo-specific prompt (engine-purity boundary, hidden-info leaks, fail-fast/comment rules, `README.md` spec fidelity); gated behind `vars.ENABLE_CLAUDE_REVIEW == 'true'` **and** an `ANTHROPIC_API_KEY` secret, so it stays inert until both are set. Advisory when on — **not** in `ci-ok`'s `needs`; promote to a required check only after a green/low-noise streak (the e2e ratchet pattern) |
 | On-demand `/code-review`, `/security-review` | Claude Code skills | available now |
 
 ### Tamper-evidence (the harness-guard tripwire)
@@ -168,13 +169,16 @@ still runs the line. `mutation.yml` guards against that: nightly, `mutmut run`
 mutates the pure engine (`app/game/`), `mutmut export-cicd-stats` writes the
 counts, and `back/scripts/mutation_gate.py` computes the score, posts it to the
 job summary, and **fails the run if it regresses below the committed floor**
-(`back/mutation-baseline.json`, currently 45%). The score is *coverage-conditioned*
+(`back/mutation-baseline.json`, currently 50%). The score is *coverage-conditioned*
 — `(killed + timeout) / (killed + timeout + survived + suspicious)`, with uncovered
 (`no_tests`) mutants excluded — so it tracks how strong the tests are, not how much
 code they touch (that's `fail_under`'s job). The corpus is scoped to the
-pure-engine tests in `[tool.mutmut]`; raise the floor as tests strengthen, and
-lower it only behind the `harness-change` label (both `mutation.yml` and
-`pyproject.toml` are protected paths).
+pure-engine tests in `[tool.mutmut]` — now including the Hypothesis property suites
+(`test_engine_properties.py`, `test_damage_properties.py`, run under a fixed-seed
+`derandomize` profile so mutant classification is stable) and the `actions/` unit
+suite; raise the floor as tests strengthen, and lower it only behind the
+`harness-change` label (both `mutation.yml` and `pyproject.toml` are protected
+paths).
 
 ### Per-package coverage (the boundary-coverage ratchet)
 
@@ -234,6 +238,15 @@ still leave login broken or the 3D board failing to render. That was the last
 missing sensor *class*, and closing it (plus the deterministic board-ready
 probe) is the prerequisite for the autonomous / long-running mode that pushes
 the harness toward H3.
+
+The **gates are now enforced at merge**, not merely advisory: the `refs/heads/main`
+ruleset requires `ci-ok` + `harness-guard` and one human review before any PR
+(including the ralph loop's) can land — so a red gate now *blocks* instead of
+warning. Two rungs remain before H3: the inferential sensor class is *wired but
+still opt-in* (the Claude reviewer is pinned/tuned but inert until
+`ENABLE_CLAUDE_REVIEW` + `ANTHROPIC_API_KEY` are set, then advisory until a
+low-noise streak promotes it), and structured/signed episode packages aren't
+produced yet.
 
 ## The steering loop
 
