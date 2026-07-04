@@ -26,6 +26,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "deptry>=0.25.1",
+    "hypothesis>=6.140.3",
     "import-linter>=2.11",
     "mutmut>=3.5.0",
     "mypy>=2.1.0",

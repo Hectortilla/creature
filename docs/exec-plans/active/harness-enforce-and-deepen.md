@@ -117,7 +117,11 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 - **Depends on:** none. HA-3 turns it on after this merges.
 
 ### Step 2 — Add Hypothesis + a first engine invariant suite (Tier 2)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — added `hypothesis` dev dep + `tests/unit/test_engine_properties.py` (structural + determinism invariants over Hypothesis-generated legal action sequences) — branch `test/harness-enforce-and-deepen/step-2/engine-invariants` — commit 940fc9b — PR https://app.graphite.com/github/pr/Hectortilla/creature/36
+- **Notes for next agent:**
+  - Two invariants from the menu were **dropped as genuinely false / risky and must not be re-added blind:** `current_health >= 0` is false (`GameCard.apply_damage` and the `DamageDealtEvent` reducer subtract past zero; `is_alive` = `current_health > 0`), and `current_health <= health` was left out because effect deltas via `CardHealthChangedEvent` aren't provably clamped. The suite asserts the solid ones: **card-instance conservation, zone/no-duplication (each card in exactly its `(owner, zone)` list), turn-ownership, and same-seed+choices determinism** (compared via event-type stream + per-zone census, since `instance_id`s are non-reproducible uuids).
+  - **Engine wart surfaced by the property run (not fixed here, out of scope):** while the game is PAUSED for `force_defend`/`forced_swap`, `GameEngine.get_valid_actions` still appends the *active* player's Pass/Concede, but the validator rejects any action except the defender's forced response ("Game is paused, waiting for forced defend action"). So `valid_actions` over-offers illegal actions during a pause. The test models a legal sequence by restricting choices to the required actor (`pending_defender_id or active_player_id`). Worth a follow-up: `get_valid_actions` should not list actions the validator will reject.
+  - The suite uses `_build_game` from `test_engine_smoke` (seeded real deck) rather than the empty-deck `empty_state` fixture, because a legal *action sequence* needs a deck to draw from.
 - **Why / failure mode closed:** the engine is pure and seeded — ideal for
   property tests — yet there are none. Example tests only pin inputs we imagined;
   the overnight risk is the bug nobody wrote a test for. Invariants catch that
@@ -157,7 +161,12 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
 - **Depends on:** Step 2 (Hypothesis present).
 
 ### Step 4 — Cover the untested action files (Tier 2)
-- [ ] **Status:** not started
+- [x] **Status:** ✅ done — 2026-07-03 — added `tests/unit/test_actions.py` (28 tests) driving `promotion`/`evolution`/`association` action classes directly: happy-path `validate` + `to_events` field asserts, every rejection `error_code`, `get_valid` enumeration, and the promote `WRONG_PHASE` path via `RuleValidator` — branch `test/harness-enforce-and-deepen/step-4/action-coverage` — commit a55a22b — PR https://app.graphite.com/github/pr/Hectortilla/creature/37
+- **Notes for next agent:**
+  - Gate run: `cd back && make check` green (all 7 stages). `make verify`'s e2e leg was **not** run: this step adds only a pure backend unit-test file (no production/frontend/config change), so it cannot affect the running-app suite; matches Step 2's precedent and this step's own scoped gate. Tests-only file → **no** `harness-change` label needed.
+  - The `place_card` fixture only appends to SUPPORTING/ATTACKING zone lists; HAND/DECK cards must be added to the hand `card_ids` manually — the module's `_in_hand(place_card, state, owner_id, **fields)` helper does this. Reuse it for Step 5 measurements.
+  - Two rejection branches were intentionally left uncovered as low-value/hard-to-craft: association's `ASSOCIATION_TARGET_FILTER` (needs a filter-atom that emits errors) and the direct-from-hand association source path (`association_allows_direct_from_hand`, needs a `cambio_de_guardia`/`playable_directly_from_hand` script atom). Worth adding in a follow-up if Step 5's mutation run shows survivors there.
+  - Step 5 can now measure these three files; expect the `no_tests` bucket for `actions/{association,evolution,promotion}.py` to shrink and surviving/killed counts to appear.
 - **Why / failure mode closed:** `back/app/game/actions/{association,evolution,
   promotion}.py` are in the `no_tests` bucket (part of the 1,025 uncovered
   mutants) — their rules can break completely and silently. Coverage here both
@@ -186,6 +195,11 @@ not a bug; note it in the PR body. Steps touching only `back/tests/**` or
     below the new measured value (leave the documented timeout-variance margin).
     Update the `comment` with the new measurement + date.
   - Do this as the **last** Tier-2 step so the floor reflects all the new tests.
+  - **Decision to make (from Step 2):** whether to add `tests/unit/test_engine_properties.py`
+    to `[tool.mutmut].tests_dir`. Pro: property tests are strong mutant killers. Con:
+    the randomized Hypothesis suite is slower and a mutant killed on only some examples
+    classifies nondeterministically across mutmut runs — which can destabilize the floor.
+    If added, pin its examples (fixed seed / `derandomize`) so classification is stable.
 - **Gate:** the mutation gate script exits 0 at the new floor; `cd back && make
   check` unaffected. `mutation-baseline.json` is **unprotected** (no label); do
   **not** also edit `mutation.yml` (protected) unless necessary.
